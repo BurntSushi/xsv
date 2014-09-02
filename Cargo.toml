@@ -1,0 +1,12 @@
+[package]
+name = "xcsv"
+version = "0.1.0"
+authors = ["Andrew Gallant <jamslam@gmail.com>"]
+
+[dependencies.rust-csv]
+# path = "/home/andrew/data/projects/rust-csv" 
+git = "git://github.com/BurntSushi/rust-csv"
+
+[dependencies.docopt_macros]
+git = "git://github.com/docopt/docopt.rs"
+
