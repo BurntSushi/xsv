@@ -10,6 +10,8 @@ As the project evolves, the importance of the following will become clearer:
 1. The flexibility of reading malformed CSV data.
 2. The number of features supported by xcsv.
 
+[![Build status](https://api.travis-ci.org/BurntSushi/xcsv.png)](https://travis-ci.org/BurntSushi/xcsv)
+
 
 **WORK IN PROGRESS**.
 
