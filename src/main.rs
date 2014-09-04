@@ -12,6 +12,12 @@ extern crate docopt;
 use std::io;
 use std::os;
 
+macro_rules! ctry(
+    ($e:expr) => (
+        match $e { Ok(e) => e, Err(e) => return Err(CliError::from_str(e)) }
+    )
+)
+
 docopt!(Args, "
 Usage:
     xcsv <command> [<args>...]
@@ -41,26 +47,6 @@ impl CliError {
     }
     fn from_flags(v: docopt::Error) -> CliError {
         ErrFlag(v)
-    }
-}
-
-macro_rules! ctry(
-    ($e:expr) => (
-        match $e { Ok(e) => e, Err(e) => return Err(CliError::from_str(e)) }
-    )
-)
-
-fn stdin_or_file(file_path: Option<String>) -> Box<Reader+'static> {
-    match file_path {
-        None => box io::stdin() as Box<Reader+'static>,
-        Some(fp) => box io::File::open(&Path::new(fp)) as Box<Reader+'static>,
-    }
-}
-
-fn char_to_u8(c: char) -> Result<u8, String> {
-    match c.to_ascii_opt() {
-        Some(ascii) => Ok(ascii.to_byte()),
-        None => Err(format!("Could not convert '{}' to ASCII.", c)),
     }
 }
 
@@ -105,5 +91,7 @@ fn main() {
         Err(ErrFlag(err)) => err.exit(),
     }
 }
+
+mod types;
 
 mod fmt;
