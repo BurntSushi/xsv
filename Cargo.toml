@@ -7,6 +7,10 @@ authors = ["Andrew Gallant <jamslam@gmail.com>"]
 # path = "/home/andrew/data/projects/rust-csv" 
 git = "git://github.com/BurntSushi/rust-csv"
 
+# [dependencies.docopt] 
+# path = "/home/andrew/data/projects/docopt.rs" 
+
 [dependencies.docopt_macros]
+# path = "/home/andrew/data/projects/docopt.rs/docopt_macros" 
 git = "git://github.com/docopt/docopt.rs"
 

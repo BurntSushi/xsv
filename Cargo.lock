@@ -2,21 +2,21 @@
 name = "xcsv"
 version = "0.1.0"
 dependencies = [
- "docopt_macros 0.6.2 (git+git://github.com/docopt/docopt.rs#52fd504ac4d9e9599adf0da51357dce00221d1de)",
+ "docopt_macros 0.6.3 (git+git://github.com/docopt/docopt.rs#652c165c6c05629dee8a19af6c62103082582a99)",
  "rust-csv 0.2.1 (git+git://github.com/BurntSushi/rust-csv#e4578ee616b046b1725fde3d2925766d8f9e64bc)",
 ]
 
 [[package]]
 name = "docopt"
-version = "0.6.2"
-source = "git+git://github.com/docopt/docopt.rs#52fd504ac4d9e9599adf0da51357dce00221d1de"
+version = "0.6.3"
+source = "git+git://github.com/docopt/docopt.rs#652c165c6c05629dee8a19af6c62103082582a99"
 
 [[package]]
 name = "docopt_macros"
-version = "0.6.2"
-source = "git+git://github.com/docopt/docopt.rs#52fd504ac4d9e9599adf0da51357dce00221d1de"
+version = "0.6.3"
+source = "git+git://github.com/docopt/docopt.rs#652c165c6c05629dee8a19af6c62103082582a99"
 dependencies = [
- "docopt 0.6.2 (git+git://github.com/docopt/docopt.rs#52fd504ac4d9e9599adf0da51357dce00221d1de)",
+ "docopt 0.6.3 (git+git://github.com/docopt/docopt.rs#652c165c6c05629dee8a19af6c62103082582a99)",
 ]
 
 [[package]]
