@@ -3,6 +3,10 @@ use std::io;
 
 use serialize::{Decodable, Decoder};
 
+use csv;
+
+struct Record(Vec<csv::ByteString>);
+
 #[deriving(Show)]
 pub struct Delimiter(u8);
 

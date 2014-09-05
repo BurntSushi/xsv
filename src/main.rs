@@ -18,6 +18,23 @@ macro_rules! ctry(
     )
 )
 
+macro_rules! csv_reader(
+    ($args:expr) => (
+        util::csv_reader($args.arg_input,
+                         $args.flag_no_headers,
+                         $args.flag_delimiter.to_byte(),
+                         $args.flag_flexible)
+    )
+)
+
+macro_rules! csv_writer(
+    ($args:expr) => (
+        util::csv_writer($args.flag_output,
+                         $args.flag_flexible,
+                         $args.flag_crlf)
+    )
+)
+
 docopt!(Args, "
 Usage:
     xcsv <command> [<args>...]
@@ -93,5 +110,6 @@ fn main() {
 }
 
 mod types;
+mod util;
 
 mod fmt;
