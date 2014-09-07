@@ -59,12 +59,7 @@ fn main() {
     conf.options_first = true;
     let args: Args = docopt::FlagParser::parse_conf(conf)
                                         .unwrap_or_else(|e| e.exit());
-    let result = match args.arg_command {
-        Count => count::main(),
-        Fmt => fmt::main(),
-        Select => select::main(),
-    };
-    match result {
+    match args.arg_command.run() {
         Ok(()) => os::set_exit_status(0),
         Err(types::ErrOther(msg)) => {
             os::set_exit_status(1);
@@ -79,6 +74,16 @@ enum Command {
     Count,
     Fmt,
     Select,
+}
+
+impl Command {
+    fn run(self) -> Result<(), types::CliError> {
+        match self {
+            Count => count::main(),
+            Fmt => fmt::main(),
+            Select => select::main(),
+        }
+    }
 }
 
 mod types;
