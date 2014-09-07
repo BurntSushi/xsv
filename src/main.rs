@@ -3,6 +3,8 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
+extern crate regex;
+#[phase(plugin)] extern crate regex_macros;
 extern crate serialize;
 
 extern crate csv;
@@ -14,24 +16,26 @@ use std::os;
 
 macro_rules! ctry(
     ($e:expr) => (
-        match $e { Ok(e) => e, Err(e) => return Err(CliError::from_str(e)) }
+        match $e {
+            Ok(e) => e,
+            Err(e) => return Err(::types::CliError::from_str(e)),
+        }
     )
 )
 
 macro_rules! csv_reader(
-    ($args:expr) => (
-        util::csv_reader($args.arg_input,
-                         $args.flag_no_headers,
-                         $args.flag_delimiter.to_byte(),
-                         $args.flag_flexible)
-    )
+    ($args:expr) => ({
+        let d = ::csv::Decoder::from_reader($args.arg_input)
+                               .separator($args.flag_delimiter.to_byte());
+        if $args.flag_no_headers { d.no_headers() } else { d }
+    })
 )
 
-macro_rules! csv_writer(
-    ($args:expr) => (
-        util::csv_writer($args.flag_output,
-                         $args.flag_flexible,
-                         $args.flag_crlf)
+macro_rules! csv_write_headers(
+    ($args:expr, $rdr:expr, $wtr:expr) => (
+        if !$args.flag_no_headers {
+            ctry!($wtr.record_bytes(ctry!($rdr.headers_bytes()).move_iter()));
+        }
     )
 )
 
@@ -45,71 +49,41 @@ Options:
     --version     Print version info and exit
 
 Commands:
-    fmt    Format CSV output (change field delimiter)
+    count    Count records
+    fmt      Format CSV output (change field delimiter)
+    select   Select columns from CSV
 ", arg_command: Command)
 
-#[deriving(Decodable, Show)]
-enum Command {
-    Fmt,
-}
-
-enum CliError {
-    ErrFlag(docopt::Error),
-    ErrOther(String),
-}
-
-impl CliError {
-    fn from_str<T: ToString>(v: T) -> CliError {
-        ErrOther(v.to_string())
-    }
-    fn from_flags(v: docopt::Error) -> CliError {
-        ErrFlag(v)
-    }
-}
-
-fn version() -> String {
-    let (maj, min, pat) = (
-        option_env!("CARGO_PKG_VERSION_MAJOR"),
-        option_env!("CARGO_PKG_VERSION_MINOR"),
-        option_env!("CARGO_PKG_VERSION_PATCH"),
-    );
-    match (maj, min, pat) {
-        (Some(maj), Some(min), Some(pat)) => format!("{}.{}.{}", maj, min, pat),
-        _ => "".to_string(),
-    }
-}
-
-fn arg_config() -> docopt::Config {
-    docopt::Config {
-        options_first: false,
-        help: true,
-        version: Some(version()),
-    }
-}
-
-fn get_args<D: docopt::FlagParser>() -> Result<D, CliError> {
-    docopt::FlagParser::parse_conf(arg_config()).map_err(CliError::from_flags)
-}
-
 fn main() {
-    let mut conf = arg_config();
+    let mut conf = util::arg_config();
     conf.options_first = true;
     let args: Args = docopt::FlagParser::parse_conf(conf)
                                         .unwrap_or_else(|e| e.exit());
     let result = match args.arg_command {
+        Count => count::main(),
         Fmt => fmt::main(),
+        Select => select::main(),
     };
     match result {
         Ok(()) => os::set_exit_status(0),
-        Err(ErrOther(msg)) => {
+        Err(types::ErrOther(msg)) => {
             os::set_exit_status(1);
             let _ = write!(io::stderr(), "{}\n", msg);
         }
-        Err(ErrFlag(err)) => err.exit(),
+        Err(types::ErrFlag(err)) => err.exit(),
     }
+}
+
+#[deriving(Decodable, Show)]
+enum Command {
+    Count,
+    Fmt,
+    Select,
 }
 
 mod types;
 mod util;
 
+mod count;
 mod fmt;
+mod select;

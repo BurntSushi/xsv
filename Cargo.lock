@@ -3,7 +3,7 @@ name = "xcsv"
 version = "0.1.0"
 dependencies = [
  "docopt_macros 0.6.3 (git+git://github.com/docopt/docopt.rs#652c165c6c05629dee8a19af6c62103082582a99)",
- "rust-csv 0.2.1 (git+git://github.com/BurntSushi/rust-csv#e4578ee616b046b1725fde3d2925766d8f9e64bc)",
+ "rust-csv 0.2.4 (git+git://github.com/BurntSushi/rust-csv#aaa362ae2627706e116efb9f6bab8cbeadd9e17a)",
 ]
 
 [[package]]
@@ -34,8 +34,8 @@ source = "git+git://github.com/BurntSushi/quickcheck#c64b4ebbafdb8521c3b20b58d2c
 
 [[package]]
 name = "rust-csv"
-version = "0.2.1"
-source = "git+git://github.com/BurntSushi/rust-csv#e4578ee616b046b1725fde3d2925766d8f9e64bc"
+version = "0.2.4"
+source = "git+git://github.com/BurntSushi/rust-csv#aaa362ae2627706e116efb9f6bab8cbeadd9e17a"
 dependencies = [
  "quickcheck 0.1.0 (git+git://github.com/BurntSushi/quickcheck#c64b4ebbafdb8521c3b20b58d2cd4b4020f45854)",
 ]

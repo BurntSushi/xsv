@@ -1,19 +1,27 @@
-use csv;
+use docopt;
 
-use types::{InputReader, OutputWriter};
+use types::CliError;
 
-pub fn csv_reader(i: InputReader,
-                  no_headers: bool, delimiter: u8, flexible: bool)
-             -> csv::Decoder<InputReader> {
-    let d = csv::Decoder::from_reader(i)
-            .separator(delimiter)
-            .enforce_same_length(!flexible);
-    if no_headers { d.no_headers() } else { d }
+fn version() -> String {
+    let (maj, min, pat) = (
+        option_env!("CARGO_PKG_VERSION_MAJOR"),
+        option_env!("CARGO_PKG_VERSION_MINOR"),
+        option_env!("CARGO_PKG_VERSION_PATCH"),
+    );
+    match (maj, min, pat) {
+        (Some(maj), Some(min), Some(pat)) => format!("{}.{}.{}", maj, min, pat),
+        _ => "".to_string(),
+    }
 }
 
-pub fn csv_writer(o: OutputWriter, flexible: bool, crlf: bool)
-             -> csv::Encoder<OutputWriter> {
-    csv::Encoder::to_writer(o)
-    .enforce_same_length(!flexible)
-    .crlf(crlf)
+pub fn arg_config() -> docopt::Config {
+    docopt::Config {
+        options_first: false,
+        help: true,
+        version: Some(version()),
+    }
+}
+
+pub fn get_args<D: docopt::FlagParser>() -> Result<D, CliError> {
+    docopt::FlagParser::parse_conf(arg_config()).map_err(CliError::from_flags)
 }
