@@ -10,6 +10,7 @@ extern crate serialize;
 extern crate csv;
 extern crate docopt;
 #[phase(plugin)] extern crate docopt_macros;
+extern crate tabwriter;
 
 use std::io;
 use std::os;
@@ -52,6 +53,7 @@ Commands:
     count    Count records
     fmt      Format CSV output (change field delimiter)
     select   Select columns from CSV
+    table    Align CSV data into columns
 ", arg_command: Command)
 
 fn main() {
@@ -74,6 +76,7 @@ enum Command {
     Count,
     Fmt,
     Select,
+    Table,
 }
 
 impl Command {
@@ -82,6 +85,7 @@ impl Command {
             Count => count::main(),
             Fmt => fmt::main(),
             Select => select::main(),
+            Table => table::main(),
         }
     }
 }
@@ -92,3 +96,4 @@ mod util;
 mod count;
 mod fmt;
 mod select;
+mod table;
