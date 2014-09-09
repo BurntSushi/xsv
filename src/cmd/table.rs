@@ -10,6 +10,10 @@ Outputs CSV data as a table with columns in alignment.
 
 This will not work well if the CSV data contains large fields.
 
+Note that formatting a table requires buffering all CSV data into memory.
+Therefore, you should use the 'slice' command to trim down large CSV data
+before formatting it with this command.
+
 Usage:
     xcsv table [options] [<input>]
 

@@ -50,10 +50,13 @@ Options:
     --version     Print version info and exit
 
 Commands:
-    count    Count records
-    fmt      Format CSV output (change field delimiter)
-    select   Select columns from CSV
-    table    Align CSV data into columns
+    count       Count records
+    fixlengths  Makes all records have same length
+    fmt         Format CSV output (change field delimiter)
+    headers     Show header names
+    select      Select columns from CSV
+    slice       Slice records from CSV
+    table       Align CSV data into columns
 ", arg_command: Command)
 
 fn main() {
@@ -74,26 +77,28 @@ fn main() {
 #[deriving(Decodable, Show)]
 enum Command {
     Count,
+    FixLengths,
     Fmt,
+    Headers,
     Select,
+    Slice,
     Table,
 }
 
 impl Command {
     fn run(self) -> Result<(), types::CliError> {
         match self {
-            Count => count::main(),
-            Fmt => fmt::main(),
-            Select => select::main(),
-            Table => table::main(),
+            Count => cmd::count::main(),
+            FixLengths => cmd::fixlengths::main(),
+            Fmt => cmd::fmt::main(),
+            Headers => cmd::headers::main(),
+            Select => cmd::select::main(),
+            Slice => cmd::slice::main(),
+            Table => cmd::table::main(),
         }
     }
 }
 
+mod cmd;
 mod types;
 mod util;
-
-mod count;
-mod fmt;
-mod select;
-mod table;

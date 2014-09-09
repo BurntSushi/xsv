@@ -54,26 +54,45 @@ impl<E, D: Decoder<E>> Decodable<D, E> for Delimiter {
 /// InputReader corresponds to a single source of input of CSV data. It
 /// abstracts over whether the data is coming from a file or stdin.
 pub struct InputReader {
-    rdr: Box<Reader+'static>,
+    rdr: InputType,
     name: String, // <stdin> or file path given
 }
 
+enum InputType {
+    InputStdin(io::BufferedReader<io::stdio::StdReader>),
+    InputFile(io::File),
+}
+
 impl InputReader {
-    pub fn new(fpath: Option<&Path>) -> io::IoResult<InputReader> {
+    fn new(fpath: Option<&Path>) -> io::IoResult<InputReader> {
         Ok(match fpath {
-            None => InputReader::from_reader("<stdin>", io::stdin()),
+            None => {
+                InputReader {
+                    rdr: InputStdin(io::stdin()),
+                    name: "<stdin>".to_string(),
+                }
+            }
             Some(p) => {
-                let f = try!(io::File::open(p));
-                InputReader::from_reader(p.display().to_string(), f)
+                InputReader {
+                    rdr: InputFile(try!(io::File::open(p))),
+                    name: p.display().to_string(),
+                }
             }
         })
     }
 
-    fn from_reader<S: StrAllocating, R: Reader+'static>
-                  (name: S, rdr: R) -> InputReader {
-        InputReader {
-            rdr: box rdr as Box<Reader+'static>,
-            name: name.into_string(),
+    pub fn file_ref<'a>(&'a mut self) -> Result<&'a mut io::File, String> {
+        match self.rdr {
+            InputStdin(_) =>
+                Err("Cannot get file ref from stdin reader.".to_string()),
+            InputFile(ref mut f) => Ok(f),
+        }
+    }
+
+    pub fn is_seekable(&self) -> bool {
+        match self.rdr {
+            InputFile(_) => true,
+            _ => false,
         }
     }
 }
@@ -86,7 +105,10 @@ impl fmt::Show for InputReader {
 
 impl Reader for InputReader {
     fn read(&mut self, buf: &mut [u8]) -> io::IoResult<uint> {
-        self.rdr.read(buf)
+        match self.rdr {
+            InputStdin(ref mut rdr) => rdr.read(buf),
+            InputFile(ref mut rdr) => rdr.read(buf),
+        }
     }
 }
 
