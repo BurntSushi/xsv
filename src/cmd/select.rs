@@ -44,8 +44,8 @@ pub fn main() -> Result<(), CliError> {
     if !args.flag_no_headers {
         ctry!(write_row(&mut wtr, ctry!(rdr.headers_bytes())));
     }
-    for r in rdr.iter_bytes() {
-        ctry!(write_row(&mut wtr, ctry!(r)));
+    for (i, r) in rdr.iter_bytes().enumerate() {
+        ctry!(ignore_pipe write_row(&mut wtr, ctry!(r)));
     }
     ctry!(wtr.flush());
     Ok(())

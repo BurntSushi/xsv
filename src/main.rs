@@ -16,12 +16,21 @@ use std::io;
 use std::os;
 
 macro_rules! ctry(
+    (ignore_pipe $e:expr) => ({
+        use std::io::{IoError, BrokenPipe};
+        match $e {
+            Ok(e) => e,
+            Err(csv::ErrIo(IoError { kind: BrokenPipe, .. })) =>
+                return Err(::types::ErrBrokenPipe),
+            Err(e) => return Err(::types::CliError::from_str(e)),
+        }
+    });
     ($e:expr) => (
         match $e {
             Ok(e) => e,
             Err(e) => return Err(::types::CliError::from_str(e)),
         }
-    )
+    );
 )
 
 macro_rules! csv_reader(
@@ -86,6 +95,9 @@ fn main() {
         Some(cmd) => {
             match cmd.run() {
                 Ok(()) => os::set_exit_status(0),
+                Err(types::ErrBrokenPipe) => {
+                    os::set_exit_status(0);
+                }
                 Err(types::ErrOther(msg)) => {
                     os::set_exit_status(1);
                     let _ = write!(io::stderr(), "{}\n", msg);

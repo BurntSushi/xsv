@@ -11,6 +11,7 @@ use docopt;
 pub enum CliError {
     ErrFlag(docopt::Error),
     ErrOther(String),
+    ErrBrokenPipe,
 }
 
 impl CliError {
