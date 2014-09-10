@@ -22,7 +22,7 @@ impl CliError {
     }
 }
 
-#[deriving(Show)]
+#[deriving(Clone, Show)]
 pub struct Delimiter(u8);
 
 /// Delimiter represents values that can be passed from the command line that
@@ -64,7 +64,7 @@ enum InputType {
 }
 
 impl InputReader {
-    fn new(fpath: Option<&Path>) -> io::IoResult<InputReader> {
+    pub fn new(fpath: Option<&Path>) -> io::IoResult<InputReader> {
         Ok(match fpath {
             None => {
                 InputReader {
@@ -92,6 +92,13 @@ impl InputReader {
     pub fn is_seekable(&self) -> bool {
         match self.rdr {
             InputFile(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_stdin(&self) -> bool {
+        match self.rdr {
+            InputStdin(_) => true,
             _ => false,
         }
     }

@@ -26,7 +26,10 @@ macro_rules! ctry(
 
 macro_rules! csv_reader(
     ($args:expr) => ({
-        let d = ::csv::Decoder::from_reader($args.arg_input)
+        csv_reader!($args, $args.arg_input)
+    });
+    ($args:expr, $rdr:expr) => ({
+        let d = ::csv::Decoder::from_reader($rdr)
                                .separator($args.flag_delimiter.to_byte());
         if $args.flag_no_headers { d.no_headers() } else { d }
     })
@@ -40,7 +43,22 @@ macro_rules! csv_write_headers(
     )
 )
 
-docopt!(Args, "
+macro_rules! command_list(
+    () => (
+"
+    cat         Concatenate by row or column
+    count       Count records
+    fixlengths  Makes all records have same length
+    fmt         Format CSV output (change field delimiter)
+    headers     Show header names
+    select      Select columns from CSV
+    slice       Slice records from CSV
+    table       Align CSV data into columns
+"
+    )
+)
+
+docopt!(Args, concat!("
 Usage:
     xcsv <command> [<args>...]
     xcsv [options]
@@ -49,33 +67,38 @@ Options:
     -h, --help    Display this message
     --version     Print version info and exit
 
-Commands:
-    count       Count records
-    fixlengths  Makes all records have same length
-    fmt         Format CSV output (change field delimiter)
-    headers     Show header names
-    select      Select columns from CSV
-    slice       Slice records from CSV
-    table       Align CSV data into columns
-", arg_command: Command)
+Commands:", command_list!()),
+arg_command: Option<Command>)
 
 fn main() {
     let mut conf = util::arg_config();
     conf.options_first = true;
     let args: Args = docopt::FlagParser::parse_conf(conf)
                                         .unwrap_or_else(|e| e.exit());
-    match args.arg_command.run() {
-        Ok(()) => os::set_exit_status(0),
-        Err(types::ErrOther(msg)) => {
+    match args.arg_command {
+        None => {
             os::set_exit_status(1);
-            let _ = write!(io::stderr(), "{}\n", msg);
+            let msg = concat!(
+                "Please choose one of the following commands:",
+                command_list!());
+            {write!(io::stderr(), "{}", msg)}.unwrap();
         }
-        Err(types::ErrFlag(err)) => err.exit(),
+        Some(cmd) => {
+            match cmd.run() {
+                Ok(()) => os::set_exit_status(0),
+                Err(types::ErrOther(msg)) => {
+                    os::set_exit_status(1);
+                    let _ = write!(io::stderr(), "{}\n", msg);
+                }
+                Err(types::ErrFlag(err)) => err.exit(),
+            }
+        }
     }
 }
 
 #[deriving(Decodable, Show)]
 enum Command {
+    Cat,
     Count,
     FixLengths,
     Fmt,
@@ -88,6 +111,7 @@ enum Command {
 impl Command {
     fn run(self) -> Result<(), types::CliError> {
         match self {
+            Cat => cmd::cat::main(),
             Count => cmd::count::main(),
             FixLengths => cmd::fixlengths::main(),
             Fmt => cmd::fmt::main(),

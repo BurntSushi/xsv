@@ -15,8 +15,16 @@ This requires two complete scans of the CSV data: one for determining the
 record size and one for the actual transform. Because of this, the input
 given must be a file and not stdin.
 
+Alternatively, if --length is set, then all records are forced to that length.
+This requires a single pass and can be done with stdin.
+
 Usage:
-    xcsv fixlengths [options] <input>
+    xcsv fixlengths [options] [<input>]
+
+fixlengths options:
+    -l, --length <arg>     Forcefully set the length of each record. If a
+                           record is not the size given, then it is truncated
+                           or expanded as appropriate.
 
 Common options:
     -h, --help             Display this message
@@ -24,29 +32,44 @@ Common options:
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
 ", arg_input: InputReader, flag_output: OutputWriter,
-   flag_delimiter: Delimiter, flag_out_delimiter: Delimiter)
+   flag_delimiter: Delimiter, flag_out_delimiter: Delimiter,
+   flag_length: Option<uint>)
 
 pub fn main() -> Result<(), CliError> {
     let mut args: Args = try!(util::get_args());
-    if !args.arg_input.is_seekable() {
-        return Err(CliError::from_str(
-            "<stdin> cannot be used in this command. \
-             Please specify a file path."));
-    }
-
-    let maxlen = reader(args.arg_input.by_ref(), &args.flag_delimiter)
-                 .iter_bytes()
-                 .map(|r|r.unwrap_or(vec!()).len())
-                 .max().unwrap_or(0);
-
-    ctry!(ctry!(args.arg_input.file_ref()).seek(0, io::SeekSet));
+    let length = match args.flag_length {
+        Some(length) => {
+            if length == 0 {
+                return Err(CliError::from_str(
+                    "Length must be greater than 0."));
+            }
+            length
+        }
+        None => {
+            if !args.arg_input.is_seekable() {
+                return Err(CliError::from_str(
+                    "<stdin> cannot be used in this command. \
+                     Please specify a file path."));
+            }
+            let maxlen = reader(args.arg_input.by_ref(), &args.flag_delimiter)
+                         .iter_bytes()
+                         .map(|r|r.unwrap_or(vec!()).len())
+                         .max().unwrap_or(0);
+            ctry!(ctry!(args.arg_input.file_ref()).seek(0, io::SeekSet));
+            maxlen
+        }
+    };
 
     let mut rdr = reader(args.arg_input.by_ref(), &args.flag_delimiter);
     let mut wtr = csv::Encoder::to_writer(args.flag_output);
     for r in rdr.iter_bytes() {
         let mut r = ctry!(r);
-        for i in range(r.len(), maxlen) {
-            r.push(csv::ByteString::from_bytes::<Vec<u8>>(vec!()));
+        if length >= r.len() {
+            for i in range(r.len(), length) {
+                r.push(util::empty_field());
+            }
+        } else {
+            r.truncate(length);
         }
         ctry!(wtr.record_bytes(r.move_iter()));
     }
