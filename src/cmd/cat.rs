@@ -20,6 +20,7 @@ can be disabled with --no-headers.)
 
 Usage:
     xcsv cat (rows | columns) [options] [<input>...]
+    xcsv cat --help
 
 cat options:
     -p, --pad              When concatenating columns, this flag will cause
