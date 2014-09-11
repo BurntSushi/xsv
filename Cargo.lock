@@ -2,43 +2,43 @@
 name = "xcsv"
 version = "0.1.0"
 dependencies = [
- "docopt_macros 0.6.3 (git+git://github.com/docopt/docopt.rs#652c165c6c05629dee8a19af6c62103082582a99)",
- "rust-csv 0.2.4 (git+git://github.com/BurntSushi/rust-csv#512dd687b1587c2ff0ac224077dfabbf1eccf942)",
+ "docopt_macros 0.6.3 (git+git://github.com/docopt/docopt.rs#da4e1ba9c416afb60999817e69618ab00cc1188a)",
+ "rust-csv 0.2.4 (git+git://github.com/BurntSushi/rust-csv#5c187653db6b7ca5be81e9412239107cd191ee17)",
  "tabwriter 0.1.0 (git+git://github.com/BurntSushi/tabwriter#b095fad854db46c2b9f4fc06691fd72eb0422f5a)",
 ]
 
 [[package]]
 name = "docopt"
 version = "0.6.3"
-source = "git+git://github.com/docopt/docopt.rs#652c165c6c05629dee8a19af6c62103082582a99"
+source = "git+git://github.com/docopt/docopt.rs#da4e1ba9c416afb60999817e69618ab00cc1188a"
 
 [[package]]
 name = "docopt_macros"
 version = "0.6.3"
-source = "git+git://github.com/docopt/docopt.rs#652c165c6c05629dee8a19af6c62103082582a99"
+source = "git+git://github.com/docopt/docopt.rs#da4e1ba9c416afb60999817e69618ab00cc1188a"
 dependencies = [
- "docopt 0.6.3 (git+git://github.com/docopt/docopt.rs#652c165c6c05629dee8a19af6c62103082582a99)",
+ "docopt 0.6.3 (git+git://github.com/docopt/docopt.rs#da4e1ba9c416afb60999817e69618ab00cc1188a)",
 ]
 
 [[package]]
 name = "quickcheck"
 version = "0.1.0"
-source = "git+git://github.com/BurntSushi/quickcheck#c64b4ebbafdb8521c3b20b58d2cd4b4020f45854"
+source = "git+git://github.com/BurntSushi/quickcheck#c5a719a3678938427c6ac5c4d9a499ece958dece"
 dependencies = [
- "quickcheck_macros 0.1.0 (git+git://github.com/BurntSushi/quickcheck#c64b4ebbafdb8521c3b20b58d2cd4b4020f45854)",
+ "quickcheck_macros 0.1.0 (git+git://github.com/BurntSushi/quickcheck#c5a719a3678938427c6ac5c4d9a499ece958dece)",
 ]
 
 [[package]]
 name = "quickcheck_macros"
 version = "0.1.0"
-source = "git+git://github.com/BurntSushi/quickcheck#c64b4ebbafdb8521c3b20b58d2cd4b4020f45854"
+source = "git+git://github.com/BurntSushi/quickcheck#c5a719a3678938427c6ac5c4d9a499ece958dece"
 
 [[package]]
 name = "rust-csv"
 version = "0.2.4"
-source = "git+git://github.com/BurntSushi/rust-csv#512dd687b1587c2ff0ac224077dfabbf1eccf942"
+source = "git+git://github.com/BurntSushi/rust-csv#5c187653db6b7ca5be81e9412239107cd191ee17"
 dependencies = [
- "quickcheck 0.1.0 (git+git://github.com/BurntSushi/quickcheck#c64b4ebbafdb8521c3b20b58d2cd4b4020f45854)",
+ "quickcheck 0.1.0 (git+git://github.com/BurntSushi/quickcheck#c5a719a3678938427c6ac5c4d9a499ece958dece)",
 ]
 
 [[package]]
@@ -46,6 +46,6 @@ name = "tabwriter"
 version = "0.1.0"
 source = "git+git://github.com/BurntSushi/tabwriter#b095fad854db46c2b9f4fc06691fd72eb0422f5a"
 dependencies = [
- "docopt_macros 0.6.3 (git+git://github.com/docopt/docopt.rs#652c165c6c05629dee8a19af6c62103082582a99)",
+ "docopt_macros 0.6.3 (git+git://github.com/docopt/docopt.rs#da4e1ba9c416afb60999817e69618ab00cc1188a)",
 ]
 

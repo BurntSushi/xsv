@@ -9,6 +9,10 @@ docs:
 	in-dir ./target/doc fix-perms
 	rscp ./target/doc/* gopher:~/www/burntsushi.net/rustdoc/
 
+debug:
+	cargo build --verbose
+	rustc -L ./target/deps/ -g -Z lto --opt-level 3 src/main.rs
+
 push:
 	git push origin master
 	git push github master
