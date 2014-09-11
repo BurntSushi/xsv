@@ -5,3 +5,6 @@ examples/data/ss10pusa.csv
 build
 target
 ctags.rust
+*.csv
+main
+xcsv
