@@ -41,10 +41,10 @@ pub fn main() -> Result<(), CliError> {
     let tw = TabWriter::new(args.flag_output)
                            .minwidth(args.flag_width)
                            .padding(args.flag_pad);
-    let mut wtr = csv::Encoder::to_writer(tw).separator(b'\t');
+    let mut wtr = csv::Writer::from_writer(tw).delimiter(b'\t');
     csv_write_headers!(args, rdr, wtr);
-    for r in rdr.iter_bytes() {
-        ctry!(wtr.record_bytes(ctry!(r).move_iter()));
+    for r in rdr.byte_records() {
+        ctry!(wtr.write_bytes(ctry!(r).into_iter()));
     }
     ctry!(wtr.flush());
     Ok(())

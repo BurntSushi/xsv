@@ -45,16 +45,16 @@ pub fn main() -> Result<(), CliError> {
 
     let num_inputs = args.arg_input.len();
     let mut headers = vec!();
-    for inp in args.arg_input.move_iter() {
-        let mut rdr = csv::Decoder::from_reader(inp)
-                                   .separator(args.flag_delimiter.to_byte());
-        for header in ctry!(rdr.headers_bytes()).move_iter() {
+    for inp in args.arg_input.into_iter() {
+        let mut rdr = csv::Reader::from_reader(inp)
+                                  .delimiter(args.flag_delimiter.to_byte());
+        for header in ctry!(rdr.byte_headers()).into_iter() {
             if !args.flag_intersect || !headers.contains(&header) {
                 headers.push(header);
             }
         }
     }
-    for (i, header) in headers.move_iter().enumerate() {
+    for (i, header) in headers.into_iter().enumerate() {
         if num_inputs == 1 && !args.flag_just_names {
             ctry!(wtr.write_str(i.to_string().as_slice()));
             ctry!(wtr.write_u8(b'\t'));

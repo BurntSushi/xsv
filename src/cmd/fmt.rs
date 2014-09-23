@@ -27,12 +27,12 @@ pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
 
     let mut rdr = csv_reader!(args);
-    let mut wtr = csv::Encoder::to_writer(args.flag_output)
-                  .separator(args.flag_out_delimiter.to_byte())
+    let mut wtr = csv::Writer::from_writer(args.flag_output)
+                  .delimiter(args.flag_out_delimiter.to_byte())
                   .crlf(args.flag_crlf);
     csv_write_headers!(args, rdr, wtr);
-    for r in rdr.iter_bytes() {
-        ctry!(wtr.record_bytes(ctry!(r).move_iter()));
+    for r in rdr.byte_records() {
+        ctry!(wtr.write_bytes(ctry!(r).into_iter()));
     }
     ctry!(wtr.flush());
     Ok(())

@@ -297,10 +297,10 @@ impl <E, D: Decoder<E>> Decodable<D, E> for SelectColumns {
 pub struct Selection(Vec<uint>);
 
 impl Selection {
-    pub fn new<R: Reader>(rdr: &mut csv::Decoder<R>, scols: &SelectColumns,
+    pub fn new<R: Reader>(rdr: &mut csv::Reader<R>, scols: &SelectColumns,
                           no_headers: bool)
                          -> Result<Selection, String> {
-        let headers = try!(rdr.headers_bytes().map_err(|e| e.to_string()));
+        let headers = try!(rdr.byte_headers().map_err(|e| e.to_string()));
         let mut map = vec!();
         for sel in scols.selectors().iter() {
             let idxs = Selection::indices(sel, headers.as_slice(), no_headers);

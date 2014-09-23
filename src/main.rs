@@ -38,8 +38,8 @@ macro_rules! csv_reader(
         csv_reader!($args, $args.arg_input)
     });
     ($args:expr, $rdr:expr) => ({
-        let d = ::csv::Decoder::from_reader($rdr)
-                               .separator($args.flag_delimiter.to_byte());
+        let d = ::csv::Reader::from_reader($rdr)
+                              .delimiter($args.flag_delimiter.to_byte());
         if $args.flag_no_headers { d.no_headers() } else { d }
     })
 )
@@ -47,7 +47,7 @@ macro_rules! csv_reader(
 macro_rules! csv_write_headers(
     ($args:expr, $rdr:expr, $wtr:expr) => (
         if !$args.flag_no_headers {
-            ctry!($wtr.record_bytes(ctry!($rdr.headers_bytes()).move_iter()));
+            ctry!($wtr.write_bytes(ctry!($rdr.byte_headers()).move_iter()));
         }
     )
 )

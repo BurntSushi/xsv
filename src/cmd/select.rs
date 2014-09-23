@@ -33,18 +33,18 @@ pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
 
     let mut rdr = csv_reader!(args);
-    let mut wtr = csv::Encoder::to_writer(args.flag_output);
+    let mut wtr = csv::Writer::from_writer(args.flag_output);
     let selection = ctry!(Selection::new(&mut rdr, &args.flag_select,
                                          args.flag_no_headers));
 
-    let write_row = |wtr: &mut csv::Encoder<_>, row: Vec<_>| {
+    let write_row = |wtr: &mut csv::Writer<_>, row: Vec<_>| {
         let selected = selection.select(row.as_slice());
-        wtr.record_bytes(selected.move_iter().map(|r| r.as_slice()))
+        wtr.write_bytes(selected.into_iter().map(|r| r.as_slice()))
     };
     if !args.flag_no_headers {
-        ctry!(write_row(&mut wtr, ctry!(rdr.headers_bytes())));
+        ctry!(write_row(&mut wtr, ctry!(rdr.byte_headers())));
     }
-    for (i, r) in rdr.iter_bytes().enumerate() {
+    for r in rdr.byte_records() {
         ctry!(ignore_pipe write_row(&mut wtr, ctry!(r)));
     }
     ctry!(wtr.flush());

@@ -41,39 +41,46 @@ Common options:
 
 pub fn main() -> Result<(), CliError> {
     let mut args: Args = try!(util::get_args());
-    let mut wtr = csv::Encoder::to_writer(args.flag_output.by_ref());
+    let mut wtr = csv::Writer::from_writer(args.flag_output.by_ref());
     if args.arg_input.is_empty() {
         args.arg_input.push(ctry!(InputReader::new(None))); // stdin
     }
     ctry!(util::at_most_one_stdin(args.arg_input.as_slice()));
 
     if args.cmd_rows {
-        for (i, inp) in args.arg_input.move_iter().enumerate() {
+        for (i, inp) in args.arg_input.into_iter().enumerate() {
             let mut rdr = csv_reader!(args, inp);
             if !args.flag_no_headers && i == 0 {
                 csv_write_headers!(args, rdr, wtr);
             }
-            for r in rdr.iter_bytes() {
-                ctry!(wtr.record_bytes(ctry!(r).move_iter()));
+            for r in rdr.byte_records() {
+                ctry!(wtr.write_bytes(ctry!(r).into_iter()));
             }
         }
     } else if args.cmd_columns {
         let delim = args.flag_delimiter.to_byte();
-        let mut rdrs: Vec<csv::Decoder<InputReader>> =
+        let mut rdrs: Vec<csv::Reader<InputReader>> =
             args.arg_input
-                .move_iter().map(|inp| column_reader(inp, delim)).collect();
+                .into_iter()
+                .map(|inp| column_reader(inp, delim))
+                .collect();
+
         // Find the lengths of each record. If a length varies, then an error
         // will occur so we can rely on the first length being the correct one.
         let mut lengths = vec!();
-        for rdr in rdrs.mut_iter() {
-            lengths.push(ctry!(rdr.headers_bytes()).len());
+        for rdr in rdrs.iter_mut() {
+            lengths.push(ctry!(rdr.byte_headers()).len());
         }
+
+        let mut iters: Vec<_> = rdrs.iter_mut()
+                                    .map(|rdr| rdr.byte_records())
+                                    .collect();
         'OUTER: loop {
             let mut records: Vec<Vec<csv::ByteString>> = vec!();
             let mut num_done = 0;
-            for (rdr, &len) in rdrs.mut_iter().zip(lengths.iter()) {
-                match rdr.record_bytes() {
-                    Err(ref e) if e.is_eof() => {
+            for (iter, &len) in iters.iter_mut().zip(lengths.iter()) {
+                match iter.next() {
+                    None => {
                         num_done += 1;
                         if args.flag_pad {
                             // This can probably be optimized by pre-allocating.
@@ -84,16 +91,16 @@ pub fn main() -> Result<(), CliError> {
                             break 'OUTER;
                         }
                     }
-                    err @ Err(_) => { ctry!(err); }
-                    Ok(next) => records.push(next),
+                    Some(err @ Err(_)) => { ctry!(err); }
+                    Some(Ok(next)) => records.push(next),
                 }
             }
             // Only needed when `--pad` is set.
-            if num_done >= rdrs.len() {
+            if num_done >= iters.len() {
                 break 'OUTER;
             }
             let row = records.as_slice().concat_vec();
-            ctry!(wtr.record_bytes(row.move_iter()));
+            ctry!(wtr.write_bytes(row.into_iter()));
         }
     } else {
         unreachable!();
@@ -102,7 +109,7 @@ pub fn main() -> Result<(), CliError> {
     Ok(())
 }
 
-fn column_reader<R: Reader>(rdr: R, delim: u8) -> csv::Decoder<R> {
+fn column_reader<R: Reader>(rdr: R, delim: u8) -> csv::Reader<R> {
     // We always set no_headers here because there's no need to distinguish.
-    csv::Decoder::from_reader(rdr).separator(delim).no_headers()
+    csv::Reader::from_reader(rdr).delimiter(delim).no_headers()
 }

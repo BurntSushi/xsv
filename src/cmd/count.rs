@@ -21,6 +21,14 @@ Common options:
 pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
     let mut rdr = csv_reader!(args);
-    println!("{:u}", rdr.iter_bytes().count());
+    let mut count = 0u;
+
+    // N.B. On a 3.6GB file, this takes ~36 seconds.
+    // When using the `byte_records` iterator, it takes a whopping 70 seconds.
+    while !rdr.done() {
+        for field in rdr { let _ = ctry!(field); }
+        count += 1;
+    }
+    println!("{:u}", count);
     Ok(())
 }

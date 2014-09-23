@@ -52,7 +52,7 @@ pub fn main() -> Result<(), CliError> {
                      Please specify a file path."));
             }
             let maxlen = reader(args.arg_input.by_ref(), &args.flag_delimiter)
-                         .iter_bytes()
+                         .byte_records()
                          .map(|r|r.unwrap_or(vec!()).len())
                          .max().unwrap_or(0);
             ctry!(ctry!(args.arg_input.file_ref()).seek(0, io::SeekSet));
@@ -61,8 +61,8 @@ pub fn main() -> Result<(), CliError> {
     };
 
     let mut rdr = reader(args.arg_input.by_ref(), &args.flag_delimiter);
-    let mut wtr = csv::Encoder::to_writer(args.flag_output);
-    for r in rdr.iter_bytes() {
+    let mut wtr = csv::Writer::from_writer(args.flag_output);
+    for r in rdr.byte_records() {
         let mut r = ctry!(r);
         if length >= r.len() {
             for i in range(r.len(), length) {
@@ -71,15 +71,15 @@ pub fn main() -> Result<(), CliError> {
         } else {
             r.truncate(length);
         }
-        ctry!(wtr.record_bytes(r.move_iter()));
+        ctry!(wtr.write_bytes(r.into_iter()));
     }
     ctry!(wtr.flush());
     Ok(())
 }
 
-fn reader<R: Reader>(rdr: R, delim: &Delimiter) -> csv::Decoder<R> {
-    csv::Decoder::from_reader(rdr)
-                 .separator(delim.to_byte())
-                 .no_headers()
-                 .enforce_same_length(false)
+fn reader<R: Reader>(rdr: R, delim: &Delimiter) -> csv::Reader<R> {
+    csv::Reader::from_reader(rdr)
+                .delimiter(delim.to_byte())
+                .no_headers()
+                .flexible(true)
 }
