@@ -1,6 +1,6 @@
 [root]
 name = "xcsv"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "docopt_macros 0.6.3 (git+git://github.com/docopt/docopt.rs#ca5a09aba10c5040220efe9d237a430f3b924736)",
  "rust-csv 0.3.0 (git+git://github.com/BurntSushi/rust-csv#93874c79da4b455253a3d22881f5545ee0bc9417)",

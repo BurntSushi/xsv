@@ -1,3 +1,4 @@
+use std::cmp;
 use std::io;
 
 use csv;
@@ -51,10 +52,19 @@ pub fn main() -> Result<(), CliError> {
                     "<stdin> cannot be used in this command. \
                      Please specify a file path."));
             }
-            let maxlen = reader(args.arg_input.by_ref(), &args.flag_delimiter)
-                         .byte_records()
-                         .map(|r|r.unwrap_or(vec!()).len())
-                         .max().unwrap_or(0);
+            let mut maxlen = 0u;
+            {
+                let mut rdr = reader(args.arg_input.by_ref(),
+                                     &args.flag_delimiter);
+                while !rdr.done() {
+                    let mut count = 0u;
+                    for field in rdr {
+                        let _ = ctry!(field);
+                        count += 1;
+                    }
+                    maxlen = cmp::max(maxlen, count);
+                }
+            }
             ctry!(ctry!(args.arg_input.file_ref()).seek(0, io::SeekSet));
             maxlen
         }
