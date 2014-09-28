@@ -1,7 +1,6 @@
-use csv;
 use docopt;
 
-use types::{CliError, Delimiter, InputReader, OutputWriter};
+use types::{CliError, CsvConfig, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -20,20 +19,24 @@ Common options:
                            as column names.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: InputReader, flag_output: OutputWriter,
+", arg_input: Option<String>, flag_output: Option<String>,
    flag_delimiter: Delimiter, flag_out_delimiter: Delimiter)
 
 pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
 
-    let mut rdr = csv_reader!(args);
-    let mut wtr = csv::Writer::from_writer(args.flag_output)
-                  .delimiter(args.flag_out_delimiter.to_byte())
-                  .crlf(args.flag_crlf);
-    csv_write_headers!(args, rdr, wtr);
+    let config = CsvConfig::new(args.arg_input)
+                           .delimiter(args.flag_delimiter)
+                           .no_headers(args.flag_no_headers);
+    let mut rdr = try!(io| config.reader());
+    let mut wtr = try!(io| CsvConfig::new(args.flag_output)
+                                     .delimiter(args.flag_out_delimiter)
+                                     .writer());
+
+    try!(csv| config.write_headers(&mut rdr, &mut wtr));
     for r in rdr.byte_records() {
-        ctry!(wtr.write_bytes(ctry!(r).into_iter()));
+        try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
     }
-    ctry!(wtr.flush());
+    try!(csv| wtr.flush());
     Ok(())
 }

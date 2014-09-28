@@ -1,9 +1,8 @@
-use std::uint;
+use std::u64;
 
-use csv;
 use docopt;
 
-use types::{CliError, Delimiter, InputReader, OutputWriter};
+use types::{CliError, CsvConfig, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -22,9 +21,6 @@ Usage:
 slice options:
     -s, --start <arg>      The index of the record to slice from.
     -e, --end <arg>        The index of the record to slice to.
-    --one                  The range is interpreted as a closed interval
-                           starting at 1. e.g., [1, 4] is equivalent to
-                           [0, 4) when this flag is enabled.
 
 Common options:
     -h, --help             Display this message
@@ -34,40 +30,33 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: InputReader, flag_output: OutputWriter, flag_delimiter: Delimiter,
-   flag_start: Option<uint>, flag_end: Option<uint>)
+", arg_input: Option<String>, flag_output: Option<String>,
+   flag_delimiter: Delimiter, flag_start: Option<u64>, flag_end: Option<u64>)
 
 pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
-    let (start, end) =
-        try!(if args.flag_one { inc_range(&args) } else { zero_range(&args) });
+
+    let start = args.flag_start.unwrap_or(0);
+    let end = args.flag_end.unwrap_or(u64::MAX);
     if start > end {
         return Err(CliError::from_str(format!(
             "The end of the range ({:u}) must be greater than or\n\
              equal to the start of the range ({:u}).", end, start)));
     }
 
-    let mut rdr = csv_reader!(args);
-    let mut wtr = csv::Writer::from_writer(args.flag_output);
-    csv_write_headers!(args, rdr, wtr);
-    for r in rdr.byte_records().skip(start).take(end - start) {
-        ctry!(wtr.write_bytes(ctry!(r).into_iter()));
+    let rconfig = CsvConfig::new(args.arg_input)
+                            .delimiter(args.flag_delimiter)
+                            .no_headers(args.flag_no_headers);
+    let mut rdr = try!(io| rconfig.reader());
+    let mut wtr = try!(io| CsvConfig::new(args.flag_output).writer());
+    try!(csv| rconfig.write_headers(&mut rdr, &mut wtr));
+
+    let mut it = rdr.byte_records()
+                    .skip(start as uint)
+                    .take((end - start) as uint);
+    for r in it {
+        try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
     }
-    ctry!(wtr.flush());
+    try!(csv| wtr.flush());
     Ok(())
-}
-
-fn zero_range(args: &Args) -> Result<(uint, uint), CliError> {
-    Ok((args.flag_start.unwrap_or(0), args.flag_end.unwrap_or(uint::MAX)))
-}
-
-fn inc_range(args: &Args) -> Result<(uint, uint), CliError> {
-    let start = args.flag_start.unwrap_or(1);
-    let end = args.flag_end.unwrap_or(::std::uint::MAX);
-    match (start, end) {
-        (0, _) | (_, 0) => {
-            Err(CliError::from_str("The first record starts at 1 (not 0)."))
-        }
-        _ => Ok((start-1, end)),
-    }
 }

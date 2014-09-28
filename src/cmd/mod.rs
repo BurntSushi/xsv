@@ -3,6 +3,7 @@ pub mod count;
 pub mod fixlengths;
 pub mod fmt;
 pub mod headers;
+pub mod index;
 pub mod select;
 pub mod slice;
 pub mod table;

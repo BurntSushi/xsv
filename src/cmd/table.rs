@@ -1,8 +1,7 @@
-use csv;
 use docopt;
 use tabwriter::TabWriter;
 
-use types::{CliError, Delimiter, InputReader, OutputWriter};
+use types::{CliError, CsvConfig, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -31,21 +30,28 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: InputReader, flag_output: OutputWriter, flag_delimiter: Delimiter,
-   flag_width: uint, flag_pad: uint)
+", arg_input: Option<String>, flag_output: Option<String>,
+   flag_delimiter: Delimiter, flag_width: uint, flag_pad: uint)
 
 pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
-    let mut rdr = csv_reader!(args);
 
-    let tw = TabWriter::new(args.flag_output)
-                           .minwidth(args.flag_width)
-                           .padding(args.flag_pad);
-    let mut wtr = csv::Writer::from_writer(tw).delimiter(b'\t');
-    csv_write_headers!(args, rdr, wtr);
+    let rconfig = CsvConfig::new(args.arg_input)
+                            .delimiter(args.flag_delimiter)
+                            .no_headers(args.flag_no_headers);
+    let wconfig = CsvConfig::new(args.flag_output)
+                            .delimiter(Delimiter(b'\t'));
+
+    let tw = TabWriter::new(try!(io| wconfig.io_writer()))
+                       .minwidth(args.flag_width)
+                       .padding(args.flag_pad);
+    let mut wtr = wconfig.from_writer(tw);
+    let mut rdr = try!(io| rconfig.reader());
+
+    try!(csv| rconfig.write_headers(&mut rdr, &mut wtr));
     for r in rdr.byte_records() {
-        ctry!(wtr.write_bytes(ctry!(r).into_iter()));
+        try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
     }
-    ctry!(wtr.flush());
+    try!(csv| wtr.flush());
     Ok(())
 }

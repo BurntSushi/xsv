@@ -2,29 +2,43 @@ use std::fmt;
 use std::from_str::FromStr;
 use std::io;
 use std::iter;
+use std::slice;
 
 use serialize::{Decodable, Decoder};
 
 use csv;
+use csv::index::Indexed;
 use docopt;
+
+use util;
 
 pub enum CliError {
     ErrFlag(docopt::Error),
+    ErrCsv(csv::Error),
+    ErrIo(io::IoError),
     ErrOther(String),
-    ErrBrokenPipe,
 }
 
 impl CliError {
-    pub fn from_str<T: ToString>(v: T) -> CliError {
-        ErrOther(v.to_string())
-    }
     pub fn from_flags(v: docopt::Error) -> CliError {
         ErrFlag(v)
+    }
+    pub fn from_csv(v: csv::Error) -> CliError {
+        match v {
+            csv::ErrIo(v) => CliError::from_io(v),
+            v => ErrCsv(v),
+        }
+    }
+    pub fn from_io(v: io::IoError) -> CliError {
+        ErrIo(v)
+    }
+    pub fn from_str<T: ToString>(v: T) -> CliError {
+        ErrOther(v.to_string())
     }
 }
 
 #[deriving(Clone, Show)]
-pub struct Delimiter(u8);
+pub struct Delimiter(pub u8);
 
 /// Delimiter represents values that can be passed from the command line that
 /// can be used as a field delimiter in CSV data.
@@ -33,6 +47,11 @@ pub struct Delimiter(u8);
 /// valid ASCII character as required by the CSV parser.
 impl Delimiter {
     pub fn to_byte(self) -> u8 {
+        let Delimiter(b) = self;
+        b
+    }
+
+    pub fn as_byte(self) -> u8 {
         let Delimiter(b) = self;
         b
     }
@@ -52,158 +71,169 @@ impl<E, D: Decoder<E>> Decodable<D, E> for Delimiter {
     }
 }
 
-/// InputReader corresponds to a single source of input of CSV data. It
-/// abstracts over whether the data is coming from a file or stdin.
-pub struct InputReader {
-    rdr: InputType,
-    name: String, // <stdin> or file path given
+pub struct CsvConfig {
+    path: Option<Path>, // None implies <stdin>
+    idx_path: Option<Path>,
+    delimiter: u8,
+    no_headers: bool,
+    flexible: bool,
+    crlf: bool,
 }
 
-enum InputType {
-    InputStdin(io::BufferedReader<io::stdio::StdReader>),
-    InputFile(io::File),
-}
+impl CsvConfig {
+    pub fn new(mut path: Option<String>) -> CsvConfig {
+        if path.as_ref().map(|p| p.equiv(&"-")) == Some(true) {
+            // If the path explicitly wants stdin/stdout, then give it to them.
+            path = None;
+        }
+        CsvConfig {
+            path: path.map(|p| Path::new(p)),
+            idx_path: None,
+            delimiter: b',',
+            no_headers: false,
+            flexible: false,
+            crlf: false,
+        }
+    }
 
-impl InputReader {
-    pub fn new(fpath: Option<&Path>) -> io::IoResult<InputReader> {
-        Ok(match fpath {
-            None => {
-                InputReader {
-                    rdr: InputStdin(io::stdin()),
-                    name: "<stdin>".to_string(),
-                }
+    pub fn delimiter(mut self, d: Delimiter) -> CsvConfig {
+        self.delimiter = d.as_byte();
+        self
+    }
+
+    pub fn no_headers(mut self, yes: bool) -> CsvConfig {
+        self.no_headers = yes;
+        self
+    }
+
+    pub fn flexible(mut self, yes: bool) -> CsvConfig {
+        self.flexible = yes;
+        self
+    }
+
+    pub fn crlf(mut self, yes: bool) -> CsvConfig {
+        self.crlf = yes;
+        self
+    }
+
+    pub fn is_std(&self) -> bool {
+        self.path.is_none()
+    }
+
+    pub fn idx_path(mut self, idx_path: Option<String>) -> CsvConfig {
+        self.idx_path = idx_path.map(|p| Path::new(p));
+        self
+    }
+
+    pub fn write_headers<R: io::Reader, W: io::Writer>
+                        (&self, r: &mut csv::Reader<R>, w: &mut csv::Writer<W>)
+                        -> csv::CsvResult<()> {
+        if !self.no_headers {
+            try!(w.write_bytes(try!(r.byte_headers()).into_iter()));
+        }
+        Ok(())
+    }
+
+    pub fn writer(&self) -> io::IoResult<csv::Writer<Box<io::Writer+'static>>> {
+        Ok(self.from_writer(try!(self.io_writer())))
+    }
+
+    pub fn reader(&self) -> io::IoResult<csv::Reader<Box<io::Reader+'static>>> {
+        Ok(self.from_reader(try!(self.io_reader())))
+    }
+
+    pub fn index_files(&self)
+           -> io::IoResult<Option<(csv::Reader<io::File>, io::File)>> {
+        let (mut csv_file, mut idx_file) = match (&self.path, &self.idx_path) {
+            (&None, &None) => return Ok(None),
+            (&None, &Some(ref p)) => return Err(io::IoError {
+                kind: io::OtherIoError,
+                desc: "Cannot use <stdin> with indexes",
+                detail: Some(format!("index file: {}", p.display())),
+            }),
+            (&Some(ref p), &None) => {
+                // We generally don't want to report an error here, since we're
+                // passively trying to find an index.
+                let idx_file = match io::File::open(&util::idx_path(p)) {
+                    // TODO: Maybe we should report an error if the file exists
+                    // but is not readable.
+                    Err(_) => return Ok(None),
+                    Ok(f) => f,
+                };
+                (try!(io::File::open(p)), idx_file)
             }
-            Some(p) => {
-                InputReader {
-                    rdr: InputFile(try!(io::File::open(p))),
-                    name: p.display().to_string(),
-                }
+            (&Some(ref p), &Some(ref ip)) => {
+                (try!(io::File::open(p)), try!(io::File::open(ip)))
             }
+        };
+        // If the CSV data was last modified after the index file was last
+        // modified, then return an error and demand the user regenerate the
+        // index.
+        let data_modified = try!(csv_file.stat()).modified;
+        let idx_modified = try!(idx_file.stat()).modified;
+        if data_modified > idx_modified {
+            return Err(io::IoError {
+                kind: io::OtherIoError,
+                desc: "The CSV file was modified after the index file. \
+                       Please re-create the index.",
+                detail: Some(format!("CSV file: {}, index file: {}",
+                                     csv_file.path().display(),
+                                     idx_file.path().display())),
+            });
+        }
+        let csv_rdr = self.from_reader(csv_file);
+        Ok(Some((csv_rdr, idx_file)))
+    }
+
+    pub fn indexed(&self) -> io::IoResult<Option<Indexed<io::File, io::File>>> {
+        Ok({ try!(self.index_files()) }.map(|(r, i)| Indexed::new(r, i)))
+    }
+
+    pub fn io_reader(&self) -> io::IoResult<Box<io::Reader+'static>> {
+        Ok(match self.path {
+            None => box io::stdin() as Box<io::Reader+'static>,
+            Some(ref p) =>
+                box try!(io::File::open(p)) as Box<io::Reader+'static>,
         })
     }
 
-    pub fn file_ref<'a>(&'a mut self) -> Result<&'a mut io::File, String> {
-        match self.rdr {
-            InputStdin(_) =>
-                Err("Cannot get file ref from stdin reader.".to_string()),
-            InputFile(ref mut f) => Ok(f),
-        }
+    pub fn from_reader<R: Reader>(&self, rdr: R) -> csv::Reader<R> {
+        csv::Reader::from_reader(rdr)
+                    .flexible(self.flexible)
+                    .delimiter(self.delimiter)
+                    .has_headers(!self.no_headers)
     }
 
-    pub fn is_seekable(&self) -> bool {
-        match self.rdr {
-            InputFile(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_stdin(&self) -> bool {
-        match self.rdr {
-            InputStdin(_) => true,
-            _ => false,
-        }
-    }
-}
-
-impl fmt::Show for InputReader {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.name)
-    }
-}
-
-impl Reader for InputReader {
-    fn read(&mut self, buf: &mut [u8]) -> io::IoResult<uint> {
-        match self.rdr {
-            InputStdin(ref mut rdr) => rdr.read(buf),
-            InputFile(ref mut rdr) => rdr.read(buf),
-        }
-    }
-}
-
-impl<E, D: Decoder<E>> Decodable<D, E> for InputReader {
-    fn decode(d: &mut D) -> Result<InputReader, E> {
-        decode_file_arg(d, "<stdin>", InputReader::new)
-    }
-}
-
-/// OutputWriter corresponds to a single destination of CSV data. It
-/// abstracts over whether the data is going to a file or stdout.
-pub struct OutputWriter {
-    wtr: Box<Writer+'static>,
-    name: String, // <stdout> or file path given
-}
-
-impl OutputWriter {
-    pub fn new(fpath: Option<&Path>) -> io::IoResult<OutputWriter> {
-        Ok(match fpath {
-            None => OutputWriter::from_writer("<stdout>", io::stdout()),
-            Some(p) => {
-                let f = try!(io::File::create(p));
-                OutputWriter::from_writer(p.display().to_string(), f)
-            }
+    pub fn io_writer(&self) -> io::IoResult<Box<io::Writer+'static>> {
+        Ok(match self.path {
+            None => box io::stdout() as Box<io::Writer+'static>,
+            Some(ref p) =>
+                box try!(io::File::create(p)) as Box<io::Writer+'static>,
         })
     }
 
-    fn from_writer<S: StrAllocating, W: Writer+'static>
-                  (name: S, wtr: W) -> OutputWriter {
-        OutputWriter {
-            wtr: box wtr as Box<Writer+'static>,
-            name: name.into_string(),
-        }
+    pub fn from_writer<W: Writer>(&self, wtr: W) -> csv::Writer<W> {
+        csv::Writer::from_writer(wtr)
+                    .flexible(self.flexible)
+                    .delimiter(self.delimiter)
+                    .crlf(self.crlf)
     }
-}
-
-impl fmt::Show for OutputWriter {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.name)
-    }
-}
-
-impl Writer for OutputWriter {
-    fn write(&mut self, buf: &[u8]) -> io::IoResult<()> {
-        self.wtr.write(buf)
-    }
-}
-
-impl<E, D: Decoder<E>> Decodable<D, E> for OutputWriter {
-    fn decode(d: &mut D) -> Result<OutputWriter, E> {
-        decode_file_arg(d, "<stdout>", OutputWriter::new)
-    }
-}
-
-fn decode_file_arg<T, E, D: Decoder<E>>
-                  (d: &mut D, stdname: &str,
-                   mk: |Option<&Path>| -> io::IoResult<T>) -> Result<T, E> {
-    let s = try!(d.read_str());
-    let p =
-        if s.len() == 0 || s.as_slice() == "-" {
-            None
-        } else {
-            Some(Path::new(s))
-        };
-    mk(p.as_ref()).map_err(|e| {
-        let p = match p {
-            None => stdname.to_string(),
-            Some(ref p) => p.display().to_string(),
-        };
-        let msg = format!("Error opening {}: {}", p, e.to_string());
-        d.error(msg.as_slice())
-    })
 }
 
 pub struct SelectColumns(Vec<Selector>);
 
-enum Selector {
-    SelStart,
-    SelEnd,
-    SelIndex(uint),
-    SelName(String),
-    // invariant: selectors MUST NOT be ranges
-    SelRange(Box<Selector>, Box<Selector>),
-}
-
 // This parser is super basic at the moment. Field names cannot contain [-,].
 impl SelectColumns {
+    pub fn selection(&self, conf: &CsvConfig, headers: &[csv::ByteString])
+                    -> Result<Selection, String> {
+        let mut map = vec![];
+        for sel in self.selectors().iter() {
+            let idxs = sel.indices(conf, headers);
+            map.extend(try!(idxs).into_iter());
+        }
+        Ok(Selection(map))
+    }
+
     fn selectors<'a>(&'a self) -> &'a [Selector] {
         let &SelectColumns(ref sels) = self;
         sels.as_slice()
@@ -253,15 +283,6 @@ impl SelectColumns {
     }
 }
 
-impl Selector {
-    fn is_range(&self) -> bool {
-        match self {
-            &SelRange(_, _) => true,
-            _ => false,
-        }
-    }
-}
-
 impl fmt::Show for SelectColumns {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.selectors().is_empty() {
@@ -271,6 +292,76 @@ impl fmt::Show for SelectColumns {
                                 .map(|sel| sel.to_string())
                                 .collect();
         write!(f, "{}", strs.connect(", "))
+    }
+}
+
+impl <E, D: Decoder<E>> Decodable<D, E> for SelectColumns {
+    fn decode(d: &mut D) -> Result<SelectColumns, E> {
+        SelectColumns::parse(try!(d.read_str()).as_slice())
+                      .map_err(|e| d.error(e.as_slice()))
+    }
+}
+
+enum Selector {
+    SelStart,
+    SelEnd,
+    SelIndex(uint),
+    SelName(String),
+    // invariant: selectors MUST NOT be ranges
+    SelRange(Box<Selector>, Box<Selector>),
+}
+
+impl Selector {
+    fn is_range(&self) -> bool {
+        match self {
+            &SelRange(_, _) => true,
+            _ => false,
+        }
+    }
+
+    fn indices(&self, conf: &CsvConfig, headers: &[csv::ByteString])
+              -> Result<Vec<uint>, String> {
+        match self {
+            &SelStart => Ok(vec!(0)),
+            &SelEnd => Ok(vec!(headers.len())),
+            &SelIndex(i) => {
+                if i < 1 || i > headers.len() {
+                    Err(format!("Selector index {} is out of \
+                                 bounds. Index must be >= 1 \
+                                 and <= {}.", i, headers.len()))
+                } else {
+                    // Indices given by user are 1-offset. Convert them here!
+                    Ok(vec!(i-1))
+                }
+            }
+            &SelName(ref s) => {
+                if conf.no_headers {
+                    return Err(format!("Cannot use names ('{}') in selection \
+                                        with --no-headers set.", s));
+                }
+                match headers.iter().position(|h| h.equiv(s)) {
+                    None => Err(format!("Selector name '{}' does not exist \
+                                         as a named header in the given CSV \
+                                         data.", s)),
+                    Some(i) => Ok(vec!(i)),
+                }
+            }
+            &SelRange(box ref sel1, box ref sel2) => {
+                assert!(!sel1.is_range());
+                assert!(!sel2.is_range());
+                let is1 = try!(sel1.indices(conf, headers));
+                let is2 = try!(sel2.indices(conf, headers));
+                let i1 = { assert!(is1.len() == 1); is1[0] };
+                let i2 = { assert!(is2.len() == 1); is2[0] };
+                Ok(match i1.cmp(&i2) {
+                    Equal => vec!(i1),
+                    Less => iter::range_inclusive(i1, i2).collect(),
+                    Greater =>
+                        iter::range_step_inclusive(i1 as int, i2 as int, -1)
+                             .map(|i| i as uint).collect(),
+                })
+            }
+        }
     }
 }
 
@@ -286,88 +377,22 @@ impl fmt::Show for Selector {
     }
 }
 
-impl <E, D: Decoder<E>> Decodable<D, E> for SelectColumns {
-    fn decode(d: &mut D) -> Result<SelectColumns, E> {
-        SelectColumns::parse(try!(d.read_str()).as_slice())
-        .map_err(|e| d.error(e.as_slice()))
-    }
-}
-
 #[deriving(Show)]
 pub struct Selection(Vec<uint>);
 
 impl Selection {
-    pub fn new<R: Reader>(rdr: &mut csv::Reader<R>, scols: &SelectColumns,
-                          no_headers: bool)
-                         -> Result<Selection, String> {
-        let headers = try!(rdr.byte_headers().map_err(|e| e.to_string()));
-        let mut map = vec!();
-        for sel in scols.selectors().iter() {
-            let idxs = Selection::indices(sel, headers.as_slice(), no_headers);
-            map.push_all_move(try!(idxs));
-        }
-        Ok(Selection(map))
+    pub fn select<'a, 'b>(&'a self, row: &'b [csv::ByteString])
+                 -> iter::Scan<&'a uint,
+                               &'b [u8],
+                               slice::Items<'a, uint>,
+                               &'b [csv::ByteString]> {
+        // This is horrifying.
+        // Help me closure reform, you're my only hope.
+        self.as_slice().iter().scan(row, |row, &idx| Some(row[idx].as_slice()))
     }
 
-    pub fn select<'a>(&self, row: &'a [csv::ByteString])
-                     -> Vec<&'a csv::ByteString> {
-        if self.as_slice().is_empty() {
-            return row.iter().collect();
-        }
-        let mut new = Vec::with_capacity(self.as_slice().len());
-        for &idx in self.as_slice().iter() {
-            new.push(&row[idx]);
-        }
-        new
-    }
-
-    fn as_slice<'a>(&'a self) -> &'a [uint] {
+    pub fn as_slice<'a>(&'a self) -> &'a [uint] {
         let &Selection(ref inds) = self;
         inds.as_slice()
-    }
-
-    fn indices(sel: &Selector, headers: &[csv::ByteString], no_headers: bool)
-              -> Result<Vec<uint>, String> {
-        match sel {
-            &SelStart => Ok(vec!(0)),
-            &SelEnd => Ok(vec!(headers.len())),
-            &SelIndex(i) => {
-                if i < 1 || i > headers.len() {
-                    Err(format!("Selector index {} is out of \
-                                 bounds. Index must be >= 1 \
-                                 and <= {}.", i, headers.len()))
-                } else {
-                    // Indices given by user are 1-offset. Convert them here!
-                    Ok(vec!(i-1))
-                }
-            }
-            &SelName(ref s) => {
-                if no_headers {
-                    return Err(format!("Cannot use names ('{}') in selection \
-                                        with --no-headers set.", s));
-                }
-                match headers.iter().position(|h| h.equiv(s)) {
-                    None => Err(format!("Selector name '{}' does not exist \
-                                         as a named header in the given CSV \
-                                         data.", s)),
-                    Some(i) => Ok(vec!(i)),
-                }
-            }
-            &SelRange(box ref sel1, box ref sel2) => {
-                assert!(!sel1.is_range());
-                assert!(!sel2.is_range());
-                let is1 = try!(Selection::indices(sel1, headers, no_headers));
-                let is2 = try!(Selection::indices(sel2, headers, no_headers));
-                let i1 = { assert!(is1.len() == 1); is1[0] };
-                let i2 = { assert!(is2.len() == 1); is2[0] };
-                Ok(match i1.cmp(&i2) {
-                    Equal => vec!(i1),
-                    Less => iter::range_inclusive(i1, i2).collect(),
-                    Greater =>
-                        iter::range_step_inclusive(i1 as int, i2 as int, -1)
-                             .map(|i| i as uint).collect(),
-                })
-            }
-        }
     }
 }

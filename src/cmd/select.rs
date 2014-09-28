@@ -1,10 +1,6 @@
-use csv;
 use docopt;
 
-use types::{
-    CliError, Delimiter, InputReader, OutputWriter,
-    SelectColumns, Selection,
-};
+use types::{CliError, CsvConfig, Delimiter, SelectColumns};
 use util;
 
 docopt!(Args, "
@@ -25,28 +21,31 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: InputReader, flag_output: OutputWriter,
+", arg_input: Option<String>, flag_output: Option<String>,
    flag_delimiter: Delimiter,
    flag_select: SelectColumns)
 
 pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
 
-    let mut rdr = csv_reader!(args);
-    let mut wtr = csv::Writer::from_writer(args.flag_output);
-    let selection = ctry!(Selection::new(&mut rdr, &args.flag_select,
-                                         args.flag_no_headers));
+    let rconfig = CsvConfig::new(args.arg_input)
+                            .delimiter(args.flag_delimiter)
+                            .no_headers(args.flag_no_headers);
 
-    let write_row = |wtr: &mut csv::Writer<_>, row: Vec<_>| {
-        let selected = selection.select(row.as_slice());
-        wtr.write_bytes(selected.into_iter().map(|r| r.as_slice()))
-    };
+    let mut rdr = try!(io| rconfig.reader());
+    let mut wtr = try!(io| CsvConfig::new(args.flag_output).writer());
+
+    let headers = try!(csv| rdr.byte_headers());
+    let selection = try!(str| args.flag_select.selection(&rconfig, headers[]));
+
     if !args.flag_no_headers {
-        ctry!(write_row(&mut wtr, ctry!(rdr.byte_headers())));
+        try!(csv| wtr.write_bytes(selection.select(headers[])));
     }
     for r in rdr.byte_records() {
-        ctry!(ignore_pipe write_row(&mut wtr, ctry!(r)));
+        // TODO: I don't think we can do any better here. Since selection
+        // operates on indices, some kind of allocation is probably required.
+        try!(csv| wtr.write_bytes(selection.select(try!(csv| r)[])))
     }
-    ctry!(wtr.flush());
+    try!(csv| wtr.flush());
     Ok(())
 }

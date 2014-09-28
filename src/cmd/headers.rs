@@ -1,10 +1,9 @@
 use std::io;
 
-use csv;
 use docopt;
 use tabwriter::TabWriter;
 
-use types::{CliError, Delimiter, InputReader};
+use types::{CliError, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -27,41 +26,38 @@ Common options:
     -h, --help             Display this message
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Vec<InputReader>, flag_delimiter: Delimiter)
+", arg_input: Vec<String>, flag_delimiter: Delimiter)
 
 pub fn main() -> Result<(), CliError> {
-    let mut args: Args = try!(util::get_args());
+    let args: Args = try!(util::get_args());
+    let configs = try!(str| util::many_configs(args.arg_input.as_slice(),
+                                               args.flag_delimiter, true));
+
+    let num_inputs = configs.len();
+    let mut headers = vec!();
+    for conf in configs.into_iter() {
+        let mut rdr = try!(io| conf.reader());
+        for header in try!(csv| rdr.byte_headers()).into_iter() {
+            if !args.flag_intersect || !headers.contains(&header) {
+                headers.push(header);
+            }
+        }
+    }
+
     let mut wtr: Box<Writer> =
         if args.flag_just_names {
             box io::stdout() as Box<Writer>
         } else {
             box TabWriter::new(io::stdout()) as Box<Writer>
         };
-
-    if args.arg_input.is_empty() {
-        args.arg_input.push(ctry!(InputReader::new(None))); // stdin
-    }
-    ctry!(util::at_most_one_stdin(args.arg_input.as_slice()));
-
-    let num_inputs = args.arg_input.len();
-    let mut headers = vec!();
-    for inp in args.arg_input.into_iter() {
-        let mut rdr = csv::Reader::from_reader(inp)
-                                  .delimiter(args.flag_delimiter.to_byte());
-        for header in ctry!(rdr.byte_headers()).into_iter() {
-            if !args.flag_intersect || !headers.contains(&header) {
-                headers.push(header);
-            }
-        }
-    }
     for (i, header) in headers.into_iter().enumerate() {
         if num_inputs == 1 && !args.flag_just_names {
-            ctry!(wtr.write_str(i.to_string().as_slice()));
-            ctry!(wtr.write_u8(b'\t'));
+            try!(io| wtr.write_str(i.to_string().as_slice()));
+            try!(io| wtr.write_u8(b'\t'));
         }
-        ctry!(wtr.write(header.as_slice()));
-        ctry!(wtr.write_u8(b'\n'));
+        try!(io| wtr.write(header.as_slice()));
+        try!(io| wtr.write_u8(b'\n'));
     }
-    ctry!(wtr.flush());
+    try!(io| wtr.flush());
     Ok(())
 }

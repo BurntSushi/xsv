@@ -1,10 +1,8 @@
 use std::cmp;
-use std::io;
 
-use csv;
 use docopt;
 
-use types::{CliError, Delimiter, InputReader, OutputWriter};
+use types::{CliError, CsvConfig, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -32,12 +30,16 @@ Common options:
     -o, --output <file>    Write output to <file> instead of stdout.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: InputReader, flag_output: OutputWriter,
+", arg_input: Option<String>, flag_output: Option<String>,
    flag_delimiter: Delimiter, flag_out_delimiter: Delimiter,
    flag_length: Option<uint>)
 
 pub fn main() -> Result<(), CliError> {
-    let mut args: Args = try!(util::get_args());
+    let args: Args = try!(util::get_args());
+    let config = CsvConfig::new(args.arg_input)
+                           .delimiter(args.flag_delimiter)
+                           .no_headers(true)
+                           .flexible(true);
     let length = match args.flag_length {
         Some(length) => {
             if length == 0 {
@@ -47,33 +49,31 @@ pub fn main() -> Result<(), CliError> {
             length
         }
         None => {
-            if !args.arg_input.is_seekable() {
+            if config.is_std() {
                 return Err(CliError::from_str(
                     "<stdin> cannot be used in this command. \
                      Please specify a file path."));
             }
             let mut maxlen = 0u;
             {
-                let mut rdr = reader(args.arg_input.by_ref(),
-                                     &args.flag_delimiter);
+                let mut rdr = try!(io| config.reader());
                 while !rdr.done() {
                     let mut count = 0u;
                     for field in rdr {
-                        let _ = ctry!(field);
+                        let _ = try!(csv| field);
                         count += 1;
                     }
                     maxlen = cmp::max(maxlen, count);
                 }
             }
-            ctry!(ctry!(args.arg_input.file_ref()).seek(0, io::SeekSet));
             maxlen
         }
     };
 
-    let mut rdr = reader(args.arg_input.by_ref(), &args.flag_delimiter);
-    let mut wtr = csv::Writer::from_writer(args.flag_output);
+    let mut rdr = try!(io| config.reader());
+    let mut wtr = try!(io| CsvConfig::new(args.flag_output).writer());
     for r in rdr.byte_records() {
-        let mut r = ctry!(r);
+        let mut r = try!(csv| r);
         if length >= r.len() {
             for i in range(r.len(), length) {
                 r.push(util::empty_field());
@@ -81,15 +81,8 @@ pub fn main() -> Result<(), CliError> {
         } else {
             r.truncate(length);
         }
-        ctry!(wtr.write_bytes(r.into_iter()));
+        try!(csv| wtr.write_bytes(r.into_iter()));
     }
-    ctry!(wtr.flush());
+    try!(csv| wtr.flush());
     Ok(())
-}
-
-fn reader<R: Reader>(rdr: R, delim: &Delimiter) -> csv::Reader<R> {
-    csv::Reader::from_reader(rdr)
-                .delimiter(delim.to_byte())
-                .no_headers()
-                .flexible(true)
 }

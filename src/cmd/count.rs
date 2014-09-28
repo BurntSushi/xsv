@@ -1,6 +1,6 @@
 use docopt;
 
-use types::{CliError, Delimiter, InputReader};
+use types::{CliError, Delimiter, CsvConfig};
 use util;
 
 docopt!(Args, "
@@ -16,19 +16,29 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: InputReader, flag_delimiter: Delimiter)
+", arg_input: Option<String>, flag_delimiter: Delimiter)
 
 pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
-    let mut rdr = csv_reader!(args);
-    let mut count = 0u;
+    let conf = CsvConfig::new(args.arg_input)
+                         .delimiter(args.flag_delimiter)
+                         .no_headers(args.flag_no_headers);
 
-    // N.B. On a 3.6GB file, this takes ~36 seconds.
-    // When using the `byte_records` iterator, it takes a whopping 70 seconds.
-    while !rdr.done() {
-        for field in rdr { let _ = ctry!(field); }
-        count += 1;
+    match try!(io| conf.index_files()) {
+        None => {
+            let mut rdr = try!(io| conf.reader());
+            let mut count = 0u;
+            while !rdr.done() {
+                for field in rdr { let _ = try!(csv| field); }
+                count += 1;
+            }
+            println!("{:u}", count);
+        }
+        Some((_, mut idx_file)) => {
+            let stat = try!(io| idx_file.stat());
+            assert_eq!(stat.size % 8, 0);
+            println!("{:u}", stat.size / 8);
+        }
     }
-    println!("{:u}", count);
     Ok(())
 }

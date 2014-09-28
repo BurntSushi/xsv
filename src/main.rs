@@ -15,41 +15,16 @@ extern crate tabwriter;
 use std::io;
 use std::os;
 
-macro_rules! ctry(
-    (ignore_pipe $e:expr) => ({
-        use std::io::{IoError, BrokenPipe};
-        match $e {
-            Ok(e) => e,
-            Err(csv::ErrIo(IoError { kind: BrokenPipe, .. })) =>
-                return Err(::types::ErrBrokenPipe),
-            Err(e) => return Err(::types::CliError::from_str(e)),
-        }
-    });
+macro_rules! try(
+    (csv| $e:expr) => (try!($e.map_err(::types::CliError::from_csv)));
+    (io| $e:expr) => (try!($e.map_err(::types::CliError::from_io)));
+    (str| $e:expr) => (try!($e.map_err(::types::CliError::from_str)));
     ($e:expr) => (
         match $e {
             Ok(e) => e,
-            Err(e) => return Err(::types::CliError::from_str(e)),
+            Err(e) => return Err(e)
         }
     );
-)
-
-macro_rules! csv_reader(
-    ($args:expr) => ({
-        csv_reader!($args, $args.arg_input)
-    });
-    ($args:expr, $rdr:expr) => ({
-        let d = ::csv::Reader::from_reader($rdr)
-                              .delimiter($args.flag_delimiter.to_byte());
-        if $args.flag_no_headers { d.no_headers() } else { d }
-    })
-)
-
-macro_rules! csv_write_headers(
-    ($args:expr, $rdr:expr, $wtr:expr) => (
-        if !$args.flag_no_headers {
-            ctry!($wtr.write_bytes(ctry!($rdr.byte_headers()).move_iter()));
-        }
-    )
 )
 
 macro_rules! command_list(
@@ -60,6 +35,7 @@ macro_rules! command_list(
     fixlengths  Makes all records have same length
     fmt         Format CSV output (change field delimiter)
     headers     Show header names
+    index       Create CSV index for faster access
     select      Select columns from CSV
     slice       Slice records from CSV
     table       Align CSV data into columns
@@ -95,14 +71,22 @@ fn main() {
         Some(cmd) => {
             match cmd.run() {
                 Ok(()) => os::set_exit_status(0),
-                Err(types::ErrBrokenPipe) => {
+                Err(types::ErrFlag(err)) => err.exit(),
+                Err(types::ErrCsv(err)) => {
+                    os::set_exit_status(1);
+                    let _ = writeln!(io::stderr(), "{}", err.to_string());
+                }
+                Err(types::ErrIo(io::IoError { kind: io::BrokenPipe, .. })) => {
                     os::set_exit_status(0);
+                }
+                Err(types::ErrIo(err)) => {
+                    os::set_exit_status(1);
+                    let _ = writeln!(io::stderr(), "{}", err.to_string());
                 }
                 Err(types::ErrOther(msg)) => {
                     os::set_exit_status(1);
-                    let _ = write!(io::stderr(), "{}\n", msg);
+                    let _ = writeln!(io::stderr(), "{}", msg);
                 }
-                Err(types::ErrFlag(err)) => err.exit(),
             }
         }
     }
@@ -115,6 +99,7 @@ enum Command {
     FixLengths,
     Fmt,
     Headers,
+    Index,
     Select,
     Slice,
     Table,
@@ -128,6 +113,7 @@ impl Command {
             FixLengths => cmd::fixlengths::main(),
             Fmt => cmd::fmt::main(),
             Headers => cmd::headers::main(),
+            Index => cmd::index::main(),
             Select => cmd::select::main(),
             Slice => cmd::slice::main(),
             Table => cmd::table::main(),

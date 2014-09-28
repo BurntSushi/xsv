@@ -1,7 +1,7 @@
 use csv;
 use docopt;
 
-use types::{CliError, Delimiter, InputReader, OutputWriter};
+use types::{CliError, CsvConfig, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -35,41 +35,37 @@ Common options:
                            concatenating columns.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Vec<InputReader>, flag_output: OutputWriter,
-   flag_delimiter: Delimiter, flag_out_delimiter: Delimiter,
-   flag_length: Option<uint>)
+", arg_input: Vec<String>, flag_output: Option<String>,
+   flag_delimiter: Delimiter)
 
 pub fn main() -> Result<(), CliError> {
-    let mut args: Args = try!(util::get_args());
-    let mut wtr = csv::Writer::from_writer(args.flag_output.by_ref());
-    if args.arg_input.is_empty() {
-        args.arg_input.push(ctry!(InputReader::new(None))); // stdin
-    }
-    ctry!(util::at_most_one_stdin(args.arg_input.as_slice()));
+    let args: Args = try!(util::get_args());
+    let mut wtr = try!(io| CsvConfig::new(args.flag_output).writer());
+    let configs = try!(str| util::many_configs(args.arg_input.as_slice(),
+                                              args.flag_delimiter,
+                                              args.flag_no_headers));
 
     if args.cmd_rows {
-        for (i, inp) in args.arg_input.into_iter().enumerate() {
-            let mut rdr = csv_reader!(args, inp);
-            if !args.flag_no_headers && i == 0 {
-                csv_write_headers!(args, rdr, wtr);
+        for (i, conf) in configs.into_iter().enumerate() {
+            let mut rdr = try!(io| conf.reader());
+            if i == 0 {
+                try!(csv| conf.write_headers(&mut rdr, &mut wtr));
             }
             for r in rdr.byte_records() {
-                ctry!(wtr.write_bytes(ctry!(r).into_iter()));
+                try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
             }
         }
     } else if args.cmd_columns {
-        let delim = args.flag_delimiter.to_byte();
-        let mut rdrs: Vec<csv::Reader<InputReader>> =
-            args.arg_input
-                .into_iter()
-                .map(|inp| column_reader(inp, delim))
-                .collect();
+        let mut rdrs = try!(io| configs.into_iter()
+                                      .map(|conf| conf.no_headers(true)
+                                                      .reader())
+                                      .collect::<Result<Vec<_>, _>>());
 
         // Find the lengths of each record. If a length varies, then an error
         // will occur so we can rely on the first length being the correct one.
         let mut lengths = vec!();
         for rdr in rdrs.iter_mut() {
-            lengths.push(ctry!(rdr.byte_headers()).len());
+            lengths.push(try!(csv| rdr.byte_headers()).len());
         }
 
         let mut iters: Vec<_> = rdrs.iter_mut()
@@ -91,7 +87,7 @@ pub fn main() -> Result<(), CliError> {
                             break 'OUTER;
                         }
                     }
-                    Some(err @ Err(_)) => { ctry!(err); }
+                    Some(Err(err)) => return Err(CliError::from_csv(err)),
                     Some(Ok(next)) => records.push(next),
                 }
             }
@@ -100,16 +96,11 @@ pub fn main() -> Result<(), CliError> {
                 break 'OUTER;
             }
             let row = records.as_slice().concat_vec();
-            ctry!(wtr.write_bytes(row.into_iter()));
+            try!(csv| wtr.write_bytes(row.into_iter()));
         }
     } else {
         unreachable!();
     }
-    ctry!(wtr.flush());
+    try!(csv| wtr.flush());
     Ok(())
-}
-
-fn column_reader<R: Reader>(rdr: R, delim: u8) -> csv::Reader<R> {
-    // We always set no_headers here because there's no need to distinguish.
-    csv::Reader::from_reader(rdr).delimiter(delim).no_headers()
 }
