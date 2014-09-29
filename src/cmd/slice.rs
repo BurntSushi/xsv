@@ -1,5 +1,6 @@
-use std::u64;
+use std::io;
 
+use csv::index::Indexed;
 use docopt;
 
 use types::{CliError, CsvConfig, Delimiter};
@@ -21,6 +22,9 @@ Usage:
 slice options:
     -s, --start <arg>      The index of the record to slice from.
     -e, --end <arg>        The index of the record to slice to.
+    -l, --len <arg>        The length of the slice (can be used instead
+                           of --end).
+    -i, --index <arg>      Slice a single record (shortcut for -s N -l 1).
 
 Common options:
     -h, --help             Display this message
@@ -31,26 +35,26 @@ Common options:
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
 ", arg_input: Option<String>, flag_output: Option<String>,
-   flag_delimiter: Delimiter, flag_start: Option<u64>, flag_end: Option<u64>)
+   flag_delimiter: Delimiter, flag_index: Option<u64>,
+   flag_start: Option<u64>, flag_end: Option<u64>, flag_len: Option<u64>)
 
 pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
-
-    let start = args.flag_start.unwrap_or(0);
-    let end = args.flag_end.unwrap_or(u64::MAX);
-    if start > end {
-        return Err(CliError::from_str(format!(
-            "The end of the range ({:u}) must be greater than or\n\
-             equal to the start of the range ({:u}).", end, start)));
-    }
-
-    let rconfig = CsvConfig::new(args.arg_input)
+    let rconfig = CsvConfig::new(args.arg_input.clone())
                             .delimiter(args.flag_delimiter)
                             .no_headers(args.flag_no_headers);
+    match try!(io| rconfig.indexed()) {
+        None => main_no_index(args, rconfig),
+        Some(idxed) => main_index(args, rconfig, idxed),
+    }
+}
+
+fn main_no_index(args: Args, rconfig: CsvConfig) -> Result<(), CliError> {
     let mut rdr = try!(io| rconfig.reader());
-    let mut wtr = try!(io| CsvConfig::new(args.flag_output).writer());
+    let mut wtr = try!(io| CsvConfig::new(args.flag_output.clone()).writer());
     try!(csv| rconfig.write_headers(&mut rdr, &mut wtr));
 
+    let (start, end) = try!(str| args.range());
     let mut it = rdr.byte_records()
                     .skip(start as uint)
                     .take((end - start) as uint);
@@ -59,4 +63,28 @@ pub fn main() -> Result<(), CliError> {
     }
     try!(csv| wtr.flush());
     Ok(())
+}
+
+fn main_index(args: Args, rconfig: CsvConfig,
+              mut idxed: Indexed<io::File, io::File>)
+             -> Result<(), CliError> {
+    let mut wtr = try!(io| CsvConfig::new(args.flag_output.clone()).writer());
+    try!(csv| rconfig.write_headers(idxed.csv(), &mut wtr));
+
+    let (start, end) = try!(str| args.range());
+    try!(csv| idxed.seek(start));
+    let mut it = idxed.csv().byte_records()
+                            .take((end - start) as uint);
+    for r in it {
+        try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
+    }
+    try!(csv| wtr.flush());
+    Ok(())
+}
+
+impl Args {
+    fn range(&self) -> Result<(u64, u64), String> {
+        util::range(self.flag_start, self.flag_end,
+                    self.flag_len, self.flag_index)
+    }
 }

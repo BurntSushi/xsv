@@ -8,3 +8,5 @@ ctags.rust
 *.csv
 main
 xcsv
+xcsv-rel
+*.idx

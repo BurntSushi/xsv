@@ -1,4 +1,5 @@
 use std::path::BytesContainer;
+use std::u64;
 
 use csv;
 use docopt;
@@ -60,4 +61,39 @@ pub fn idx_path(csv_path: &Path) -> Path {
     let mut p = csv_path.container_into_owned_bytes();
     p.push_all(".idx".as_bytes());
     Path::new(p)
+}
+
+type Idx = Option<u64>;
+
+pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
+            -> Result<(u64, u64), String> {
+    let (s, e) =
+        match index {
+            Some(i) => {
+                let exists = |i: Idx| i.is_some();
+                if exists(start) || exists(end) || exists(len) {
+                    return Err("--index cannot be used with \
+                                --start, --end or --len".to_string());
+                }
+                (i, i+1)
+            }
+            None => {
+                let s = start.unwrap_or(0);
+                let e = match (&end, &len) {
+                    (&Some(_), &Some(_)) =>
+                        return Err("--end and --len cannot be used
+                                    at the same time.".to_string()),
+                    (&None, &None) => u64::MAX,
+                    (&Some(e), &None) => e,
+                    (&None, &Some(l)) => s + l,
+                };
+                (s, e)
+            }
+        };
+    if s > e {
+        return Err(format!(
+            "The end of the range ({:u}) must be greater than or\n\
+             equal to the start of the range ({:u}).", e, s));
+    }
+    Ok((s, e))
 }

@@ -24,21 +24,26 @@ pub fn main() -> Result<(), CliError> {
                          .delimiter(args.flag_delimiter)
                          .no_headers(args.flag_no_headers);
 
-    match try!(io| conf.index_files()) {
-        None => {
-            let mut rdr = try!(io| conf.reader());
-            let mut count = 0u;
-            while !rdr.done() {
-                for field in rdr { let _ = try!(csv| field); }
-                count += 1;
+    let mut count =
+        match try!(io| conf.index_files()) {
+            None => {
+                let mut rdr = try!(io| conf.reader());
+                let mut count = 0u64;
+                while !rdr.done() {
+                    for field in rdr { let _ = try!(csv| field); }
+                    count += 1;
+                }
+                count
             }
-            println!("{:u}", count);
-        }
-        Some((_, mut idx_file)) => {
-            let stat = try!(io| idx_file.stat());
-            assert_eq!(stat.size % 8, 0);
-            println!("{:u}", stat.size / 8);
-        }
+            Some((_, mut idx_file)) => {
+                let stat = try!(io| idx_file.stat());
+                assert_eq!(stat.size % 8, 0);
+                stat.size / 8
+            }
+        };
+    if !args.flag_no_headers {
+        count -= 1;
     }
+    println!("{:u}", count);
     Ok(())
 }

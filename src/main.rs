@@ -33,6 +33,7 @@ macro_rules! command_list(
     cat         Concatenate by row or column
     count       Count records
     fixlengths  Makes all records have same length
+    flatten     Show one field per line
     fmt         Format CSV output (change field delimiter)
     headers     Show header names
     index       Create CSV index for faster access
@@ -97,6 +98,7 @@ enum Command {
     Cat,
     Count,
     FixLengths,
+    Flatten,
     Fmt,
     Headers,
     Index,
@@ -111,6 +113,7 @@ impl Command {
             Cat => cmd::cat::main(),
             Count => cmd::count::main(),
             FixLengths => cmd::fixlengths::main(),
+            Flatten => cmd::flatten::main(),
             Fmt => cmd::fmt::main(),
             Headers => cmd::headers::main(),
             Index => cmd::index::main(),
