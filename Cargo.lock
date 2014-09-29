@@ -3,7 +3,7 @@ name = "xcsv"
 version = "0.2.0"
 dependencies = [
  "docopt_macros 0.6.4 (git+git://github.com/docopt/docopt.rs#21ce1190ef7631f71e52de5e13eb4d131564b82e)",
- "rust-csv 0.4.0 (git+git://github.com/BurntSushi/rust-csv#de5482e287e0bce7663739a3fd4b3f119ed8ac36)",
+ "rust-csv 0.4.0 (git+git://github.com/BurntSushi/rust-csv#03ef88594b402758bdda56bca6908eed69d42fef)",
  "tabwriter 0.1.0 (git+git://github.com/BurntSushi/tabwriter#b095fad854db46c2b9f4fc06691fd72eb0422f5a)",
 ]
 
@@ -23,7 +23,7 @@ dependencies = [
 [[package]]
 name = "rust-csv"
 version = "0.4.0"
-source = "git+git://github.com/BurntSushi/rust-csv#de5482e287e0bce7663739a3fd4b3f119ed8ac36"
+source = "git+git://github.com/BurntSushi/rust-csv#03ef88594b402758bdda56bca6908eed69d42fef"
 
 [[package]]
 name = "tabwriter"
