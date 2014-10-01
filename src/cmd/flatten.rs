@@ -32,7 +32,8 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Option<String>, flag_delimiter: Delimiter)
+", arg_input: Option<String>, flag_delimiter: Delimiter,
+   flag_condensed: Option<uint>)
 
 pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
@@ -58,7 +59,13 @@ pub fn main() -> Result<(), CliError> {
         for (header, field) in headers.iter().zip(try!(csv| r).into_iter()) {
             try!(io| wtr.write(header[]));
             try!(io| wtr.write_u8(b'\t'));
-            try!(io| wtr.write(field[]));
+            match args.flag_condensed {
+                Some(n) if n < field.len() => {
+                    try!(io| wtr.write(field[..n]));
+                    try!(io| wtr.write_str("..."));
+                }
+                _ => try!(io| wtr.write(field[])),
+            }
             try!(io| wtr.write_u8(b'\n'));
         }
     }
