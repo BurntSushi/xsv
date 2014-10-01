@@ -5,6 +5,7 @@ pub mod flatten;
 pub mod fmt;
 pub mod headers;
 pub mod index;
+pub mod join;
 pub mod select;
 pub mod slice;
 pub mod table;

@@ -37,6 +37,7 @@ macro_rules! command_list(
     fmt         Format CSV output (change field delimiter)
     headers     Show header names
     index       Create CSV index for faster access
+    join        Join CSV files
     select      Select columns from CSV
     slice       Slice records from CSV
     table       Align CSV data into columns
@@ -102,6 +103,7 @@ enum Command {
     Fmt,
     Headers,
     Index,
+    Join,
     Select,
     Slice,
     Table,
@@ -117,6 +119,7 @@ impl Command {
             Fmt => cmd::fmt::main(),
             Headers => cmd::headers::main(),
             Index => cmd::index::main(),
+            Join => cmd::join::main(),
             Select => cmd::select::main(),
             Slice => cmd::slice::main(),
             Table => cmd::table::main(),
