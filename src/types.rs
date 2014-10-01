@@ -234,6 +234,12 @@ impl SelectColumns {
         Ok(Selection(map))
     }
 
+    pub fn merge(&mut self, scols: SelectColumns) {
+        let &SelectColumns(ref mut sels1) = self;
+        let SelectColumns(sels2) = scols;
+        sels1.extend(sels2.into_iter());
+    }
+
     fn selectors<'a>(&'a self) -> &'a [Selector] {
         let &SelectColumns(ref sels) = self;
         sels.as_slice()
@@ -391,8 +397,53 @@ impl Selection {
         self.as_slice().iter().scan(row, |row, &idx| Some(row[idx].as_slice()))
     }
 
+    pub fn normalized(&self) -> NormalSelection {
+        let &Selection(ref inds) = self;
+        let mut normal = inds.clone();
+        normal.sort();
+        normal.dedup();
+        let mut set = Vec::from_elem(normal[normal.len()-1] + 1, false);
+        for i in normal.into_iter() {
+            *set.get_mut(i) = true;
+        }
+        NormalSelection(set)
+    }
+
     pub fn as_slice<'a>(&'a self) -> &'a [uint] {
         let &Selection(ref inds) = self;
+        inds.as_slice()
+    }
+}
+
+impl Collection for Selection {
+    fn len(&self) -> uint {
+        let &Selection(ref inds) = self;
+        inds.len()
+    }
+}
+
+#[deriving(Show)]
+pub struct NormalSelection(Vec<bool>);
+
+impl NormalSelection {
+    pub fn select<'a, 'b, T, I: Iterator<T>>(&'a self, row: I)
+                 -> iter::FilterMap<Option<T>, T,
+                                    iter::Scan<(uint, T),
+                                               Option<T>,
+                                               iter::Enumerate<I>,
+                                               &'a [bool]>> {
+        let set = self.as_slice();
+        row.enumerate().scan(set, |set, (i, v)| {
+            if i < set.len() && set[i] { Some(Some(v)) } else { Some(None) }
+        }).filter_map(|v| v)
+    }
+
+    pub fn selected(&self, i: uint) -> bool {
+        self.as_slice()[i]
+    }
+
+    pub fn as_slice<'a>(&'a self) -> &'a [bool] {
+        let &NormalSelection(ref inds) = self;
         inds.as_slice()
     }
 }
