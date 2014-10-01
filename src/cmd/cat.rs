@@ -42,8 +42,8 @@ pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
     let mut wtr = try!(io| CsvConfig::new(args.flag_output).writer());
     let configs = try!(str| util::many_configs(args.arg_input.as_slice(),
-                                              args.flag_delimiter,
-                                              args.flag_no_headers));
+                                               args.flag_delimiter,
+                                               args.flag_no_headers));
 
     if args.cmd_rows {
         for (i, conf) in configs.into_iter().enumerate() {
