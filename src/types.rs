@@ -142,6 +142,17 @@ impl CsvConfig {
         Ok(self.from_reader(try!(self.io_reader())))
     }
 
+    pub fn reader_file(&self) -> io::IoResult<csv::Reader<io::File>> {
+        match self.path {
+            None => Err(io::IoError {
+                kind: io::OtherIoError,
+                desc: "Cannot use <stdin> here",
+                detail: None,
+            }),
+            Some(ref p) => io::File::open(p).map(|f| self.from_reader(f)),
+        }
+    }
+
     pub fn index_files(&self)
            -> io::IoResult<Option<(csv::Reader<io::File>, io::File)>> {
         let (mut csv_file, mut idx_file) = match (&self.path, &self.idx_path) {

@@ -1,6 +1,9 @@
 use std::collections::hashmap::{HashMap, Vacant, Occupied};
+use std::fmt;
+use std::io;
 
 use csv::{mod, ByteString};
+use csv::index::Indexed;
 use docopt;
 
 use types::{
@@ -42,8 +45,8 @@ pub fn main() -> Result<(), CliError> {
                            .delimiter(args.flag_delimiter)
                            .no_headers(args.flag_no_headers);
 
-    let mut rdr1 = try!(io| rconf1.reader());
-    let mut rdr2 = try!(io| rconf2.reader());
+    let mut rdr1 = try!(io| rconf1.reader_file());
+    let mut rdr2 = try!(io| rconf2.reader_file());
     let mut wtr = try!(io| CsvConfig::new(args.flag_output.clone()).writer());
 
     let (sel1, sel2) = try!(args.get_selections(&rconf1, &mut rdr1,
@@ -51,27 +54,38 @@ pub fn main() -> Result<(), CliError> {
     let (nsel1, nsel2) = (sel1.normalized(), sel2.normalized());
     try!(args.write_headers(&mut rdr1, &mut rdr2, &mut wtr));
 
-    let validx = try!(new_value_index(&mut rdr1, &nsel1));
-    println!("{}", validx);
-    Ok(())
-}
+    let mut validx = try!(ValueIndex::new(rdr2, &nsel2));
+    for row in rdr1.byte_records() {
+        let row = try!(csv| row);
+        let val = sel1.select(row[])
+                      .map(ByteString::from_bytes)
+                      .collect::<Vec<ByteString>>();
+        match validx.values.find_equiv(&val[]) {
+            None => continue,
+            Some(rows) => {
+                for &rowi in rows.iter() {
+                    try!(csv| validx.idx.seek(rowi));
+                    let row1 = row.iter().map(|f| f.as_slice());
 
-fn new_value_index<R: Reader>
-                  (rdr: &mut csv::Reader<R>, nsel: &NormalSelection)
-                  -> Result<HashMap<Vec<ByteString>, Vec<uint>>, CliError> {
-    let mut validx = HashMap::new();
-    let mut rowi = 0u;
-    while !rdr.done() {
-        let fields = try!(csv| nsel.select(rdr.by_ref())
-                                   .map(|v| v.map(ByteString::from_bytes))
-                                   .collect::<Result<Vec<_>, _>>());
-        match validx.entry(fields) {
-            Vacant(v) => { v.set(vec![rowi]); }
-            Occupied(mut v) => { v.get_mut().push(rowi); }
+                    // The use of unwrap here is somewhat justified.
+                    // In particular, `row2` is from the indexed CSV data,
+                    // **which has already been parsed successfully** in its
+                    // entirety. If `unwrap` fails, then one of two things
+                    // must have happened: 1) there is a bug in my code
+                    // somewhere (likely in the indexing) or 2) the file
+                    // changed on disk (a risk we take).
+                    //
+                    // Actually, I suspect there is a more principled way.
+                    // I think `write_bytes` might be able to handle the error
+                    // somehow, but I'm not quite sure how to do it. (Without
+                    // expanding the API of csv::Writer.)
+                    let row2 = validx.idx.csv().by_ref().map(|f| f.unwrap());
+                    try!(csv| wtr.write_bytes(row1.chain(row2)));
+                }
+            }
         }
-        rowi += 1;
     }
-    Ok(validx)
+    Ok(())
 }
 
 impl Args {
@@ -107,6 +121,62 @@ impl Args {
             let mut headers = headers1.clone();
             headers.push_all(headers2[]);
             try!(csv| wtr.write_bytes(headers.into_iter()));
+        }
+        Ok(())
+    }
+}
+
+struct ValueIndex<R> {
+    // This maps tuples of values to corresponding rows.
+    values: HashMap<Vec<ByteString>, Vec<u64>>,
+    idx: Indexed<R, io::MemReader>,
+}
+
+impl<R: Reader + Seek> ValueIndex<R> {
+    fn new(mut rdr: csv::Reader<R>, nsel: &NormalSelection)
+          -> Result<ValueIndex<R>, CliError> {
+        let mut val_idx = HashMap::with_capacity(10000);
+        let mut rows = io::MemWriter::with_capacity(8 * 10000);
+        let mut rowi = 0u64;
+        try!(io| rows.write_be_u64(0)); // offset to the first row, which
+                                        // has already been read as a header.
+        while !rdr.done() {
+            // This is a bit hokey. We're doing this manually instead of
+            // calling `csv::index::create` so we can create both indexes
+            // in one pass.
+            try!(io| rows.write_be_u64(rdr.byte_offset()));
+
+            let fields = try!(csv| nsel.select(rdr.by_ref())
+                                       .map(|v| v.map(ByteString::from_bytes))
+                                       .collect::<Result<Vec<_>, _>>());
+            match val_idx.entry(fields) {
+                Vacant(v) => {
+                    let mut rows = Vec::with_capacity(10);
+                    rows.push(rowi);
+                    v.set(rows);
+                }
+                Occupied(mut v) => { v.get_mut().push(rowi); }
+            }
+            rowi += 1;
+        }
+        Ok(ValueIndex {
+            values: val_idx,
+            idx: Indexed::new(rdr, io::MemReader::new(rows.unwrap())),
+        })
+    }
+}
+
+impl<R> fmt::Show for ValueIndex<R> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Sort the values by order of first appearance.
+        let mut kvs = self.values.iter().collect::<Vec<_>>();
+        kvs.sort_by(|&(_, v1), &(_, v2)| v1[0].cmp(&v2[0]));
+        for (keys, rows) in kvs.into_iter() {
+            // This is just for debugging, so assume Unicode for now.
+            let keys = keys.iter()
+                           .map(|k| String::from_utf8(k[].to_vec()).unwrap())
+                           .collect::<Vec<_>>();
+            try!(writeln!(f, "({}) => {}", keys.connect(", "), rows))
         }
         Ok(())
     }
