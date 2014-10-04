@@ -1,5 +1,5 @@
 [root]
-name = "xcsv"
+name = "xsv"
 version = "0.2.0"
 dependencies = [
  "docopt_macros 0.6.4 (git+git://github.com/docopt/docopt.rs#21ce1190ef7631f71e52de5e13eb4d131564b82e)",

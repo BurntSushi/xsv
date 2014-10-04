@@ -1,5 +1,5 @@
 [package]
-name = "xcsv"
+name = "xsv"
 version = "0.2.0"
 authors = ["Andrew Gallant <jamslam@gmail.com>"]
 
