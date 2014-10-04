@@ -52,7 +52,7 @@ pub fn main() -> Result<(), CliError> {
         };
     for (i, header) in headers.into_iter().enumerate() {
         if num_inputs == 1 && !args.flag_just_names {
-            try!(io| wtr.write_str(i.to_string().as_slice()));
+            try!(io| wtr.write_str((i + 1).to_string().as_slice()));
             try!(io| wtr.write_u8(b'\t'));
         }
         try!(io| wtr.write(header.as_slice()));

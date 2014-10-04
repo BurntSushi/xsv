@@ -336,7 +336,7 @@ impl<R: Reader + Seek> ValueIndex<R> {
         }
         Ok(ValueIndex {
             values: val_idx,
-            idx: Indexed::new(rdr, io::MemReader::new(rows.unwrap())),
+            idx: try!(csv| Indexed::new(rdr, io::MemReader::new(rows.unwrap()))),
             num_rows: rowi,
         })
     }

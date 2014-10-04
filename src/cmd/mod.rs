@@ -6,6 +6,8 @@ pub mod fmt;
 pub mod headers;
 pub mod index;
 pub mod join;
+pub mod search;
 pub mod select;
 pub mod slice;
+pub mod split;
 pub mod table;

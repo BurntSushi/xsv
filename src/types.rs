@@ -120,11 +120,6 @@ impl CsvConfig {
         self.path.is_none()
     }
 
-    pub fn idx_path(mut self, idx_path: Option<String>) -> CsvConfig {
-        self.idx_path = idx_path.map(|p| Path::new(p));
-        self
-    }
-
     pub fn write_headers<R: io::Reader, W: io::Writer>
                         (&self, r: &mut csv::Reader<R>, w: &mut csv::Writer<W>)
                         -> csv::CsvResult<()> {
@@ -196,8 +191,12 @@ impl CsvConfig {
         Ok(Some((csv_rdr, idx_file)))
     }
 
-    pub fn indexed(&self) -> io::IoResult<Option<Indexed<io::File, io::File>>> {
-        Ok({ try!(self.index_files()) }.map(|(r, i)| Indexed::new(r, i)))
+    pub fn indexed(&self)
+        -> Result<Option<Indexed<io::File, io::File>>, CliError> {
+        match try!(io| self.index_files()) {
+            None => Ok(None),
+            Some((r, i)) => Ok(Some(try!(csv| Indexed::new(r, i)))),
+        }
     }
 
     pub fn io_reader(&self) -> io::IoResult<Box<io::Reader+'static>> {
@@ -218,8 +217,12 @@ impl CsvConfig {
     pub fn io_writer(&self) -> io::IoResult<Box<io::Writer+'static>> {
         Ok(match self.path {
             None => box io::stdout() as Box<io::Writer+'static>,
-            Some(ref p) =>
-                box try!(io::File::create(p)) as Box<io::Writer+'static>,
+            Some(ref p) => {
+                let f = box {
+                    try!(io::File::create(p))
+                } as Box<io::Writer+'static>;
+                f
+            }
         })
     }
 
@@ -237,18 +240,16 @@ pub struct SelectColumns(Vec<Selector>);
 impl SelectColumns {
     pub fn selection(&self, conf: &CsvConfig, headers: &[csv::ByteString])
                     -> Result<Selection, String> {
+        if self.selectors().is_empty() {
+            return Ok(Selection(Vec::from_fn(headers.len(), |i| i)));
+        }
+
         let mut map = vec![];
         for sel in self.selectors().iter() {
             let idxs = sel.indices(conf, headers);
             map.extend(try!(idxs).into_iter());
         }
         Ok(Selection(map))
-    }
-
-    pub fn merge(&mut self, scols: SelectColumns) {
-        let &SelectColumns(ref mut sels1) = self;
-        let SelectColumns(sels2) = scols;
-        sels1.extend(sels2.into_iter());
     }
 
     fn selectors<'a>(&'a self) -> &'a [Selector] {
@@ -447,10 +448,6 @@ impl NormalSelection {
         row.enumerate().scan(set, |set, (i, v)| {
             if i < set.len() && set[i] { Some(Some(v)) } else { Some(None) }
         }).filter_map(|v| v)
-    }
-
-    pub fn selected(&self, i: uint) -> bool {
-        self.as_slice()[i]
     }
 
     pub fn as_slice<'a>(&'a self) -> &'a [bool] {

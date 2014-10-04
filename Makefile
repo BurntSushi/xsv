@@ -17,3 +17,11 @@ push:
 	git push origin master
 	git push github master
 
+dev:
+	cargo build
+	cp ./target/xcsv ~/bin/csvt
+
+release:
+	cargo build --release
+	cp ./target/release/xcsv ~/bin/csvt
+

@@ -43,7 +43,7 @@ pub fn main() -> Result<(), CliError> {
     let rconfig = CsvConfig::new(args.arg_input.clone())
                             .delimiter(args.flag_delimiter)
                             .no_headers(args.flag_no_headers);
-    match try!(io| rconfig.indexed()) {
+    match try!(rconfig.indexed()) {
         None => main_no_index(args, rconfig),
         Some(idxed) => main_index(args, rconfig, idxed),
     }

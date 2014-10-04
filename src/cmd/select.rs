@@ -5,13 +5,8 @@ use util;
 
 docopt!(Args, "
 Usage:
-    xcsv select [options] [<input>]
-
-select options:
-    -s, --select <arg>  Column selection. Each column can be referenced
-                        by its column name or index, starting at 1.
-                        Specify multiple columns by separating them with
-                        a comma. Specify a range of columns with `-`.
+    xcsv select [options] <selection> [<input>]
+    xcsv select --help
 
 Common options:
     -h, --help             Display this message
@@ -22,8 +17,7 @@ Common options:
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
 ", arg_input: Option<String>, flag_output: Option<String>,
-   flag_delimiter: Delimiter,
-   flag_select: SelectColumns)
+   flag_delimiter: Delimiter, arg_selection: SelectColumns)
 
 pub fn main() -> Result<(), CliError> {
     let args: Args = try!(util::get_args());
@@ -36,15 +30,15 @@ pub fn main() -> Result<(), CliError> {
     let mut wtr = try!(io| CsvConfig::new(args.flag_output).writer());
 
     let headers = try!(csv| rdr.byte_headers());
-    let selection = try!(str| args.flag_select.selection(&rconfig, headers[]));
+    let sel = try!(str| args.arg_selection.selection(&rconfig, headers[]));
 
     if !args.flag_no_headers {
-        try!(csv| wtr.write_bytes(selection.select(headers[])));
+        try!(csv| wtr.write_bytes(sel.select(headers[])));
     }
     for r in rdr.byte_records() {
         // TODO: I don't think we can do any better here. Since selection
         // operates on indices, some kind of allocation is probably required.
-        try!(csv| wtr.write_bytes(selection.select(try!(csv| r)[])))
+        try!(csv| wtr.write_bytes(sel.select(try!(csv| r)[])))
     }
     try!(csv| wtr.flush());
     Ok(())

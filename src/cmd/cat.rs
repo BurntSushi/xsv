@@ -19,7 +19,8 @@ data given are used. Headers in subsequent inputs are ignored. (This behavior
 can be disabled with --no-headers.)
 
 Usage:
-    xcsv cat (rows | columns) [options] [<input>...]
+    xcsv cat rows    [options] [<input>...]
+    xcsv cat columns [options] [<input>...]
     xcsv cat --help
 
 cat options:

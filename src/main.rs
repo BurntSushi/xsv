@@ -1,10 +1,10 @@
 #![feature(macro_rules, phase)]
 
-#![allow(non_snake_case)]
-#![allow(dead_code)]
+/*!
+These are some docs.
+*/
 
 extern crate regex;
-#[phase(plugin)] extern crate regex_macros;
 extern crate serialize;
 
 extern crate csv;
@@ -47,8 +47,10 @@ macro_rules! command_list(
     headers     Show header names
     index       Create CSV index for faster access
     join        Join CSV files
+    search      Search CSV data with regexes
     select      Select columns from CSV
     slice       Slice records from CSV
+    split       Split CSV data into many files
     table       Align CSV data into columns
 "
     )
@@ -113,8 +115,10 @@ enum Command {
     Headers,
     Index,
     Join,
+    Search,
     Select,
     Slice,
+    Split,
     Table,
 }
 
@@ -129,8 +133,10 @@ impl Command {
             Headers => cmd::headers::main(),
             Index => cmd::index::main(),
             Join => cmd::join::main(),
+            Search => cmd::search::main(),
             Select => cmd::select::main(),
             Slice => cmd::slice::main(),
+            Split => cmd::split::main(),
             Table => cmd::table::main(),
         }
     }

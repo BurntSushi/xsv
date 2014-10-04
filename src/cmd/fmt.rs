@@ -31,6 +31,7 @@ pub fn main() -> Result<(), CliError> {
     let mut rdr = try!(io| config.reader());
     let mut wtr = try!(io| CsvConfig::new(args.flag_output)
                                      .delimiter(args.flag_out_delimiter)
+                                     .crlf(args.flag_crlf)
                                      .writer());
 
     try!(csv| config.write_headers(&mut rdr, &mut wtr));
