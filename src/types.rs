@@ -408,7 +408,7 @@ impl Selection {
         self.as_slice().iter().scan(row, |row, &idx| Some(row[idx].as_slice()))
     }
 
-    pub fn normalized(&self) -> NormalSelection {
+    pub fn normal(&self) -> NormalSelection {
         let &Selection(ref inds) = self;
         let mut normal = inds.clone();
         normal.sort();

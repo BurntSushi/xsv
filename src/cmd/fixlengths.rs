@@ -59,8 +59,11 @@ pub fn main() -> Result<(), CliError> {
                 let mut rdr = try!(io| config.reader());
                 while !rdr.done() {
                     let mut count = 0u;
-                    for field in rdr {
-                        let _ = try!(csv| field);
+                    loop {
+                        match rdr.next_field() {
+                            None => break,
+                            Some(r) => { try!(csv| r); }
+                        }
                         count += 1;
                     }
                     maxlen = cmp::max(maxlen, count);

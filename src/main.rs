@@ -27,6 +27,15 @@ macro_rules! try(
     );
 )
 
+macro_rules! werr(
+    ($($arg:tt)*) => (
+        match ::std::io::stderr().write_str(format!($($arg)*).as_slice()) {
+            Ok(_) => (),
+            Err(err) => fail!("{}", err),
+        }
+    )
+)
+
 macro_rules! command_list(
     () => (
 "

@@ -30,7 +30,12 @@ pub fn main() -> Result<(), CliError> {
                 let mut rdr = try!(io| conf.reader());
                 let mut count = 0u64;
                 while !rdr.done() {
-                    for field in rdr { let _ = try!(csv| field); }
+                    loop {
+                        match rdr.next_field() {
+                            None => break,
+                            Some(r) => { try!(csv| r); }
+                        }
+                    }
                     count += 1;
                 }
                 count
