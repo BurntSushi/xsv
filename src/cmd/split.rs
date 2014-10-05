@@ -11,9 +11,8 @@ use util;
 docopt!(Args, "
 Splits the given CSV data into chunks.
 
-The files are written to the directory given with the name '{start}-{end}.csv',
-where {start} and {end} is the half-open interval corresponding to the records
-in the chunk.
+The files are written to the directory given with the name '{start}.csv',
+where {start} is the index of the first record of the chunk (starting at 0).
 
 Usage:
     xsv split [options] <outdir> [<input>]
@@ -22,9 +21,10 @@ split options:
     -s, --size <arg>       The number of records to write into each chunk.
                            [default: 500]
     -j, --jobs <arg>       The number of spliting jobs to run in parallel.
-                           Note that this only works when the given CSV data
-                           has an index already created.
-                           [default: 4]
+                           This only works when the given CSV data has
+                           an index already created. Note that a file handle
+                           is opened for each job.
+                           [default: 12]
 
 Common options:
     -h, --help             Display this message
@@ -77,9 +77,9 @@ impl Args {
         }
         let mut pool = TaskPool::new(self.flag_jobs, || { proc(i) i });
         for i in range(0, nchunks) {
-            let conf = self.rconfig();
             let args = self.clone();
             pool.execute(proc(_) {
+                let conf = args.rconfig();
                 let mut idx = conf.indexed().unwrap().unwrap();
                 let headers = idx.csv().byte_headers().unwrap();
                 let mut wtr = args.new_writer(headers[], i * args.flag_size)
