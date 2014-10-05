@@ -1,16 +1,16 @@
-xcsv is a command line program for slicing, analyzing, splitting and joining 
+xsv is a command line program for slicing, analyzing, splitting and joining 
 CSV files. There are two primary goals: performance and simplicity. To be more 
 concrete:
 
-1. xcsv should never be the bottleneck when parsing CSV data. (Performance.)
-2. With xcsv, it should be easy to perform simple tasks.
+1. xsv should never be the bottleneck when parsing CSV data. (Performance.)
+2. With xsv, it should be easy to perform simple tasks.
 
 As the project evolves, the importance of the following will become clearer:
 
 1. The flexibility of reading malformed CSV data.
-2. The number of features supported by xcsv.
+2. The number of features supported by xsv.
 
-[![Build status](https://api.travis-ci.org/BurntSushi/xcsv.png)](https://travis-ci.org/BurntSushi/xcsv)
+[![Build status](https://api.travis-ci.org/BurntSushi/xsv.png)](https://travis-ci.org/BurntSushi/xsv)
 
 
 **WORK IN PROGRESS**.
