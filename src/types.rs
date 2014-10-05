@@ -12,6 +12,7 @@ use docopt;
 
 use util;
 
+#[deriving(Show)]
 pub enum CliError {
     ErrFlag(docopt::Error),
     ErrCsv(csv::Error),

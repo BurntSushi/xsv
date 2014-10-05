@@ -75,9 +75,11 @@ fn main() {
                                         .unwrap_or_else(|e| e.exit());
     match args.arg_command {
         None => {
-            os::set_exit_status(1);
+            os::set_exit_status(0);
             let msg = concat!(
-                "Please choose one of the following commands:",
+                "xsv is a suite of CSV command line utilities.
+
+Please choose one of the following commands:",
                 command_list!());
             {write!(io::stderr(), "{}", msg)}.unwrap();
         }
