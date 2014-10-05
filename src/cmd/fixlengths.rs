@@ -18,7 +18,7 @@ Alternatively, if --length is set, then all records are forced to that length.
 This requires a single pass and can be done with stdin.
 
 Usage:
-    xcsv fixlengths [options] [<input>]
+    xsv fixlengths [options] [<input>]
 
 fixlengths options:
     -l, --length <arg>     Forcefully set the length of each record. If a

@@ -5,7 +5,7 @@ use util;
 
 docopt!(Args, "
 Usage:
-    xcsv fmt [options] [<input>]
+    xsv fmt [options] [<input>]
 
 fmt options:
     -t, --out-delimiter <arg>  The field delimiter for writing CSV data.

@@ -14,7 +14,7 @@ Therefore, you should use the 'slice' command to trim down large CSV data
 before formatting it with this command.
 
 Usage:
-    xcsv table [options] [<input>]
+    xsv table [options] [<input>]
 
 table options:
     -w, --width <arg>      The minimum width of each column.

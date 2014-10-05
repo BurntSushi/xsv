@@ -16,7 +16,7 @@ where {start} and {end} is the half-open interval corresponding to the records
 in the chunk.
 
 Usage:
-    xcsv split [options] <outdir> [<input>]
+    xsv split [options] <outdir> [<input>]
 
 split options:
     -s, --size <arg>       The number of records to write into each chunk.

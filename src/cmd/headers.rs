@@ -13,7 +13,7 @@ These names can be used in commands like 'select' to refer to columns in the
 CSV data.
 
 Usage:
-    xcsv headers [options] [<input>...]
+    xsv headers [options] [<input>...]
 
 headers options:
     -j, --just-names       Only show the header names (hide column index).

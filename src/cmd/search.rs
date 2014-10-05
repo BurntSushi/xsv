@@ -14,8 +14,8 @@ with the `--select` flag (but the full row is still written to the output if
 there is a match).
 
 Usage:
-    xcsv search [options] <regex> [<input>]
-    xcsv search --help
+    xsv search [options] <regex> [<input>]
+    xsv search --help
 
 search options:
     -s, --select <arg>  Column selection. Each column can be referenced

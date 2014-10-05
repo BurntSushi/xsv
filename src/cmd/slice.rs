@@ -17,7 +17,7 @@ If the end of the range isn't specified, then the slice continues to the last
 record in the CSV data.
 
 Usage:
-    xcsv slice [options] [<input>]
+    xsv slice [options] [<input>]
 
 slice options:
     -s, --start <arg>      The index of the record to slice from.

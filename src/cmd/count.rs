@@ -7,7 +7,7 @@ docopt!(Args, "
 Prints a count of the number of records in the CSV data.
 
 Usage:
-    xcsv count [options] [<input>]
+    xsv count [options] [<input>]
 
 Common options:
     -h, --help             Display this message

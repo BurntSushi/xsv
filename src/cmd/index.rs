@@ -14,8 +14,8 @@ Note that this does not accept CSV data on stdin. You must give
 a file path.
 
 Usage:
-    xcsv index [options] <input>
-    xcsv index --help
+    xsv index [options] <input>
+    xsv index --help
 
 index options:
     -o, --output <file>    Write index to <file> instead of <input>.idx.

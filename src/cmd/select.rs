@@ -5,8 +5,8 @@ use util;
 
 docopt!(Args, "
 Usage:
-    xcsv select [options] <selection> [<input>]
-    xcsv select --help
+    xsv select [options] <selection> [<input>]
+    xsv select --help
 
 Common options:
     -h, --help             Display this message

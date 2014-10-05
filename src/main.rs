@@ -58,8 +58,8 @@ macro_rules! command_list(
 
 docopt!(Args, concat!("
 Usage:
-    xcsv <command> [<args>...]
-    xcsv [options]
+    xsv <command> [<args>...]
+    xsv [options]
 
 Options:
     -h, --help    Display this message

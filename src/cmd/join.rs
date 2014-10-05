@@ -24,8 +24,8 @@ separating them with a comma. Specify a range of columns with `-`. Both
 columns1 and columns2 must specify exactly the same number of columns.
 
 Usage:
-    xcsv join [options] <columns1> <input1> <columns2> <input2>
-    xcsv join --help
+    xsv join [options] <columns1> <input1> <columns2> <input2>
+    xsv join --help
 
 join options:
     --left                 Do a 'left outer' join. This returns all rows in

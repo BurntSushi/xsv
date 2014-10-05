@@ -15,7 +15,7 @@ There is also a condensed view (-c or --condensed) that will shorten
 the contents of each field to provide a summary view.
 
 Usage:
-    xcsv flatten [options] [<input>]
+    xsv flatten [options] [<input>]
 
 flatten options:
     -c, --condensed <arg>  Limits the length (in bytes) of each field to the
