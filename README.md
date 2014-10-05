@@ -2,8 +2,9 @@ xsv is a command line program for slicing, analyzing, splitting and joining
 CSV files. There are two primary goals: performance and simplicity. To be more 
 concrete:
 
-1. xsv should never be the bottleneck when parsing CSV data. (Performance.)
-2. With xsv, it should be easy to perform simple tasks.
+1. With xsv, it should be easy to perform simple tasks.
+2. Behavior that affects performance should be made explicit (and documented)
+   in the command line interface.
 
 As the project evolves, the importance of the following will become clearer:
 
