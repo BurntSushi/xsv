@@ -62,7 +62,7 @@ Common options:
    flag_delimiter: Delimiter, flag_jobs: u64,
    flag_select: SelectColumns)
 
-pub fn main(argv: &[&str]) -> CliResult<()> {
+pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(argv));
 
     let mut wtr = try!(io| Config::new(args.flag_output.clone()).writer());

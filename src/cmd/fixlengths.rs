@@ -35,7 +35,7 @@ Common options:
    flag_delimiter: Delimiter, flag_out_delimiter: Delimiter,
    flag_length: Option<uint>)
 
-pub fn main(argv: &[&str]) -> CliResult<()> {
+pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(argv));
     let config = Config::new(args.arg_input)
                         .delimiter(args.flag_delimiter)

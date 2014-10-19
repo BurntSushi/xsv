@@ -38,7 +38,7 @@ Common options:
 ", arg_input: Option<String>, arg_outdir: String, flag_output: Option<String>,
    flag_delimiter: Delimiter, flag_size: u64, flag_jobs: uint)
 
-pub fn main(argv: &[&str]) -> CliResult<()> {
+pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(argv));
     try!(io| mkdir_recursive(&Path::new(args.arg_outdir[]),
                              io::AllPermissions));

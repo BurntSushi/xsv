@@ -40,7 +40,7 @@ Common options:
 ", arg_input: Vec<String>, flag_output: Option<String>,
    flag_delimiter: Delimiter)
 
-pub fn main(argv: &[&str]) -> CliResult<()> {
+pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(argv));
     let mut wtr = try!(io| Config::new(args.flag_output).writer());
     let configs = try!(str| util::many_configs(args.arg_input.as_slice(),

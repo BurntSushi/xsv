@@ -134,21 +134,21 @@ impl Command {
         let argv: Vec<_> = argv.iter().skip(1).map(|s| s[]).collect();
         let argv = argv[];
         match self {
-            Cat => cmd::cat::main(argv),
-            Count => cmd::count::main(argv),
-            FixLengths => cmd::fixlengths::main(argv),
-            Flatten => cmd::flatten::main(argv),
-            Fmt => cmd::fmt::main(argv),
-            Frequency => cmd::frequency::main(argv),
-            Headers => cmd::headers::main(argv),
-            Index => cmd::index::main(argv),
-            Join => cmd::join::main(argv),
-            Search => cmd::search::main(argv),
-            Select => cmd::select::main(argv),
-            Slice => cmd::slice::main(argv),
-            Split => cmd::split::main(argv),
-            Stats => cmd::stats::main(argv),
-            Table => cmd::table::main(argv),
+            Cat => cmd::cat::run(argv),
+            Count => cmd::count::run(argv),
+            FixLengths => cmd::fixlengths::run(argv),
+            Flatten => cmd::flatten::run(argv),
+            Fmt => cmd::fmt::run(argv),
+            Frequency => cmd::frequency::run(argv),
+            Headers => cmd::headers::run(argv),
+            Index => cmd::index::run(argv),
+            Join => cmd::join::run(argv),
+            Search => cmd::search::run(argv),
+            Select => cmd::select::run(argv),
+            Slice => cmd::slice::run(argv),
+            Split => cmd::split::run(argv),
+            Stats => cmd::stats::run(argv),
+            Table => cmd::table::run(argv),
         }
     }
 }

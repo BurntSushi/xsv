@@ -62,7 +62,7 @@ Common options:
    flag_output: Option<String>, flag_delimiter: Delimiter,
    flag_left: bool, flag_right: bool, flag_full: bool, flag_cross: bool)
 
-pub fn main(argv: &[&str]) -> CliResult<()> {
+pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(argv));
     let mut state = try!(args.new_io_state());
     match (

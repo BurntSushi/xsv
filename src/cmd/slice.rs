@@ -39,7 +39,7 @@ Common options:
    flag_delimiter: Delimiter, flag_index: Option<u64>,
    flag_start: Option<u64>, flag_end: Option<u64>, flag_len: Option<u64>)
 
-pub fn main(argv: &[&str]) -> CliResult<()> {
+pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(argv));
     match try!(args.rconfig().indexed()) {
         None => args.no_index(),

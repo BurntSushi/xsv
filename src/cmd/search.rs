@@ -40,7 +40,7 @@ Common options:
    arg_regex: String,
    flag_delimiter: Delimiter, flag_select: SelectColumns)
 
-pub fn main(argv: &[&str]) -> CliResult<()> {
+pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(argv));
     let pattern = try!(Regex::new(args.arg_regex[])
                              .map_err(CliError::from_str));

@@ -34,7 +34,7 @@ Common options:
 ", arg_input: Option<String>, flag_output: Option<String>,
    flag_delimiter: Delimiter, flag_width: uint, flag_pad: uint)
 
-pub fn main(argv: &[&str]) -> CliResult<()> {
+pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(argv));
 
     let rconfig = Config::new(args.arg_input)
