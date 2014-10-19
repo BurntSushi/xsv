@@ -8,38 +8,34 @@ use serialize::{Decodable, Decoder};
 use csv;
 
 #[deriving(Clone)]
-pub struct SelectColumns(Vec<Selector>);
+pub struct SelectColumns {
+    selectors: Vec<Selector>,
+    invert: bool,
+}
 
 // This parser is super basic at the moment. Field names cannot contain [-,].
 impl SelectColumns {
     pub fn selection(&self, first_record: &[csv::ByteString], use_names: bool)
                     -> Result<Selection, String> {
-        if self.selectors().is_empty() {
+        if self.selectors.is_empty() {
             return Ok(Selection(Vec::from_fn(first_record.len(), |i| i)));
         }
 
         let mut map = vec![];
-        for sel in self.selectors().iter() {
+        for sel in self.selectors.iter() {
             let idxs = sel.indices(first_record, use_names);
             map.extend(try!(idxs).into_iter());
         }
         Ok(Selection(map))
     }
 
-    fn selectors<'a>(&'a self) -> &'a [Selector] {
-        let &SelectColumns(ref sels) = self;
-        sels.as_slice()
-    }
-
     fn parse(s: &str) -> Result<SelectColumns, String> {
-        let mut sels = vec!();
-        if s.is_empty() {
-            return Ok(SelectColumns(sels));
-        }
+        let mut scols = SelectColumns { selectors: vec![], invert: false };
+        if s.is_empty() { return Ok(scols); }
         for sel in s.split(',') {
-            sels.push(try!(SelectColumns::parse_selector(sel)));
+            scols.selectors.push(try!(SelectColumns::parse_selector(sel)));
         }
-        Ok(SelectColumns(sels))
+        Ok(scols)
     }
 
     fn parse_selector(sel: &str) -> Result<Selector, String> {
@@ -57,13 +53,13 @@ impl SelectColumns {
                 } else {
                     try!(SelectColumns::parse_one_selector(pieces[1]))
                 };
-            Ok(SelRange(box start, box end))
+            Ok(SelRange(start, end))
         } else {
-            SelectColumns::parse_one_selector(sel)
+            SelectColumns::parse_one_selector(sel).map(SelOne)
         }
     }
 
-    fn parse_one_selector(sel: &str) -> Result<Selector, String> {
+    fn parse_one_selector(sel: &str) -> Result<OneSelector, String> {
         if sel.contains_char('-') {
             return Err(format!("Illegal '-' in selector '{}'.", sel))
         }
@@ -77,13 +73,13 @@ impl SelectColumns {
 
 impl fmt::Show for SelectColumns {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.selectors().is_empty() {
-            return write!(f, "<All>");
+        if self.selectors.is_empty() {
+            write!(f, "<All>")
+        } else {
+            let strs: Vec<_> =
+                self.selectors.iter().map(|sel| sel.to_string()).collect();
+            write!(f, "{}", strs.connect(", "))
         }
-        let strs: Vec<String> = self.selectors().iter()
-                                .map(|sel| sel.to_string())
-                                .collect();
-        write!(f, "{}", strs.connect(", "))
     }
 }
 
@@ -96,27 +92,48 @@ impl <E, D: Decoder<E>> Decodable<D, E> for SelectColumns {
 
 #[deriving(Clone)]
 enum Selector {
+    SelOne(OneSelector),
+    SelRange(OneSelector, OneSelector),
+}
+
+#[deriving(Clone)]
+enum OneSelector {
     SelStart,
     SelEnd,
     SelIndex(uint),
     SelName(String),
-    // invariant: selectors MUST NOT be ranges
-    SelRange(Box<Selector>, Box<Selector>),
+    SelIndexedName(String, uint),
 }
 
 impl Selector {
-    fn is_range(&self) -> bool {
-        match self {
-            &SelRange(_, _) => true,
-            _ => false,
-        }
-    }
-
     fn indices(&self, first_record: &[csv::ByteString], use_names: bool)
               -> Result<Vec<uint>, String> {
         match self {
-            &SelStart => Ok(vec!(0)),
-            &SelEnd => Ok(vec!(first_record.len())),
+            &SelOne(ref sel) => {
+                sel.index(first_record, use_names).map(|i| vec![i])
+            }
+            &SelRange(ref sel1, ref sel2) => {
+                let i1 = try!(sel1.index(first_record, use_names));
+                let i2 = try!(sel2.index(first_record, use_names));
+                Ok(match i1.cmp(&i2) {
+                    Equal => vec!(i1),
+                    Less => iter::range_inclusive(i1, i2).collect(),
+                    Greater => {
+                        iter::range_step_inclusive(i1 as int, i2 as int, -1)
+                             .map(|i| i as uint).collect()
+                    }
+                })
+            }
+        }
+    }
+}
+
+impl OneSelector {
+    fn index(&self, first_record: &[csv::ByteString], use_names: bool)
+            -> Result<uint, String> {
+        match self {
+            &SelStart => Ok(0),
+            &SelEnd => Ok(first_record.len()),
             &SelIndex(i) => {
                 if i < 1 || i > first_record.len() {
                     Err(format!("Selector index {} is out of \
@@ -124,7 +141,7 @@ impl Selector {
                                  and <= {}.", i, first_record.len()))
                 } else {
                     // Indices given by user are 1-offset. Convert them here!
-                    Ok(vec!(i-1))
+                    Ok(i-1)
                 }
             }
             &SelName(ref s) => {
@@ -136,23 +153,31 @@ impl Selector {
                     None => Err(format!("Selector name '{}' does not exist \
                                          as a named header in the given CSV \
                                          data.", s)),
-                    Some(i) => Ok(vec!(i)),
+                    Some(i) => Ok(i),
                 }
             }
-            &SelRange(box ref sel1, box ref sel2) => {
-                assert!(!sel1.is_range());
-                assert!(!sel2.is_range());
-                let is1 = try!(sel1.indices(first_record, use_names));
-                let is2 = try!(sel2.indices(first_record, use_names));
-                let i1 = { assert!(is1.len() == 1); is1[0] };
-                let i2 = { assert!(is2.len() == 1); is2[0] };
-                Ok(match i1.cmp(&i2) {
-                    Equal => vec!(i1),
-                    Less => iter::range_inclusive(i1, i2).collect(),
-                    Greater =>
-                        iter::range_step_inclusive(i1 as int, i2 as int, -1)
-                             .map(|i| i as uint).collect(),
-                })
+            &SelIndexedName(ref s, sidx) => {
+                if !use_names {
+                    return Err(format!("Cannot use names ('{}') in selection \
+                                        with --no-headers set.", s));
+                }
+                let mut num_found = 0;
+                for (i, field) in first_record.iter().enumerate() {
+                    if field.equiv(s) {
+                        if num_found == sidx {
+                            return Ok(i);
+                        }
+                        num_found += 1;
+                    }
+                }
+                if num_found == 0 {
+                    return Err(format!("Selector name '{}' does not exist \
+                                        as a named header in the given CSV \
+                                        data.", s));
+                }
+                Err(format!("Selector index '{}' for name '{}' is \
+                             out of bounds. Must be >= 0 and <= {}.",
+                             sidx, s, num_found - 1))
             }
         }
     }
@@ -161,11 +186,21 @@ impl Selector {
 impl fmt::Show for Selector {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            &SelOne(ref sel) => sel.fmt(f),
+            &SelRange(ref s, ref e) => write!(f, "Range({}, {})", s, e),
+        }
+    }
+}
+
+impl fmt::Show for OneSelector {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
             &SelStart => write!(f, "Start"),
             &SelEnd => write!(f, "End"),
-            &SelName(ref s) => write!(f, "Name({})", s),
             &SelIndex(idx) => write!(f, "Index({:u})", idx),
-            &SelRange(ref s, ref e) => write!(f, "Range({}, {})", s, e),
+            &SelName(ref s) => write!(f, "Name({})", s),
+            &SelIndexedName(ref s, idx) => write!(f, "IndexedName({}[{}])",
+                                                  s, idx),
         }
     }
 }
@@ -195,17 +230,15 @@ impl Selection {
         }
         NormalSelection(set)
     }
+}
 
-    pub fn as_slice<'a>(&'a self) -> &'a [uint] {
-        let &Selection(ref inds) = self;
-        inds.as_slice()
-    }
+impl AsSlice<uint> for Selection {
+    fn as_slice(&self) -> &[uint] { self.0[] }
 }
 
 impl Collection for Selection {
     fn len(&self) -> uint {
-        let &Selection(ref inds) = self;
-        inds.len()
+        self.0.len()
     }
 }
 
@@ -224,11 +257,10 @@ impl NormalSelection {
             if i < set.len() && set[i] { Some(Some(v)) } else { Some(None) }
         }).filter_map(|v| v)
     }
+}
 
-    pub fn as_slice<'a>(&'a self) -> &'a [bool] {
-        let &NormalSelection(ref inds) = self;
-        inds.as_slice()
-    }
+impl AsSlice<bool> for NormalSelection {
+    fn as_slice(&self) -> &[bool] { self.0[] }
 }
 
 impl Collection for NormalSelection {
