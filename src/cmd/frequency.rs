@@ -1,12 +1,5 @@
-#![allow(dead_code, unused_imports)]
-
-use std::cell::RefCell;
-use std::default::Default;
-use std::fmt;
-use std::from_str::{FromStr, from_str};
 use std::io::{mod, File};
 use std::os;
-use std::str;
 
 use csv::{mod, ByteString};
 use csv::index::Indexed;
@@ -63,8 +56,8 @@ Common options:
    flag_delimiter: Delimiter, flag_jobs: u64,
    flag_select: SelectColumns, flag_limit: uint)
 
-pub fn main() -> CliResult<()> {
-    let args: Args = try!(util::get_args());
+pub fn main(argv: &[&str]) -> CliResult<()> {
+    let args: Args = try!(util::get_args(argv));
 
     let mut wtr = try!(io| Config::new(args.flag_output.clone()).writer());
     let (headers, tables) = try!(match try!(args.rconfig().indexed()) {

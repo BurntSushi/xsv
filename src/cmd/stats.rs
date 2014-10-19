@@ -1,6 +1,3 @@
-#![allow(dead_code, unused_imports)]
-
-use std::cell::RefCell;
 use std::default::Default;
 use std::fmt;
 use std::from_str::{FromStr, from_str};
@@ -65,8 +62,8 @@ Common options:
    flag_delimiter: Delimiter, flag_jobs: u64,
    flag_select: SelectColumns)
 
-pub fn main() -> CliResult<()> {
-    let args: Args = try!(util::get_args());
+pub fn main(argv: &[&str]) -> CliResult<()> {
+    let args: Args = try!(util::get_args(argv));
 
     let mut wtr = try!(io| Config::new(args.flag_output.clone()).writer());
     let (headers, stats) = try!(match try!(args.rconfig().indexed()) {

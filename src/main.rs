@@ -130,22 +130,25 @@ enum Command {
 
 impl Command {
     fn run(self) -> CliResult<()> {
+        let argv = os::args();
+        let argv: Vec<_> = argv.iter().skip(1).map(|s| s[]).collect();
+        let argv = argv[];
         match self {
-            Cat => cmd::cat::main(),
-            Count => cmd::count::main(),
-            FixLengths => cmd::fixlengths::main(),
-            Flatten => cmd::flatten::main(),
-            Fmt => cmd::fmt::main(),
-            Frequency => cmd::frequency::main(),
-            Headers => cmd::headers::main(),
-            Index => cmd::index::main(),
-            Join => cmd::join::main(),
-            Search => cmd::search::main(),
-            Select => cmd::select::main(),
-            Slice => cmd::slice::main(),
-            Split => cmd::split::main(),
-            Stats => cmd::stats::main(),
-            Table => cmd::table::main(),
+            Cat => cmd::cat::main(argv),
+            Count => cmd::count::main(argv),
+            FixLengths => cmd::fixlengths::main(argv),
+            Flatten => cmd::flatten::main(argv),
+            Fmt => cmd::fmt::main(argv),
+            Frequency => cmd::frequency::main(argv),
+            Headers => cmd::headers::main(argv),
+            Index => cmd::index::main(argv),
+            Join => cmd::join::main(argv),
+            Search => cmd::search::main(argv),
+            Select => cmd::select::main(argv),
+            Slice => cmd::slice::main(argv),
+            Split => cmd::split::main(argv),
+            Stats => cmd::stats::main(argv),
+            Table => cmd::table::main(argv),
         }
     }
 }

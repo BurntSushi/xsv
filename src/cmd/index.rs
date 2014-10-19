@@ -27,8 +27,8 @@ Common options:
                            Must be a single character. [default: ,]
 ", flag_delimiter: Delimiter, flag_output: Option<String>)
 
-pub fn main() -> CliResult<()> {
-    let args: Args = try!(util::get_args());
+pub fn main(argv: &[&str]) -> CliResult<()> {
+    let args: Args = try!(util::get_args(argv));
 
     let pcsv = Path::new(args.arg_input.as_slice());
     let pidx = match args.flag_output {

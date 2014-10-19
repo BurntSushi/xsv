@@ -29,8 +29,8 @@ Common options:
                            Must be a single character. [default: ,]
 ", arg_input: Vec<String>, flag_delimiter: Delimiter)
 
-pub fn main() -> CliResult<()> {
-    let args: Args = try!(util::get_args());
+pub fn main(argv: &[&str]) -> CliResult<()> {
+    let args: Args = try!(util::get_args(argv));
     let configs = try!(str| util::many_configs(args.arg_input.as_slice(),
                                                args.flag_delimiter, true));
 

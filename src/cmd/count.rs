@@ -19,8 +19,8 @@ Common options:
                            Must be a single character. [default: ,]
 ", arg_input: Option<String>, flag_delimiter: Delimiter)
 
-pub fn main() -> CliResult<()> {
-    let args: Args = try!(util::get_args());
+pub fn main(argv: &[&str]) -> CliResult<()> {
+    let args: Args = try!(util::get_args(argv));
     let conf = Config::new(args.arg_input)
                       .delimiter(args.flag_delimiter)
                       .no_headers(args.flag_no_headers);

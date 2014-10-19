@@ -27,8 +27,9 @@ pub fn arg_config() -> docopt::Config {
     }
 }
 
-pub fn get_args<D: docopt::FlagParser>() -> CliResult<D> {
-    docopt::FlagParser::parse_conf(arg_config()).map_err(CliError::from_flags)
+pub fn get_args<D: docopt::FlagParser>(argv: &[&str]) -> CliResult<D> {
+    docopt::FlagParser::parse_args(arg_config(), argv)
+                       .map_err(CliError::from_flags)
 }
 
 pub fn many_configs(inps: &[String], delim: Delimiter, no_headers: bool)
