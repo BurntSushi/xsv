@@ -13,7 +13,9 @@ use csv::index::Indexed;
 use docopt;
 use stats::{Commute, OnlineStats, MinMax, Unsorted, merge_all};
 
-use types::{CliError, CsvConfig, Delimiter, SelectColumns, Selection};
+use CliResult;
+use config::{Config, Delimiter};
+use select::{SelectColumns, Selection};
 use util;
 
 docopt!(Args deriving Clone, "
@@ -63,10 +65,10 @@ Common options:
    flag_delimiter: Delimiter, flag_jobs: u64,
    flag_select: SelectColumns)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
 
-    let mut wtr = try!(io| CsvConfig::new(args.flag_output.clone()).writer());
+    let mut wtr = try!(io| Config::new(args.flag_output.clone()).writer());
     let (headers, stats) = try!(match try!(args.rconfig().indexed()) {
         None => args.sequential_stats(),
         Some(idx) => {
@@ -90,7 +92,7 @@ pub fn main() -> Result<(), CliError> {
 
 impl Args {
     fn sequential_stats(&self)
-                       -> Result<(Vec<ByteString>, Vec<Stats>), CliError> {
+                       -> CliResult<(Vec<ByteString>, Vec<Stats>)> {
         let mut rdr = try!(io| self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
         let stats = try!(self.compute(&sel, rdr.byte_records()));
@@ -98,7 +100,7 @@ impl Args {
     }
 
     fn parallel_stats(&self, idx: Indexed<io::File, io::File>)
-                     -> Result<(Vec<ByteString>, Vec<Stats>), CliError> {
+                     -> CliResult<(Vec<ByteString>, Vec<Stats>)> {
         use std::comm::channel;
         use std::sync::TaskPool;
 
@@ -143,7 +145,7 @@ impl Args {
 
     fn compute<I: Iterator<csv::CsvResult<Vec<ByteString>>>>
               (&self, sel: &Selection, mut it: I)
-              -> Result<Vec<Stats>, CliError> {
+              -> CliResult<Vec<Stats>> {
         let mut stats = self.new_stats(sel.len());
         for row in it {
             let row = try!(csv| row);
@@ -155,17 +157,17 @@ impl Args {
     }
 
     fn sel_headers<R: Reader>(&self, rdr: &mut csv::Reader<R>)
-                  -> Result<(Vec<ByteString>, Selection), CliError> {
+                  -> CliResult<(Vec<ByteString>, Selection)> {
         let headers = try!(csv| rdr.byte_headers());
-        let sel = try!(str| self.flag_select
-                                .selection(&self.rconfig(), headers[]));
+        let sel = try!(str| self.rconfig().selection(headers[]));
         Ok((sel.select(headers[]).map(ByteString::from_bytes).collect(), sel))
     }
 
-    fn rconfig(&self) -> CsvConfig {
-        CsvConfig::new(self.arg_input.clone())
-                  .delimiter(self.flag_delimiter)
-                  .no_headers(self.flag_no_headers)
+    fn rconfig(&self) -> Config {
+        Config::new(self.arg_input.clone())
+               .delimiter(self.flag_delimiter)
+               .no_headers(self.flag_no_headers)
+               .select(self.flag_select.clone())
     }
 
     fn njobs(&self) -> u64 {

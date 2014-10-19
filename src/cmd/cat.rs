@@ -1,7 +1,8 @@
 use csv;
 use docopt;
 
-use types::{CliError, CsvConfig, Delimiter};
+use {CliError, CliResult};
+use config::{Config, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -39,9 +40,9 @@ Common options:
 ", arg_input: Vec<String>, flag_output: Option<String>,
    flag_delimiter: Delimiter)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
-    let mut wtr = try!(io| CsvConfig::new(args.flag_output).writer());
+    let mut wtr = try!(io| Config::new(args.flag_output).writer());
     let configs = try!(str| util::many_configs(args.arg_input.as_slice(),
                                                args.flag_delimiter,
                                                args.flag_no_headers));

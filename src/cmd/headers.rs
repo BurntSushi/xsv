@@ -3,7 +3,8 @@ use std::io;
 use docopt;
 use tabwriter::TabWriter;
 
-use types::{CliError, Delimiter};
+use CliResult;
+use config::Delimiter;
 use util;
 
 docopt!(Args, "
@@ -28,7 +29,7 @@ Common options:
                            Must be a single character. [default: ,]
 ", arg_input: Vec<String>, flag_delimiter: Delimiter)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
     let configs = try!(str| util::many_configs(args.arg_input.as_slice(),
                                                args.flag_delimiter, true));

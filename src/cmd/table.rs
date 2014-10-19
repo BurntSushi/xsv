@@ -1,7 +1,8 @@
 use docopt;
 use tabwriter::TabWriter;
 
-use types::{CliError, CsvConfig, Delimiter};
+use CliResult;
+use config::{Config, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -33,14 +34,13 @@ Common options:
 ", arg_input: Option<String>, flag_output: Option<String>,
    flag_delimiter: Delimiter, flag_width: uint, flag_pad: uint)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
 
-    let rconfig = CsvConfig::new(args.arg_input)
-                            .delimiter(args.flag_delimiter)
-                            .no_headers(args.flag_no_headers);
-    let wconfig = CsvConfig::new(args.flag_output)
-                            .delimiter(Delimiter(b'\t'));
+    let rconfig = Config::new(args.arg_input)
+                         .delimiter(args.flag_delimiter)
+                         .no_headers(args.flag_no_headers);
+    let wconfig = Config::new(args.flag_output).delimiter(Delimiter(b'\t'));
 
     let tw = TabWriter::new(try!(io| wconfig.io_writer()))
                        .minwidth(args.flag_width)

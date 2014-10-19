@@ -1,9 +1,10 @@
-use std::io;
+use std::io::File;
 
 use csv::index::Indexed;
 use docopt;
 
-use types::{CliError, CsvConfig, Delimiter};
+use CliResult;
+use config::{Config, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -38,53 +39,57 @@ Common options:
    flag_delimiter: Delimiter, flag_index: Option<u64>,
    flag_start: Option<u64>, flag_end: Option<u64>, flag_len: Option<u64>)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
-    let rconfig = CsvConfig::new(args.arg_input.clone())
-                            .delimiter(args.flag_delimiter)
-                            .no_headers(args.flag_no_headers);
-    match try!(rconfig.indexed()) {
-        None => main_no_index(args, rconfig),
-        Some(idxed) => main_index(args, rconfig, idxed),
+    match try!(args.rconfig().indexed()) {
+        None => args.no_index(),
+        Some(idxed) => args.with_index(idxed),
     }
-}
-
-fn main_no_index(args: Args, rconfig: CsvConfig) -> Result<(), CliError> {
-    let mut rdr = try!(io| rconfig.reader());
-    let mut wtr = try!(io| CsvConfig::new(args.flag_output.clone()).writer());
-    try!(csv| rconfig.write_headers(&mut rdr, &mut wtr));
-
-    let (start, end) = try!(str| args.range());
-    let mut it = rdr.byte_records()
-                    .skip(start as uint)
-                    .take((end - start) as uint);
-    for r in it {
-        try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
-    }
-    try!(csv| wtr.flush());
-    Ok(())
-}
-
-fn main_index(args: Args, rconfig: CsvConfig,
-              mut idxed: Indexed<io::File, io::File>)
-             -> Result<(), CliError> {
-    let mut wtr = try!(io| CsvConfig::new(args.flag_output.clone()).writer());
-    try!(csv| rconfig.write_headers(idxed.csv(), &mut wtr));
-
-    let (start, end) = try!(str| args.range());
-    try!(csv| idxed.seek(start));
-    let mut it = idxed.csv().byte_records()
-                            .take((end - start) as uint);
-    for r in it {
-        try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
-    }
-    try!(csv| wtr.flush());
-    Ok(())
 }
 
 impl Args {
+    fn no_index(&self) -> CliResult<()> {
+        let mut rdr = try!(io| self.rconfig().reader());
+        let mut wtr = try!(io| self.wconfig().writer());
+        try!(csv| self.rconfig().write_headers(&mut rdr, &mut wtr));
+
+        let (start, end) = try!(str| self.range());
+        let mut it = rdr.byte_records()
+                        .skip(start as uint)
+                        .take((end - start) as uint);
+        for r in it {
+            try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
+        }
+        try!(csv| wtr.flush());
+        Ok(())
+    }
+
+    fn with_index(&self, mut idx: Indexed<File, File>) -> CliResult<()> {
+        let mut wtr = try!(io| self.wconfig().writer());
+        try!(csv| self.rconfig().write_headers(idx.csv(), &mut wtr));
+
+        let (start, end) = try!(str| self.range());
+        try!(csv| idx.seek(start));
+        let mut it = idx.csv().byte_records().take((end - start) as uint);
+        for r in it {
+            try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
+        }
+        try!(csv| wtr.flush());
+        Ok(())
+    }
+
     fn range(&self) -> Result<(u64, u64), String> {
         util::range(self.flag_start, self.flag_end,
                     self.flag_len, self.flag_index)
+    }
+
+    fn rconfig(&self) -> Config {
+        Config::new(self.arg_input.clone())
+               .delimiter(self.flag_delimiter)
+               .no_headers(self.flag_no_headers)
+    }
+
+    fn wconfig(&self) -> Config {
+        Config::new(self.flag_output.clone())
     }
 }

@@ -3,7 +3,8 @@ use std::io::{BufferedWriter, File};
 use csv;
 use docopt;
 
-use types::{CliError, Delimiter};
+use CliResult;
+use config::Delimiter;
 use util;
 
 docopt!(Args, "
@@ -26,7 +27,7 @@ Common options:
                            Must be a single character. [default: ,]
 ", flag_delimiter: Delimiter, flag_output: Option<String>)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
 
     let pcsv = Path::new(args.arg_input.as_slice());

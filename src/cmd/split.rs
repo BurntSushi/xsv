@@ -5,7 +5,8 @@ use csv;
 use csv::index::Indexed;
 use docopt;
 
-use types::{CliError, CsvConfig, Delimiter};
+use CliResult;
+use config::{Config, Delimiter};
 use util;
 
 docopt!(Args deriving Clone, "
@@ -37,7 +38,7 @@ Common options:
 ", arg_input: Option<String>, arg_outdir: String, flag_output: Option<String>,
    flag_delimiter: Delimiter, flag_size: u64, flag_jobs: uint)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
     try!(io| mkdir_recursive(&Path::new(args.arg_outdir[]),
                              io::AllPermissions));
@@ -49,7 +50,7 @@ pub fn main() -> Result<(), CliError> {
 }
 
 impl Args {
-    fn sequential_split(&self) -> Result<(), CliError> {
+    fn sequential_split(&self) -> CliResult<()> {
         let rconfig = self.rconfig();
         let mut rdr = try!(io| rconfig.reader());
         let headers = try!(csv| rdr.byte_headers());
@@ -68,7 +69,7 @@ impl Args {
     }
 
     fn parallel_split(&self, idx: Indexed<io::File, io::File>)
-                     -> Result<(), CliError> {
+                     -> CliResult<()> {
         use std::sync::TaskPool;
 
         let nchunks = util::num_of_chunks(idx.count(), self.flag_size);
@@ -95,20 +96,20 @@ impl Args {
     }
 
     fn new_writer(&self, headers: &[csv::ByteString], start: u64)
-                 -> Result<csv::Writer<Box<io::Writer+'static>>, CliError> {
+                 -> CliResult<csv::Writer<Box<io::Writer+'static>>> {
         let dir = Path::new(self.arg_outdir.clone());
         let path = dir.join(format!("{}.csv", start));
         let spath = Some(path.display().to_string());
-        let mut wtr = try!(io| CsvConfig::new(spath).writer());
+        let mut wtr = try!(io| Config::new(spath).writer());
         if !self.flag_no_headers {
             try!(csv| wtr.write_bytes(headers.iter().map(|f| f[])));
         }
         Ok(wtr)
     }
 
-    fn rconfig(&self) -> CsvConfig {
-        CsvConfig::new(self.arg_input.clone())
-                  .delimiter(self.flag_delimiter)
-                  .no_headers(self.flag_no_headers)
+    fn rconfig(&self) -> Config {
+        Config::new(self.arg_input.clone())
+               .delimiter(self.flag_delimiter)
+               .no_headers(self.flag_no_headers)
     }
 }

@@ -2,7 +2,8 @@ use std::cmp;
 
 use docopt;
 
-use types::{CliError, CsvConfig, Delimiter};
+use {CliError, CliResult};
+use config::{Config, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -34,12 +35,12 @@ Common options:
    flag_delimiter: Delimiter, flag_out_delimiter: Delimiter,
    flag_length: Option<uint>)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
-    let config = CsvConfig::new(args.arg_input)
-                           .delimiter(args.flag_delimiter)
-                           .no_headers(true)
-                           .flexible(true);
+    let config = Config::new(args.arg_input)
+                        .delimiter(args.flag_delimiter)
+                        .no_headers(true)
+                        .flexible(true);
     let length = match args.flag_length {
         Some(length) => {
             if length == 0 {
@@ -74,7 +75,7 @@ pub fn main() -> Result<(), CliError> {
     };
 
     let mut rdr = try!(io| config.reader());
-    let mut wtr = try!(io| CsvConfig::new(args.flag_output).writer());
+    let mut wtr = try!(io| Config::new(args.flag_output).writer());
     for r in rdr.byte_records() {
         let mut r = try!(csv| r);
         if length >= r.len() {

@@ -1,6 +1,7 @@
 use docopt;
 
-use types::{CliError, CsvConfig, Delimiter};
+use CliResult;
+use config::{Config, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -22,19 +23,19 @@ Common options:
 ", arg_input: Option<String>, flag_output: Option<String>,
    flag_delimiter: Delimiter, flag_out_delimiter: Delimiter)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
 
-    let config = CsvConfig::new(args.arg_input)
-                           .delimiter(args.flag_delimiter)
-                           .no_headers(args.flag_no_headers);
-    let mut rdr = try!(io| config.reader());
-    let mut wtr = try!(io| CsvConfig::new(args.flag_output)
-                                     .delimiter(args.flag_out_delimiter)
-                                     .crlf(args.flag_crlf)
-                                     .writer());
+    let rconfig = Config::new(args.arg_input)
+                         .delimiter(args.flag_delimiter)
+                         .no_headers(args.flag_no_headers);
+    let wconfig = Config::new(args.flag_output)
+                         .delimiter(args.flag_out_delimiter)
+                         .crlf(args.flag_crlf);
+    let mut rdr = try!(io| rconfig.reader());
+    let mut wtr = try!(io| wconfig.writer());
 
-    try!(csv| config.write_headers(&mut rdr, &mut wtr));
+    try!(csv| wconfig.write_headers(&mut rdr, &mut wtr));
     for r in rdr.byte_records() {
         try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
     }

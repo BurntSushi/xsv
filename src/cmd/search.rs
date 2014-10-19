@@ -2,7 +2,9 @@ use regex::Regex;
 
 use docopt;
 
-use types::{CliError, CsvConfig, Delimiter, SelectColumns};
+use {CliError, CliResult};
+use config::{Config, Delimiter};
+use select::SelectColumns;
 use util;
 
 docopt!(Args, "
@@ -38,20 +40,20 @@ Common options:
    arg_regex: String,
    flag_delimiter: Delimiter, flag_select: SelectColumns)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
-    let pattern = try!(Regex::new(args.arg_regex[]).map_err(CliError::from_str));
-
-    let rconfig = CsvConfig::new(args.arg_input)
-                            .delimiter(args.flag_delimiter)
-                            .no_headers(args.flag_no_headers);
+    let pattern = try!(Regex::new(args.arg_regex[])
+                             .map_err(CliError::from_str));
+    let rconfig = Config::new(args.arg_input)
+                         .delimiter(args.flag_delimiter)
+                         .no_headers(args.flag_no_headers)
+                         .select(args.flag_select);
 
     let mut rdr = try!(io| rconfig.reader());
-    let mut wtr = try!(io| CsvConfig::new(args.flag_output).writer());
+    let mut wtr = try!(io| Config::new(args.flag_output).writer());
 
     let headers = try!(csv| rdr.byte_headers());
-    let sel = try!(str| args.flag_select.selection(&rconfig, headers[]));
-    let nsel = sel.normal();
+    let nsel = try!(str| rconfig.normal_selection(headers[]));
 
     try!(csv| rconfig.write_headers(&mut rdr, &mut wtr));
     for row in rdr.records() {

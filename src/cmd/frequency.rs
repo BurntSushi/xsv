@@ -13,7 +13,9 @@ use csv::index::Indexed;
 use docopt;
 use stats::{Frequencies, merge_all};
 
-use types::{CliError, CsvConfig, Delimiter, Selection, SelectColumns};
+use CliResult;
+use config::{Config, Delimiter};
+use select::{SelectColumns, Selection};
 use util;
 
 docopt!(Args deriving Clone, "
@@ -61,10 +63,10 @@ Common options:
    flag_delimiter: Delimiter, flag_jobs: u64,
    flag_select: SelectColumns, flag_limit: uint)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
 
-    let mut wtr = try!(io| CsvConfig::new(args.flag_output.clone()).writer());
+    let mut wtr = try!(io| Config::new(args.flag_output.clone()).writer());
     let (headers, tables) = try!(match try!(args.rconfig().indexed()) {
         None => args.sequential_ftables(),
         Some(idx) => {
@@ -93,10 +95,11 @@ type FTable = Frequencies<ByteString>;
 type FTables = Vec<Frequencies<ByteString>>;
 
 impl Args {
-    fn rconfig(&self) -> CsvConfig {
-        CsvConfig::new(self.arg_input.clone())
-                  .delimiter(self.flag_delimiter)
-                  .no_headers(self.flag_no_headers)
+    fn rconfig(&self) -> Config {
+        Config::new(self.arg_input.clone())
+               .delimiter(self.flag_delimiter)
+               .no_headers(self.flag_no_headers)
+               .select(self.flag_select.clone())
     }
 
     fn counts<'a>(&self, ftab: &'a FTable) -> Vec<(&'a ByteString, u64)> {
@@ -111,14 +114,14 @@ impl Args {
         counts
     }
 
-    fn sequential_ftables(&self) -> Result<(Headers, FTables), CliError> {
+    fn sequential_ftables(&self) -> CliResult<(Headers, FTables)> {
         let mut rdr = try!(io| self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
         Ok((headers, try!(self.ftables(&sel, rdr.byte_records()))))
     }
 
     fn parallel_ftables(&self, idx: Indexed<io::File, io::File>)
-                       -> Result<(Headers, FTables), CliError> {
+                       -> CliResult<(Headers, FTables)> {
         use std::comm::channel;
         use std::sync::TaskPool;
 
@@ -145,7 +148,7 @@ impl Args {
 
     fn ftables<I: Iterator<csv::CsvResult<ByteRow>>>
               (&self, sel: &Selection, mut it: I)
-              -> Result<FTables, CliError> {
+              -> CliResult<FTables> {
         let null = ByteString::from_bytes(b"NULL");
         let nsel = sel.normal();
         let mut tabs = Vec::from_fn(nsel.len(), |_| Frequencies::new());
@@ -165,10 +168,9 @@ impl Args {
     }
 
     fn sel_headers<R: Reader>(&self, rdr: &mut csv::Reader<R>)
-                  -> Result<(ByteRow, Selection), CliError> {
+                  -> CliResult<(ByteRow, Selection)> {
         let headers = try!(csv| rdr.byte_headers());
-        let sel = try!(str| self.flag_select
-                                .selection(&self.rconfig(), headers[]));
+        let sel = try!(str| self.rconfig().selection(headers[]));
         Ok((sel.select(headers[]).map(ByteString::from_bytes).collect(), sel))
     }
 

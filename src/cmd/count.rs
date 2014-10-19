@@ -1,6 +1,7 @@
 use docopt;
 
-use types::{CliError, Delimiter, CsvConfig};
+use CliResult;
+use config::{Delimiter, Config};
 use util;
 
 docopt!(Args, "
@@ -18,11 +19,11 @@ Common options:
                            Must be a single character. [default: ,]
 ", arg_input: Option<String>, flag_delimiter: Delimiter)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
-    let conf = CsvConfig::new(args.arg_input)
-                         .delimiter(args.flag_delimiter)
-                         .no_headers(args.flag_no_headers);
+    let conf = Config::new(args.arg_input)
+                      .delimiter(args.flag_delimiter)
+                      .no_headers(args.flag_no_headers);
 
     let mut count =
         match try!(conf.indexed()) {

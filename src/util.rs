@@ -4,7 +4,8 @@ use std::u64;
 use csv;
 use docopt;
 
-use types::{CliError, CsvConfig, Delimiter};
+use {CliError, CliResult};
+use config::{Config, Delimiter};
 
 fn version() -> String {
     let (maj, min, pat) = (
@@ -26,26 +27,26 @@ pub fn arg_config() -> docopt::Config {
     }
 }
 
-pub fn get_args<D: docopt::FlagParser>() -> Result<D, CliError> {
+pub fn get_args<D: docopt::FlagParser>() -> CliResult<D> {
     docopt::FlagParser::parse_conf(arg_config()).map_err(CliError::from_flags)
 }
 
 pub fn many_configs(inps: &[String], delim: Delimiter, no_headers: bool)
-                   -> Result<Vec<CsvConfig>, String> {
+                   -> Result<Vec<Config>, String> {
     let mut inps = inps.to_vec();
     if inps.is_empty() {
         inps.push("-".to_string()); // stdin
     }
     let confs = inps.into_iter()
-                    .map(|p| CsvConfig::new(Some(p))
-                                       .delimiter(delim)
-                                       .no_headers(no_headers))
+                    .map(|p| Config::new(Some(p))
+                                    .delimiter(delim)
+                                    .no_headers(no_headers))
                     .collect::<Vec<_>>();
     try!(errif_greater_one_stdin(confs.as_slice()));
     Ok(confs)
 }
 
-pub fn errif_greater_one_stdin(inps: &[CsvConfig]) -> Result<(), String> {
+pub fn errif_greater_one_stdin(inps: &[Config]) -> Result<(), String> {
     let nstd = inps.iter().filter(|inp| inp.is_std()).count();
     if nstd > 1 {
         return Err("At most one <stdin> input is allowed.".to_string());

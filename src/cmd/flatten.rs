@@ -3,7 +3,8 @@ use std::io;
 use docopt;
 use tabwriter::TabWriter;
 
-use types::{CliError, CsvConfig, Delimiter};
+use CliResult;
+use config::{Config, Delimiter};
 use util;
 
 docopt!(Args, "
@@ -35,11 +36,11 @@ Common options:
 ", arg_input: Option<String>, flag_delimiter: Delimiter,
    flag_condensed: Option<uint>)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
-    let rconfig = CsvConfig::new(args.arg_input.clone())
-                            .delimiter(args.flag_delimiter)
-                            .no_headers(args.flag_no_headers);
+    let rconfig = Config::new(args.arg_input.clone())
+                         .delimiter(args.flag_delimiter)
+                         .no_headers(args.flag_no_headers);
     let mut rdr = try!(io| rconfig.reader());
     let headers = try!(csv| rdr.byte_headers());
 

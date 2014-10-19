@@ -7,9 +7,9 @@ use csv::{mod, ByteString};
 use csv::index::Indexed;
 use docopt;
 
-use types::{
-    CliError, CsvConfig, Delimiter, NormalSelection, Selection, SelectColumns
-};
+use {CliError, CliResult};
+use config::{Config, Delimiter};
+use select::{SelectColumns, Selection, NormalSelection};
 use util;
 
 docopt!(Args, "
@@ -62,7 +62,7 @@ Common options:
    flag_output: Option<String>, flag_delimiter: Delimiter,
    flag_left: bool, flag_right: bool, flag_full: bool, flag_cross: bool)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
     let mut state = try!(args.new_io_state());
     match (
@@ -105,7 +105,7 @@ struct IoState<R, W> {
 }
 
 impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
-    fn write_headers(&mut self) -> Result<(), CliError> {
+    fn write_headers(&mut self) -> CliResult<()> {
         let headers1 = try!(csv| self.rdr1.byte_headers());
         let headers2 = try!(csv| self.rdr2.byte_headers());
         if !self.no_headers {
@@ -116,7 +116,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         Ok(())
     }
 
-    fn inner_join(mut self) -> Result<(), CliError> {
+    fn inner_join(mut self) -> CliResult<()> {
         let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2.normal()));
         for row in self.rdr1.byte_records() {
             let row = try!(csv| row);
@@ -140,7 +140,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         Ok(())
     }
 
-    fn outer_join(mut self, right: bool) -> Result<(), CliError> {
+    fn outer_join(mut self, right: bool) -> CliResult<()> {
         if right {
             ::std::mem::swap(&mut self.rdr1, &mut self.rdr2);
             ::std::mem::swap(&mut self.sel1, &mut self.sel2);
@@ -180,7 +180,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         Ok(())
     }
 
-    fn full_outer_join(mut self) -> Result<(), CliError> {
+    fn full_outer_join(mut self) -> CliResult<()> {
         let (pad1, pad2) = try!(self.get_padding());
         let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2.normal()));
 
@@ -224,7 +224,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         Ok(())
     }
 
-    fn cross_join(mut self) -> Result<(), CliError> {
+    fn cross_join(mut self) -> CliResult<()> {
         for row1 in self.rdr1.byte_records() {
             let row1 = try!(csv| row1);
 
@@ -245,8 +245,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         Ok(())
     }
 
-    fn get_padding(&mut self)
-        -> Result<(Vec<ByteString>, Vec<ByteString>), CliError> {
+    fn get_padding(&mut self) -> CliResult<(Vec<ByteString>, Vec<ByteString>)> {
         let len1 = try!(csv| self.rdr1.byte_headers()).len();
         let len2 = try!(csv| self.rdr2.byte_headers()).len();
         let (nada1, nada2) = (util::empty_field(), util::empty_field());
@@ -256,20 +255,22 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
 
 impl Args {
     fn new_io_state(&self)
-        -> Result<IoState<io::File, Box<io::Writer+'static>>, CliError> {
-        let rconf1 = CsvConfig::new(Some(self.arg_input1.clone()))
-                               .delimiter(self.flag_delimiter)
-                               .no_headers(self.flag_no_headers);
-        let rconf2 = CsvConfig::new(Some(self.arg_input2.clone()))
-                               .delimiter(self.flag_delimiter)
-                               .no_headers(self.flag_no_headers);
+        -> CliResult<IoState<io::File, Box<io::Writer+'static>>> {
+        let rconf1 = Config::new(Some(self.arg_input1.clone()))
+                            .delimiter(self.flag_delimiter)
+                            .no_headers(self.flag_no_headers)
+                            .select(self.arg_columns1.clone());
+        let rconf2 = Config::new(Some(self.arg_input2.clone()))
+                            .delimiter(self.flag_delimiter)
+                            .no_headers(self.flag_no_headers)
+                            .select(self.arg_columns2.clone());
 
         let mut rdr1 = try!(io| rconf1.reader_file());
         let mut rdr2 = try!(io| rconf2.reader_file());
         let (sel1, sel2) = try!(self.get_selections(&rconf1, &mut rdr1,
                                                     &rconf2, &mut rdr2));
         Ok(IoState {
-            wtr: try!(io| CsvConfig::new(self.flag_output.clone()).writer()),
+            wtr: try!(io| Config::new(self.flag_output.clone()).writer()),
             rdr1: rdr1,
             sel1: sel1,
             rdr2: rdr2,
@@ -280,15 +281,13 @@ impl Args {
 
     fn get_selections<R: Reader>
                      (&self,
-                      rconf1: &CsvConfig, rdr1: &mut csv::Reader<R>,
-                      rconf2: &CsvConfig, rdr2: &mut csv::Reader<R>)
-                     -> Result<(Selection, Selection), CliError> {
+                      rconf1: &Config, rdr1: &mut csv::Reader<R>,
+                      rconf2: &Config, rdr2: &mut csv::Reader<R>)
+                     -> CliResult<(Selection, Selection)> {
         let headers1 = try!(csv| rdr1.byte_headers());
         let headers2 = try!(csv| rdr2.byte_headers());
-        let select1 =
-            try!(str| self.arg_columns1.selection(rconf1, headers1[]));
-        let select2 =
-            try!(str| self.arg_columns2.selection(rconf2, headers2[]));
+        let select1 = try!(str| rconf1.selection(headers1[]));
+        let select2 = try!(str| rconf2.selection(headers2[]));
         if select1.len() != select2.len() {
             return Err(CliError::from_str(format!(
                 "Column selections must have the same number of columns, \
@@ -308,7 +307,7 @@ struct ValueIndex<R> {
 
 impl<R: Reader + Seek> ValueIndex<R> {
     fn new(mut rdr: csv::Reader<R>, nsel: &NormalSelection)
-          -> Result<ValueIndex<R>, CliError> {
+          -> CliResult<ValueIndex<R>> {
         let mut val_idx = HashMap::with_capacity(10000);
         // let mut val_idx = BTreeMap::new(); 
         let mut rows = io::MemWriter::with_capacity(8 * 10000);

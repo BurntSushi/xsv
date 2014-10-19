@@ -1,6 +1,8 @@
 use docopt;
 
-use types::{CliError, CsvConfig, Delimiter, SelectColumns};
+use CliResult;
+use config::{Config, Delimiter};
+use select::SelectColumns;
 use util;
 
 docopt!(Args, "
@@ -19,18 +21,19 @@ Common options:
 ", arg_input: Option<String>, flag_output: Option<String>,
    flag_delimiter: Delimiter, arg_selection: SelectColumns)
 
-pub fn main() -> Result<(), CliError> {
+pub fn main() -> CliResult<()> {
     let args: Args = try!(util::get_args());
 
-    let rconfig = CsvConfig::new(args.arg_input)
-                            .delimiter(args.flag_delimiter)
-                            .no_headers(args.flag_no_headers);
+    let rconfig = Config::new(args.arg_input)
+                         .delimiter(args.flag_delimiter)
+                         .no_headers(args.flag_no_headers)
+                         .select(args.arg_selection);
 
     let mut rdr = try!(io| rconfig.reader());
-    let mut wtr = try!(io| CsvConfig::new(args.flag_output).writer());
+    let mut wtr = try!(io| Config::new(args.flag_output).writer());
 
     let headers = try!(csv| rdr.byte_headers());
-    let sel = try!(str| args.arg_selection.selection(&rconfig, headers[]));
+    let sel = try!(str| rconfig.selection(headers[]));
 
     if !args.flag_no_headers {
         try!(csv| wtr.write_bytes(sel.select(headers[])));

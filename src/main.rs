@@ -17,9 +17,9 @@ use std::io;
 use std::os;
 
 macro_rules! try(
-    (csv| $e:expr) => (try!($e.map_err(::types::CliError::from_csv)));
-    (io| $e:expr) => (try!($e.map_err(::types::CliError::from_io)));
-    (str| $e:expr) => (try!($e.map_err(::types::CliError::from_str)));
+    (csv| $e:expr) => (try!($e.map_err(::CliError::from_csv)));
+    (io| $e:expr) => (try!($e.map_err(::CliError::from_io)));
+    (str| $e:expr) => (try!($e.map_err(::CliError::from_str)));
     ($e:expr) => (
         match $e {
             Ok(e) => e,
@@ -88,19 +88,19 @@ Please choose one of the following commands:",
         Some(cmd) => {
             match cmd.run() {
                 Ok(()) => os::set_exit_status(0),
-                Err(types::ErrFlag(err)) => err.exit(),
-                Err(types::ErrCsv(err)) => {
+                Err(ErrFlag(err)) => err.exit(),
+                Err(ErrCsv(err)) => {
                     os::set_exit_status(1);
                     let _ = writeln!(io::stderr(), "{}", err.to_string());
                 }
-                Err(types::ErrIo(io::IoError { kind: io::BrokenPipe, .. })) => {
+                Err(ErrIo(io::IoError { kind: io::BrokenPipe, .. })) => {
                     os::set_exit_status(0);
                 }
-                Err(types::ErrIo(err)) => {
+                Err(ErrIo(err)) => {
                     os::set_exit_status(1);
                     let _ = writeln!(io::stderr(), "{}", err.to_string());
                 }
-                Err(types::ErrOther(msg)) => {
+                Err(ErrOther(msg)) => {
                     os::set_exit_status(1);
                     let _ = writeln!(io::stderr(), "{}", msg);
                 }
@@ -129,7 +129,7 @@ enum Command {
 }
 
 impl Command {
-    fn run(self) -> Result<(), types::CliError> {
+    fn run(self) -> CliResult<()> {
         match self {
             Cat => cmd::cat::main(),
             Count => cmd::count::main(),
@@ -150,6 +150,35 @@ impl Command {
     }
 }
 
+pub type CliResult<T> = Result<T, CliError>;
+
+#[deriving(Show)]
+pub enum CliError {
+    ErrFlag(docopt::Error),
+    ErrCsv(csv::Error),
+    ErrIo(io::IoError),
+    ErrOther(String),
+}
+
+impl CliError {
+    pub fn from_flags(v: docopt::Error) -> CliError {
+        ErrFlag(v)
+    }
+    pub fn from_csv(v: csv::Error) -> CliError {
+        match v {
+            csv::ErrIo(v) => CliError::from_io(v),
+            v => ErrCsv(v),
+        }
+    }
+    pub fn from_io(v: io::IoError) -> CliError {
+        ErrIo(v)
+    }
+    pub fn from_str<T: ToString>(v: T) -> CliError {
+        ErrOther(v.to_string())
+    }
+}
+
 mod cmd;
-mod types;
+mod config;
+mod select;
 mod util;
