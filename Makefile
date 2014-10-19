@@ -1,5 +1,5 @@
 all:
-	echo Nothing to do...
+	@echo Nothing to do...
 
 ctags:
 	ctags --recurse --options=ctags.rust --languages=Rust

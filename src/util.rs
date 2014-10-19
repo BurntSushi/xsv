@@ -57,6 +57,14 @@ pub fn empty_field() -> csv::ByteString {
     csv::ByteString::from_bytes::<&[u8]>([])
 }
 
+pub fn num_of_chunks(nitems: u64, chunk_size: u64) -> u64 {
+    let mut n = nitems / chunk_size;
+    if nitems % chunk_size != 0 {
+        n += 1;
+    }
+    n
+}
+
 pub fn idx_path(csv_path: &Path) -> Path {
     let mut p = csv_path.container_into_owned_bytes();
     p.push_all(".idx".as_bytes());

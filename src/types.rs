@@ -235,6 +235,7 @@ impl CsvConfig {
     }
 }
 
+#[deriving(Clone)]
 pub struct SelectColumns(Vec<Selector>);
 
 // This parser is super basic at the moment. Field names cannot contain [-,].
@@ -321,6 +322,7 @@ impl <E, D: Decoder<E>> Decodable<D, E> for SelectColumns {
     }
 }
 
+#[deriving(Clone)]
 enum Selector {
     SelStart,
     SelEnd,
@@ -396,7 +398,7 @@ impl fmt::Show for Selector {
     }
 }
 
-#[deriving(Show)]
+#[deriving(Clone, Show)]
 pub struct Selection(Vec<uint>);
 
 impl Selection {
@@ -435,7 +437,7 @@ impl Collection for Selection {
     }
 }
 
-#[deriving(Show)]
+#[deriving(Clone, Show)]
 pub struct NormalSelection(Vec<bool>);
 
 impl NormalSelection {
@@ -454,5 +456,11 @@ impl NormalSelection {
     pub fn as_slice<'a>(&'a self) -> &'a [bool] {
         let &NormalSelection(ref inds) = self;
         inds.as_slice()
+    }
+}
+
+impl Collection for NormalSelection {
+    fn len(&self) -> uint {
+        self.as_slice().iter().filter(|b| **b).count()
     }
 }

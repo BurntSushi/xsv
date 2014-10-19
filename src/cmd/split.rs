@@ -8,7 +8,7 @@ use docopt;
 use types::{CliError, CsvConfig, Delimiter};
 use util;
 
-docopt!(Args, "
+docopt!(Args deriving Clone, "
 Splits the given CSV data into chunks.
 
 The files are written to the directory given with the name '{start}.csv',
@@ -71,10 +71,7 @@ impl Args {
                      -> Result<(), CliError> {
         use std::sync::TaskPool;
 
-        let mut nchunks = idx.count() / self.flag_size;
-        if idx.count() % self.flag_size != 0 {
-            nchunks += 1;
-        }
+        let nchunks = util::num_of_chunks(idx.count(), self.flag_size);
         let mut pool = TaskPool::new(self.flag_jobs, || { proc(i) i });
         for i in range(0, nchunks) {
             let args = self.clone();
@@ -113,22 +110,5 @@ impl Args {
         CsvConfig::new(self.arg_input.clone())
                   .delimiter(self.flag_delimiter)
                   .no_headers(self.flag_no_headers)
-    }
-}
-
-// This is gross. Any way around it?
-impl Clone for Args {
-    fn clone(&self) -> Args {
-        Args {
-            flag_size: self.flag_size,
-            cmd_split: self.cmd_split,
-            flag_output: self.flag_output.clone(),
-            flag_no_headers: self.flag_no_headers,
-            flag_delimiter: self.flag_delimiter.clone(),
-            flag_help: self.flag_help,
-            arg_input: self.arg_input.clone(),
-            arg_outdir: self.arg_outdir.clone(),
-            flag_jobs: self.flag_jobs,
-        }
     }
 }

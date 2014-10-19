@@ -1,4 +1,4 @@
-#![feature(macro_rules, phase)]
+#![feature(if_let, macro_rules, phase, slicing_syntax, tuple_indexing)]
 
 /*!
 These are some docs.
@@ -10,6 +10,7 @@ extern crate serialize;
 extern crate csv;
 extern crate docopt;
 #[phase(plugin)] extern crate docopt_macros;
+extern crate stats;
 extern crate tabwriter;
 
 use std::io;
@@ -44,6 +45,7 @@ macro_rules! command_list(
     fixlengths  Makes all records have same length
     flatten     Show one field per line
     fmt         Format CSV output (change field delimiter)
+    frequency   Show frequency tables
     headers     Show header names
     index       Create CSV index for faster access
     join        Join CSV files
@@ -114,6 +116,7 @@ enum Command {
     FixLengths,
     Flatten,
     Fmt,
+    Frequency,
     Headers,
     Index,
     Join,
@@ -121,6 +124,7 @@ enum Command {
     Select,
     Slice,
     Split,
+    Stats,
     Table,
 }
 
@@ -132,6 +136,7 @@ impl Command {
             FixLengths => cmd::fixlengths::main(),
             Flatten => cmd::flatten::main(),
             Fmt => cmd::fmt::main(),
+            Frequency => cmd::frequency::main(),
             Headers => cmd::headers::main(),
             Index => cmd::index::main(),
             Join => cmd::join::main(),
@@ -139,6 +144,7 @@ impl Command {
             Select => cmd::select::main(),
             Slice => cmd::slice::main(),
             Split => cmd::split::main(),
+            Stats => cmd::stats::main(),
             Table => cmd::table::main(),
         }
     }

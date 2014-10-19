@@ -78,7 +78,7 @@ pub fn main() -> Result<(), CliError> {
     for r in rdr.byte_records() {
         let mut r = try!(csv| r);
         if length >= r.len() {
-            for i in range(r.len(), length) {
+            for _ in range(r.len(), length) {
                 r.push(util::empty_field());
             }
         } else {
