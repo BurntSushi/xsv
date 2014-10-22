@@ -80,7 +80,7 @@ impl SelectColumns {
         }
         let idx: Option<uint> = FromStr::from_str(sel);
         Ok(match idx {
-            None => SelName(sel.to_string()),
+            None => SelIndexedName(sel.to_string(), 0),
             Some(idx) => SelIndex(idx),
         })
     }
@@ -116,7 +116,6 @@ enum OneSelector {
     SelStart,
     SelEnd,
     SelIndex(uint),
-    SelName(String),
     SelIndexedName(String, uint),
 }
 
@@ -157,18 +156,6 @@ impl OneSelector {
                 } else {
                     // Indices given by user are 1-offset. Convert them here!
                     Ok(i-1)
-                }
-            }
-            &SelName(ref s) => {
-                if !use_names {
-                    return Err(format!("Cannot use names ('{}') in selection \
-                                        with --no-headers set.", s));
-                }
-                match first_record.iter().position(|h| h.equiv(s)) {
-                    None => Err(format!("Selector name '{}' does not exist \
-                                         as a named header in the given CSV \
-                                         data.", s)),
-                    Some(i) => Ok(i),
                 }
             }
             &SelIndexedName(ref s, sidx) => {
@@ -213,7 +200,6 @@ impl fmt::Show for OneSelector {
             &SelStart => write!(f, "Start"),
             &SelEnd => write!(f, "End"),
             &SelIndex(idx) => write!(f, "Index({:u})", idx),
-            &SelName(ref s) => write!(f, "Name({})", s),
             &SelIndexedName(ref s, idx) => write!(f, "IndexedName({}[{}])",
                                                   s, idx),
         }
