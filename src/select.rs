@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt;
 use std::from_str::FromStr;
 use std::iter;
@@ -26,12 +27,26 @@ impl SelectColumns {
             let idxs = sel.indices(first_record, use_names);
             map.extend(try!(idxs).into_iter());
         }
+        if self.invert {
+            let set: HashSet<_> = map.into_iter().collect();
+            let mut map = vec![];
+            for i in range(0, first_record.len()) {
+                if !set.contains(&i) {
+                    map.push(i);
+                }
+            }
+            return Ok(Selection(map));
+        }
         Ok(Selection(map))
     }
 
-    fn parse(s: &str) -> Result<SelectColumns, String> {
+    fn parse(mut s: &str) -> Result<SelectColumns, String> {
         let mut scols = SelectColumns { selectors: vec![], invert: false };
         if s.is_empty() { return Ok(scols); }
+        if s.as_bytes()[0] == b'!' {
+            scols.invert = true;
+            s = s[1..];
+        }
         for sel in s.split(',') {
             scols.selectors.push(try!(SelectColumns::parse_selector(sel)));
         }
