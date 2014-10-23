@@ -14,12 +14,16 @@ pub struct SelectColumns {
     invert: bool,
 }
 
-// This parser is super basic at the moment. Field names cannot contain [-,].
 impl SelectColumns {
     pub fn selection(&self, first_record: &[csv::ByteString], use_names: bool)
                     -> Result<Selection, String> {
         if self.selectors.is_empty() {
-            return Ok(Selection(Vec::from_fn(first_record.len(), |i| i)));
+            return Ok(Selection(if self.invert {
+                // Inverting everything means we get nothing.
+                vec![]
+            } else {
+                Vec::from_fn(first_record.len(), |i| i)
+            }));
         }
 
         let mut map = vec![];
@@ -41,47 +45,16 @@ impl SelectColumns {
     }
 
     fn parse(mut s: &str) -> Result<SelectColumns, String> {
-        let mut scols = SelectColumns { selectors: vec![], invert: false };
-        if s.is_empty() { return Ok(scols); }
-        if s.as_bytes()[0] == b'!' {
-            scols.invert = true;
-            s = s[1..];
-        }
-        for sel in s.split(',') {
-            scols.selectors.push(try!(SelectColumns::parse_selector(sel)));
-        }
-        Ok(scols)
-    }
-
-    fn parse_selector(sel: &str) -> Result<Selector, String> {
-        if sel.contains_char('-') {
-            let pieces: Vec<&str> = sel.splitn(1, '-').collect();
-            let start = 
-                if pieces[0].is_empty() {
-                    SelStart
-                } else {
-                    try!(SelectColumns::parse_one_selector(pieces[0]))
-                };
-            let end =
-                if pieces[1].is_empty() {
-                    SelEnd
-                } else {
-                    try!(SelectColumns::parse_one_selector(pieces[1]))
-                };
-            Ok(SelRange(start, end))
-        } else {
-            SelectColumns::parse_one_selector(sel).map(SelOne)
-        }
-    }
-
-    fn parse_one_selector(sel: &str) -> Result<OneSelector, String> {
-        if sel.contains_char('-') {
-            return Err(format!("Illegal '-' in selector '{}'.", sel))
-        }
-        let idx: Option<uint> = FromStr::from_str(sel);
-        Ok(match idx {
-            None => SelIndexedName(sel.to_string(), 0),
-            Some(idx) => SelIndex(idx),
+        let invert =
+            if s.as_bytes()[0] == b'!' {
+                s = s[1..];
+                true
+            } else {
+                false
+            };
+        Ok(SelectColumns {
+            selectors: try!(SelectorParser::new(s).parse()),
+            invert: invert,
         })
     }
 }
@@ -102,6 +75,146 @@ impl <E, D: Decoder<E>> Decodable<D, E> for SelectColumns {
     fn decode(d: &mut D) -> Result<SelectColumns, E> {
         SelectColumns::parse(try!(d.read_str()).as_slice())
                       .map_err(|e| d.error(e.as_slice()))
+    }
+}
+
+struct SelectorParser {
+    chars: Vec<char>,
+    pos: uint,
+}
+
+impl SelectorParser {
+    fn new(s: &str) -> SelectorParser {
+        SelectorParser { chars: s.chars().collect(), pos: 0 }
+    }
+
+    fn parse(&mut self) -> Result<Vec<Selector>, String> {
+        let mut sels = vec![];
+        loop {
+            if self.cur().is_none() {
+                break;
+            }
+            let f1: OneSelector =
+                if self.cur() == Some('-') {
+                    self.bump();
+                    SelStart
+                } else {
+                    try!(self.parse_one())
+                };
+            let f2: Option<OneSelector> =
+                if self.cur() == Some('-') {
+                    self.bump();
+                    Some(if self.is_end_of_selector() {
+                        SelEnd
+                    } else {
+                        try!(self.parse_one())
+                    })
+                } else {
+                    None
+                };
+            if !self.is_end_of_selector() {
+                return Err(format!(
+                    "Expected end of field but got '{}' instead.",
+                    self.cur().unwrap()));
+            }
+            sels.push(match f2 {
+                Some(end) => SelRange(f1, end),
+                None => SelOne(f1),
+            });
+            self.bump();
+        }
+        Ok(sels)
+    }
+
+    fn parse_one(&mut self) -> Result<OneSelector, String> {
+        let name =
+            if self.cur() == Some('"') {
+                self.bump();
+                try!(self.parse_quoted_name())
+            } else {
+                try!(self.parse_name())
+            };
+        Ok(if self.cur() == Some('[') {
+            let idx = try!(self.parse_index());
+            SelIndexedName(name, idx)
+        } else {
+            match FromStr::from_str(name[]) {
+                None => SelIndexedName(name, 0),
+                Some(idx) => SelIndex(idx),
+            }
+        })
+    }
+
+    fn parse_name(&mut self) -> Result<String, String> {
+        let mut name = String::new();
+        loop {
+            if self.is_end_of_field() || self.cur() == Some('[') {
+                break;
+            }
+            name.push(self.cur().unwrap());
+            self.bump();
+        }
+        Ok(name)
+    }
+
+    fn parse_quoted_name(&mut self) -> Result<String, String> {
+        let mut name = String::new();
+        loop {
+            match self.cur() {
+                None => {
+                    return Err("Unclosed quote, missing closing \"."
+                               .to_string());
+                }
+                Some('"') => {
+                    self.bump();
+                    if self.cur() == Some('"') {
+                        self.bump();
+                        name.push('"'); name.push('"');
+                        continue;
+                    }
+                    break
+                }
+                Some(c) => { name.push(c); self.bump(); }
+            }
+        }
+        Ok(name)
+    }
+
+    fn parse_index(&mut self) -> Result<uint, String> {
+        assert_eq!(self.cur().unwrap(), '[');
+        self.bump();
+
+        let mut idx = String::new();
+        loop {
+            match self.cur() {
+                None => {
+                    return Err("Unclosed index bracket, missing closing ]."
+                               .to_string());
+                }
+                Some(']') => { self.bump(); break; }
+                Some(c) => { idx.push(c); self.bump(); }
+            }
+        }
+        match FromStr::from_str(idx[]) {
+            None => Err(format!("Could not convert '{}' to an integer.", idx)),
+            Some(idx) => Ok(idx),
+        }
+    }
+
+    fn cur(&self) -> Option<char> {
+        self.chars[].get(self.pos).map(|c| *c)
+    }
+
+    fn is_end_of_field(&self) -> bool {
+        self.cur().map(|c| c == ',' || c == '-').unwrap_or(true)
+    }
+
+    fn is_end_of_selector(&self) -> bool {
+        self.cur().map(|c| c == ',').unwrap_or(true)
+    }
+
+    fn bump(&mut self) {
+        if self.pos < self.chars.len() { self.pos += 1; }
     }
 }
 
