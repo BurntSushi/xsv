@@ -41,7 +41,7 @@ Common options:
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(argv));
     try!(io| mkdir_recursive(&Path::new(args.arg_outdir[]),
-                             io::AllPermissions));
+                             io::ALL_PERMISSIONS));
 
     match try!(args.rconfig().indexed()) {
         Some(idx) => args.parallel_split(idx),
