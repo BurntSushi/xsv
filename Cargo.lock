@@ -26,7 +26,7 @@ source = "git+git://github.com/BurntSushi/rust-stats#ef01f4b50c621f2a2c45abebf7e
 [[package]]
 name = "tabwriter"
 version = "0.1.0"
-source = "git+git://github.com/BurntSushi/tabwriter#84eb31ae0480f9480a586e8c6879a817a56839b8"
+source = "git+git://github.com/BurntSushi/tabwriter#ba284d243404abf268195f314316b8d2a5780b1a"
 dependencies = [
  "docopt 0.6.5 (git+git://github.com/docopt/docopt.rs)",
 ]
