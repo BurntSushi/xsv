@@ -53,6 +53,7 @@ macro_rules! command_list(
     select      Select columns from CSV
     slice       Slice records from CSV
     split       Split CSV data into many files
+    stats       Compute basic statistics
     table       Align CSV data into columns
 "
     )
