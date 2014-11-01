@@ -2,10 +2,10 @@
 name = "xsv"
 version = "0.2.0"
 dependencies = [
- "docopt_macros 0.6.5 (git+git://github.com/docopt/docopt.rs#1c9a63e0362848570f7c503f8891770ebf2d1eab)",
- "rust-csv 0.5.0 (git+git://github.com/BurntSushi/rust-csv#e8945bf8a1e8779727748c2e0d460f8d9aaf4b67)",
- "rust-stats 0.1.0 (git+git://github.com/BurntSushi/rust-stats#7185ec4db7b8503ae8a2077c848d535eadedfce4)",
- "tabwriter 0.1.0 (git+git://github.com/BurntSushi/tabwriter#b095fad854db46c2b9f4fc06691fd72eb0422f5a)",
+ "docopt_macros 0.6.5 (git+git://github.com/docopt/docopt.rs)",
+ "rust-csv 0.5.0 (git+git://github.com/BurntSushi/rust-csv)",
+ "rust-stats 0.1.0 (git+git://github.com/BurntSushi/rust-stats)",
+ "tabwriter 0.1.0 (git+git://github.com/BurntSushi/tabwriter)",
 ]
 
 [[package]]
@@ -18,7 +18,7 @@ name = "docopt_macros"
 version = "0.6.5"
 source = "git+git://github.com/docopt/docopt.rs#1c9a63e0362848570f7c503f8891770ebf2d1eab"
 dependencies = [
- "docopt 0.6.5 (git+git://github.com/docopt/docopt.rs#1c9a63e0362848570f7c503f8891770ebf2d1eab)",
+ "docopt 0.6.5 (git+git://github.com/docopt/docopt.rs)",
 ]
 
 [[package]]
@@ -36,6 +36,6 @@ name = "tabwriter"
 version = "0.1.0"
 source = "git+git://github.com/BurntSushi/tabwriter#b095fad854db46c2b9f4fc06691fd72eb0422f5a"
 dependencies = [
- "docopt_macros 0.6.5 (git+git://github.com/docopt/docopt.rs#1c9a63e0362848570f7c503f8891770ebf2d1eab)",
+ "docopt_macros 0.6.5 (git+git://github.com/docopt/docopt.rs)",
 ]
 
