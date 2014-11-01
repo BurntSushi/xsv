@@ -295,11 +295,22 @@ impl Stats {
             }
         }
         match self.median.as_mut().and_then(|v| v.median()) {
-            None => {}
+            None => {
+                if self.which.median {
+                    pieces.push(empty());
+                }
+            }
             Some(v) => { pieces.push(v.to_string()); }
         }
         match self.mode.as_mut() {
-            None => {}
+            None => {
+                if self.which.mode {
+                    pieces.push(empty());
+                }
+                if self.which.cardinality {
+                    pieces.push(empty());
+                }
+            }
             Some(ref mut v) => {
                 if self.which.mode {
                     let lossy: |ByteString| -> String =
