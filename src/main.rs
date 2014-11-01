@@ -52,6 +52,7 @@ macro_rules! command_list(
     search      Search CSV data with regexes
     select      Select columns from CSV
     slice       Slice records from CSV
+    sort        Sort CSV data
     split       Split CSV data into many files
     stats       Compute basic statistics
     table       Align CSV data into columns
@@ -124,6 +125,7 @@ enum Command {
     Search,
     Select,
     Slice,
+    Sort,
     Split,
     Stats,
     Table,
@@ -147,6 +149,7 @@ impl Command {
             Search => cmd::search::run(argv),
             Select => cmd::select::run(argv),
             Slice => cmd::slice::run(argv),
+            Sort => cmd::sort::run(argv),
             Split => cmd::split::run(argv),
             Stats => cmd::stats::run(argv),
             Table => cmd::table::run(argv),
