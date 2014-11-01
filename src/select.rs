@@ -15,6 +15,20 @@ pub struct SelectColumns {
 }
 
 impl SelectColumns {
+    fn parse(mut s: &str) -> Result<SelectColumns, String> {
+        let invert =
+            if !s.is_empty() && s.as_bytes()[0] == b'!' {
+                s = s[1..];
+                true
+            } else {
+                false
+            };
+        Ok(SelectColumns {
+            selectors: try!(SelectorParser::new(s).parse()),
+            invert: invert,
+        })
+    }
+
     pub fn selection(&self, first_record: &[csv::ByteString], use_names: bool)
                     -> Result<Selection, String> {
         if self.selectors.is_empty() {
@@ -42,20 +56,6 @@ impl SelectColumns {
             return Ok(Selection(map));
         }
         Ok(Selection(map))
-    }
-
-    fn parse(mut s: &str) -> Result<SelectColumns, String> {
-        let invert =
-            if s.as_bytes()[0] == b'!' {
-                s = s[1..];
-                true
-            } else {
-                false
-            };
-        Ok(SelectColumns {
-            selectors: try!(SelectorParser::new(s).parse()),
-            invert: invert,
-        })
     }
 }
 
