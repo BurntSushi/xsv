@@ -60,7 +60,7 @@ struct Args {
     flag_limit: uint,
     flag_asc: bool,
     flag_no_nulls: bool,
-    flag_jobs: u64,
+    flag_jobs: uint,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Delimiter,
@@ -131,17 +131,17 @@ impl Args {
         let mut rdr = try!(io| self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
 
-        let chunk_size = idx.count() / self.njobs();
-        let nchunks = util::num_of_chunks(idx.count(), chunk_size);
+        let chunk_size = idx.count() as uint / self.njobs();
+        let nchunks = util::num_of_chunks(idx.count() as uint, chunk_size);
 
-        let mut pool = TaskPool::new(self.njobs() as uint, || { proc(_) () });
+        let mut pool = TaskPool::new(self.njobs(), || { proc(_) () });
         let (send, recv) = channel();
         for i in range(0, nchunks) {
             let (send, args, sel) = (send.clone(), self.clone(), sel.clone());
             pool.execute(proc(_) {
                 let mut idx = args.rconfig().indexed().unwrap().unwrap();
-                idx.seek(i * chunk_size).unwrap();
-                let it = idx.csv().byte_records().take(chunk_size as uint);
+                idx.seek((i * chunk_size) as u64).unwrap();
+                let it = idx.csv().byte_records().take(chunk_size);
                 send.send(args.ftables(&sel, it).unwrap());
             });
         }
@@ -177,7 +177,7 @@ impl Args {
         Ok((sel.select(headers[]).map(ByteString::from_bytes).collect(), sel))
     }
 
-    fn njobs(&self) -> u64 {
-        if self.flag_jobs == 0 { os::num_cpus() as u64 } else { self.flag_jobs }
+    fn njobs(&self) -> uint {
+        if self.flag_jobs == 0 { os::num_cpus() } else { self.flag_jobs }
     }
 }

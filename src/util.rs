@@ -1,5 +1,4 @@
 use std::path::BytesContainer;
-use std::u64;
 
 use serialize::{Decoder, Decodable};
 
@@ -63,7 +62,7 @@ pub fn empty_field() -> csv::ByteString {
     csv::ByteString::from_bytes::<&[u8]>([])
 }
 
-pub fn num_of_chunks(nitems: u64, chunk_size: u64) -> u64 {
+pub fn num_of_chunks(nitems: uint, chunk_size: uint) -> uint {
     let mut n = nitems / chunk_size;
     if nitems % chunk_size != 0 {
         n += 1;
@@ -77,10 +76,10 @@ pub fn idx_path(csv_path: &Path) -> Path {
     Path::new(p)
 }
 
-type Idx = Option<u64>;
+type Idx = Option<uint>;
 
 pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
-            -> Result<(u64, u64), String> {
+            -> Result<(uint, uint), String> {
     let (s, e) =
         match index {
             Some(i) => {
@@ -97,7 +96,7 @@ pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
                     (&Some(_), &Some(_)) =>
                         return Err("--end and --len cannot be used
                                     at the same time.".to_string()),
-                    (&None, &None) => u64::MAX,
+                    (&None, &None) => ::std::uint::MAX,
                     (&Some(e), &None) => e,
                     (&None, &Some(l)) => s + l,
                 };

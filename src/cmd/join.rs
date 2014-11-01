@@ -137,7 +137,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                 None => continue,
                 Some(rows) => {
                     for &rowi in rows.iter() {
-                        try!(csv| validx.idx.seek(rowi));
+                        try!(csv| validx.idx.seek(rowi as u64));
 
                         let mut row1 = row.iter().map(|f| Ok(f.as_slice()));
                         let row2 = validx.idx.csv().by_ref();
@@ -175,7 +175,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                 }
                 Some(rows) => {
                     for &rowi in rows.iter() {
-                        try!(csv| validx.idx.seek(rowi));
+                        try!(csv| validx.idx.seek(rowi as u64));
                         let row1 = row.iter().map(|f| Ok(f.as_slice()));
                         let row2 = validx.idx.csv().by_ref();
                         if right {
@@ -195,7 +195,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2.normal()));
 
         // Keep track of which rows we've written from rdr2.
-        let mut rdr2_written = Vec::from_elem(validx.num_rows as uint, false);
+        let mut rdr2_written = Vec::from_elem(validx.num_rows, false);
         for row1 in self.rdr1.byte_records() {
             let row1 = try!(csv| row1);
 
@@ -210,9 +210,9 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                 }
                 Some(rows) => {
                     for &rowi in rows.iter() {
-                        rdr2_written[rowi as uint] = true;
+                        rdr2_written[rowi] = true;
 
-                        try!(csv| validx.idx.seek(rowi));
+                        try!(csv| validx.idx.seek(rowi as u64));
                         let row1 = row1.iter().map(|f| Ok(f[]));
                         let row2 = validx.idx.csv().by_ref();
                         try!(csv| self.wtr.write_results(row1.chain(row2)));
@@ -310,9 +310,9 @@ impl Args {
 
 struct ValueIndex<R> {
     // This maps tuples of values to corresponding rows.
-    values: HashMap<Vec<ByteString>, Vec<u64>>,
+    values: HashMap<Vec<ByteString>, Vec<uint>>,
     idx: Indexed<R, io::MemReader>,
-    num_rows: u64,
+    num_rows: uint,
 }
 
 impl<R: Reader + Seek> ValueIndex<R> {
@@ -321,7 +321,7 @@ impl<R: Reader + Seek> ValueIndex<R> {
         let mut val_idx = HashMap::with_capacity(10000);
         // let mut val_idx = BTreeMap::new(); 
         let mut rows = io::MemWriter::with_capacity(8 * 10000);
-        let mut rowi = 0u64;
+        let mut rowi = 0u;
         try!(io| rows.write_be_u64(0)); // offset to the first row, which
                                         // has already been read as a header.
         while !rdr.done() {
@@ -345,7 +345,8 @@ impl<R: Reader + Seek> ValueIndex<R> {
         }
         Ok(ValueIndex {
             values: val_idx,
-            idx: try!(csv| Indexed::new(rdr, io::MemReader::new(rows.unwrap()))),
+            idx: try!(csv|
+                Indexed::new(rdr, io::MemReader::new(rows.unwrap()))),
             num_rows: rowi,
         })
     }

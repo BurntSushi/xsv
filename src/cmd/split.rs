@@ -40,8 +40,8 @@ Common options:
 struct Args {
     arg_input: Option<String>,
     arg_outdir: String,
-    flag_size: u64,
-    flag_jobs: u64,
+    flag_size: uint,
+    flag_jobs: uint,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Delimiter,
@@ -66,9 +66,9 @@ impl Args {
 
         let mut wtr = try!(self.new_writer(headers[], 0));
         for (i, row) in rdr.byte_records().enumerate() {
-            if i > 0 && i as u64 % self.flag_size == 0 {
+            if i > 0 && i % self.flag_size == 0 {
                 try!(csv| wtr.flush());
-                wtr = try!(self.new_writer(headers[], i as u64));
+                wtr = try!(self.new_writer(headers[], i));
             }
             let row = try!(csv| row);
             try!(csv| wtr.write_bytes(row.into_iter()));
@@ -81,8 +81,8 @@ impl Args {
                      -> CliResult<()> {
         use std::sync::TaskPool;
 
-        let nchunks = util::num_of_chunks(idx.count(), self.flag_size);
-        let mut pool = TaskPool::new(self.flag_jobs as uint, || { proc(i) i });
+        let nchunks = util::num_of_chunks(idx.count() as uint, self.flag_size);
+        let mut pool = TaskPool::new(self.flag_jobs, || { proc(i) i });
         for i in range(0, nchunks) {
             let args = self.clone();
             pool.execute(proc(_) {
@@ -92,8 +92,8 @@ impl Args {
                 let mut wtr = args.new_writer(headers[], i * args.flag_size)
                                   .unwrap();
 
-                idx.seek(i * args.flag_size).unwrap();
-                let writenum = args.flag_size as uint;
+                idx.seek((i * args.flag_size) as u64).unwrap();
+                let writenum = args.flag_size;
                 for row in idx.csv().byte_records().take(writenum) {
                     let row = row.unwrap();
                     wtr.write_bytes(row.into_iter()).unwrap();
@@ -104,7 +104,7 @@ impl Args {
         Ok(())
     }
 
-    fn new_writer(&self, headers: &[csv::ByteString], start: u64)
+    fn new_writer(&self, headers: &[csv::ByteString], start: uint)
                  -> CliResult<csv::Writer<Box<io::Writer+'static>>> {
         let dir = Path::new(self.arg_outdir.clone());
         let path = dir.join(format!("{}.csv", start));

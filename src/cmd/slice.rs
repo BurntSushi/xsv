@@ -39,10 +39,10 @@ Common options:
 #[deriving(Decodable)]
 struct Args {
     arg_input: Option<String>,
-    flag_start: Option<u64>,
-    flag_end: Option<u64>,
-    flag_len: Option<u64>,
-    flag_index: Option<u64>,
+    flag_start: Option<uint>,
+    flag_end: Option<uint>,
+    flag_len: Option<uint>,
+    flag_index: Option<uint>,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Delimiter,
@@ -63,9 +63,7 @@ impl Args {
         try!(csv| self.rconfig().write_headers(&mut rdr, &mut wtr));
 
         let (start, end) = try!(str| self.range());
-        let mut it = rdr.byte_records()
-                        .skip(start as uint)
-                        .take((end - start) as uint);
+        let mut it = rdr.byte_records().skip(start).take(end - start);
         for r in it {
             try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
         }
@@ -78,8 +76,8 @@ impl Args {
         try!(csv| self.rconfig().write_headers(idx.csv(), &mut wtr));
 
         let (start, end) = try!(str| self.range());
-        try!(csv| idx.seek(start));
-        let mut it = idx.csv().byte_records().take((end - start) as uint);
+        try!(csv| idx.seek(start as u64));
+        let mut it = idx.csv().byte_records().take(end - start);
         for r in it {
             try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
         }
@@ -87,7 +85,7 @@ impl Args {
         Ok(())
     }
 
-    fn range(&self) -> Result<(u64, u64), String> {
+    fn range(&self) -> Result<(uint, uint), String> {
         util::range(self.flag_start, self.flag_end,
                     self.flag_len, self.flag_index)
     }
