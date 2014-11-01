@@ -135,7 +135,7 @@ impl Args {
             pool.execute(proc(_) { tx.send(stat.to_record()); });
         }
         for (i, rx) in results.into_iter().enumerate() {
-            *records.get_mut(i) = rx.recv();
+            records[i] = rx.recv();
         }
         records
     }
@@ -147,7 +147,7 @@ impl Args {
         for row in it {
             let row = try!(csv| row);
             for (i, field) in sel.select(row[]).enumerate() {
-                stats.get_mut(i).add(field);
+                stats[i].add(field);
             }
         }
         Ok(stats)

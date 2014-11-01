@@ -200,7 +200,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                 }
                 Some(rows) => {
                     for &rowi in rows.iter() {
-                        *rdr2_written.get_mut(rowi as uint) = true;
+                        rdr2_written[rowi as uint] = true;
 
                         try!(csv| validx.idx.seek(rowi));
                         let row1 = row1.iter().map(|f| Ok(f[]));

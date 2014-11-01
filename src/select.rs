@@ -340,7 +340,7 @@ impl Selection {
         normal.dedup();
         let mut set = Vec::from_elem(normal[normal.len()-1] + 1, false);
         for i in normal.into_iter() {
-            *set.get_mut(i) = true;
+            set[i] = true;
         }
         NormalSelection(set)
     }

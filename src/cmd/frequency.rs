@@ -149,10 +149,10 @@ impl Args {
             let row = try!(csv| row);
             for (i, field) in nsel.select(row.into_iter()).enumerate() {
                 if !field.is_empty() {
-                    tabs.get_mut(i).add(field);
+                    tabs[i].add(field);
                 } else {
                     if !self.flag_no_nulls {
-                        tabs.get_mut(i).add(null.clone());
+                        tabs[i].add(null.clone());
                     }
                 }
             }
