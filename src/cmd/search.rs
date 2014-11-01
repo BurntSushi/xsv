@@ -1,13 +1,11 @@
 use regex::Regex;
 
-use docopt;
-
 use {CliError, CliResult};
 use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
 
-docopt!(Args, "
+static USAGE: &'static str = "
 Filters CSV data by whether the given regex matches a row.
 
 The regex is applied to each field in each row, and if any field matches,
@@ -36,12 +34,20 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Option<String>, flag_output: Option<String>,
-   arg_regex: String,
-   flag_delimiter: Delimiter, flag_select: SelectColumns)
+";
+
+#[deriving(Decodable)]
+struct Args {
+    arg_input: Option<String>,
+    arg_regex: String,
+    flag_select: SelectColumns,
+    flag_output: Option<String>,
+    flag_no_headers: bool,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
     let pattern = try!(Regex::new(args.arg_regex[])
                              .map_err(CliError::from_str));
     let rconfig = Config::new(args.arg_input)

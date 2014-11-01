@@ -1,13 +1,12 @@
 use std::io::{BufferedWriter, File};
 
 use csv;
-use docopt;
 
 use CliResult;
 use config::Delimiter;
 use util;
 
-docopt!(Args, "
+static USAGE: &'static str = "
 Creates an index of the given CSV data, which can make other
 operations like slicing much faster.
 
@@ -25,10 +24,17 @@ Common options:
     -h, --help             Display this message
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", flag_delimiter: Delimiter, flag_output: Option<String>)
+";
+
+#[deriving(Decodable)]
+struct Args {
+    arg_input: String,
+    flag_output: Option<String>,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
 
     let pcsv = Path::new(args.arg_input.as_slice());
     let pidx = match args.flag_output {

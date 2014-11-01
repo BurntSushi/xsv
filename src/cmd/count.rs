@@ -1,10 +1,8 @@
-use docopt;
-
 use CliResult;
 use config::{Delimiter, Config};
 use util;
 
-docopt!(Args, "
+static USAGE: &'static str = "
 Prints a count of the number of records in the CSV data.
 
 Usage:
@@ -17,10 +15,17 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Option<String>, flag_delimiter: Delimiter)
+";
+
+#[deriving(Decodable)]
+struct Args {
+    arg_input: Option<String>,
+    flag_no_headers: bool,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
     let conf = Config::new(args.arg_input)
                       .delimiter(args.flag_delimiter)
                       .no_headers(args.flag_no_headers);

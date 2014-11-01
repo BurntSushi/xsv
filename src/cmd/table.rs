@@ -1,11 +1,10 @@
-use docopt;
 use tabwriter::TabWriter;
 
 use CliResult;
 use config::{Config, Delimiter};
 use util;
 
-docopt!(Args, "
+static USAGE: &'static str = "
 Outputs CSV data as a table with columns in alignment.
 
 This will not work well if the CSV data contains large fields.
@@ -31,11 +30,20 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Option<String>, flag_output: Option<String>,
-   flag_delimiter: Delimiter, flag_width: uint, flag_pad: uint)
+";
+
+#[deriving(Decodable)]
+struct Args {
+    arg_input: Option<String>,
+    flag_width: uint,
+    flag_pad: uint,
+    flag_output: Option<String>,
+    flag_no_headers: bool,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
 
     let rconfig = Config::new(args.arg_input)
                          .delimiter(args.flag_delimiter)

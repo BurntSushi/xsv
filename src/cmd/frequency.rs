@@ -3,7 +3,6 @@ use std::os;
 
 use csv::{mod, ByteString};
 use csv::index::Indexed;
-use docopt;
 use stats::{Frequencies, merge_all};
 
 use CliResult;
@@ -11,7 +10,7 @@ use config::{Config, Delimiter};
 use select::{SelectColumns, Selection};
 use util;
 
-docopt!(Args deriving Clone, "
+static USAGE: &'static str = "
 Compute a frequency table on CSV data.
 
 The frequency table is formatted as CSV data:
@@ -52,12 +51,23 @@ Common options:
                            in statistics.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Option<String>, flag_output: Option<String>,
-   flag_delimiter: Delimiter, flag_jobs: u64,
-   flag_select: SelectColumns, flag_limit: uint)
+";
+
+#[deriving(Clone, Decodable)]
+struct Args {
+    arg_input: Option<String>,
+    flag_select: SelectColumns,
+    flag_limit: uint,
+    flag_asc: bool,
+    flag_no_nulls: bool,
+    flag_jobs: u64,
+    flag_output: Option<String>,
+    flag_no_headers: bool,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
 
     let mut wtr = try!(io| Config::new(args.flag_output.clone()).writer());
     let (headers, tables) = try!(match try!(args.rconfig().indexed()) {

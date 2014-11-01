@@ -1,13 +1,12 @@
 use std::io::File;
 
 use csv::index::Indexed;
-use docopt;
 
 use CliResult;
 use config::{Config, Delimiter};
 use util;
 
-docopt!(Args, "
+static USAGE: &'static str = "
 Returns the rows in the range specified (starting at 0, half-open interval).
 The range does not include headers.
 
@@ -35,12 +34,22 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Option<String>, flag_output: Option<String>,
-   flag_delimiter: Delimiter, flag_index: Option<u64>,
-   flag_start: Option<u64>, flag_end: Option<u64>, flag_len: Option<u64>)
+";
+
+#[deriving(Decodable)]
+struct Args {
+    arg_input: Option<String>,
+    flag_start: Option<u64>,
+    flag_end: Option<u64>,
+    flag_len: Option<u64>,
+    flag_index: Option<u64>,
+    flag_output: Option<String>,
+    flag_no_headers: bool,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
     match try!(args.rconfig().indexed()) {
         None => args.no_index(),
         Some(idxed) => args.with_index(idxed),

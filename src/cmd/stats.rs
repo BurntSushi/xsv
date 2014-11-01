@@ -7,7 +7,6 @@ use std::str;
 
 use csv::{mod, ByteString};
 use csv::index::Indexed;
-use docopt;
 use stats::{Commute, OnlineStats, MinMax, Unsorted, merge_all};
 
 use CliResult;
@@ -15,7 +14,7 @@ use config::{Config, Delimiter};
 use select::{SelectColumns, Selection};
 use util;
 
-docopt!(Args deriving Clone, "
+static USAGE: &'static str = "
 Computes basic statistics on CSV data.
 
 Basic statistics includes mean, median, mode, standard deviation, max and
@@ -58,12 +57,24 @@ Common options:
                            in statistics.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Option<String>, flag_output: Option<String>,
-   flag_delimiter: Delimiter, flag_jobs: u64,
-   flag_select: SelectColumns)
+";
+
+#[deriving(Clone, Decodable)]
+struct Args {
+    arg_input: Option<String>,
+    flag_select: SelectColumns,
+    flag_mode: bool,
+    flag_cardinality: bool,
+    flag_median: bool,
+    flag_nulls: bool,
+    flag_jobs: u64,
+    flag_output: Option<String>,
+    flag_no_headers: bool,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
 
     let mut wtr = try!(io| Config::new(args.flag_output.clone()).writer());
     let (headers, stats) = try!(match try!(args.rconfig().indexed()) {

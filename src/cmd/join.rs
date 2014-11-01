@@ -1,18 +1,16 @@
 use std::collections::hashmap::{HashMap, Vacant, Occupied};
-// use collections::btree::{BTreeMap, Vacant, Occupied}; 
 use std::fmt;
 use std::io;
 
 use csv::{mod, ByteString};
 use csv::index::Indexed;
-use docopt;
 
 use {CliError, CliResult};
 use config::{Config, Delimiter};
 use select::{SelectColumns, Selection, NormalSelection};
 use util;
 
-docopt!(Args, "
+static USAGE: &'static str = "
 Joins two sets of CSV data on the specified columns.
 
 The default join operation is an 'inner' join. This corresponds to the
@@ -57,13 +55,25 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_columns1: SelectColumns, arg_input1: String,
-   arg_columns2: SelectColumns, arg_input2: String,
-   flag_output: Option<String>, flag_delimiter: Delimiter,
-   flag_left: bool, flag_right: bool, flag_full: bool, flag_cross: bool)
+";
+
+#[deriving(Decodable)]
+struct Args {
+    arg_columns1: SelectColumns,
+    arg_input1: String,
+    arg_columns2: SelectColumns,
+    arg_input2: String,
+    flag_left: bool,
+    flag_right: bool,
+    flag_full: bool,
+    flag_cross: bool,
+    flag_output: Option<String>,
+    flag_no_headers: bool,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
     let mut state = try!(args.new_io_state());
     match (
         args.flag_left,

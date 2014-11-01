@@ -3,13 +3,12 @@ use std::io::fs::mkdir_recursive;
 
 use csv;
 use csv::index::Indexed;
-use docopt;
 
 use CliResult;
 use config::{Config, Delimiter};
 use util;
 
-docopt!(Args deriving Clone, "
+static USAGE: &'static str = "
 Splits the given CSV data into chunks.
 
 The files are written to the directory given with the name '{start}.csv',
@@ -35,11 +34,21 @@ Common options:
                            concatenating columns.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Option<String>, arg_outdir: String, flag_output: Option<String>,
-   flag_delimiter: Delimiter, flag_size: u64, flag_jobs: uint)
+";
+
+#[deriving(Clone, Decodable)]
+struct Args {
+    arg_input: Option<String>,
+    arg_outdir: String,
+    flag_size: u64,
+    flag_jobs: u64,
+    flag_output: Option<String>,
+    flag_no_headers: bool,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
     try!(io| mkdir_recursive(&Path::new(args.arg_outdir[]),
                              io::ALL_PERMISSIONS));
 
@@ -73,7 +82,7 @@ impl Args {
         use std::sync::TaskPool;
 
         let nchunks = util::num_of_chunks(idx.count(), self.flag_size);
-        let mut pool = TaskPool::new(self.flag_jobs, || { proc(i) i });
+        let mut pool = TaskPool::new(self.flag_jobs as uint, || { proc(i) i });
         for i in range(0, nchunks) {
             let args = self.clone();
             pool.execute(proc(_) {

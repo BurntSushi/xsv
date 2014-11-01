@@ -4,8 +4,8 @@ version = "0.2.0"
 authors = ["Andrew Gallant <jamslam@gmail.com>"]
 
 [dependencies.rust-csv]
-# path = "/home/andrew/data/projects/rust-csv" 
 git = "git://github.com/BurntSushi/rust-csv"
+# path = "/home/andrew/data/projects/rust-csv" 
 
 [dependencies.rust-stats]
 # path = "/home/andrew/data/projects/rust-stats" 
@@ -14,11 +14,6 @@ git = "git://github.com/BurntSushi/rust-stats"
 [dependencies.tabwriter]
 git = "git://github.com/BurntSushi/tabwriter"
 
-# [dependencies.docopt] 
+[dependencies.docopt] 
+git = "git://github.com/docopt/docopt.rs" 
 # path = "/home/andrew/data/projects/docopt.rs" 
-# git = "git://github.com/docopt/docopt.rs" 
-
-[dependencies.docopt_macros]
-# path = "/home/andrew/data/projects/docopt.rs/docopt_macros" 
-git = "git://github.com/docopt/docopt.rs"
-

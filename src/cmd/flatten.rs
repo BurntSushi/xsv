@@ -1,13 +1,12 @@
 use std::io;
 
-use docopt;
 use tabwriter::TabWriter;
 
 use CliResult;
 use config::{Config, Delimiter};
 use util;
 
-docopt!(Args, "
+static USAGE: &'static str = "
 Prints flattened records such that fields are labeled separated
 by a new line. This mode is particularly useful for viewing one
 record at a time.
@@ -33,11 +32,19 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Option<String>, flag_delimiter: Delimiter,
-   flag_condensed: Option<uint>)
+";
+
+#[deriving(Decodable)]
+struct Args {
+    arg_input: Option<String>,
+    flag_condensed: Option<uint>,
+    flag_separator: String,
+    flag_no_headers: bool,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
     let rconfig = Config::new(args.arg_input.clone())
                          .delimiter(args.flag_delimiter)
                          .no_headers(args.flag_no_headers);

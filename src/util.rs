@@ -1,6 +1,8 @@
 use std::path::BytesContainer;
 use std::u64;
 
+use serialize::{Decoder, Decodable};
+
 use csv;
 use docopt;
 
@@ -27,9 +29,11 @@ pub fn arg_config() -> docopt::Config {
     }
 }
 
-pub fn get_args<D: docopt::FlagParser>(argv: &[&str]) -> CliResult<D> {
-    docopt::FlagParser::parse_args(arg_config(), argv)
-                       .map_err(CliError::from_flags)
+pub fn get_args<T>(usage: &str, argv: &[&str]) -> CliResult<T>
+       where T: Decodable<docopt::Decoder, docopt::Error> {
+    docopt::docopt_args(arg_config(), argv, usage)
+           .and_then(|vmap| vmap.decode())
+           .map_err(CliError::from_flags)
 }
 
 pub fn many_configs(inps: &[String], delim: Delimiter, no_headers: bool)

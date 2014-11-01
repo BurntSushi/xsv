@@ -1,11 +1,10 @@
 use csv;
-use docopt;
 
 use {CliError, CliResult};
 use config::{Config, Delimiter};
 use util;
 
-docopt!(Args, "
+static USAGE: &'static str = "
 Concatenates CSV data by column or by row.
 
 When concatenating by column, the columns will be written in the same order
@@ -37,11 +36,21 @@ Common options:
                            concatenating columns.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Vec<String>, flag_output: Option<String>,
-   flag_delimiter: Delimiter)
+";
+
+#[deriving(Decodable)]
+struct Args {
+    cmd_rows: bool,
+    cmd_columns: bool,
+    arg_input: Vec<String>,
+    flag_pad: bool,
+    flag_output: Option<String>,
+    flag_no_headers: bool,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
     let mut wtr = try!(io| Config::new(args.flag_output).writer());
     let configs = try!(str| util::many_configs(args.arg_input.as_slice(),
                                                args.flag_delimiter,

@@ -1,12 +1,10 @@
 use std::cmp;
 
-use docopt;
-
 use {CliError, CliResult};
 use config::{Config, Delimiter};
 use util;
 
-docopt!(Args, "
+static USAGE: &'static str = "
 Transforms CSV data so that all records have the same length. The length is the
 length of the longest record in the data. Records with smaller lengths are
 padded with empty fields.
@@ -31,12 +29,18 @@ Common options:
     -o, --output <file>    Write output to <file> instead of stdout.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Option<String>, flag_output: Option<String>,
-   flag_delimiter: Delimiter, flag_out_delimiter: Delimiter,
-   flag_length: Option<uint>)
+";
+
+#[deriving(Decodable)]
+struct Args {
+    arg_input: Option<String>,
+    flag_length: Option<uint>,
+    flag_output: Option<String>,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
     let config = Config::new(args.arg_input)
                         .delimiter(args.flag_delimiter)
                         .no_headers(true)

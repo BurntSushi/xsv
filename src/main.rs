@@ -9,7 +9,6 @@ extern crate serialize;
 
 extern crate csv;
 extern crate docopt;
-#[phase(plugin)] extern crate docopt_macros;
 extern crate stats;
 extern crate tabwriter;
 
@@ -60,7 +59,7 @@ macro_rules! command_list(
     )
 )
 
-docopt!(Args, concat!("
+static USAGE: &'static str = concat!("
 Usage:
     xsv <command> [<args>...]
     xsv [options]
@@ -69,14 +68,19 @@ Options:
     -h, --help    Display this message
     --version     Print version info and exit
 
-Commands:", command_list!()),
-arg_command: Option<Command>)
+Commands:", command_list!());
+
+#[deriving(Decodable)]
+struct Args {
+    arg_command: Option<Command>,
+}
 
 fn main() {
     let mut conf = util::arg_config();
     conf.options_first = true;
-    let args: Args = docopt::FlagParser::parse_conf(conf)
-                                        .unwrap_or_else(|e| e.exit());
+    let args: Args = docopt::docopt_conf(conf, USAGE)
+                            .and_then(|vmap| vmap.decode())
+                            .unwrap_or_else(|e| e.exit());
     match args.arg_command {
         None => {
             os::set_exit_status(0);

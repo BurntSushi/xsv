@@ -1,13 +1,12 @@
 use std::io;
 
-use docopt;
 use tabwriter::TabWriter;
 
 use CliResult;
 use config::Delimiter;
 use util;
 
-docopt!(Args, "
+static USAGE: &'static str = "
 Prints the fields of the first row in the CSV data.
 
 These names can be used in commands like 'select' to refer to columns in the
@@ -27,10 +26,18 @@ Common options:
     -h, --help             Display this message
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
-", arg_input: Vec<String>, flag_delimiter: Delimiter)
+";
+
+#[deriving(Decodable)]
+struct Args {
+    arg_input: Vec<String>,
+    flag_just_names: bool,
+    flag_intersect: bool,
+    flag_delimiter: Delimiter,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(argv));
+    let args: Args = try!(util::get_args(USAGE, argv));
     let configs = try!(str| util::many_configs(args.arg_input.as_slice(),
                                                args.flag_delimiter, true));
 
