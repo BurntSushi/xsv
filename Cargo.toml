@@ -15,5 +15,5 @@ git = "git://github.com/BurntSushi/rust-stats"
 git = "git://github.com/BurntSushi/tabwriter"
 
 [dependencies.docopt] 
-git = "git://github.com/docopt/docopt.rs" 
-# path = "/home/andrew/data/projects/docopt.rs" 
+git = "git://github.com/docopt/docopt.rs"
+# path = "/home/andrew/data/projects/rust/docopt.rs"

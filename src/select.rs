@@ -344,16 +344,14 @@ impl Selection {
         }
         NormalSelection(set)
     }
+
+    pub fn len(&self) -> uint {
+        self.0.len()
+    }
 }
 
 impl AsSlice<uint> for Selection {
     fn as_slice(&self) -> &[uint] { self.0[] }
-}
-
-impl Collection for Selection {
-    fn len(&self) -> uint {
-        self.0.len()
-    }
 }
 
 #[deriving(Clone, Show)]
@@ -371,14 +369,12 @@ impl NormalSelection {
             if i < set.len() && set[i] { Some(Some(v)) } else { Some(None) }
         }).filter_map(|v| v)
     }
+
+    pub fn len(&self) -> uint {
+        self.as_slice().iter().filter(|b| **b).count()
+    }
 }
 
 impl AsSlice<bool> for NormalSelection {
     fn as_slice(&self) -> &[bool] { self.0[] }
-}
-
-impl Collection for NormalSelection {
-    fn len(&self) -> uint {
-        self.as_slice().iter().filter(|b| **b).count()
-    }
 }

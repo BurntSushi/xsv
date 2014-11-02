@@ -2,32 +2,32 @@
 name = "xsv"
 version = "0.2.0"
 dependencies = [
- "docopt 0.6.5 (git+git://github.com/docopt/docopt.rs)",
- "rust-csv 0.5.0 (git+git://github.com/BurntSushi/rust-csv)",
- "rust-stats 0.1.0 (git+git://github.com/BurntSushi/rust-stats)",
- "tabwriter 0.1.0 (git+git://github.com/BurntSushi/tabwriter)",
+ "docopt 0.6.8 (git+git://github.com/docopt/docopt.rs)",
+ "rust-csv 0.5.1 (git+git://github.com/BurntSushi/rust-csv)",
+ "rust-stats 0.1.1 (git+git://github.com/BurntSushi/rust-stats)",
+ "tabwriter 0.1.1 (git+git://github.com/BurntSushi/tabwriter)",
 ]
 
 [[package]]
 name = "docopt"
-version = "0.6.5"
-source = "git+git://github.com/docopt/docopt.rs#d8fe958fd2b47c2200e55020d72541dfc2a0b61f"
+version = "0.6.8"
+source = "git+git://github.com/docopt/docopt.rs#14b2d769eeecb6c6d4568055012e817175ac0d35"
 
 [[package]]
 name = "rust-csv"
-version = "0.5.0"
-source = "git+git://github.com/BurntSushi/rust-csv#af6e80bd40a299393fb07fded3fb013f634c6caf"
+version = "0.5.1"
+source = "git+git://github.com/BurntSushi/rust-csv#35b5a1e866daf164603c45da09267725f2c5251a"
 
 [[package]]
 name = "rust-stats"
-version = "0.1.0"
-source = "git+git://github.com/BurntSushi/rust-stats#ef01f4b50c621f2a2c45abebf7e1e4662195a14c"
+version = "0.1.1"
+source = "git+git://github.com/BurntSushi/rust-stats#3345e88ab815bdd669e9481d9d12a893c2fc4281"
 
 [[package]]
 name = "tabwriter"
-version = "0.1.0"
-source = "git+git://github.com/BurntSushi/tabwriter#fe0edaaeb8352c3e693161d6d33d10b0176bfe9c"
+version = "0.1.1"
+source = "git+git://github.com/BurntSushi/tabwriter#0d2f79b8be19d035d6f70cf04eefb3fb62cb96e7"
 dependencies = [
- "docopt 0.6.5 (git+git://github.com/docopt/docopt.rs)",
+ "docopt 0.6.8 (git+git://github.com/docopt/docopt.rs)",
 ]
 

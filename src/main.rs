@@ -140,7 +140,7 @@ enum Command {
 impl Command {
     fn run(self) -> CliResult<()> {
         let argv = os::args();
-        let argv: Vec<_> = argv.iter().skip(1).map(|s| s[]).collect();
+        let argv: Vec<_> = argv.iter().map(|s| s[]).collect();
         let argv = argv[];
         match self {
             Cat => cmd::cat::run(argv),
