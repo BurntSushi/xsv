@@ -15,6 +15,8 @@ extern crate tabwriter;
 use std::io;
 use std::os;
 
+use docopt::Docopt;
+
 macro_rules! try(
     (csv| $e:expr) => (try!($e.map_err(::CliError::from_csv)));
     (io| $e:expr) => (try!($e.map_err(::CliError::from_io)));
@@ -76,10 +78,10 @@ struct Args {
 }
 
 fn main() {
-    let mut conf = util::arg_config();
-    conf.options_first = true;
-    let args: Args = docopt::docopt_conf(conf, USAGE)
-                            .and_then(|vmap| vmap.decode())
+    let args: Args = Docopt::new(USAGE)
+                            .and_then(|d| d.options_first(true)
+                                           .version(Some(util::version()))
+                                           .decode())
                             .unwrap_or_else(|e| e.exit());
     match args.arg_command {
         None => {

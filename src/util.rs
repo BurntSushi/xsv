@@ -1,14 +1,12 @@
 use std::path::BytesContainer;
 
-use serialize::{Decoder, Decodable};
-
 use csv;
-use docopt;
+use docopt::Docopt;
 
 use {CliError, CliResult};
 use config::{Config, Delimiter};
 
-fn version() -> String {
+pub fn version() -> String {
     let (maj, min, pat) = (
         option_env!("CARGO_PKG_VERSION_MAJOR"),
         option_env!("CARGO_PKG_VERSION_MINOR"),
@@ -20,18 +18,12 @@ fn version() -> String {
     }
 }
 
-pub fn arg_config() -> docopt::Config {
-    docopt::Config {
-        options_first: false,
-        help: true,
-        version: Some(version()),
-    }
-}
-
 pub fn get_args<T>(usage: &str, argv: &[&str]) -> CliResult<T>
-       where T: Decodable<docopt::Decoder, docopt::Error> {
-    docopt::docopt_args(arg_config(), argv, usage)
-           .and_then(|vmap| vmap.decode())
+       where T: ::serialize::Decodable<::docopt::Decoder, ::docopt::Error> {
+    Docopt::new(usage)
+           .and_then(|d| d.argv(argv.iter().map(|&x| x))
+                          .version(Some(version()))
+                          .decode())
            .map_err(CliError::from_flags)
 }
 
