@@ -39,13 +39,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let wconfig = Config::new(args.flag_output)
                          .delimiter(args.flag_out_delimiter)
                          .crlf(args.flag_crlf);
-    let mut rdr = try!(io| rconfig.reader());
-    let mut wtr = try!(io| wconfig.writer());
+    let mut rdr = try!(rconfig.reader());
+    let mut wtr = try!(wconfig.writer());
 
-    try!(csv| wconfig.write_headers(&mut rdr, &mut wtr));
+    try!(wconfig.write_headers(&mut rdr, &mut wtr));
     for r in rdr.byte_records() {
-        try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
+        try!(wtr.write_bytes(try!(r).into_iter()));
     }
-    try!(csv| wtr.flush());
+    try!(wtr.flush());
     Ok(())
 }

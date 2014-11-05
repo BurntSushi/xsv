@@ -38,14 +38,14 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
-    let configs = try!(str| util::many_configs(args.arg_input.as_slice(),
+    let configs = try!(util::many_configs(args.arg_input.as_slice(),
                                                args.flag_delimiter, true));
 
     let num_inputs = configs.len();
     let mut headers = vec!();
     for conf in configs.into_iter() {
-        let mut rdr = try!(io| conf.reader());
-        for header in try!(csv| rdr.byte_headers()).into_iter() {
+        let mut rdr = try!(conf.reader());
+        for header in try!(rdr.byte_headers()).into_iter() {
             if !args.flag_intersect || !headers.contains(&header) {
                 headers.push(header);
             }
@@ -60,12 +60,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         };
     for (i, header) in headers.into_iter().enumerate() {
         if num_inputs == 1 && !args.flag_just_names {
-            try!(io| wtr.write_str((i + 1).to_string().as_slice()));
-            try!(io| wtr.write_u8(b'\t'));
+            try!(wtr.write_str((i + 1).to_string().as_slice()));
+            try!(wtr.write_u8(b'\t'));
         }
-        try!(io| wtr.write(header.as_slice()));
-        try!(io| wtr.write_u8(b'\n'));
+        try!(wtr.write(header.as_slice()));
+        try!(wtr.write_u8(b'\n'));
     }
-    try!(io| wtr.flush());
+    try!(wtr.flush());
     Ok(())
 }

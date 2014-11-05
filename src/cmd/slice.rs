@@ -58,30 +58,30 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
 impl Args {
     fn no_index(&self) -> CliResult<()> {
-        let mut rdr = try!(io| self.rconfig().reader());
-        let mut wtr = try!(io| self.wconfig().writer());
-        try!(csv| self.rconfig().write_headers(&mut rdr, &mut wtr));
+        let mut rdr = try!(self.rconfig().reader());
+        let mut wtr = try!(self.wconfig().writer());
+        try!(self.rconfig().write_headers(&mut rdr, &mut wtr));
 
-        let (start, end) = try!(str| self.range());
+        let (start, end) = try!(self.range());
         let mut it = rdr.byte_records().skip(start).take(end - start);
         for r in it {
-            try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
+            try!(wtr.write_bytes(try!(r).into_iter()));
         }
-        try!(csv| wtr.flush());
+        try!(wtr.flush());
         Ok(())
     }
 
     fn with_index(&self, mut idx: Indexed<File, File>) -> CliResult<()> {
-        let mut wtr = try!(io| self.wconfig().writer());
-        try!(csv| self.rconfig().write_headers(idx.csv(), &mut wtr));
+        let mut wtr = try!(self.wconfig().writer());
+        try!(self.rconfig().write_headers(idx.csv(), &mut wtr));
 
-        let (start, end) = try!(str| self.range());
-        try!(csv| idx.seek(start as u64));
+        let (start, end) = try!(self.range());
+        try!(idx.seek(start as u64));
         let mut it = idx.csv().byte_records().take(end - start);
         for r in it {
-            try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
+            try!(wtr.write_bytes(try!(r).into_iter()));
         }
-        try!(csv| wtr.flush());
+        try!(wtr.flush());
         Ok(())
     }
 

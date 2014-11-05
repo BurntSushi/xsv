@@ -41,9 +41,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         None => util::idx_path(&pcsv),
         Some(p) => Path::new(p),
     };
-    let rdr = csv::Reader::from_reader(try!(io| File::open(&pcsv)))
+    let rdr = csv::Reader::from_reader(try!(File::open(&pcsv)))
                           .delimiter(args.flag_delimiter.to_byte());
-    let idx = BufferedWriter::new(try!(io| File::create(&pidx)));
-    let _ = try!(csv| csv::index::create(rdr, idx));
+    let idx = BufferedWriter::new(try!(File::create(&pidx)));
+    let _ = try!(csv::index::create(rdr, idx));
     Ok(())
 }

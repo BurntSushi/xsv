@@ -186,9 +186,9 @@ impl Config {
 
     pub fn indexed(&self)
         -> CliResult<Option<Indexed<io::File, io::File>>> {
-        match try!(io| self.index_files()) {
+        match try!(self.index_files()) {
             None => Ok(None),
-            Some((r, i)) => Ok(Some(try!(csv| Indexed::new(r, i)))),
+            Some((r, i)) => Ok(Some(try!(Indexed::new(r, i)))),
         }
     }
 

@@ -12,22 +12,11 @@ extern crate docopt;
 extern crate stats;
 extern crate tabwriter;
 
+use std::error::FromError;
 use std::io;
 use std::os;
 
 use docopt::Docopt;
-
-macro_rules! try(
-    (csv| $e:expr) => (try!($e.map_err(::CliError::from_csv)));
-    (io| $e:expr) => (try!($e.map_err(::CliError::from_io)));
-    (str| $e:expr) => (try!($e.map_err(::CliError::from_str)));
-    ($e:expr) => (
-        match $e {
-            Ok(e) => e,
-            Err(e) => return Err(e)
-        }
-    );
-)
 
 macro_rules! werr(
     ($($arg:tt)*) => (
@@ -173,21 +162,36 @@ pub enum CliError {
     ErrOther(String),
 }
 
-impl CliError {
-    pub fn from_flags(v: docopt::Error) -> CliError {
-        ErrFlag(v)
+impl FromError<docopt::Error> for CliError {
+    fn from_error(err: docopt::Error) -> CliError {
+        ErrFlag(err)
     }
-    pub fn from_csv(v: csv::Error) -> CliError {
-        match v {
-            csv::ErrIo(v) => CliError::from_io(v),
+}
+
+impl FromError<csv::Error> for CliError {
+    fn from_error(err: csv::Error) -> CliError {
+        match err {
+            csv::ErrIo(v) => FromError::from_error(v),
             v => ErrCsv(v),
         }
     }
-    pub fn from_io(v: io::IoError) -> CliError {
-        ErrIo(v)
+}
+
+impl FromError<io::IoError> for CliError {
+    fn from_error(err: io::IoError) -> CliError {
+        ErrIo(err)
     }
-    pub fn from_str<T: ToString>(v: T) -> CliError {
-        ErrOther(v.to_string())
+}
+
+impl<T: StrAllocating> FromError<T> for CliError {
+    fn from_error(err: T) -> CliError {
+        ErrOther(err.into_string())
+    }
+}
+
+impl FromError<regex::Error> for CliError {
+    fn from_error(err: regex::Error) -> CliError {
+        ErrOther(err.to_string())
     }
 }
 

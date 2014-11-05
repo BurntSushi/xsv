@@ -1,6 +1,6 @@
 use regex::Regex;
 
-use {CliError, CliResult};
+use CliResult;
 use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
@@ -48,26 +48,25 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
-    let pattern = try!(Regex::new(args.arg_regex[])
-                             .map_err(CliError::from_str));
+    let pattern = try!(Regex::new(args.arg_regex[]));
     let rconfig = Config::new(args.arg_input)
                          .delimiter(args.flag_delimiter)
                          .no_headers(args.flag_no_headers)
                          .select(args.flag_select);
 
-    let mut rdr = try!(io| rconfig.reader());
-    let mut wtr = try!(io| Config::new(args.flag_output).writer());
+    let mut rdr = try!(rconfig.reader());
+    let mut wtr = try!(Config::new(args.flag_output).writer());
 
-    let headers = try!(csv| rdr.byte_headers());
-    let nsel = try!(str| rconfig.normal_selection(headers[]));
+    let headers = try!(rdr.byte_headers());
+    let nsel = try!(rconfig.normal_selection(headers[]));
 
-    try!(csv| rconfig.write_headers(&mut rdr, &mut wtr));
+    try!(rconfig.write_headers(&mut rdr, &mut wtr));
     for row in rdr.records() {
-        let row = try!(csv| row);
+        let row = try!(row);
         if nsel.select(row.iter()).any(|f| pattern.is_match(f[])) {
-            try!(csv| wtr.write(row.iter().map(|f| f[])));
+            try!(wtr.write(row.iter().map(|f| f[])));
         }
     }
-    try!(csv| wtr.flush());
+    try!(wtr.flush());
     Ok(())
 }

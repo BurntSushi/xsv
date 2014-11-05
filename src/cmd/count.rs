@@ -34,13 +34,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         match try!(conf.indexed()) {
             Some(idx) => idx.count(),
             None => {
-                let mut rdr = try!(io| conf.reader());
+                let mut rdr = try!(conf.reader());
                 let mut count = 0u64;
                 while !rdr.done() {
                     loop {
                         match rdr.next_field() {
                             None => break,
-                            Some(r) => { try!(csv| r); }
+                            Some(r) => { try!(r); }
                         }
                     }
                     count += 1;

@@ -76,7 +76,7 @@ struct Args {
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
 
-    let mut wtr = try!(io| Config::new(args.flag_output.clone()).writer());
+    let mut wtr = try!(Config::new(args.flag_output.clone()).writer());
     let (headers, stats) = try!(match try!(args.rconfig().indexed()) {
         None => args.sequential_stats(),
         Some(idx) => {
@@ -89,11 +89,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     });
     let stats = args.stats_to_records(stats);
 
-    try!(csv| wtr.write(args.stat_headers().into_iter()));
+    try!(wtr.write(args.stat_headers().into_iter()));
     for (header, stat) in headers.iter().zip(stats.into_iter()) {
         let row = vec![header[]].into_iter()
                                 .chain(stat.iter().map(|f| f.as_bytes()));
-        try!(csv| wtr.write_bytes(row));
+        try!(wtr.write_bytes(row));
     }
     Ok(())
 }
@@ -101,7 +101,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 impl Args {
     fn sequential_stats(&self)
                        -> CliResult<(Vec<ByteString>, Vec<Stats>)> {
-        let mut rdr = try!(io| self.rconfig().reader());
+        let mut rdr = try!(self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
         let stats = try!(self.compute(&sel, rdr.byte_records()));
         Ok((headers, stats))
@@ -112,7 +112,7 @@ impl Args {
         use std::comm::channel;
         use std::sync::TaskPool;
 
-        let mut rdr = try!(io| self.rconfig().reader());
+        let mut rdr = try!(self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
 
         let chunk_size = idx.count() as uint / self.njobs();
@@ -156,7 +156,7 @@ impl Args {
               -> CliResult<Vec<Stats>> {
         let mut stats = self.new_stats(sel.len());
         for row in it {
-            let row = try!(csv| row);
+            let row = try!(row);
             for (i, field) in sel.select(row[]).enumerate() {
                 stats[i].add(field);
             }
@@ -166,8 +166,8 @@ impl Args {
 
     fn sel_headers<R: Reader>(&self, rdr: &mut csv::Reader<R>)
                   -> CliResult<(Vec<ByteString>, Selection)> {
-        let headers = try!(csv| rdr.byte_headers());
-        let sel = try!(str| self.rconfig().selection(headers[]));
+        let headers = try!(rdr.byte_headers());
+        let sel = try!(self.rconfig().selection(headers[]));
         Ok((sel.select(headers[]).map(ByteString::from_bytes).collect(), sel))
     }
 

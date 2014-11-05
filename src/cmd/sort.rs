@@ -44,13 +44,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                          .no_headers(args.flag_no_headers)
                          .select(args.flag_select);
 
-    let mut rdr = try!(io| rconfig.reader());
-    let mut wtr = try!(io| Config::new(args.flag_output).writer());
+    let mut rdr = try!(rconfig.reader());
+    let mut wtr = try!(Config::new(args.flag_output).writer());
 
-    let headers = try!(csv| rdr.byte_headers());
-    let sel = try!(str| rconfig.selection(headers[]));
+    let headers = try!(rdr.byte_headers());
+    let sel = try!(rconfig.selection(headers[]));
 
-    let mut all = try!(csv| rdr.byte_records().collect::<Result<Vec<_>, _>>());
+    let mut all = try!(rdr.byte_records().collect::<Result<Vec<_>, _>>());
     all.sort_by(|r1, r2| {
         // TODO: Numeric sorting. The tricky part, IMO, is figuring out
         // how to expose it in the CLI interface. Not sure of the right
@@ -58,10 +58,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         iter::order::cmp(sel.select(r1[]), sel.select(r2[]))
     });
 
-    try!(csv| rconfig.write_headers(&mut rdr, &mut wtr));
+    try!(rconfig.write_headers(&mut rdr, &mut wtr));
     for r in all.into_iter() {
-        try!(csv| wtr.write_bytes(r.into_iter()));
+        try!(wtr.write_bytes(r.into_iter()));
     }
-    try!(csv| wtr.flush());
+    try!(wtr.flush());
     Ok(())
 }

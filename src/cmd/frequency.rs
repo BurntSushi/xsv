@@ -69,7 +69,7 @@ struct Args {
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
 
-    let mut wtr = try!(io| Config::new(args.flag_output.clone()).writer());
+    let mut wtr = try!(Config::new(args.flag_output.clone()).writer());
     let (headers, tables) = try!(match try!(args.rconfig().indexed()) {
         None => args.sequential_ftables(),
         Some(idx) => {
@@ -81,12 +81,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
     });
 
-    try!(csv| wtr.write(vec!["field", "value", "count"].into_iter()));
+    try!(wtr.write(vec!["field", "value", "count"].into_iter()));
     for (header, ftab) in headers.iter().zip(tables.into_iter()) {
         for (value, count) in args.counts(&ftab).into_iter() {
             let count = count.to_string();
             let row = vec![header[], value[], count.as_bytes()];
-            try!(csv| wtr.write_bytes(row.into_iter()));
+            try!(wtr.write_bytes(row.into_iter()));
         }
     }
     Ok(())
@@ -118,7 +118,7 @@ impl Args {
     }
 
     fn sequential_ftables(&self) -> CliResult<(Headers, FTables)> {
-        let mut rdr = try!(io| self.rconfig().reader());
+        let mut rdr = try!(self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
         Ok((headers, try!(self.ftables(&sel, rdr.byte_records()))))
     }
@@ -128,7 +128,7 @@ impl Args {
         use std::comm::channel;
         use std::sync::TaskPool;
 
-        let mut rdr = try!(io| self.rconfig().reader());
+        let mut rdr = try!(self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
 
         let chunk_size = idx.count() as uint / self.njobs();
@@ -156,7 +156,7 @@ impl Args {
         let nsel = sel.normal();
         let mut tabs = Vec::from_fn(nsel.len(), |_| Frequencies::new());
         for row in it {
-            let row = try!(csv| row);
+            let row = try!(row);
             for (i, field) in nsel.select(row.into_iter()).enumerate() {
                 if !field.is_empty() {
                     tabs[i].add(field);
@@ -172,8 +172,8 @@ impl Args {
 
     fn sel_headers<R: Reader>(&self, rdr: &mut csv::Reader<R>)
                   -> CliResult<(ByteRow, Selection)> {
-        let headers = try!(csv| rdr.byte_headers());
-        let sel = try!(str| self.rconfig().selection(headers[]));
+        let headers = try!(rdr.byte_headers());
+        let sel = try!(self.rconfig().selection(headers[]));
         Ok((sel.select(headers[]).map(ByteString::from_bytes).collect(), sel))
     }
 

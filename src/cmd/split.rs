@@ -49,8 +49,7 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
-    try!(io| mkdir_recursive(&Path::new(args.arg_outdir[]),
-                             io::ALL_PERMISSIONS));
+    try!(mkdir_recursive(&Path::new(args.arg_outdir[]), io::ALL_PERMISSIONS));
 
     match try!(args.rconfig().indexed()) {
         Some(idx) => args.parallel_split(idx),
@@ -61,19 +60,19 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 impl Args {
     fn sequential_split(&self) -> CliResult<()> {
         let rconfig = self.rconfig();
-        let mut rdr = try!(io| rconfig.reader());
-        let headers = try!(csv| rdr.byte_headers());
+        let mut rdr = try!(rconfig.reader());
+        let headers = try!(rdr.byte_headers());
 
         let mut wtr = try!(self.new_writer(headers[], 0));
         for (i, row) in rdr.byte_records().enumerate() {
             if i > 0 && i % self.flag_size == 0 {
-                try!(csv| wtr.flush());
+                try!(wtr.flush());
                 wtr = try!(self.new_writer(headers[], i));
             }
-            let row = try!(csv| row);
-            try!(csv| wtr.write_bytes(row.into_iter()));
+            let row = try!(row);
+            try!(wtr.write_bytes(row.into_iter()));
         }
-        try!(csv| wtr.flush());
+        try!(wtr.flush());
         Ok(())
     }
 
@@ -109,9 +108,9 @@ impl Args {
         let dir = Path::new(self.arg_outdir.clone());
         let path = dir.join(format!("{}.csv", start));
         let spath = Some(path.display().to_string());
-        let mut wtr = try!(io| Config::new(spath).writer());
+        let mut wtr = try!(Config::new(spath).writer());
         if !self.flag_no_headers {
-            try!(csv| wtr.write_bytes(headers.iter().map(|f| f[])));
+            try!(wtr.write_bytes(headers.iter().map(|f| f[])));
         }
         Ok(wtr)
     }

@@ -50,16 +50,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                          .no_headers(args.flag_no_headers);
     let wconfig = Config::new(args.flag_output).delimiter(Delimiter(b'\t'));
 
-    let tw = TabWriter::new(try!(io| wconfig.io_writer()))
+    let tw = TabWriter::new(try!(wconfig.io_writer()))
                        .minwidth(args.flag_width)
                        .padding(args.flag_pad);
     let mut wtr = wconfig.from_writer(tw);
-    let mut rdr = try!(io| rconfig.reader());
+    let mut rdr = try!(rconfig.reader());
 
-    try!(csv| rconfig.write_headers(&mut rdr, &mut wtr));
+    try!(rconfig.write_headers(&mut rdr, &mut wtr));
     for r in rdr.byte_records() {
-        try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
+        try!(wtr.write_bytes(try!(r).into_iter()));
     }
-    try!(csv| wtr.flush());
+    try!(wtr.flush());
     Ok(())
 }

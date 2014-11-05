@@ -1,6 +1,8 @@
+use std::error::FromError;
+
 use csv;
 
-use {CliError, CliResult};
+use CliResult;
 use config::{Config, Delimiter};
 use util;
 
@@ -51,32 +53,31 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
-    let mut wtr = try!(io| Config::new(args.flag_output).writer());
-    let configs = try!(str| util::many_configs(args.arg_input.as_slice(),
+    let mut wtr = try!(Config::new(args.flag_output).writer());
+    let configs = try!(util::many_configs(args.arg_input.as_slice(),
                                                args.flag_delimiter,
                                                args.flag_no_headers));
 
     if args.cmd_rows {
         for (i, conf) in configs.into_iter().enumerate() {
-            let mut rdr = try!(io| conf.reader());
+            let mut rdr = try!(conf.reader());
             if i == 0 {
-                try!(csv| conf.write_headers(&mut rdr, &mut wtr));
+                try!(conf.write_headers(&mut rdr, &mut wtr));
             }
             for r in rdr.byte_records() {
-                try!(csv| wtr.write_bytes(try!(csv| r).into_iter()));
+                try!(wtr.write_bytes(try!(r).into_iter()));
             }
         }
     } else if args.cmd_columns {
-        let mut rdrs = try!(io| configs.into_iter()
-                                      .map(|conf| conf.no_headers(true)
-                                                      .reader())
-                                      .collect::<Result<Vec<_>, _>>());
+        let mut rdrs = try!(configs.into_iter()
+                                   .map(|conf| conf.no_headers(true).reader())
+                                   .collect::<Result<Vec<_>, _>>());
 
         // Find the lengths of each record. If a length varies, then an error
         // will occur so we can rely on the first length being the correct one.
         let mut lengths = vec!();
         for rdr in rdrs.iter_mut() {
-            lengths.push(try!(csv| rdr.byte_headers()).len());
+            lengths.push(try!(rdr.byte_headers()).len());
         }
 
         let mut iters: Vec<_> = rdrs.iter_mut()
@@ -98,7 +99,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                             break 'OUTER;
                         }
                     }
-                    Some(Err(err)) => return Err(CliError::from_csv(err)),
+                    Some(Err(err)) => return Err(FromError::from_error(err)),
                     Some(Ok(next)) => records.push(next),
                 }
             }
@@ -107,11 +108,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 break 'OUTER;
             }
             let row = records.as_slice().concat_vec();
-            try!(csv| wtr.write_bytes(row.into_iter()));
+            try!(wtr.write_bytes(row.into_iter()));
         }
     } else {
         unreachable!();
     }
-    try!(csv| wtr.flush());
+    try!(wtr.flush());
     Ok(())
 }

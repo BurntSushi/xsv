@@ -1,11 +1,12 @@
 use std::collections::hash_map::{HashMap, Vacant, Occupied};
+use std::error::FromError;
 use std::fmt;
 use std::io;
 
 use csv::{mod, ByteString};
 use csv::index::Indexed;
 
-use {CliError, CliResult};
+use CliResult;
 use config::{Config, Delimiter};
 use select::{SelectColumns, Selection, NormalSelection};
 use util;
@@ -101,7 +102,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             try!(state.write_headers());
             state.inner_join()
         }
-        _ => Err(CliError::from_str("Please pick exactly one join operation."))
+        _ => Err(FromError::from_error(
+            "Please pick exactly one join operation."))
     }
 }
 
@@ -116,12 +118,12 @@ struct IoState<R, W> {
 
 impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
     fn write_headers(&mut self) -> CliResult<()> {
-        let headers1 = try!(csv| self.rdr1.byte_headers());
-        let headers2 = try!(csv| self.rdr2.byte_headers());
+        let headers1 = try!(self.rdr1.byte_headers());
+        let headers2 = try!(self.rdr2.byte_headers());
         if !self.no_headers {
             let mut headers = headers1.clone();
             headers.push_all(headers2[]);
-            try!(csv| self.wtr.write_bytes(headers.into_iter()));
+            try!(self.wtr.write_bytes(headers.into_iter()));
         }
         Ok(())
     }
@@ -129,7 +131,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
     fn inner_join(mut self) -> CliResult<()> {
         let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2.normal()));
         for row in self.rdr1.byte_records() {
-            let row = try!(csv| row);
+            let row = try!(row);
             let val = self.sel1.select(row[])
                                .map(ByteString::from_bytes)
                                .collect::<Vec<ByteString>>();
@@ -137,12 +139,12 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                 None => continue,
                 Some(rows) => {
                     for &rowi in rows.iter() {
-                        try!(csv| validx.idx.seek(rowi as u64));
+                        try!(validx.idx.seek(rowi as u64));
 
                         let mut row1 = row.iter().map(|f| Ok(f.as_slice()));
                         let row2 = validx.idx.csv().by_ref();
                         let combined = row1.by_ref().chain(row2);
-                        try!(csv| self.wtr.write_results(combined));
+                        try!(self.wtr.write_results(combined));
                     }
                 }
             }
@@ -159,7 +161,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         let (_, pad2) = try!(self.get_padding());
         let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2.normal()));
         for row in self.rdr1.byte_records() {
-            let row = try!(csv| row);
+            let row = try!(row);
             let val = self.sel1.select(row[])
                                .map(ByteString::from_bytes)
                                .collect::<Vec<ByteString>>();
@@ -168,20 +170,20 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                     let row1 = row.iter().map(|f| Ok(f[]));
                     let row2 = pad2.iter().map(|f| Ok(f[]));
                     if right {
-                        try!(csv| self.wtr.write_results(row2.chain(row1)));
+                        try!(self.wtr.write_results(row2.chain(row1)));
                     } else {
-                        try!(csv| self.wtr.write_results(row1.chain(row2)));
+                        try!(self.wtr.write_results(row1.chain(row2)));
                     }
                 }
                 Some(rows) => {
                     for &rowi in rows.iter() {
-                        try!(csv| validx.idx.seek(rowi as u64));
+                        try!(validx.idx.seek(rowi as u64));
                         let row1 = row.iter().map(|f| Ok(f.as_slice()));
                         let row2 = validx.idx.csv().by_ref();
                         if right {
-                            try!(csv| self.wtr.write_results(row2.chain(row1)));
+                            try!(self.wtr.write_results(row2.chain(row1)));
                         } else {
-                            try!(csv| self.wtr.write_results(row1.chain(row2)));
+                            try!(self.wtr.write_results(row1.chain(row2)));
                         }
                     }
                 }
@@ -197,7 +199,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         // Keep track of which rows we've written from rdr2.
         let mut rdr2_written = Vec::from_elem(validx.num_rows, false);
         for row1 in self.rdr1.byte_records() {
-            let row1 = try!(csv| row1);
+            let row1 = try!(row1);
 
             let val = self.sel1.select(row1[])
                                .map(ByteString::from_bytes)
@@ -206,16 +208,16 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                 None => {
                     let row1 = row1.iter().map(|f| Ok(f[]));
                     let row2 = pad2.iter().map(|f| Ok(f[]));
-                    try!(csv| self.wtr.write_results(row1.chain(row2)));
+                    try!(self.wtr.write_results(row1.chain(row2)));
                 }
                 Some(rows) => {
                     for &rowi in rows.iter() {
                         rdr2_written[rowi] = true;
 
-                        try!(csv| validx.idx.seek(rowi as u64));
+                        try!(validx.idx.seek(rowi as u64));
                         let row1 = row1.iter().map(|f| Ok(f[]));
                         let row2 = validx.idx.csv().by_ref();
-                        try!(csv| self.wtr.write_results(row1.chain(row2)));
+                        try!(self.wtr.write_results(row1.chain(row2)));
                     }
                 }
             }
@@ -225,10 +227,10 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         // from rdr1.
         for (i, &written) in rdr2_written.iter().enumerate() {
             if !written {
-                try!(csv| validx.idx.seek(i as u64));
+                try!(validx.idx.seek(i as u64));
                 let row1 = pad1.iter().map(|f| Ok(f[]));
                 let row2 = validx.idx.csv().by_ref();
-                try!(csv| self.wtr.write_results(row1.chain(row2)));
+                try!(self.wtr.write_results(row1.chain(row2)));
             }
         }
         Ok(())
@@ -236,28 +238,28 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
 
     fn cross_join(mut self) -> CliResult<()> {
         for row1 in self.rdr1.byte_records() {
-            let row1 = try!(csv| row1);
+            let row1 = try!(row1);
 
-            try!(csv| self.rdr2.seek(0, io::SeekSet));
+            try!(self.rdr2.seek(0, io::SeekSet));
             let mut first = true;
             while !self.rdr2.done() {
                 // Skip the header row. The raw byte interface won't
                 // do it for us.
                 if first {
-                    for f in self.rdr2 { try!(csv| f); }
+                    for f in self.rdr2 { try!(f); }
                     first = false;
                 }
                 let row1 = row1.iter().map(|f| Ok(f[]));
                 let row2 = self.rdr2.by_ref();
-                try!(csv| self.wtr.write_results(row1.chain(row2)));
+                try!(self.wtr.write_results(row1.chain(row2)));
             }
         }
         Ok(())
     }
 
     fn get_padding(&mut self) -> CliResult<(Vec<ByteString>, Vec<ByteString>)> {
-        let len1 = try!(csv| self.rdr1.byte_headers()).len();
-        let len2 = try!(csv| self.rdr2.byte_headers()).len();
+        let len1 = try!(self.rdr1.byte_headers()).len();
+        let len2 = try!(self.rdr2.byte_headers()).len();
         let (nada1, nada2) = (util::empty_field(), util::empty_field());
         Ok((Vec::from_elem(len1, nada1), Vec::from_elem(len2, nada2)))
     }
@@ -275,12 +277,12 @@ impl Args {
                             .no_headers(self.flag_no_headers)
                             .select(self.arg_columns2.clone());
 
-        let mut rdr1 = try!(io| rconf1.reader_file());
-        let mut rdr2 = try!(io| rconf2.reader_file());
+        let mut rdr1 = try!(rconf1.reader_file());
+        let mut rdr2 = try!(rconf2.reader_file());
         let (sel1, sel2) = try!(self.get_selections(&rconf1, &mut rdr1,
                                                     &rconf2, &mut rdr2));
         Ok(IoState {
-            wtr: try!(io| Config::new(self.flag_output.clone()).writer()),
+            wtr: try!(Config::new(self.flag_output.clone()).writer()),
             rdr1: rdr1,
             sel1: sel1,
             rdr2: rdr2,
@@ -294,12 +296,12 @@ impl Args {
                       rconf1: &Config, rdr1: &mut csv::Reader<R>,
                       rconf2: &Config, rdr2: &mut csv::Reader<R>)
                      -> CliResult<(Selection, Selection)> {
-        let headers1 = try!(csv| rdr1.byte_headers());
-        let headers2 = try!(csv| rdr2.byte_headers());
-        let select1 = try!(str| rconf1.selection(headers1[]));
-        let select2 = try!(str| rconf2.selection(headers2[]));
+        let headers1 = try!(rdr1.byte_headers());
+        let headers2 = try!(rdr2.byte_headers());
+        let select1 = try!(rconf1.selection(headers1[]));
+        let select2 = try!(rconf2.selection(headers2[]));
         if select1.len() != select2.len() {
-            return Err(CliError::from_str(format!(
+            return Err(FromError::from_error(format!(
                 "Column selections must have the same number of columns, \
                  but found column selections with {} and {} columns.",
                 select1.len(), select2.len())));
@@ -322,17 +324,17 @@ impl<R: Reader + Seek> ValueIndex<R> {
         // let mut val_idx = BTreeMap::new(); 
         let mut rows = io::MemWriter::with_capacity(8 * 10000);
         let mut rowi = 0u;
-        try!(io| rows.write_be_u64(0)); // offset to the first row, which
+        try!(rows.write_be_u64(0)); // offset to the first row, which
                                         // has already been read as a header.
         while !rdr.done() {
             // This is a bit hokey. We're doing this manually instead of
             // calling `csv::index::create` so we can create both indexes
             // in one pass.
-            try!(io| rows.write_be_u64(rdr.byte_offset()));
+            try!(rows.write_be_u64(rdr.byte_offset()));
 
-            let fields = try!(csv| nsel.select(unsafe { rdr.byte_fields() })
-                                       .map(|v| v.map(ByteString::from_bytes))
-                                       .collect::<Result<Vec<_>, _>>());
+            let fields = try!(nsel.select(unsafe { rdr.byte_fields() })
+                                  .map(|v| v.map(ByteString::from_bytes))
+                                  .collect::<Result<Vec<_>, _>>());
             match val_idx.entry(fields) {
                 Vacant(v) => {
                     let mut rows = Vec::with_capacity(4);
@@ -345,8 +347,7 @@ impl<R: Reader + Seek> ValueIndex<R> {
         }
         Ok(ValueIndex {
             values: val_idx,
-            idx: try!(csv|
-                Indexed::new(rdr, io::MemReader::new(rows.unwrap()))),
+            idx: try!(Indexed::new(rdr, io::MemReader::new(rows.unwrap()))),
             num_rows: rowi,
         })
     }

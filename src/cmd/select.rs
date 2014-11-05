@@ -35,20 +35,20 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                          .no_headers(args.flag_no_headers)
                          .select(args.arg_selection);
 
-    let mut rdr = try!(io| rconfig.reader());
-    let mut wtr = try!(io| Config::new(args.flag_output).writer());
+    let mut rdr = try!(rconfig.reader());
+    let mut wtr = try!(Config::new(args.flag_output).writer());
 
-    let headers = try!(csv| rdr.byte_headers());
-    let sel = try!(str| rconfig.selection(headers[]));
+    let headers = try!(rdr.byte_headers());
+    let sel = try!(rconfig.selection(headers[]));
 
     if !args.flag_no_headers {
-        try!(csv| wtr.write_bytes(sel.select(headers[])));
+        try!(wtr.write_bytes(sel.select(headers[])));
     }
     for r in rdr.byte_records() {
         // TODO: I don't think we can do any better here. Since selection
         // operates on indices, some kind of allocation is probably required.
-        try!(csv| wtr.write_bytes(sel.select(try!(csv| r)[])))
+        try!(wtr.write_bytes(sel.select(try!(r)[])))
     }
-    try!(csv| wtr.flush());
+    try!(wtr.flush());
     Ok(())
 }

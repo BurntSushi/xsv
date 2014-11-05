@@ -1,9 +1,10 @@
+use std::error::FromError;
 use std::path::BytesContainer;
 
 use csv;
 use docopt::Docopt;
 
-use {CliError, CliResult};
+use CliResult;
 use config::{Config, Delimiter};
 
 pub fn version() -> String {
@@ -24,7 +25,7 @@ pub fn get_args<T>(usage: &str, argv: &[&str]) -> CliResult<T>
            .and_then(|d| d.argv(argv.iter().map(|&x| x))
                           .version(Some(version()))
                           .decode())
-           .map_err(CliError::from_flags)
+           .map_err(FromError::from_error)
 }
 
 pub fn many_configs(inps: &[String], delim: Delimiter, no_headers: bool)

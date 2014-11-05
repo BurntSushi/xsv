@@ -48,8 +48,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let rconfig = Config::new(args.arg_input.clone())
                          .delimiter(args.flag_delimiter)
                          .no_headers(args.flag_no_headers);
-    let mut rdr = try!(io| rconfig.reader());
-    let headers = try!(csv| rdr.byte_headers());
+    let mut rdr = try!(rconfig.reader());
+    let headers = try!(rdr.byte_headers());
 
     let mut wtr: Box<Writer> =
         if false {
@@ -60,23 +60,23 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut first = true;
     for r in rdr.byte_records() {
         if !first && !args.flag_separator.is_empty() {
-            try!(io| wtr.write_str(args.flag_separator.as_slice()));
-            try!(io| wtr.write_u8(b'\n'));
+            try!(wtr.write_str(args.flag_separator.as_slice()));
+            try!(wtr.write_u8(b'\n'));
         }
         first = false;
-        for (header, field) in headers.iter().zip(try!(csv| r).into_iter()) {
-            try!(io| wtr.write(header[]));
-            try!(io| wtr.write_u8(b'\t'));
+        for (header, field) in headers.iter().zip(try!(r).into_iter()) {
+            try!(wtr.write(header[]));
+            try!(wtr.write_u8(b'\t'));
             match args.flag_condensed {
                 Some(n) if n < field.len() => {
-                    try!(io| wtr.write(field[..n]));
-                    try!(io| wtr.write_str("..."));
+                    try!(wtr.write(field[..n]));
+                    try!(wtr.write_str("..."));
                 }
-                _ => try!(io| wtr.write(field[])),
+                _ => try!(wtr.write(field[])),
             }
-            try!(io| wtr.write_u8(b'\n'));
+            try!(wtr.write_u8(b'\n'));
         }
     }
-    try!(io| wtr.flush());
+    try!(wtr.flush());
     Ok(())
 }
