@@ -1,4 +1,4 @@
-use std::collections::hashmap::{HashMap, Vacant, Occupied};
+use std::collections::hash_map::{HashMap, Vacant, Occupied};
 use std::fmt;
 use std::io;
 

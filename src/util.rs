@@ -63,7 +63,7 @@ pub fn num_of_chunks(nitems: uint, chunk_size: uint) -> uint {
 }
 
 pub fn idx_path(csv_path: &Path) -> Path {
-    let mut p = csv_path.container_into_owned_bytes();
+    let mut p = csv_path.container_as_bytes().to_vec();
     p.push_all(".idx".as_bytes());
     Path::new(p)
 }

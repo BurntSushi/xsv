@@ -1,6 +1,6 @@
 [root]
 name = "xsv"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "docopt 0.6.8 (git+git://github.com/docopt/docopt.rs)",
  "rust-csv 0.5.1 (git+git://github.com/BurntSushi/rust-csv)",
@@ -11,7 +11,7 @@ dependencies = [
 [[package]]
 name = "docopt"
 version = "0.6.8"
-source = "git+git://github.com/docopt/docopt.rs#14b2d769eeecb6c6d4568055012e817175ac0d35"
+source = "git+git://github.com/docopt/docopt.rs#1b614c83b771b23e95e69d10b4bc04c87ff7eff3"
 
 [[package]]
 name = "rust-csv"
@@ -21,7 +21,7 @@ source = "git+git://github.com/BurntSushi/rust-csv#35b5a1e866daf164603c45da09267
 [[package]]
 name = "rust-stats"
 version = "0.1.1"
-source = "git+git://github.com/BurntSushi/rust-stats#3345e88ab815bdd669e9481d9d12a893c2fc4281"
+source = "git+git://github.com/BurntSushi/rust-stats#5aafeb6e77804341f938caa4cd3d0e687961747c"
 
 [[package]]
 name = "tabwriter"
