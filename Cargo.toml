@@ -17,3 +17,10 @@ git = "git://github.com/BurntSushi/tabwriter"
 [dependencies.docopt] 
 git = "git://github.com/docopt/docopt.rs"
 # path = "/home/andrew/data/projects/rust/docopt.rs"
+
+[[bin]]
+name = "xsv"
+test = false
+
+[[test]]
+name = "tests"

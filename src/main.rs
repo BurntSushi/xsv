@@ -1,4 +1,4 @@
-#![feature(if_let, macro_rules, phase, slicing_syntax, tuple_indexing)]
+#![feature(if_let, macro_rules, slicing_syntax, tuple_indexing)]
 
 /*!
 These are some docs.

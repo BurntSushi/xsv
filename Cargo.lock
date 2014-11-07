@@ -11,12 +11,12 @@ dependencies = [
 [[package]]
 name = "docopt"
 version = "0.6.8"
-source = "git+git://github.com/docopt/docopt.rs#1b614c83b771b23e95e69d10b4bc04c87ff7eff3"
+source = "git+git://github.com/docopt/docopt.rs#2aece54507e6cd2a8cdfbce51e85e08fc7cd00d7"
 
 [[package]]
 name = "rust-csv"
 version = "0.5.1"
-source = "git+git://github.com/BurntSushi/rust-csv#35b5a1e866daf164603c45da09267725f2c5251a"
+source = "git+git://github.com/BurntSushi/rust-csv#fe382eeb78e7542effe6daf5576b1aeb6fd9dde6"
 
 [[package]]
 name = "rust-stats"
