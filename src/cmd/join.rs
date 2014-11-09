@@ -135,7 +135,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
             let val = self.sel1.select(row[])
                                .map(ByteString::from_bytes)
                                .collect::<Vec<ByteString>>();
-            match validx.values.find(&val) {
+            match validx.values.get(&val) {
                 None => continue,
                 Some(rows) => {
                     for &rowi in rows.iter() {
@@ -165,7 +165,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
             let val = self.sel1.select(row[])
                                .map(ByteString::from_bytes)
                                .collect::<Vec<ByteString>>();
-            match validx.values.find(&val) {
+            match validx.values.get(&val) {
                 None => {
                     let row1 = row.iter().map(|f| Ok(f[]));
                     let row2 = pad2.iter().map(|f| Ok(f[]));
@@ -204,7 +204,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
             let val = self.sel1.select(row1[])
                                .map(ByteString::from_bytes)
                                .collect::<Vec<ByteString>>();
-            match validx.values.find(&val) {
+            match validx.values.get(&val) {
                 None => {
                     let row1 = row1.iter().map(|f| Ok(f[]));
                     let row2 = pad2.iter().map(|f| Ok(f[]));
