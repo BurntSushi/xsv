@@ -36,14 +36,15 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             None => {
                 let mut rdr = try!(conf.reader());
                 let mut count = 0u64;
+                let mut seen_field = false;
                 while !rdr.done() {
                     loop {
                         match rdr.next_field() {
                             None => break,
-                            Some(r) => { try!(r); }
+                            Some(r) => { seen_field = true; try!(r); }
                         }
                     }
-                    count += 1;
+                    if seen_field { count += 1; }
                 }
                 count
             }
