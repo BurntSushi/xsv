@@ -1,38 +1,50 @@
-use {assert_csv_eq, to_strings};
+use {CsvData, qcheck};
 use workdir::Workdir;
 
 #[test]
-fn abc() {
-    let wrk = Workdir::new("abc");
-    let rows = vec![
-        vec!["name", "value"],
-        vec!["andrew", "human"],
-        vec!["cauchy", "cat"],
-    ];
-    wrk.create("in.csv", rows.clone());
-    let got = wrk.read("in.csv");
+fn cat_rows() {
+    fn p(rows: CsvData) -> bool {
+        let expected = rows.clone();
+        let (rows1, rows2) =
+            if rows.is_empty() {
+                (vec![], vec![])
+            } else {
+                let (rows1, rows2) = rows.as_slice().split_at(rows.len() / 2);
+                (rows1.to_vec(), rows2.to_vec())
+            };
+        let wrk = Workdir::new("cat_rows");
+        wrk.create("in1.csv", rows1.clone());
+        wrk.create("in2.csv", rows2.clone());
 
-    assert_csv_eq(rows, got);
+        let mut cmd = wrk.command("cat");
+        cmd.arg("rows")
+           .arg("-n")
+           .arg("in1.csv").arg("in2.csv")
+           .arg("-o").arg("out.csv");
+        wrk.run(&mut cmd);
+        let got: CsvData = wrk.read("out.csv");
+        assert_eq!(got, expected);
+        true
+    }
+    qcheck(p);
 }
 
 #[test]
-fn xyz() {
-    let wrk = Workdir::new("xyz");
-    let rows = vec![
-        vec!["andrew", "human"],
-        vec!["cauchy", "cat"],
-    ];
-    wrk.create("in.csv", rows.clone());
+fn cat_rows_headers() {
+    let wrk = Workdir::new("cat_rows_headers");
+    let rows1 = vec![svec!["h1", "h2"], svec!["a", "b"]];
+    let rows2 = vec![svec!["h1", "h2"], svec!["y", "z"]];
+    wrk.create("in1.csv", rows1.clone());
+    wrk.create("in2.csv", rows2.clone());
 
     let mut cmd = wrk.command("cat");
-    let status = cmd.arg("rows").arg("-n")
-                    .arg(wrk.path("in.csv")).arg(wrk.path("in.csv"))
-                    .arg("-o").arg(wrk.path("out.csv"))
-                    .status().unwrap();
-    assert!(status.success());
-    let got = wrk.read("out.csv");
+    cmd.arg("rows")
+       .arg("in1.csv").arg("in2.csv")
+       .arg("-o").arg("out.csv");
+    wrk.run(&mut cmd);
+    let got: Vec<Vec<String>> = wrk.read("out.csv");
 
-    let mut expected = to_strings(rows.clone());
-    expected.extend(to_strings(rows).into_iter());
-    assert_csv_eq(expected, got);
+    let mut expected = rows1.clone();
+    expected.extend(rows2.clone().into_iter().skip(1));
+    assert_eq!(got, expected);
 }

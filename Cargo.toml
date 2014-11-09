@@ -5,7 +5,7 @@ authors = ["Andrew Gallant <jamslam@gmail.com>"]
 
 [dependencies.rust-csv]
 git = "git://github.com/BurntSushi/rust-csv"
-# path = "/home/andrew/data/projects/rust-csv" 
+# path = "/home/andrew/data/projects/rust/rust-csv" 
 
 [dependencies.rust-stats]
 # path = "/home/andrew/data/projects/rust-stats" 
@@ -17,6 +17,9 @@ git = "git://github.com/BurntSushi/tabwriter"
 [dependencies.docopt] 
 git = "git://github.com/docopt/docopt.rs"
 # path = "/home/andrew/data/projects/rust/docopt.rs"
+
+[dev-dependencies.quickcheck]
+git = "git://github.com/BurntSushi/quickcheck"
 
 [[bin]]
 name = "xsv"

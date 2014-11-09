@@ -7,7 +7,9 @@ use std::sync::atomic;
 
 use csv;
 
-static XSV_INTEGRATION_TEST_DIR: &'static str = ".xit";
+use Csv;
+
+static XSV_INTEGRATION_TEST_DIR: &'static str = "xit";
 
 static NEXT_ID: atomic::AtomicUint = atomic::INIT_ATOMIC_UINT;
 
@@ -31,24 +33,34 @@ impl Workdir {
         Workdir { root: root, dir: dir }
     }
 
-    pub fn create<S: Str>(&self, name: &str, rows: Vec<Vec<S>>) {
+    pub fn create<T: Csv>(&self, name: &str, rows: T) {
         let mut wtr = csv::Writer::from_file(&self.path(name));
-        for row in rows.into_iter() {
+        for row in rows.to_vecs().into_iter() {
             wtr.write(row.into_iter()).unwrap();
         }
         wtr.flush().unwrap();
     }
 
-    pub fn read(&self, name: &str) -> Vec<Vec<String>> {
+    pub fn read<T: Csv>(&self, name: &str) -> T {
         let mut rdr = csv::Reader::from_file(&self.path(name))
                                   .has_headers(false);
-        rdr.records().collect::<Result<_, _>>().unwrap()
+        Csv::from_vecs(rdr.records().collect::<Result<_, _>>().unwrap())
     }
 
     pub fn command(&self, sub_command: &str) -> process::Command {
         let mut cmd = process::Command::new(self.xsv_bin());
-        cmd.arg(sub_command);
+        cmd.cwd(&self.dir).arg(sub_command);
         cmd
+    }
+
+    pub fn run(&self, cmd: &process::Command) {
+        let o = cmd.output().unwrap();
+        if !o.status.success() {
+            panic!("'{}' ({}) failed in '{}'. \n\nstdout: {}\n\nstderr: {}",
+                   cmd, o.status, self.dir.display(),
+                   String::from_utf8_lossy(o.output.as_slice()),
+                   String::from_utf8_lossy(o.error.as_slice()))
+        }
     }
 
     pub fn path(&self, name: &str) -> Path {

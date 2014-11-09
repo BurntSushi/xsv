@@ -3,6 +3,7 @@ name = "xsv"
 version = "0.3.0"
 dependencies = [
  "docopt 0.6.8 (git+git://github.com/docopt/docopt.rs)",
+ "quickcheck 0.1.2 (git+git://github.com/BurntSushi/quickcheck)",
  "rust-csv 0.5.1 (git+git://github.com/BurntSushi/rust-csv)",
  "rust-stats 0.1.1 (git+git://github.com/BurntSushi/rust-stats)",
  "tabwriter 0.1.1 (git+git://github.com/BurntSushi/tabwriter)",
@@ -14,9 +15,14 @@ version = "0.6.8"
 source = "git+git://github.com/docopt/docopt.rs#0b184b15ed5ea7e3c180b088e8f99baa4427f989"
 
 [[package]]
+name = "quickcheck"
+version = "0.1.2"
+source = "git+git://github.com/BurntSushi/quickcheck#9b9c39f492782591e876e5547d173009d714cace"
+
+[[package]]
 name = "rust-csv"
 version = "0.5.1"
-source = "git+git://github.com/BurntSushi/rust-csv#fe382eeb78e7542effe6daf5576b1aeb6fd9dde6"
+source = "git+git://github.com/BurntSushi/rust-csv#920684f32dd4e8a3fd80ed62c096b07330131100"
 
 [[package]]
 name = "rust-stats"
