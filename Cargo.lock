@@ -11,7 +11,7 @@ dependencies = [
 [[package]]
 name = "docopt"
 version = "0.6.8"
-source = "git+git://github.com/docopt/docopt.rs#2aece54507e6cd2a8cdfbce51e85e08fc7cd00d7"
+source = "git+git://github.com/docopt/docopt.rs#0b184b15ed5ea7e3c180b088e8f99baa4427f989"
 
 [[package]]
 name = "rust-csv"
