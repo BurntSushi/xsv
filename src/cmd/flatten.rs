@@ -28,8 +28,8 @@ flatten options:
 Common options:
     -h, --help             Display this message
     -n, --no-headers       When set, the first row will not be interpreted
-                           as headers. (i.e., They are not searched, analyzed,
-                           sliced, etc.)
+                           as headers. When set, the name of each field
+                           will be its index.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
 ";
@@ -64,8 +64,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             try!(wtr.write_u8(b'\n'));
         }
         first = false;
-        for (header, field) in headers.iter().zip(try!(r).into_iter()) {
-            try!(wtr.write(header[]));
+        let r = try!(r).into_iter();
+        for (i, (header, field)) in headers.iter().zip(r).enumerate() {
+            if args.flag_no_headers {
+                try!(wtr.write_str(i.to_string().as_slice()));
+            } else {
+                try!(wtr.write(header[]));
+            }
             try!(wtr.write_u8(b'\t'));
             match args.flag_condensed {
                 Some(n) if n < field.len() => {

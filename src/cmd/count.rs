@@ -30,7 +30,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                       .delimiter(args.flag_delimiter)
                       .no_headers(args.flag_no_headers);
 
-    let mut count =
+    let count =
         match try!(conf.indexed()) {
             Some(idx) => idx.count(),
             None => {
@@ -46,12 +46,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                     }
                     if seen_field { count += 1; }
                 }
-                count
+                if !args.flag_no_headers && count > 0 {
+                    count - 1
+                } else {
+                    count
+                }
             }
         };
-    if !args.flag_no_headers {
-        count -= 1;
-    }
     println!("{:u}", count);
     Ok(())
 }

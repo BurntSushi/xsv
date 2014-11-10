@@ -22,12 +22,12 @@ source = "git+git://github.com/BurntSushi/quickcheck#9b9c39f492782591e876e5547d1
 [[package]]
 name = "rust-csv"
 version = "0.5.1"
-source = "git+git://github.com/BurntSushi/rust-csv#920684f32dd4e8a3fd80ed62c096b07330131100"
+source = "git+git://github.com/BurntSushi/rust-csv#7a216b4cf5616d34ed0f8896624740fb9b66241d"
 
 [[package]]
 name = "rust-stats"
 version = "0.1.1"
-source = "git+git://github.com/BurntSushi/rust-stats#5aafeb6e77804341f938caa4cd3d0e687961747c"
+source = "git+git://github.com/BurntSushi/rust-stats#29c9068f6736b082f1ec04832e6728bcac2e15fd"
 
 [[package]]
 name = "tabwriter"

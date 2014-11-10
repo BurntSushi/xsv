@@ -14,8 +14,6 @@ fmt options:
 Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
-    -n, --no-headers       When set, the first row will NOT be interpreted
-                           as column names.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
 ";
@@ -26,7 +24,6 @@ struct Args {
     flag_out_delimiter: Delimiter,
     flag_crlf: bool,
     flag_output: Option<String>,
-    flag_no_headers: bool,
     flag_delimiter: Delimiter,
 }
 
@@ -35,14 +32,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let rconfig = Config::new(args.arg_input)
                          .delimiter(args.flag_delimiter)
-                         .no_headers(args.flag_no_headers);
+                         .no_headers(true);
     let wconfig = Config::new(args.flag_output)
                          .delimiter(args.flag_out_delimiter)
                          .crlf(args.flag_crlf);
     let mut rdr = try!(rconfig.reader());
     let mut wtr = try!(wconfig.writer());
 
-    try!(wconfig.write_headers(&mut rdr, &mut wtr));
     for r in rdr.byte_records() {
         try!(wtr.write_bytes(try!(r).into_iter()));
     }

@@ -335,6 +335,10 @@ impl Selection {
 
     pub fn normal(&self) -> NormalSelection {
         let &Selection(ref inds) = self;
+        if inds.is_empty() {
+            return NormalSelection(vec![]);
+        }
+
         let mut normal = inds.clone();
         normal.sort();
         normal.dedup();

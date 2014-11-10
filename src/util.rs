@@ -55,7 +55,18 @@ pub fn empty_field() -> csv::ByteString {
     csv::ByteString::from_bytes::<&[u8]>([])
 }
 
+pub fn chunk_size(nitems: uint, njobs: uint) -> uint {
+    if nitems < njobs {
+        nitems
+    } else {
+        nitems / njobs
+    }
+}
+
 pub fn num_of_chunks(nitems: uint, chunk_size: uint) -> uint {
+    if chunk_size == 0 {
+        return nitems;
+    }
     let mut n = nitems / chunk_size;
     if nitems % chunk_size != 0 {
         n += 1;
