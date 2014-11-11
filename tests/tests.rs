@@ -36,6 +36,7 @@ mod test_fixlengths;
 mod test_flatten;
 mod test_fmt;
 mod test_frequency;
+mod test_headers;
 mod test_index;
 
 fn qcheck<T: Testable>(p: T) {
