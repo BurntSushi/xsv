@@ -100,7 +100,7 @@ impl Csv for Vec<CsvRecord> {
     fn from_vecs(vecs: CsvVecs) -> Vec<CsvRecord> { unsafe { transmute(vecs) } }
 }
 
-#[deriving(Clone, Eq, Ord, PartialEq, PartialOrd, Show)]
+#[deriving(Clone, Eq, Ord, PartialOrd, Show)]
 struct CsvData {
     data: Vec<CsvRecord>,
     record_len: uint,
@@ -160,5 +160,12 @@ impl Csv for CsvData {
             data: unsafe { transmute(vecs) },
             record_len: record_len,
         }
+    }
+}
+
+impl PartialEq for CsvData {
+    fn eq(&self, other: &CsvData) -> bool {
+        (self.data.is_empty() && other.data.is_empty())
+        || (self.record_len == other.record_len && self.data == other.data)
     }
 }

@@ -105,7 +105,7 @@ impl Args {
                .select(self.flag_select.clone())
     }
 
-    fn counts<'a>(&self, ftab: &'a FTable) -> Vec<(&'a ByteString, u64)> {
+    fn counts(&self, ftab: &FTable) -> Vec<(ByteString, u64)> {
         let mut counts = if self.flag_asc {
             ftab.least_frequent()
         } else {
@@ -114,7 +114,13 @@ impl Args {
         if self.flag_limit > 0 {
             counts = counts.into_iter().take(self.flag_limit).collect();
         }
-        counts
+        counts.into_iter().map(|(bs, c)| {
+            if b"" == bs.as_slice() {
+                (ByteString::from_bytes(b"(NULL)"), c)
+            } else {
+                (bs.clone(), c)
+            }
+        }).collect()
     }
 
     fn sequential_ftables(&self) -> CliResult<(Headers, FTables)> {
@@ -156,7 +162,7 @@ impl Args {
     fn ftables<I: Iterator<csv::CsvResult<ByteRow>>>
               (&self, sel: &Selection, mut it: I)
               -> CliResult<FTables> {
-        let null = ByteString::from_bytes(b"NULL");
+        let null = ByteString::from_bytes(b"");
         let nsel = sel.normal();
         let mut tabs = Vec::from_fn(nsel.len(), |_| Frequencies::new());
         for row in it {
