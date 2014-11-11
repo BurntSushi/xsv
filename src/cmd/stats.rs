@@ -115,7 +115,7 @@ impl Args {
         let mut rdr = try!(self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
 
-        let chunk_size = idx.count() as uint / self.njobs();
+        let chunk_size = util::chunk_size(idx.count() as uint, self.njobs());
         let nchunks = util::num_of_chunks(idx.count() as uint, chunk_size);
 
         let mut pool = TaskPool::new(self.njobs(), || { proc(_) () });
