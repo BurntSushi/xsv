@@ -245,7 +245,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
             while !self.rdr2.done() {
                 // Skip the header row. The raw byte interface won't
                 // do it for us.
-                if first {
+                if !self.no_headers && first {
                     for f in self.rdr2 { try!(f); }
                     first = false;
                 }
