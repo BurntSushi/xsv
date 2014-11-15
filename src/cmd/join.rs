@@ -118,11 +118,9 @@ struct IoState<R, W> {
 
 impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
     fn write_headers(&mut self) -> CliResult<()> {
-        let headers1 = try!(self.rdr1.byte_headers());
-        let headers2 = try!(self.rdr2.byte_headers());
         if !self.no_headers {
-            let mut headers = headers1.clone();
-            headers.push_all(headers2[]);
+            let mut headers = try!(self.rdr1.byte_headers());
+            headers.extend(try!(self.rdr2.byte_headers()).into_iter());
             try!(self.wtr.write_bytes(headers.into_iter()));
         }
         Ok(())
@@ -323,9 +321,13 @@ impl<R: Reader + Seek> ValueIndex<R> {
         let mut val_idx = HashMap::with_capacity(10000);
         // let mut val_idx = BTreeMap::new(); 
         let mut rows = io::MemWriter::with_capacity(8 * 10000);
-        let mut rowi = 0u;
-        try!(rows.write_be_u64(0)); // offset to the first row, which
-                                        // has already been read as a header.
+        let (mut rowi, mut count) = (0u, 0u);
+        if !rdr.has_headers {
+            try!(rdr.seek(0, ::std::io::SeekSet));
+        } else {
+            try!(rows.write_be_u64(0));
+            count += 1;
+        }
         while !rdr.done() {
             // This is a bit hokey. We're doing this manually instead of
             // calling `csv::index::create` so we can create both indexes
@@ -344,7 +346,9 @@ impl<R: Reader + Seek> ValueIndex<R> {
                 Occupied(mut v) => { v.get_mut().push(rowi); }
             }
             rowi += 1;
+            count += 1;
         }
+        try!(rows.write_be_u64(count as u64));
         Ok(ValueIndex {
             values: val_idx,
             idx: try!(Indexed::new(rdr, io::MemReader::new(rows.unwrap()))),

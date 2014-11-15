@@ -3,32 +3,41 @@ use std::io::process;
 use workdir::Workdir;
 
 macro_rules! join_test {
-    ($name:ident $fun:expr) => (
+    ($name:ident $name_no_headers:ident $fun:expr) => (
         #[test]
         fn $name() {
-            let wrk = setup(stringify!($name));
+            let wrk = setup(stringify!($name), true);
             let mut cmd = wrk.command("join");
             cmd.args(["city", "cities.csv", "city", "places.csv"]);
-            $fun(wrk, cmd);
+            $fun(wrk, cmd, true);
+        }
+
+        #[test]
+        fn $name_no_headers() {
+            let wrk = setup(stringify!($name_no_headers), false);
+            let mut cmd = wrk.command("join");
+            cmd.arg("--no-headers");
+            cmd.args(["1", "cities.csv", "1", "places.csv"]);
+            $fun(wrk, cmd, false);
         }
     );
 }
 
-fn setup(name: &str) -> Workdir {
-    let cities = vec![
-        svec!["city", "state"],
+fn setup(name: &str, headers: bool) -> Workdir {
+    let mut cities = vec![
         svec!["Boston", "MA"],
         svec!["New York", "NY"],
         svec!["San Francisco", "CA"],
         svec!["Buffalo", "NY"],
     ];
-    let places = vec![
-        svec!["city", "place"],
+    let mut places = vec![
         svec!["Boston", "Logan Airport"],
         svec!["Boston", "Boston Garden"],
         svec!["Buffalo", "Ralph Wilson Stadium"],
         svec!["Orlando", "Disney World"],
     ];
+    if headers { cities.insert(0, svec!["city", "state"]); }
+    if headers { places.insert(0, svec!["city", "place"]); }
 
     let wrk = Workdir::new(name);
     wrk.create("cities.csv", cities);
@@ -36,56 +45,65 @@ fn setup(name: &str) -> Workdir {
     wrk
 }
 
-join_test!(join_inner |wrk: Workdir, cmd: process::Command| {
+fn make_rows(headers: bool, rows: Vec<Vec<String>>) -> Vec<Vec<String>> {
+    let mut all_rows = vec![];
+    if headers {
+        all_rows.push(svec!["city", "state", "city", "place"]);
+    }
+    all_rows.extend(rows.into_iter());
+    all_rows
+}
+
+join_test!(join_inner join_inner_no_headers
+           |wrk: Workdir, cmd: process::Command, headers: bool| {
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
-    let expected = vec![
-        svec!["city", "state", "city", "place"],
+    let expected = make_rows(headers, vec![
         svec!["Boston", "MA", "Boston", "Logan Airport"],
         svec!["Boston", "MA", "Boston", "Boston Garden"],
         svec!["Buffalo", "NY", "Buffalo", "Ralph Wilson Stadium"],
-    ];
+    ]);
     assert_eq!(got, expected);
 })
 
-join_test!(join_outer_left |wrk: Workdir, mut cmd: process::Command| {
+join_test!(join_outer_left join_outer_left_no_headers
+           |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--left");
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
-    let expected = vec![
-        svec!["city", "state", "city", "place"],
+    let expected = make_rows(headers, vec![
         svec!["Boston", "MA", "Boston", "Logan Airport"],
         svec!["Boston", "MA", "Boston", "Boston Garden"],
         svec!["New York", "NY", "", ""],
         svec!["San Francisco", "CA", "", ""],
         svec!["Buffalo", "NY", "Buffalo", "Ralph Wilson Stadium"],
-    ];
+    ]);
     assert_eq!(got, expected);
 })
 
-join_test!(join_outer_right |wrk: Workdir, mut cmd: process::Command| {
+join_test!(join_outer_right join_outer_right_no_headers
+           |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--right");
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
-    let expected = vec![
-        svec!["city", "state", "city", "place"],
+    let expected = make_rows(headers, vec![
         svec!["Boston", "MA", "Boston", "Logan Airport"],
         svec!["Boston", "MA", "Boston", "Boston Garden"],
         svec!["Buffalo", "NY", "Buffalo", "Ralph Wilson Stadium"],
         svec!["", "", "Orlando", "Disney World"],
-    ];
+    ]);
     assert_eq!(got, expected);
 })
 
-join_test!(join_outer_full |wrk: Workdir, mut cmd: process::Command| {
+join_test!(join_outer_full join_outer_full_no_headers
+           |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--full");
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
-    let expected = vec![
-        svec!["city", "state", "city", "place"],
+    let expected = make_rows(headers, vec![
         svec!["Boston", "MA", "Boston", "Logan Airport"],
         svec!["Boston", "MA", "Boston", "Boston Garden"],
         svec!["New York", "NY", "", ""],
         svec!["San Francisco", "CA", "", ""],
         svec!["Buffalo", "NY", "Buffalo", "Ralph Wilson Stadium"],
         svec!["", "", "Orlando", "Disney World"],
-    ];
+    ]);
     assert_eq!(got, expected);
 })
 
