@@ -12,22 +12,22 @@ dependencies = [
 [[package]]
 name = "docopt"
 version = "0.6.8"
-source = "git+git://github.com/docopt/docopt.rs#0b184b15ed5ea7e3c180b088e8f99baa4427f989"
+source = "git+git://github.com/docopt/docopt.rs#eff782322c5064879b8fb393807bd565af234a18"
 
 [[package]]
 name = "quickcheck"
 version = "0.1.2"
-source = "git+git://github.com/BurntSushi/quickcheck#9b9c39f492782591e876e5547d173009d714cace"
+source = "git+git://github.com/BurntSushi/quickcheck#3ef94610889571745b52981e3e3489e566bf2267"
 
 [[package]]
 name = "rust-csv"
 version = "0.5.1"
-source = "git+git://github.com/BurntSushi/rust-csv#7a216b4cf5616d34ed0f8896624740fb9b66241d"
+source = "git+git://github.com/BurntSushi/rust-csv#4879230109dbee1bba3235949bf31beed775bd98"
 
 [[package]]
 name = "rust-stats"
 version = "0.1.1"
-source = "git+git://github.com/BurntSushi/rust-stats#7a5d7c93497e1121c19de32e7d28243250811ef8"
+source = "git+git://github.com/BurntSushi/rust-stats#75275af252201be3cc204580d1cb70b41895a18a"
 
 [[package]]
 name = "tabwriter"
