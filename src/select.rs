@@ -96,7 +96,6 @@ impl SelectorParser {
             }
             let f1: OneSelector =
                 if self.cur() == Some('-') {
-                    self.bump();
                     SelStart
                 } else {
                     try!(self.parse_one())
@@ -260,7 +259,13 @@ impl OneSelector {
             -> Result<uint, String> {
         match self {
             &SelStart => Ok(0),
-            &SelEnd => Ok(first_record.len()),
+            &SelEnd => Ok(
+                if first_record.len() == 0 {
+                    0
+                } else {
+                    first_record.len() - 1
+                }
+            ),
             &SelIndex(i) => {
                 if i < 1 || i > first_record.len() {
                     Err(format!("Selector index {} is out of \

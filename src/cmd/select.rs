@@ -5,7 +5,7 @@ use util;
 
 static USAGE: &'static str = "
 Usage:
-    xsv select [options] <selection> [<input>]
+    xsv select [options] [--] <selection> [<input>]
     xsv select --help
 
 Common options:
