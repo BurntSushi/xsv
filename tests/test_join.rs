@@ -2,6 +2,8 @@ use std::io::process;
 
 use workdir::Workdir;
 
+// This macro takes *two* identifiers: one for the test with headers
+// and another for the test without headers.
 macro_rules! join_test {
     ($name:ident $name_no_headers:ident $fun:expr) => (
         #[test]
