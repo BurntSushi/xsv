@@ -39,6 +39,7 @@ mod test_frequency;
 mod test_headers;
 mod test_index;
 mod test_join;
+mod test_search;
 
 fn qcheck<T: Testable>(p: T) {
     QuickCheck::new().gen(StdGen::new(task_rng(), 5)).quickcheck(p);
