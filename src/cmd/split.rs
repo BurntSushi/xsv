@@ -1,3 +1,4 @@
+use std::error::FromError;
 use std::io;
 use std::io::fs::mkdir_recursive;
 
@@ -16,6 +17,7 @@ where {start} is the index of the first record of the chunk (starting at 0).
 
 Usage:
     xsv split [options] <outdir> [<input>]
+    xsv split --help
 
 split options:
     -s, --size <arg>       The number of records to write into each chunk.
@@ -49,6 +51,9 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
+    if args.flag_size == 0 {
+        return Err(FromError::from_error("--size must be greater than 0."));
+    }
     try!(mkdir_recursive(&Path::new(args.arg_outdir[]), io::ALL_PERMISSIONS));
 
     match try!(args.rconfig().indexed()) {
@@ -92,8 +97,7 @@ impl Args {
                                   .unwrap();
 
                 idx.seek((i * args.flag_size) as u64).unwrap();
-                let writenum = args.flag_size;
-                for row in idx.csv().byte_records().take(writenum) {
+                for row in idx.csv().byte_records().take(args.flag_size) {
                     let row = row.unwrap();
                     wtr.write_bytes(row.into_iter()).unwrap();
                 }

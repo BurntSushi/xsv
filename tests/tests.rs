@@ -1,4 +1,4 @@
-#![feature(macro_rules, phase)]
+#![feature(if_let, macro_rules, phase)]
 
 #![allow(dead_code)]
 
@@ -41,6 +41,10 @@ mod test_index;
 mod test_join;
 mod test_search;
 mod test_select;
+mod test_slice;
+mod test_sort;
+mod test_split;
+mod test_table;
 
 fn qcheck<T: Testable>(p: T) {
     QuickCheck::new().gen(StdGen::new(task_rng(), 5)).quickcheck(p);

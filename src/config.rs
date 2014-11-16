@@ -117,7 +117,10 @@ impl Config {
                         (&self, r: &mut csv::Reader<R>, w: &mut csv::Writer<W>)
                         -> csv::CsvResult<()> {
         if !self.no_headers {
-            try!(w.write_bytes(try!(r.byte_headers()).into_iter()));
+            let r = try!(r.byte_headers());
+            if !r.is_empty() {
+                try!(w.write_bytes(r.into_iter()));
+            }
         }
         Ok(())
     }

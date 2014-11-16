@@ -1,26 +1,31 @@
-use std::io::process;
-
 use workdir::Workdir;
 
 // This macro takes *two* identifiers: one for the test with headers
 // and another for the test without headers.
 macro_rules! join_test {
-    ($name:ident $name_no_headers:ident $fun:expr) => (
-        #[test]
-        fn $name() {
-            let wrk = setup(stringify!($name), true);
-            let mut cmd = wrk.command("join");
-            cmd.args(["city", "cities.csv", "city", "places.csv"]);
-            $fun(wrk, cmd, true);
-        }
+    ($name:ident, $fun:expr) => (
+        mod $name {
+            use std::io::process;
 
-        #[test]
-        fn $name_no_headers() {
-            let wrk = setup(stringify!($name_no_headers), false);
-            let mut cmd = wrk.command("join");
-            cmd.arg("--no-headers");
-            cmd.args(["1", "cities.csv", "1", "places.csv"]);
-            $fun(wrk, cmd, false);
+            use workdir::Workdir;
+            use super::{make_rows, setup};
+
+            #[test]
+            fn headers() {
+                let wrk = setup(stringify!($name), true);
+                let mut cmd = wrk.command("join");
+                cmd.args(["city", "cities.csv", "city", "places.csv"]);
+                $fun(wrk, cmd, true);
+            }
+
+            #[test]
+            fn no_headers() {
+                let wrk = setup(stringify!($name_no_headers), false);
+                let mut cmd = wrk.command("join");
+                cmd.arg("--no-headers");
+                cmd.args(["1", "cities.csv", "1", "places.csv"]);
+                $fun(wrk, cmd, false);
+            }
         }
     );
 }
@@ -56,8 +61,7 @@ fn make_rows(headers: bool, rows: Vec<Vec<String>>) -> Vec<Vec<String>> {
     all_rows
 }
 
-join_test!(join_inner join_inner_no_headers
-           |wrk: Workdir, cmd: process::Command, headers: bool| {
+join_test!(join_inner, |wrk: Workdir, cmd: process::Command, headers: bool| {
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
     let expected = make_rows(headers, vec![
         svec!["Boston", "MA", "Boston", "Logan Airport"],
@@ -67,7 +71,7 @@ join_test!(join_inner join_inner_no_headers
     assert_eq!(got, expected);
 })
 
-join_test!(join_outer_left join_outer_left_no_headers
+join_test!(join_outer_left,
            |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--left");
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
@@ -81,7 +85,7 @@ join_test!(join_outer_left join_outer_left_no_headers
     assert_eq!(got, expected);
 })
 
-join_test!(join_outer_right join_outer_right_no_headers
+join_test!(join_outer_right,
            |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--right");
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
@@ -94,7 +98,7 @@ join_test!(join_outer_right join_outer_right_no_headers
     assert_eq!(got, expected);
 })
 
-join_test!(join_outer_full join_outer_full_no_headers
+join_test!(join_outer_full,
            |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--full");
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);

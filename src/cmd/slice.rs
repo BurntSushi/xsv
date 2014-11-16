@@ -76,6 +76,9 @@ impl Args {
         try!(self.rconfig().write_headers(idx.csv(), &mut wtr));
 
         let (start, end) = try!(self.range());
+        if end - start == 0 {
+            return Ok(());
+        }
         try!(idx.seek(start as u64));
         let mut it = idx.csv().byte_records().take(end - start);
         for r in it {

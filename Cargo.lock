@@ -22,7 +22,7 @@ source = "git+git://github.com/BurntSushi/quickcheck#3ef94610889571745b52981e3e3
 [[package]]
 name = "rust-csv"
 version = "0.5.1"
-source = "git+git://github.com/BurntSushi/rust-csv#4879230109dbee1bba3235949bf31beed775bd98"
+source = "git+git://github.com/BurntSushi/rust-csv#8ed93326bda356d9e0a8ab9f2d281b2bf6ffab86"
 
 [[package]]
 name = "rust-stats"

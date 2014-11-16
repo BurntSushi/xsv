@@ -69,8 +69,8 @@ impl Workdir {
         Csv::from_vecs(rdr.records().collect::<Result<_, _>>().unwrap())
     }
 
-    pub fn from_str<T: FromStr>(&self, name: &str) -> T {
-        let o = io::File::open(&Path::new(name)).unwrap()
+    pub fn from_str<T: FromStr>(&self, name: &Path) -> T {
+        let o = io::File::open(name).unwrap()
                          .read_to_string().unwrap();
         from_str(o.as_slice()).expect("fromstr")
     }
