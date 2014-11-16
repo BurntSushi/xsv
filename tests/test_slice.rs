@@ -5,54 +5,55 @@ use workdir::Workdir;
 macro_rules! slice_tests {
     ($name:ident, $start:expr, $end:expr, $expected:expr) => (
         mod $name {
-            use super::assert_slice;
+            use super::test_slice;
 
             #[test]
             fn headers_no_index() {
-                assert_slice(stringify!($name), $start, $end, $expected,
-                             true, false, false);
+                let name = concat!(stringify!($name), "headers_no_index");
+                test_slice(name, $start, $end, $expected, true, false, false);
             }
 
             #[test]
             fn no_headers_no_index() {
-                assert_slice(stringify!($name), $start, $end, $expected,
-                             false, false, false);
+                let name = concat!(stringify!($name), "no_headers_no_index");
+                test_slice(name, $start, $end, $expected, false, false, false);
             }
 
             #[test]
             fn headers_index() {
-                assert_slice(stringify!($name), $start, $end, $expected,
-                             true, true, false);
+                let name = concat!(stringify!($name), "headers_index");
+                test_slice(name, $start, $end, $expected, true, true, false);
             }
 
             #[test]
             fn no_headers_index() {
-                assert_slice(stringify!($name), $start, $end, $expected,
-                             false, true, false);
+                let name = concat!(stringify!($name), "no_headers_index");
+                test_slice(name, $start, $end, $expected, false, true, false);
             }
 
             #[test]
             fn headers_no_index_len() {
-                assert_slice(stringify!($name), $start, $end, $expected,
-                             true, false, true);
+                let name = concat!(stringify!($name), "headers_no_index_len");
+                test_slice(name, $start, $end, $expected, true, false, true);
             }
 
             #[test]
             fn no_headers_no_index_len() {
-                assert_slice(stringify!($name), $start, $end, $expected,
-                             false, false, true);
+                let name = concat!(stringify!($name),
+                                   "no_headers_no_index_len");
+                test_slice(name, $start, $end, $expected, false, false, true);
             }
 
             #[test]
             fn headers_index_len() {
-                assert_slice(stringify!($name), $start, $end, $expected,
-                             true, true, true);
+                let name = concat!(stringify!($name), "headers_index_len");
+                test_slice(name, $start, $end, $expected, true, true, true);
             }
 
             #[test]
             fn no_headers_index_len() {
-                assert_slice(stringify!($name), $start, $end, $expected,
-                             false, true, true);
+                let name = concat!(stringify!($name), "no_headers_index_len");
+                test_slice(name, $start, $end, $expected, false, true, true);
             }
         }
     );
@@ -77,7 +78,7 @@ fn setup(name: &str, headers: bool, use_index: bool)
     (wrk, cmd)
 }
 
-fn assert_slice(name: &str, start: Option<uint>, end: Option<uint>,
+fn test_slice(name: &str, start: Option<uint>, end: Option<uint>,
                 expected: &[&str], headers: bool,
                 use_index: bool, as_len: bool) {
     let (wrk, mut cmd) = setup(name, headers, use_index);
@@ -104,7 +105,7 @@ fn assert_slice(name: &str, start: Option<uint>, end: Option<uint>,
     assert_eq!(got, expected);
 }
 
-fn assert_index(name: &str, idx: uint, expected: &str,
+fn test_index(name: &str, idx: uint, expected: &str,
                 headers: bool, use_index: bool) {
     let (wrk, mut cmd) = setup(name, headers, use_index);
     cmd.arg("--index").arg(idx.to_string());
@@ -126,14 +127,14 @@ slice_tests!(slice_all, None, None, ["a", "b", "c", "d", "e"])
 
 #[test]
 fn slice_index() {
-    assert_index("slice_index", 1, "b", true, false);
+    test_index("slice_index", 1, "b", true, false);
 }
 fn slice_index_no_headers() {
-    assert_index("slice_index_no_headers", 1, "b", false, false);
+    test_index("slice_index_no_headers", 1, "b", false, false);
 }
 fn slice_index_withindex() {
-    assert_index("slice_index_withindex", 1, "b", true, true);
+    test_index("slice_index_withindex", 1, "b", true, true);
 }
 fn slice_index_no_headers_withindex() {
-    assert_index("slice_index_no_headers_withindex", 1, "b", false, true);
+    test_index("slice_index_no_headers_withindex", 1, "b", false, true);
 }

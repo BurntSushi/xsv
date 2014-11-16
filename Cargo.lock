@@ -27,7 +27,7 @@ source = "git+git://github.com/BurntSushi/rust-csv#8ed93326bda356d9e0a8ab9f2d281
 [[package]]
 name = "rust-stats"
 version = "0.1.1"
-source = "git+git://github.com/BurntSushi/rust-stats#75275af252201be3cc204580d1cb70b41895a18a"
+source = "git+git://github.com/BurntSushi/rust-stats#3cb3a769b88126e18807b8583afe0d2c26c6690b"
 
 [[package]]
 name = "tabwriter"

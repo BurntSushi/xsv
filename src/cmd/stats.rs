@@ -112,6 +112,12 @@ impl Args {
         use std::comm::channel;
         use std::sync::TaskPool;
 
+        // N.B. This method doesn't handle the case when the number of records
+        // is zero correctly. (So we use `sequential_stats` instead.
+        if idx.count() == 0 {
+            return self.sequential_stats();
+        }
+
         let mut rdr = try!(self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
 
@@ -130,7 +136,7 @@ impl Args {
             });
         }
         drop(send);
-        Ok((headers, merge_all(recv.iter()).unwrap()))
+        Ok((headers, merge_all(recv.iter()).unwrap_or(vec![])))
     }
 
     fn stats_to_records(&self, stats: Vec<Stats>) -> Vec<Vec<String>> {
@@ -259,7 +265,7 @@ impl Stats {
             TUnknown => {}
             TNull => {}
             TUnicode => {}
-            TFloat => {
+            TFloat | TInteger => {
                 if sample_type.is_null() {
                     if self.which.include_nulls {
                         self.online.as_mut().map(|v| { v.add_null(); });
@@ -267,17 +273,6 @@ impl Stats {
                 } else {
                     let n = from_bytes::<f64>(sample).unwrap();
                     self.median.as_mut().map(|v| { v.add(n); });
-                    self.online.as_mut().map(|v| { v.add(n); });
-                }
-            }
-            TInteger => {
-                if sample_type.is_null() {
-                    if self.which.include_nulls {
-                        self.online.as_mut().map(|v| { v.add_null(); });
-                    }
-                } else {
-                    let n = from_bytes::<f64>(sample).unwrap();
-                    self.median.as_mut().map(|v| { v.add(n as f64); });
                     self.online.as_mut().map(|v| { v.add(n); });
                 }
             }
@@ -404,7 +399,7 @@ impl Default for FieldType {
     // The default is the most specific type.
     // Type inference proceeds by assuming the most specific type and then
     // relaxing the type as counter-examples are found.
-    fn default() -> FieldType { TInteger }
+    fn default() -> FieldType { TNull }
 }
 
 impl fmt::Show for FieldType {
@@ -435,7 +430,7 @@ impl TypedMinMax {
         }
         self.strings.add(ByteString::from_bytes(sample));
         match typ {
-            TUnicode | TUnknown => {}
+            TUnicode | TUnknown | TNull => {}
             TFloat => {
                 let n = str::from_utf8(sample[])
                             .and_then(|s| from_str::<f64>(s))
@@ -448,13 +443,14 @@ impl TypedMinMax {
                             .and_then(|s| from_str::<i64>(s))
                             .unwrap();
                 self.integers.add(n);
+                self.floats.add(n as f64);
             }
-            _ => unreachable!(),
         }
     }
 
     fn show(&self, typ: FieldType) -> Option<(String, String)> {
         match typ {
+            TNull => None,
             TUnicode | TUnknown => {
                 match (self.strings.min(), self.strings.max()) {
                     (Some(min), Some(max)) => {
@@ -481,7 +477,6 @@ impl TypedMinMax {
                     _ => None
                 }
             }
-            _ => unreachable!(),
         }
     }
 }
