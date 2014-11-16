@@ -25,9 +25,6 @@ table options:
 Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
-    -n, --no-headers       When set, the first row will not be interpreted
-                           as headers. (i.e., They are not searched, analyzed,
-                           sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
 ";
@@ -38,7 +35,6 @@ struct Args {
     flag_width: uint,
     flag_pad: uint,
     flag_output: Option<String>,
-    flag_no_headers: bool,
     flag_delimiter: Delimiter,
 }
 
@@ -47,7 +43,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let rconfig = Config::new(args.arg_input)
                          .delimiter(args.flag_delimiter)
-                         .no_headers(args.flag_no_headers);
+                         .no_headers(true);
     let wconfig = Config::new(args.flag_output).delimiter(Delimiter(b'\t'));
 
     let tw = TabWriter::new(try!(wconfig.io_writer()))
@@ -56,7 +52,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut wtr = wconfig.from_writer(tw);
     let mut rdr = try!(rconfig.reader());
 
-    try!(rconfig.write_headers(&mut rdr, &mut wtr));
     for r in rdr.byte_records() {
         try!(wtr.write_bytes(try!(r).into_iter()));
     }
