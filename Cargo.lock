@@ -1,6 +1,6 @@
 [root]
 name = "xsv"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "docopt 0.6.8 (git+git://github.com/docopt/docopt.rs)",
  "quickcheck 0.1.2 (git+git://github.com/BurntSushi/quickcheck)",
