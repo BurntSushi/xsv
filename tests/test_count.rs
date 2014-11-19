@@ -5,7 +5,8 @@ use workdir::Workdir;
 ///
 /// It does some simple case analysis to handle whether we want to test counts
 /// in the presence of headers and/or indexes.
-fn prop_count_len(name: &str, rows: CsvData, headers: bool, idx: bool) -> bool {
+fn prop_count_len(name: &str, rows: CsvData,
+                  headers: bool, idx: bool) -> bool {
     let mut expected_count = rows.as_slice().len();
     if headers && expected_count > 0 {
         expected_count -= 1;

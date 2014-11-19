@@ -125,11 +125,13 @@ impl Config {
         Ok(())
     }
 
-    pub fn writer(&self) -> io::IoResult<csv::Writer<Box<io::Writer+'static>>> {
+    pub fn writer(&self)
+                 -> io::IoResult<csv::Writer<Box<io::Writer+'static>>> {
         Ok(self.from_writer(try!(self.io_writer())))
     }
 
-    pub fn reader(&self) -> io::IoResult<csv::Reader<Box<io::Reader+'static>>> {
+    pub fn reader(&self)
+                 -> io::IoResult<csv::Reader<Box<io::Reader+'static>>> {
         Ok(self.from_reader(try!(self.io_reader())))
     }
 

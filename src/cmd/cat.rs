@@ -91,8 +91,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                     None => {
                         num_done += 1;
                         if args.flag_pad {
-                            // This can probably be optimized by pre-allocating.
-                            // It would avoid the intermediate `Vec`.
+                            // This can probably be optimized by
+                            // pre-allocating. It would avoid the intermediate
+                            // `Vec`.
                             let pad = Vec::from_elem(len, util::empty_field());
                             records.push(pad);
                         } else {

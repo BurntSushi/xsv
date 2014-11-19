@@ -322,8 +322,8 @@ impl Stats {
                 if self.which.mode {
                     let lossy: |ByteString| -> String =
                         |s| String::from_utf8_lossy(s[]).into_string();
-                    let mode = v.mode().map(lossy).unwrap_or("N/A".to_string());
-                    pieces.push(mode);
+                    pieces.push(
+                        v.mode().map(lossy).unwrap_or("N/A".into_string()));
                 }
                 if self.which.cardinality {
                     pieces.push(v.cardinality().to_string());

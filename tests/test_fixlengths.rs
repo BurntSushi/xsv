@@ -6,10 +6,11 @@ use workdir::Workdir;
 #[test]
 fn prop_fixlengths_all_maxlen() {
     fn p(rows: Vec<CsvRecord>) -> TestResult {
-        let expected_len = match rows.iter().map(|r| r.as_slice().len()).max() {
-            None => return TestResult::discard(),
-            Some(n) => n,
-        };
+        let expected_len =
+            match rows.iter().map(|r| r.as_slice().len()).max() {
+                None => return TestResult::discard(),
+                Some(n) => n,
+            };
 
         let wrk = Workdir::new("fixlengths_all_maxlen").flexible(true);
         wrk.create("in.csv", rows);

@@ -105,8 +105,12 @@ impl Arbitrary for CsvRecord {
 }
 
 impl Csv for Vec<CsvRecord> {
-    fn to_vecs(self) -> CsvVecs { unsafe { transmute(self) } }
-    fn from_vecs(vecs: CsvVecs) -> Vec<CsvRecord> { unsafe { transmute(vecs) } }
+    fn to_vecs(self) -> CsvVecs {
+        unsafe { transmute(self) }
+    }
+    fn from_vecs(vecs: CsvVecs) -> Vec<CsvRecord> {
+        unsafe { transmute(vecs) }
+    }
 }
 
 #[deriving(Clone, Eq, Ord, PartialOrd, Show)]

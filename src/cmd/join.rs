@@ -255,7 +255,8 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         Ok(())
     }
 
-    fn get_padding(&mut self) -> CliResult<(Vec<ByteString>, Vec<ByteString>)> {
+    fn get_padding(&mut self)
+                  -> CliResult<(Vec<ByteString>, Vec<ByteString>)> {
         let len1 = try!(self.rdr1.byte_headers()).len();
         let len2 = try!(self.rdr2.byte_headers()).len();
         let (nada1, nada2) = (util::empty_field(), util::empty_field());

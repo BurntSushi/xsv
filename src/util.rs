@@ -14,7 +14,8 @@ pub fn version() -> String {
         option_env!("CARGO_PKG_VERSION_PATCH"),
     );
     match (maj, min, pat) {
-        (Some(maj), Some(min), Some(pat)) => format!("{}.{}.{}", maj, min, pat),
+        (Some(maj), Some(min), Some(pat)) =>
+            format!("{}.{}.{}", maj, min, pat),
         _ => "".to_string(),
     }
 }
