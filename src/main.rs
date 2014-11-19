@@ -85,19 +85,20 @@ Please choose one of the following commands:",
         Some(cmd) => {
             match cmd.run() {
                 Ok(()) => os::set_exit_status(0),
-                Err(ErrFlag(err)) => err.exit(),
-                Err(ErrCsv(err)) => {
+                Err(CliError::Flag(err)) => err.exit(),
+                Err(CliError::Csv(err)) => {
                     os::set_exit_status(1);
                     let _ = writeln!(io::stderr(), "{}", err.to_string());
                 }
-                Err(ErrIo(io::IoError { kind: io::BrokenPipe, .. })) => {
+                Err(CliError::Io(
+                        io::IoError { kind: io::BrokenPipe, .. })) => {
                     os::set_exit_status(0);
                 }
-                Err(ErrIo(err)) => {
+                Err(CliError::Io(err)) => {
                     os::set_exit_status(1);
                     let _ = writeln!(io::stderr(), "{}", err.to_string());
                 }
-                Err(ErrOther(msg)) => {
+                Err(CliError::Other(msg)) => {
                     os::set_exit_status(1);
                     let _ = writeln!(io::stderr(), "{}", msg);
                 }
@@ -132,22 +133,22 @@ impl Command {
         let argv: Vec<_> = argv.iter().map(|s| s[]).collect();
         let argv = argv[];
         match self {
-            Cat => cmd::cat::run(argv),
-            Count => cmd::count::run(argv),
-            FixLengths => cmd::fixlengths::run(argv),
-            Flatten => cmd::flatten::run(argv),
-            Fmt => cmd::fmt::run(argv),
-            Frequency => cmd::frequency::run(argv),
-            Headers => cmd::headers::run(argv),
-            Index => cmd::index::run(argv),
-            Join => cmd::join::run(argv),
-            Search => cmd::search::run(argv),
-            Select => cmd::select::run(argv),
-            Slice => cmd::slice::run(argv),
-            Sort => cmd::sort::run(argv),
-            Split => cmd::split::run(argv),
-            Stats => cmd::stats::run(argv),
-            Table => cmd::table::run(argv),
+            Command::Cat => cmd::cat::run(argv),
+            Command::Count => cmd::count::run(argv),
+            Command::FixLengths => cmd::fixlengths::run(argv),
+            Command::Flatten => cmd::flatten::run(argv),
+            Command::Fmt => cmd::fmt::run(argv),
+            Command::Frequency => cmd::frequency::run(argv),
+            Command::Headers => cmd::headers::run(argv),
+            Command::Index => cmd::index::run(argv),
+            Command::Join => cmd::join::run(argv),
+            Command::Search => cmd::search::run(argv),
+            Command::Select => cmd::select::run(argv),
+            Command::Slice => cmd::slice::run(argv),
+            Command::Sort => cmd::sort::run(argv),
+            Command::Split => cmd::split::run(argv),
+            Command::Stats => cmd::stats::run(argv),
+            Command::Table => cmd::table::run(argv),
         }
     }
 }
@@ -156,42 +157,42 @@ pub type CliResult<T> = Result<T, CliError>;
 
 #[deriving(Show)]
 pub enum CliError {
-    ErrFlag(docopt::Error),
-    ErrCsv(csv::Error),
-    ErrIo(io::IoError),
-    ErrOther(String),
+    Flag(docopt::Error),
+    Csv(csv::Error),
+    Io(io::IoError),
+    Other(String),
 }
 
 impl FromError<docopt::Error> for CliError {
     fn from_error(err: docopt::Error) -> CliError {
-        ErrFlag(err)
+        CliError::Flag(err)
     }
 }
 
 impl FromError<csv::Error> for CliError {
     fn from_error(err: csv::Error) -> CliError {
         match err {
-            csv::ErrIo(v) => FromError::from_error(v),
-            v => ErrCsv(v),
+            csv::Io(v) => FromError::from_error(v),
+            v => CliError::Csv(v),
         }
     }
 }
 
 impl FromError<io::IoError> for CliError {
     fn from_error(err: io::IoError) -> CliError {
-        ErrIo(err)
+        CliError::Io(err)
     }
 }
 
 impl<T: StrAllocating> FromError<T> for CliError {
     fn from_error(err: T) -> CliError {
-        ErrOther(err.into_string())
+        CliError::Other(err.into_string())
     }
 }
 
 impl FromError<regex::Error> for CliError {
     fn from_error(err: regex::Error) -> CliError {
-        ErrOther(err.to_string())
+        CliError::Other(err.to_string())
     }
 }
 

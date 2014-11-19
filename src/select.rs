@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 use std::fmt;
-use std::from_str::FromStr;
 use std::iter;
 use std::slice;
+use std::str::FromStr;
 
 use serialize::{Decodable, Decoder};
 
@@ -96,7 +96,7 @@ impl SelectorParser {
             }
             let f1: OneSelector =
                 if self.cur() == Some('-') {
-                    SelStart
+                    OneSelector::Start
                 } else {
                     try!(self.parse_one())
                 };
@@ -104,7 +104,7 @@ impl SelectorParser {
                 if self.cur() == Some('-') {
                     self.bump();
                     Some(if self.is_end_of_selector() {
-                        SelEnd
+                        OneSelector::End
                     } else {
                         try!(self.parse_one())
                     })
@@ -117,8 +117,8 @@ impl SelectorParser {
                     self.cur().unwrap()));
             }
             sels.push(match f2 {
-                Some(end) => SelRange(f1, end),
-                None => SelOne(f1),
+                Some(end) => Selector::Range(f1, end),
+                None => Selector::One(f1),
             });
             self.bump();
         }
@@ -135,11 +135,11 @@ impl SelectorParser {
             };
         Ok(if self.cur() == Some('[') {
             let idx = try!(self.parse_index());
-            SelIndexedName(name, idx)
+            OneSelector::IndexedName(name, idx)
         } else {
             match FromStr::from_str(name[]) {
-                None => SelIndexedName(name, 0),
-                Some(idx) => SelIndex(idx),
+                None => OneSelector::IndexedName(name, 0),
+                Some(idx) => OneSelector::Index(idx),
             }
         })
     }
@@ -219,26 +219,26 @@ impl SelectorParser {
 
 #[deriving(Clone)]
 enum Selector {
-    SelOne(OneSelector),
-    SelRange(OneSelector, OneSelector),
+    One(OneSelector),
+    Range(OneSelector, OneSelector),
 }
 
 #[deriving(Clone)]
 enum OneSelector {
-    SelStart,
-    SelEnd,
-    SelIndex(uint),
-    SelIndexedName(String, uint),
+    Start,
+    End,
+    Index(uint),
+    IndexedName(String, uint),
 }
 
 impl Selector {
     fn indices(&self, first_record: &[csv::ByteString], use_names: bool)
               -> Result<Vec<uint>, String> {
         match self {
-            &SelOne(ref sel) => {
+            &Selector::One(ref sel) => {
                 sel.index(first_record, use_names).map(|i| vec![i])
             }
-            &SelRange(ref sel1, ref sel2) => {
+            &Selector::Range(ref sel1, ref sel2) => {
                 let i1 = try!(sel1.index(first_record, use_names));
                 let i2 = try!(sel2.index(first_record, use_names));
                 Ok(match i1.cmp(&i2) {
@@ -257,16 +257,16 @@ impl Selector {
 impl OneSelector {
     fn index(&self, first_record: &[csv::ByteString], use_names: bool)
             -> Result<uint, String> {
-        match self {
-            &SelStart => Ok(0),
-            &SelEnd => Ok(
+        match *self {
+            OneSelector::Start => Ok(0),
+            OneSelector::End => Ok(
                 if first_record.len() == 0 {
                     0
                 } else {
                     first_record.len() - 1
                 }
             ),
-            &SelIndex(i) => {
+            OneSelector::Index(i) => {
                 if i < 1 || i > first_record.len() {
                     Err(format!("Selector index {} is out of \
                                  bounds. Index must be >= 1 \
@@ -276,7 +276,7 @@ impl OneSelector {
                     Ok(i-1)
                 }
             }
-            &SelIndexedName(ref s, sidx) => {
+            OneSelector::IndexedName(ref s, sidx) => {
                 if !use_names {
                     return Err(format!("Cannot use names ('{}') in selection \
                                         with --no-headers set.", s));
@@ -305,21 +305,21 @@ impl OneSelector {
 
 impl fmt::Show for Selector {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &SelOne(ref sel) => sel.fmt(f),
-            &SelRange(ref s, ref e) => write!(f, "Range({}, {})", s, e),
+        match *self {
+            Selector::One(ref sel) => sel.fmt(f),
+            Selector::Range(ref s, ref e) => write!(f, "Range({}, {})", s, e),
         }
     }
 }
 
 impl fmt::Show for OneSelector {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &SelStart => write!(f, "Start"),
-            &SelEnd => write!(f, "End"),
-            &SelIndex(idx) => write!(f, "Index({:u})", idx),
-            &SelIndexedName(ref s, idx) => write!(f, "IndexedName({}[{}])",
-                                                  s, idx),
+        match *self {
+            OneSelector::Start => write!(f, "Start"),
+            OneSelector::End => write!(f, "End"),
+            OneSelector::Index(idx) => write!(f, "Index({:u})", idx),
+            OneSelector::IndexedName(ref s, idx) =>
+                write!(f, "IndexedName({}[{}])", s, idx),
         }
     }
 }

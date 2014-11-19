@@ -1,9 +1,9 @@
 use std::fmt;
-use std::from_str::{FromStr, from_str};
 use std::io;
 use std::io::fs::{mod, PathExtensions};
 use std::io::process;
 use std::os;
+use std::str::{FromStr, from_str};
 use std::sync::atomic;
 
 use csv;

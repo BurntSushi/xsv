@@ -86,10 +86,10 @@ impl Args {
         use std::sync::TaskPool;
 
         let nchunks = util::num_of_chunks(idx.count() as uint, self.flag_size);
-        let mut pool = TaskPool::new(self.flag_jobs, || { proc(i) i });
+        let pool = TaskPool::new(self.flag_jobs);
         for i in range(0, nchunks) {
             let args = self.clone();
-            pool.execute(proc(_) {
+            pool.execute(proc() {
                 let conf = args.rconfig();
                 let mut idx = conf.indexed().unwrap().unwrap();
                 let headers = idx.csv().byte_headers().unwrap();

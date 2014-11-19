@@ -12,17 +12,17 @@ dependencies = [
 [[package]]
 name = "docopt"
 version = "0.6.8"
-source = "git+git://github.com/docopt/docopt.rs#eff782322c5064879b8fb393807bd565af234a18"
+source = "git+git://github.com/docopt/docopt.rs#2343b49bc9de6c6c5802aad8b7e1b778f0abf7b0"
 
 [[package]]
 name = "quickcheck"
 version = "0.1.2"
-source = "git+git://github.com/BurntSushi/quickcheck#3ef94610889571745b52981e3e3489e566bf2267"
+source = "git+git://github.com/BurntSushi/quickcheck#2540f79fac736b035869205696f33fef9abbea3f"
 
 [[package]]
 name = "rust-csv"
 version = "0.5.1"
-source = "git+git://github.com/BurntSushi/rust-csv#8ed93326bda356d9e0a8ab9f2d281b2bf6ffab86"
+source = "git+git://github.com/BurntSushi/rust-csv#34be7bd832fb31679e43adf1f7bc344687c38a72"
 
 [[package]]
 name = "rust-stats"

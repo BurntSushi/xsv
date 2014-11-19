@@ -1,9 +1,8 @@
 use std::default::Default;
 use std::fmt;
-use std::from_str::{FromStr, from_str};
 use std::io::{mod, File};
 use std::os;
-use std::str;
+use std::str::{mod, FromStr, from_str};
 
 use csv::{mod, ByteString};
 use csv::index::Indexed;
@@ -13,6 +12,8 @@ use CliResult;
 use config::{Config, Delimiter};
 use select::{SelectColumns, Selection};
 use util;
+
+use self::FieldType::{TUnknown, TNull, TUnicode, TFloat, TInteger};
 
 static USAGE: &'static str = "
 Computes basic statistics on CSV data.
@@ -124,11 +125,11 @@ impl Args {
         let chunk_size = util::chunk_size(idx.count() as uint, self.njobs());
         let nchunks = util::num_of_chunks(idx.count() as uint, chunk_size);
 
-        let mut pool = TaskPool::new(self.njobs(), || { proc(_) () });
+        let pool = TaskPool::new(self.njobs());
         let (send, recv) = channel();
         for i in range(0, nchunks) {
             let (send, args, sel) = (send.clone(), self.clone(), sel.clone());
-            pool.execute(proc(_) {
+            pool.execute(proc() {
                 let mut idx = args.rconfig().indexed().unwrap().unwrap();
                 idx.seek((i * chunk_size) as u64).unwrap();
                 let it = idx.csv().byte_records().take(chunk_size);
@@ -144,12 +145,12 @@ impl Args {
         use std::sync::TaskPool;
 
         let mut records = Vec::from_elem(stats.len(), vec![]);
-        let mut pool = TaskPool::new(self.njobs(), || { proc(_) () });
+        let pool = TaskPool::new(self.njobs());
         let mut results = vec![];
         for mut stat in stats.into_iter() {
             let (tx, rx) = channel();
             results.push(rx);
-            pool.execute(proc(_) { tx.send(stat.to_record()); });
+            pool.execute(proc() { tx.send(stat.to_record()); });
         }
         for (i, rx) in results.into_iter().enumerate() {
             records[i] = rx.recv();
