@@ -10,20 +10,32 @@ readme = "README.md"
 keywords = ["csv", "tsv", "slice", "command"]
 license = "Unlicense"
 
-[dependencies.csv]
-git = "git://github.com/BurntSushi/rust-csv"
+[dependencies]
+csv = "0.5.*"
+streaming-stats = "0.1.*"
+tabwriter = "0.1.*"
+docopt = "0.6.*"
+quickcheck = "0.1.*"
 
-[dependencies.streaming-stats]
-git = "git://github.com/BurntSushi/rust-stats"
+# [dependencies.csv]
+# path = "/home/andrew/data/projects/rust/rust-csv"
+# git = "git://github.com/BurntSushi/rust-csv"
 
-[dependencies.tabwriter]
-git = "git://github.com/BurntSushi/tabwriter"
-
-[dependencies.docopt] 
-git = "git://github.com/docopt/docopt.rs"
-
-[dev-dependencies.quickcheck]
-git = "git://github.com/BurntSushi/quickcheck"
+# [dependencies.streaming-stats]
+# path = "/home/andrew/data/projects/rust/rust-stats"
+# git = "git://github.com/BurntSushi/rust-stats"
+#
+# [dependencies.tabwriter]
+# path = "/home/andrew/data/projects/rust/tabwriter"
+# git = "git://github.com/BurntSushi/tabwriter"
+#
+# [dependencies.docopt]
+# path = "/home/andrew/data/projects/rust/docopt"
+# git = "git://github.com/docopt/docopt.rs"
+#
+# [dev-dependencies.quickcheck]
+# path = "/home/andrew/data/projects/rust/quickcheck"
+# git = "git://github.com/BurntSushi/quickcheck"
 
 [[bin]]
 name = "xsv"
