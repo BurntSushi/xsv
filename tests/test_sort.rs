@@ -46,7 +46,7 @@ fn sort_select() {
     wrk.create("in.csv", vec![svec!["1", "b"], svec!["2", "a"]]);
 
     let mut cmd = wrk.command("sort");
-    cmd.arg("--no-headers").args(["--select", "2"]).arg("in.csv");
+    cmd.arg("--no-headers").args(&["--select", "2"]).arg("in.csv");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
     let expected = vec![svec!["2", "a"], svec!["1", "b"]];

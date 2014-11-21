@@ -80,7 +80,7 @@ fn main() {
 
 Please choose one of the following commands:",
                 command_list!());
-            {write!(io::stderr(), "{}", msg)}.unwrap();
+            io::stderr().write_str(msg).unwrap();
         }
         Some(cmd) => {
             match cmd.run() {
@@ -88,7 +88,9 @@ Please choose one of the following commands:",
                 Err(CliError::Flag(err)) => err.exit(),
                 Err(CliError::Csv(err)) => {
                     os::set_exit_status(1);
-                    let _ = writeln!(io::stderr(), "{}", err.to_string());
+                    io::stderr()
+                       .write_str(format!("{}\n", err.to_string()).as_slice())
+                       .unwrap();
                 }
                 Err(CliError::Io(
                         io::IoError { kind: io::BrokenPipe, .. })) => {
@@ -96,11 +98,15 @@ Please choose one of the following commands:",
                 }
                 Err(CliError::Io(err)) => {
                     os::set_exit_status(1);
-                    let _ = writeln!(io::stderr(), "{}", err.to_string());
+                    io::stderr()
+                       .write_str(format!("{}\n", err.to_string()).as_slice())
+                       .unwrap();
                 }
                 Err(CliError::Other(msg)) => {
                     os::set_exit_status(1);
-                    let _ = writeln!(io::stderr(), "{}", msg);
+                    io::stderr()
+                       .write_str(format!("{}\n", msg).as_slice())
+                       .unwrap();
                 }
             }
         }

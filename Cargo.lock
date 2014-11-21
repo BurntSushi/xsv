@@ -2,38 +2,43 @@
 name = "xsv"
 version = "0.4.0"
 dependencies = [
+ "csv 0.5.1 (git+git://github.com/BurntSushi/rust-csv)",
  "docopt 0.6.8 (git+git://github.com/docopt/docopt.rs)",
  "quickcheck 0.1.2 (git+git://github.com/BurntSushi/quickcheck)",
- "rust-csv 0.5.1 (git+git://github.com/BurntSushi/rust-csv)",
- "rust-stats 0.1.1 (git+git://github.com/BurntSushi/rust-stats)",
+ "streaming-stats 0.1.1 (git+git://github.com/BurntSushi/rust-stats)",
  "tabwriter 0.1.1 (git+git://github.com/BurntSushi/tabwriter)",
 ]
 
 [[package]]
+name = "csv"
+version = "0.5.1"
+source = "git+git://github.com/BurntSushi/rust-csv#3011952f93be35c6fba420bfa581484a4d6e3be4"
+
+[[package]]
 name = "docopt"
 version = "0.6.8"
-source = "git+git://github.com/docopt/docopt.rs#2343b49bc9de6c6c5802aad8b7e1b778f0abf7b0"
+source = "git+git://github.com/docopt/docopt.rs#be2e3b6b91ab1912d79f1e840d9397dead6e6a6e"
+
+[[package]]
+name = "docopt"
+version = "0.6.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "quickcheck"
 version = "0.1.2"
-source = "git+git://github.com/BurntSushi/quickcheck#2540f79fac736b035869205696f33fef9abbea3f"
+source = "git+git://github.com/BurntSushi/quickcheck#743c44f41dcbff55555fd50bf25ba5d153a87afa"
 
 [[package]]
-name = "rust-csv"
-version = "0.5.1"
-source = "git+git://github.com/BurntSushi/rust-csv#34be7bd832fb31679e43adf1f7bc344687c38a72"
-
-[[package]]
-name = "rust-stats"
+name = "streaming-stats"
 version = "0.1.1"
-source = "git+git://github.com/BurntSushi/rust-stats#3cb3a769b88126e18807b8583afe0d2c26c6690b"
+source = "git+git://github.com/BurntSushi/rust-stats#abeb9cad86b7802cfc3b51fdea7384ff57479e53"
 
 [[package]]
 name = "tabwriter"
 version = "0.1.1"
-source = "git+git://github.com/BurntSushi/tabwriter#0d2f79b8be19d035d6f70cf04eefb3fb62cb96e7"
+source = "git+git://github.com/BurntSushi/tabwriter#3aa06672f17f405e2bb9e423837dcab28d716d94"
 dependencies = [
- "docopt 0.6.8 (git+git://github.com/docopt/docopt.rs)",
+ "docopt 0.6.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

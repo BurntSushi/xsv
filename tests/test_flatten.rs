@@ -54,7 +54,7 @@ fn flatten_no_headers() {
 #[test]
 fn flatten_separator() {
     let (wrk, mut cmd) = setup("flatten_separator");
-    cmd.args(["--separator", "!mysep!"]);
+    cmd.args(&["--separator", "!mysep!"]);
 
     let got: String = wrk.stdout(&cmd);
     let expected = "\
@@ -70,7 +70,7 @@ h2  stuvwx\
 #[test]
 fn flatten_condensed() {
     let (wrk, mut cmd) = setup("flatten_condensed");
-    cmd.args(["--condensed", "2"]);
+    cmd.args(&["--condensed", "2"]);
 
     let got: String = wrk.stdout(&cmd);
     let expected = "\

@@ -53,7 +53,7 @@ pub fn errif_greater_one_stdin(inps: &[Config]) -> Result<(), String> {
 }
 
 pub fn empty_field() -> csv::ByteString {
-    csv::ByteString::from_bytes::<&[u8]>([])
+    csv::ByteString::from_bytes::<&[u8]>(&[])
 }
 
 pub fn chunk_size(nitems: uint, njobs: uint) -> uint {
@@ -110,8 +110,8 @@ pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
         };
     if s > e {
         return Err(format!(
-            "The end of the range ({:u}) must be greater than or\n\
-             equal to the start of the range ({:u}).", e, s));
+            "The end of the range ({}) must be greater than or\n\
+             equal to the start of the range ({}).", e, s));
     }
     Ok((s, e))
 }

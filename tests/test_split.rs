@@ -23,7 +23,7 @@ fn split_zero() {
     wrk.create("in.csv", data(true));
 
     let mut cmd = wrk.command("split");
-    cmd.args(["--size", "0"]).arg(wrk.path(".")).arg("in.csv");
+    cmd.args(&["--size", "0"]).arg(wrk.path(".")).arg("in.csv");
     wrk.assert_err(&cmd);
 }
 
@@ -33,7 +33,7 @@ fn split() {
     wrk.create("in.csv", data(true));
 
     let mut cmd = wrk.command("split");
-    cmd.args(["--size", "2"]).arg(wrk.path(".")).arg("in.csv");
+    cmd.args(&["--size", "2"]).arg(wrk.path(".")).arg("in.csv");
     wrk.run(&cmd);
 
     split_eq!(wrk, "0.csv", "\
@@ -59,7 +59,7 @@ fn split_idx() {
     wrk.create_indexed("in.csv", data(true));
 
     let mut cmd = wrk.command("split");
-    cmd.args(["--size", "2"]).arg(wrk.path(".")).arg("in.csv");
+    cmd.args(&["--size", "2"]).arg(wrk.path(".")).arg("in.csv");
     wrk.run(&cmd);
 
     split_eq!(wrk, "0.csv", "\
@@ -85,7 +85,9 @@ fn split_no_headers() {
     wrk.create("in.csv", data(false));
 
     let mut cmd = wrk.command("split");
-    cmd.args(["--no-headers", "--size", "2"]).arg(wrk.path(".")).arg("in.csv");
+    cmd.args(&["--no-headers", "--size", "2"])
+       .arg(wrk.path("."))
+       .arg("in.csv");
     wrk.run(&cmd);
 
     split_eq!(wrk, "0.csv", "\
@@ -108,7 +110,9 @@ fn split_no_headers_idx() {
     wrk.create_indexed("in.csv", data(false));
 
     let mut cmd = wrk.command("split");
-    cmd.args(["--no-headers", "--size", "2"]).arg(wrk.path(".")).arg("in.csv");
+    cmd.args(&["--no-headers", "--size", "2"])
+       .arg(wrk.path("."))
+       .arg("in.csv");
     wrk.run(&cmd);
 
     split_eq!(wrk, "0.csv", "\
@@ -131,7 +135,7 @@ fn split_one() {
     wrk.create("in.csv", data(true));
 
     let mut cmd = wrk.command("split");
-    cmd.args(["--size", "1"]).arg(wrk.path(".")).arg("in.csv");
+    cmd.args(&["--size", "1"]).arg(wrk.path(".")).arg("in.csv");
     wrk.run(&cmd);
 
     split_eq!(wrk, "0.csv", "\
@@ -166,7 +170,7 @@ fn split_one_idx() {
     wrk.create_indexed("in.csv", data(true));
 
     let mut cmd = wrk.command("split");
-    cmd.args(["--size", "1"]).arg(wrk.path(".")).arg("in.csv");
+    cmd.args(&["--size", "1"]).arg(wrk.path(".")).arg("in.csv");
     wrk.run(&cmd);
 
     split_eq!(wrk, "0.csv", "\
@@ -201,7 +205,7 @@ fn split_uneven() {
     wrk.create("in.csv", data(true));
 
     let mut cmd = wrk.command("split");
-    cmd.args(["--size", "4"]).arg(wrk.path(".")).arg("in.csv");
+    cmd.args(&["--size", "4"]).arg(wrk.path(".")).arg("in.csv");
     wrk.run(&cmd);
 
     split_eq!(wrk, "0.csv", "\
@@ -224,7 +228,7 @@ fn split_uneven_idx() {
     wrk.create_indexed("in.csv", data(true));
 
     let mut cmd = wrk.command("split");
-    cmd.args(["--size", "4"]).arg(wrk.path(".")).arg("in.csv");
+    cmd.args(&["--size", "4"]).arg(wrk.path(".")).arg("in.csv");
     wrk.run(&cmd);
 
     split_eq!(wrk, "0.csv", "\

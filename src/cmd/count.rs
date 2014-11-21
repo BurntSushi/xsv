@@ -53,6 +53,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 }
             }
         };
-    println!("{:u}", count);
+    println!("{}", count);
     Ok(())
 }

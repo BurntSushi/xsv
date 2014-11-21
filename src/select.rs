@@ -317,7 +317,7 @@ impl fmt::Show for OneSelector {
         match *self {
             OneSelector::Start => write!(f, "Start"),
             OneSelector::End => write!(f, "End"),
-            OneSelector::Index(idx) => write!(f, "Index({:u})", idx),
+            OneSelector::Index(idx) => write!(f, "Index({})", idx),
             OneSelector::IndexedName(ref s, idx) =>
                 write!(f, "IndexedName({}[{}])", s, idx),
         }

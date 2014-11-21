@@ -2,20 +2,24 @@
 name = "xsv"
 version = "0.4.0"
 authors = ["Andrew Gallant <jamslam@gmail.com>"]
+description = "A high performance CSV command line toolkit."
+documentation = "http://burntsushi.net/rustdoc/xsv/"
+homepage = "https://github.com/BurntSushi/xsv"
+repository = "https://github.com/BurntSushi/xsv"
+readme = "README.md"
+keywords = ["csv", "tsv", "slice", "command"]
+license = "Unlicense"
 
-[dependencies.rust-csv]
-# path = "/home/andrew/data/projects/rust/rust-csv" 
+[dependencies.csv]
 git = "git://github.com/BurntSushi/rust-csv"
 
-[dependencies.rust-stats]
-# path = "/home/andrew/data/projects/rust/rust-stats" 
+[dependencies.streaming-stats]
 git = "git://github.com/BurntSushi/rust-stats"
 
 [dependencies.tabwriter]
 git = "git://github.com/BurntSushi/tabwriter"
 
 [dependencies.docopt] 
-# path = "/home/andrew/data/projects/rust/docopt.rs"
 git = "git://github.com/docopt/docopt.rs"
 
 [dev-dependencies.quickcheck]

@@ -119,11 +119,11 @@ fn test_index(name: &str, idx: uint, expected: &str,
     assert_eq!(got, expected);
 }
 
-slice_tests!(slice_simple, Some(0), Some(1), ["a"])
-slice_tests!(slice_simple_2, Some(1), Some(3), ["b", "c"])
-slice_tests!(slice_no_start, None, Some(1), ["a"])
-slice_tests!(slice_no_end, Some(3), None, ["d", "e"])
-slice_tests!(slice_all, None, None, ["a", "b", "c", "d", "e"])
+slice_tests!(slice_simple, Some(0), Some(1), &["a"])
+slice_tests!(slice_simple_2, Some(1), Some(3), &["b", "c"])
+slice_tests!(slice_no_start, None, Some(1), &["a"])
+slice_tests!(slice_no_end, Some(3), None, &["d", "e"])
+slice_tests!(slice_all, None, None, &["a", "b", "c", "d", "e"])
 
 #[test]
 fn slice_index() {

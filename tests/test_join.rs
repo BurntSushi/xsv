@@ -14,7 +14,7 @@ macro_rules! join_test {
             fn headers() {
                 let wrk = setup(stringify!($name), true);
                 let mut cmd = wrk.command("join");
-                cmd.args(["city", "cities.csv", "city", "places.csv"]);
+                cmd.args(&["city", "cities.csv", "city", "places.csv"]);
                 $fun(wrk, cmd, true);
             }
 
@@ -23,7 +23,7 @@ macro_rules! join_test {
                 let wrk = setup(stringify!($name_no_headers), false);
                 let mut cmd = wrk.command("join");
                 cmd.arg("--no-headers");
-                cmd.args(["1", "cities.csv", "1", "places.csv"]);
+                cmd.args(&["1", "cities.csv", "1", "places.csv"]);
                 $fun(wrk, cmd, false);
             }
         }
@@ -121,7 +121,7 @@ fn join_outer_cross() {
 
     let mut cmd = wrk.command("join");
     cmd.arg("--cross").arg("--no-headers")
-       .args(["", "letters.csv", "", "numbers.csv"]);
+       .args(&["", "letters.csv", "", "numbers.csv"]);
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
     let expected = vec![
         svec!["a", "b", "1", "2"],

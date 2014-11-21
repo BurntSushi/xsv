@@ -44,7 +44,7 @@ impl Workdir {
         let mut wtr = csv::Writer::from_file(&self.path(name))
                                   .flexible(self.flexible);
         for row in rows.to_vecs().into_iter() {
-            wtr.write(row.into_iter()).unwrap();
+            wtr.write(row.iter()).unwrap();
         }
         wtr.flush().unwrap();
     }
