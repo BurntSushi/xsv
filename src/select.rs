@@ -373,8 +373,7 @@ impl NormalSelection {
                                                Option<T>,
                                                iter::Enumerate<I>,
                                                &'a [bool]>> {
-        let set = self.as_slice();
-        row.enumerate().scan(set, |set, (i, v)| {
+        row.enumerate().scan(self.as_slice(), |set, (i, v)| {
             if i < set.len() && set[i] { Some(Some(v)) } else { Some(None) }
         }).filter_map(|v| v)
     }

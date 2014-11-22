@@ -9,14 +9,14 @@ use util;
 static USAGE: &'static str = "
 Concatenates CSV data by column or by row.
 
-When concatenating by column, the columns will be written in the same order
-as the inputs given. The number of rows in the result is always equivalent to
-to the minimum number of rows across all given CSV data. (This behavior can
-be reversed with the '--pad' flag.)
+When concatenating by column, the columns will be written in the same order as
+the inputs given. The number of rows in the result is always equivalent to to
+the minimum number of rows across all given CSV data. (This behavior can be
+reversed with the '--pad' flag.)
 
 When concatenating by row, all CSV data must have the same number of columns.
 If you need to rearrange the columns or fix the lengths of records, use the
-'slice' or 'fixlengths' commands. Also, only the headers of the *first* CSV
+'select' or 'fixlengths' commands. Also, only the headers of the *first* CSV
 data given are used. Headers in subsequent inputs are ignored. (This behavior
 can be disabled with --no-headers.)
 

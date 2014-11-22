@@ -1,6 +1,6 @@
 [package]
 name = "xsv"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Andrew Gallant <jamslam@gmail.com>"]
 description = "A high performance CSV command line toolkit."
 documentation = "http://burntsushi.net/rustdoc/xsv/"
@@ -9,6 +9,13 @@ repository = "https://github.com/BurntSushi/xsv"
 readme = "README.md"
 keywords = ["csv", "tsv", "slice", "command"]
 license = "Unlicense"
+
+[profile.release]
+opt-level = 3
+lto = true
+
+[profile.test]
+opt-level = 2
 
 [dependencies]
 csv = "0.5.*"

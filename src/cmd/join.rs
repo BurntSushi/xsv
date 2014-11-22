@@ -140,7 +140,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                         try!(validx.idx.seek(rowi as u64));
 
                         let mut row1 = row.iter().map(|f| Ok(f.as_slice()));
-                        let row2 = validx.idx.csv().by_ref();
+                        let row2 = unsafe { validx.idx.csv().byte_fields() };
                         let combined = row1.by_ref().chain(row2);
                         try!(self.wtr.write_results(combined));
                     }
@@ -177,7 +177,9 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                     for &rowi in rows.iter() {
                         try!(validx.idx.seek(rowi as u64));
                         let row1 = row.iter().map(|f| Ok(f.as_slice()));
-                        let row2 = validx.idx.csv().by_ref();
+                        let row2 = unsafe {
+                            validx.idx.csv().byte_fields()
+                        };
                         if right {
                             try!(self.wtr.write_results(row2.chain(row1)));
                         } else {
@@ -214,7 +216,9 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
 
                         try!(validx.idx.seek(rowi as u64));
                         let row1 = row1.iter().map(|f| Ok(f[]));
-                        let row2 = validx.idx.csv().by_ref();
+                        let row2 = unsafe {
+                            validx.idx.csv().byte_fields()
+                        };
                         try!(self.wtr.write_results(row1.chain(row2)));
                     }
                 }
@@ -227,7 +231,9 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
             if !written {
                 try!(validx.idx.seek(i as u64));
                 let row1 = pad1.iter().map(|f| Ok(f[]));
-                let row2 = validx.idx.csv().by_ref();
+                let row2 = unsafe {
+                    validx.idx.csv().byte_fields()
+                };
                 try!(self.wtr.write_results(row1.chain(row2)));
             }
         }
@@ -244,11 +250,13 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                 // Skip the header row. The raw byte interface won't
                 // do it for us.
                 if !self.no_headers && first {
-                    for f in self.rdr2 { try!(f); }
+                    for f in unsafe { self.rdr2.byte_fields() } { try!(f); }
                     first = false;
                 }
                 let row1 = row1.iter().map(|f| Ok(f[]));
-                let row2 = self.rdr2.by_ref();
+                let row2 = unsafe {
+                    self.rdr2.byte_fields()
+                };
                 try!(self.wtr.write_results(row1.chain(row2)));
             }
         }

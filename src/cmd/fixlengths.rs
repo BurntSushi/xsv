@@ -6,8 +6,8 @@ use config::{Config, Delimiter};
 use util;
 
 static USAGE: &'static str = "
-Transforms CSV data so that all records have the same length. The length is the
-length of the longest record in the data. Records with smaller lengths are
+Transforms CSV data so that all records have the same length. The length is
+the length of the longest record in the data. Records with smaller lengths are
 padded with empty fields.
 
 This requires two complete scans of the CSV data: one for determining the
@@ -66,7 +66,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 while !rdr.done() {
                     let mut count = 0u;
                     loop {
-                        match rdr.next_field() {
+                        match rdr.next_field().into_iter_result() {
                             None => break,
                             Some(r) => { try!(r); }
                         }

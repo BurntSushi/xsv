@@ -1,3 +1,7 @@
+use std::error::FromError;
+
+use csv::NextField;
+
 use CliResult;
 use config::{Delimiter, Config};
 use util;
@@ -5,14 +9,16 @@ use util;
 static USAGE: &'static str = "
 Prints a count of the number of records in the CSV data.
 
+Note that the count will not include the header row (unless --no-headers is
+given).
+
 Usage:
     xsv count [options] [<input>]
 
 Common options:
     -h, --help             Display this message
-    -n, --no-headers       When set, the first row will not be interpreted
-                           as headers. (i.e., They are not searched, analyzed,
-                           sliced, etc.)
+    -n, --no-headers       When set, the first row will not be included in
+                           the count.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
 ";
@@ -36,15 +42,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             None => {
                 let mut rdr = try!(conf.reader());
                 let mut count = 0u64;
-                let mut seen_field = false;
                 while !rdr.done() {
                     loop {
                         match rdr.next_field() {
-                            None => break,
-                            Some(r) => { seen_field = true; try!(r); }
+                            NextField::EndOfCsv => break,
+                            NextField::EndOfRecord => { count += 1; break; }
+                            NextField::Error(err) =>
+                                return Err(FromError::from_error(err)),
+                            NextField::Data(_) => {}
                         }
                     }
-                    if seen_field { count += 1; }
                 }
                 if !args.flag_no_headers && count > 0 {
                     count - 1
