@@ -1,12 +1,12 @@
 [root]
 name = "xsv"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "csv 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "docopt 0.6.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickcheck 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "streaming-stats 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "tabwriter 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tabwriter 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -31,7 +31,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "tabwriter"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "docopt 0.6.8 (registry+https://github.com/rust-lang/crates.io-index)",
