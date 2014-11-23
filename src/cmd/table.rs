@@ -41,10 +41,10 @@ struct Args {
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
 
-    let rconfig = Config::new(args.arg_input)
+    let rconfig = Config::new(&args.arg_input)
                          .delimiter(args.flag_delimiter)
                          .no_headers(true);
-    let wconfig = Config::new(args.flag_output).delimiter(Delimiter(b'\t'));
+    let wconfig = Config::new(&args.flag_output).delimiter(Delimiter(b'\t'));
 
     let tw = TabWriter::new(try!(wconfig.io_writer()))
                        .minwidth(args.flag_width)

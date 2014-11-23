@@ -112,7 +112,7 @@ impl Args {
         let dir = Path::new(self.arg_outdir.clone());
         let path = dir.join(format!("{}.csv", start));
         let spath = Some(path.display().to_string());
-        let mut wtr = try!(Config::new(spath).writer());
+        let mut wtr = try!(Config::new(&spath).writer());
         if !self.flag_no_headers {
             try!(wtr.write_bytes(headers.iter().map(|f| f[])));
         }
@@ -120,7 +120,7 @@ impl Args {
     }
 
     fn rconfig(&self) -> Config {
-        Config::new(self.arg_input.clone())
+        Config::new(&self.arg_input)
                .delimiter(self.flag_delimiter)
                .no_headers(self.flag_no_headers)
     }

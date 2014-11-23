@@ -36,7 +36,7 @@ pub fn many_configs(inps: &[String], delim: Delimiter, no_headers: bool)
         inps.push("-".to_string()); // stdin
     }
     let confs = inps.into_iter()
-                    .map(|p| Config::new(Some(p))
+                    .map(|p| Config::new(&Some(p))
                                     .delimiter(delim)
                                     .no_headers(no_headers))
                     .collect::<Vec<_>>();

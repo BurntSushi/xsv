@@ -94,12 +94,12 @@ impl Args {
     }
 
     fn rconfig(&self) -> Config {
-        Config::new(self.arg_input.clone())
+        Config::new(&self.arg_input)
                .delimiter(self.flag_delimiter)
                .no_headers(self.flag_no_headers)
     }
 
     fn wconfig(&self) -> Config {
-        Config::new(self.flag_output.clone())
+        Config::new(&self.flag_output)
     }
 }

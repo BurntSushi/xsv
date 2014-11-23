@@ -77,7 +77,7 @@ struct Args {
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
 
-    let mut wtr = try!(Config::new(args.flag_output.clone()).writer());
+    let mut wtr = try!(Config::new(&args.flag_output).writer());
     let (headers, stats) = try!(match try!(args.rconfig().indexed()) {
         None => args.sequential_stats(),
         Some(idx) => {
@@ -179,7 +179,7 @@ impl Args {
     }
 
     fn rconfig(&self) -> Config {
-        Config::new(self.arg_input.clone())
+        Config::new(&self.arg_input)
                .delimiter(self.flag_delimiter)
                .no_headers(self.flag_no_headers)
                .select(self.flag_select.clone())

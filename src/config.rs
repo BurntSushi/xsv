@@ -54,13 +54,13 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(mut path: Option<String>) -> Config {
-        if path.as_ref().map(|p| p.equiv(&"-")) == Some(true) {
-            // If the path explicitly wants stdin/stdout, then give it to them.
-            path = None;
-        }
+    pub fn new(path: &Option<String>) -> Config {
+        let path =
+            path.clone()
+                .map(|p| Path::new(p))
+                .and_then(|p| if p.as_vec() == b"-" { None } else { Some(p) });
         Config {
-            path: path.map(|p| Path::new(p)),
+            path: path,
             idx_path: None,
             select_columns: None,
             delimiter: b',',
@@ -190,7 +190,7 @@ impl Config {
     }
 
     pub fn indexed(&self)
-        -> CliResult<Option<Indexed<io::File, io::File>>> {
+                  -> CliResult<Option<Indexed<io::File, io::File>>> {
         match try!(self.index_files()) {
             None => Ok(None),
             Some((r, i)) => Ok(Some(try!(Indexed::new(r, i)))),

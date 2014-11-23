@@ -32,7 +32,7 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
-    let conf = Config::new(args.arg_input)
+    let conf = Config::new(&args.arg_input)
                       .delimiter(args.flag_delimiter)
                       .no_headers(args.flag_no_headers);
 
@@ -60,6 +60,5 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 }
             }
         };
-    println!("{}", count);
-    Ok(())
+    Ok(println!("{}", count))
 }

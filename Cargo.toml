@@ -18,7 +18,7 @@ lto = true
 opt-level = 2
 
 [dependencies]
-csv = "0.5.*"
+csv = "0.*"
 streaming-stats = "0.1.*"
 tabwriter = "0.1.*"
 docopt = "0.6.*"

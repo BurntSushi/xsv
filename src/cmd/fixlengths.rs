@@ -42,7 +42,7 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
-    let config = Config::new(args.arg_input)
+    let config = Config::new(&args.arg_input)
                         .delimiter(args.flag_delimiter)
                         .no_headers(true)
                         .flexible(true);
@@ -61,26 +61,24 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                      Please specify a file path."));
             }
             let mut maxlen = 0u;
-            {
-                let mut rdr = try!(config.reader());
-                while !rdr.done() {
-                    let mut count = 0u;
-                    loop {
-                        match rdr.next_field().into_iter_result() {
-                            None => break,
-                            Some(r) => { try!(r); }
-                        }
-                        count += 1;
+            let mut rdr = try!(config.reader());
+            while !rdr.done() {
+                let mut count = 0u;
+                loop {
+                    match rdr.next_field().into_iter_result() {
+                        None => break,
+                        Some(r) => { try!(r); }
                     }
-                    maxlen = cmp::max(maxlen, count);
+                    count += 1;
                 }
+                maxlen = cmp::max(maxlen, count);
             }
             maxlen
         }
     };
 
     let mut rdr = try!(config.reader());
-    let mut wtr = try!(Config::new(args.flag_output).writer());
+    let mut wtr = try!(Config::new(&args.flag_output).writer());
     for r in rdr.byte_records() {
         let mut r = try!(r);
         if length >= r.len() {

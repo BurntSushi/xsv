@@ -39,13 +39,13 @@ struct Args {
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
 
-    let rconfig = Config::new(args.arg_input)
+    let rconfig = Config::new(&args.arg_input)
                          .delimiter(args.flag_delimiter)
                          .no_headers(args.flag_no_headers)
                          .select(args.flag_select);
 
     let mut rdr = try!(rconfig.reader());
-    let mut wtr = try!(Config::new(args.flag_output).writer());
+    let mut wtr = try!(Config::new(&args.flag_output).writer());
 
     let headers = try!(rdr.byte_headers());
     let sel = try!(rconfig.selection(headers[]));
