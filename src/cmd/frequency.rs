@@ -55,13 +55,13 @@ Common options:
 
 #[deriving(Clone, Decodable)]
 struct Args {
-    arg_input: Option<Path>,
+    arg_input: Option<String>,
     flag_select: SelectColumns,
     flag_limit: uint,
     flag_asc: bool,
     flag_no_nulls: bool,
     flag_jobs: uint,
-    flag_output: Option<Path>,
+    flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Delimiter,
 }

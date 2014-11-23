@@ -40,11 +40,11 @@ Common options:
 
 #[deriving(Clone, Decodable)]
 struct Args {
-    arg_input: Option<Path>,
-    arg_outdir: Path,
+    arg_input: Option<String>,
+    arg_outdir: String,
     flag_size: uint,
     flag_jobs: uint,
-    flag_output: Option<Path>,
+    flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Delimiter,
 }
@@ -54,7 +54,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     if args.flag_size == 0 {
         return Err(FromError::from_error("--size must be greater than 0."));
     }
-    try!(mkdir_recursive(&args.arg_outdir, io::ALL_PERMISSIONS));
+    try!(mkdir_recursive(&Path::new(args.arg_outdir[]), io::ALL_PERMISSIONS));
 
     match try!(args.rconfig().indexed()) {
         Some(idx) => args.parallel_split(idx),
@@ -109,8 +109,10 @@ impl Args {
 
     fn new_writer(&self, headers: &[csv::ByteString], start: uint)
                  -> CliResult<csv::Writer<Box<io::Writer+'static>>> {
-        let path = self.arg_outdir.join(format!("{}.csv", start));
-        let mut wtr = try!(Config::new(&Some(path)).writer());
+        let dir = Path::new(self.arg_outdir.clone());
+        let path = dir.join(format!("{}.csv", start));
+        let spath = Some(path.display().to_string());
+        let mut wtr = try!(Config::new(&spath).writer());
         if !self.flag_no_headers {
             try!(wtr.write_bytes(headers.iter().map(|f| f[])));
         }

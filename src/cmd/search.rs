@@ -38,10 +38,10 @@ Common options:
 
 #[deriving(Decodable)]
 struct Args {
-    arg_input: Option<Path>,
+    arg_input: Option<String>,
     arg_regex: String,
     flag_select: SelectColumns,
-    flag_output: Option<Path>,
+    flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Delimiter,
 }

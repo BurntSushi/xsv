@@ -39,7 +39,7 @@ Common options:
 
 #[deriving(Decodable)]
 struct Args {
-    arg_input: Option<Path>,
+    arg_input: Option<String>,
     flag_condensed: Option<uint>,
     flag_separator: String,
     flag_no_headers: bool,

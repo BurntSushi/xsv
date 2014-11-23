@@ -38,12 +38,12 @@ Common options:
 
 #[deriving(Decodable)]
 struct Args {
-    arg_input: Option<Path>,
+    arg_input: Option<String>,
     flag_start: Option<uint>,
     flag_end: Option<uint>,
     flag_len: Option<uint>,
     flag_index: Option<uint>,
-    flag_output: Option<Path>,
+    flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Delimiter,
 }

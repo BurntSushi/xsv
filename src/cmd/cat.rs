@@ -44,9 +44,9 @@ Common options:
 struct Args {
     cmd_rows: bool,
     cmd_columns: bool,
-    arg_input: Vec<Path>,
+    arg_input: Vec<String>,
     flag_pad: bool,
-    flag_output: Option<Path>,
+    flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Delimiter,
 }

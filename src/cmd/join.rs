@@ -61,14 +61,14 @@ Common options:
 #[deriving(Decodable)]
 struct Args {
     arg_columns1: SelectColumns,
-    arg_input1: Path,
+    arg_input1: String,
     arg_columns2: SelectColumns,
-    arg_input2: Path,
+    arg_input2: String,
     flag_left: bool,
     flag_right: bool,
     flag_full: bool,
     flag_cross: bool,
-    flag_output: Option<Path>,
+    flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Delimiter,
 }

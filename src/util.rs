@@ -29,11 +29,11 @@ pub fn get_args<T>(usage: &str, argv: &[&str]) -> CliResult<T>
            .map_err(FromError::from_error)
 }
 
-pub fn many_configs(inps: &[Path], delim: Delimiter, no_headers: bool)
+pub fn many_configs(inps: &[String], delim: Delimiter, no_headers: bool)
                    -> Result<Vec<Config>, String> {
     let mut inps = inps.to_vec();
     if inps.is_empty() {
-        inps.push(Path::new("-")); // stdin
+        inps.push("-".to_string()); // stdin
     }
     let confs = inps.into_iter()
                     .map(|p| Config::new(&Some(p))

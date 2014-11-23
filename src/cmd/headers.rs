@@ -30,7 +30,7 @@ Common options:
 
 #[deriving(Decodable)]
 struct Args {
-    arg_input: Vec<Path>,
+    arg_input: Vec<String>,
     flag_just_names: bool,
     flag_intersect: bool,
     flag_delimiter: Delimiter,
@@ -39,7 +39,7 @@ struct Args {
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
     let configs = try!(util::many_configs(args.arg_input.as_slice(),
-                                          args.flag_delimiter, true));
+                                               args.flag_delimiter, true));
 
     let num_inputs = configs.len();
     let mut headers = vec!();
