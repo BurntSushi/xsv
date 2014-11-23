@@ -25,7 +25,7 @@ Common options:
 
 #[deriving(Decodable)]
 struct Args {
-    arg_input: Option<String>,
+    arg_input: Option<Path>,
     flag_no_headers: bool,
     flag_delimiter: Delimiter,
 }

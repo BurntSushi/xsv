@@ -54,10 +54,9 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(path: &Option<String>) -> Config {
+    pub fn new(path: &Option<Path>) -> Config {
         let path =
             path.clone()
-                .map(|p| Path::new(p))
                 .and_then(|p| if p.as_vec() == b"-" { None } else { Some(p) });
         Config {
             path: path,

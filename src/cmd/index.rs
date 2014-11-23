@@ -29,7 +29,7 @@ Common options:
 #[deriving(Decodable)]
 struct Args {
     arg_input: String,
-    flag_output: Option<String>,
+    flag_output: Option<Path>,
     flag_delimiter: Delimiter,
 }
 
