@@ -39,6 +39,7 @@ macro_rules! command_list(
     headers     Show header names
     index       Create CSV index for faster access
     join        Join CSV files
+    sample      Randomly sample CSV data
     search      Search CSV data with regexes
     select      Select columns from CSV
     slice       Slice records from CSV
@@ -124,6 +125,7 @@ enum Command {
     Headers,
     Index,
     Join,
+    Sample,
     Search,
     Select,
     Slice,
@@ -148,6 +150,7 @@ impl Command {
             Command::Headers => cmd::headers::run(argv),
             Command::Index => cmd::index::run(argv),
             Command::Join => cmd::join::run(argv),
+            Command::Sample => cmd::sample::run(argv),
             Command::Search => cmd::search::run(argv),
             Command::Select => cmd::select::run(argv),
             Command::Slice => cmd::slice::run(argv),

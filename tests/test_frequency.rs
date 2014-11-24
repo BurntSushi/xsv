@@ -33,14 +33,14 @@ fn frequency_no_headers() {
     cmd.args(&["--limit", "0"]).args(&["--select", "1"]).arg("--no-headers");
 
     let mut got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    got = got.into_iter().skip(1).collect();
     got.sort();
     let expected = vec![
-        svec!["field", "value", "count"],
-        svec!["h1", "(NULL)", "1"],
-        svec!["h1", "(NULL)", "1"],
-        svec!["h1", "a", "3"],
-        svec!["h1", "b", "1"],
-        svec!["h1", "h1", "1"],
+        svec!["1", "(NULL)", "1"],
+        svec!["1", "(NULL)", "1"],
+        svec!["1", "a", "3"],
+        svec!["1", "b", "1"],
+        svec!["1", "h1", "1"],
     ];
     assert_eq!(got, expected);
 }

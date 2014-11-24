@@ -12,6 +12,9 @@ Prints the fields of the first row in the CSV data.
 These names can be used in commands like 'select' to refer to columns in the
 CSV data.
 
+Note that multiple CSV files may be given to this command. This is useful with
+the --intersect flag.
+
 Usage:
     xsv headers [options] [<input>...]
 
@@ -39,7 +42,7 @@ struct Args {
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
     let configs = try!(util::many_configs(args.arg_input.as_slice(),
-                                               args.flag_delimiter, true));
+                                          args.flag_delimiter, true));
 
     let num_inputs = configs.len();
     let mut headers = vec!();

@@ -17,6 +17,10 @@ The frequency table is formatted as CSV data:
 
     field,value,count
 
+By default, there is a row for the N most frequent values for each field in the
+data. The order and number of values can be tweaked with --asc and --limit,
+respectively.
+
 Since this computes an exact frequency table, memory proportional to the
 cardinality of each column is required.
 
@@ -27,13 +31,13 @@ frequency options:
     -s, --select <arg>     Select a subset of columns to compute frequencies
                            for. See 'xsv select --help' for the format
                            details. This is provided here because piping 'xsv
-                           select' into 'xsv frequencies' will disable the use
+                           select' into 'xsv frequency' will disable the use
                            of indexing.
     -l, --limit <arg>      Limit the frequency table to the N most common
                            items. Set to '0' to disable a limit.
                            [default: 10]
     -a, --asc              Sort the frequency tables in ascending order by
-                           count.
+                           count. The default is descending order.
     --no-nulls             Don't include NULLs in the frequency table.
     -j, --jobs <arg>       The number of jobs to run in parallel.
                            This works better when the given CSV data has
@@ -46,9 +50,10 @@ frequency options:
 Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
-    -n, --no-headers       When set, the first row will NOT be interpreted
-                           as column names. i.e., They will be included
-                           in statistics.
+    -n, --no-headers       When set, the first row will NOT be included
+                           in the frequency table. Additionally, the 'field'
+                           column will be 1-based indices instead of header
+                           names.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
 ";
@@ -71,18 +76,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut wtr = try!(Config::new(&args.flag_output).writer());
     let (headers, tables) = try!(match try!(args.rconfig().indexed()) {
-        None => args.sequential_ftables(),
-        Some(idx) => {
-            if args.flag_jobs == 1 {
-                args.sequential_ftables()
-            } else {
-                args.parallel_ftables(idx)
-            }
-        }
+        Some(ref mut idx) if args.njobs() > 1 => args.parallel_ftables(idx),
+        _ => args.sequential_ftables(),
     });
 
     try!(wtr.write(vec!["field", "value", "count"].into_iter()));
-    for (header, ftab) in headers.iter().zip(tables.into_iter()) {
+    let head_ftables = headers.into_iter().zip(tables.into_iter());
+    for (i, (mut header, ftab)) in head_ftables.enumerate() {
+        if args.flag_no_headers {
+            header = ByteString::from_bytes((i+1).to_string());
+        }
         for (value, count) in args.counts(&ftab).into_iter() {
             let count = count.to_string();
             let row = vec![header[], value[], count.as_bytes()];
@@ -129,7 +132,7 @@ impl Args {
         Ok((headers, try!(self.ftables(&sel, rdr.byte_records()))))
     }
 
-    fn parallel_ftables(&self, idx: Indexed<io::File, io::File>)
+    fn parallel_ftables(&self, idx: &mut Indexed<io::File, io::File>)
                        -> CliResult<(Headers, FTables)> {
         use std::comm::channel;
         use std::sync::TaskPool;
@@ -169,7 +172,7 @@ impl Args {
             let row = try!(row);
             for (i, field) in nsel.select(row.into_iter()).enumerate() {
                 if !field.is_empty() {
-                    tabs[i].add(field);
+                    tabs[i].add(trim(field));
                 } else {
                     if !self.flag_no_nulls {
                         tabs[i].add(null.clone());
@@ -189,5 +192,12 @@ impl Args {
 
     fn njobs(&self) -> uint {
         if self.flag_jobs == 0 { os::num_cpus() } else { self.flag_jobs }
+    }
+}
+
+fn trim(bs: ByteString) -> ByteString {
+    match bs.into_utf8_string() {
+        Ok(s) => ByteString::from_bytes(s.trim()),
+        Err(bs) => bs,
     }
 }

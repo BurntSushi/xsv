@@ -202,7 +202,8 @@ impl Args {
 
     fn stat_headers(&self) -> Vec<String> {
         let mut fields = vec![
-            "field", "type", "min", "max", "mean", "stddev",
+            "field", "type", "min", "max", "min_length", "max_length",
+            "mean", "stddev",
         ];
         if self.flag_median { fields.push("median"); }
         if self.flag_mode { fields.push("mode"); }
@@ -290,6 +291,11 @@ impl Stats {
             Some(mm) => { pieces.push(mm.0); pieces.push(mm.1); }
             None => { pieces.push(empty()); pieces.push(empty()); }
         }
+        match self.minmax.as_ref().and_then(|mm| mm.len_range()) {
+            Some(mm) => { pieces.push(mm.0); pieces.push(mm.1); }
+            None => { pieces.push(empty()); pieces.push(empty()); }
+        }
+
         if !self.typ.is_number() {
             pieces.push(empty()); pieces.push(empty());
         } else {
@@ -420,12 +426,14 @@ impl fmt::Show for FieldType {
 #[deriving(Clone)]
 struct TypedMinMax {
     strings: MinMax<ByteString>,
+    str_len: MinMax<uint>,
     integers: MinMax<i64>,
     floats: MinMax<f64>,
 }
 
 impl TypedMinMax {
     fn add(&mut self, typ: FieldType, sample: &[u8]) {
+        self.str_len.add(sample.len());
         if sample.is_empty() {
             return;
         }
@@ -446,6 +454,13 @@ impl TypedMinMax {
                 self.integers.add(n);
                 self.floats.add(n as f64);
             }
+        }
+    }
+
+    fn len_range(&self) -> Option<(String, String)> {
+        match (self.str_len.min(), self.str_len.max()) {
+            (Some(min), Some(max)) => Some((min.to_string(), max.to_string())),
+            _ => None,
         }
     }
 
@@ -486,6 +501,7 @@ impl Default for TypedMinMax {
     fn default() -> TypedMinMax {
         TypedMinMax {
             strings: Default::default(),
+            str_len: Default::default(),
             integers: Default::default(),
             floats: Default::default(),
         }
@@ -495,6 +511,7 @@ impl Default for TypedMinMax {
 impl Commute for TypedMinMax {
     fn merge(&mut self, other: TypedMinMax) {
         self.strings.merge(other.strings);
+        self.str_len.merge(other.str_len);
         self.integers.merge(other.integers);
         self.floats.merge(other.floats);
     }

@@ -7,6 +7,7 @@ pub mod frequency;
 pub mod headers;
 pub mod index;
 pub mod join;
+pub mod sample;
 pub mod search;
 pub mod select;
 pub mod slice;

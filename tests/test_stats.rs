@@ -143,6 +143,11 @@ stats_tests!(stats_max_mix, "max", &["2", "a", "1.1"], "a")
 stats_tests!(stats_min_null, "min", &["", "2", "1.1"], "1.1")
 stats_tests!(stats_max_null, "max", &["2", "1.1", ""], "2")
 
+stats_tests!(stats_len_min, "min_length", &["aa", "a"], "1")
+stats_tests!(stats_len_max, "max_length", &["a", "aa"], "2")
+stats_tests!(stats_len_min_null, "min_length", &["", "aa", "a"], "0")
+stats_tests!(stats_len_max_null, "max_length", &["a", "aa", ""], "2")
+
 stats_tests!(stats_mean, "mean", &["5", "15", "10"], "10")
 stats_tests!(stats_stddev, "stddev", &["1", "2", "3"], "0.816497")
 stats_tests!(stats_mean_null, "mean", &["", "5", "15", "10"], "10")
