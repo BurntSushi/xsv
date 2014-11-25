@@ -10,7 +10,7 @@ Filters CSV data by whether the given regex matches a row.
 
 The regex is applied to each field in each row, and if any field matches,
 then the row is written to the output. The columns to search can be limited
-with the `--select` flag (but the full row is still written to the output if
+with the '--select' flag (but the full row is still written to the output if
 there is a match).
 
 Usage:
@@ -18,13 +18,8 @@ Usage:
     xsv search --help
 
 search options:
-    -s, --select <arg>  Column selection. Each column can be referenced
-                        by its column name or index, starting at 1.
-                        Specify multiple columns by separating them with
-                        a comma. Specify a range of columns with `-`.
-                        Each column will have the regex applied to it.
-                        If not supplied, all columns in each row will be
-                        searched.
+    -s, --select <arg>     Select the columns to search. See 'xsv select -h'
+                           for the full syntax.
 
 Common options:
     -h, --help             Display this message
@@ -67,6 +62,5 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             try!(wtr.write(row.iter().map(|f| f[])));
         }
     }
-    try!(wtr.flush());
-    Ok(())
+    Ok(try!(wtr.flush()))
 }

@@ -33,7 +33,7 @@ impl<E, D: Decoder<E>> Decodable<D, E> for Delimiter {
     fn decode(d: &mut D) -> Result<Delimiter, E> {
         let c = try!(d.read_char());
         match c.to_ascii_opt() {
-            Some(ascii) => Ok(Delimiter(ascii.to_byte())),
+            Some(ascii) => Ok(Delimiter(ascii.as_byte())),
             None => {
                 let msg = format!("Could not convert '{}' \
                                    to ASCII delimiter.", c);

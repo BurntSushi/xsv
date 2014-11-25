@@ -8,7 +8,7 @@ use util;
 static USAGE: &'static str = "
 Sorts CSV data lexicographically.
 
-Note that this (currently) requires reading all of the CSV data into memory.
+Note that this requires reading all of the CSV data into memory.
 
 Usage:
     xsv sort [options] [<input>]
@@ -21,8 +21,9 @@ Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
     -n, --no-headers       When set, the first row will not be interpreted
-                           as headers. (i.e., They are not searched, analyzed,
-                           sliced, etc.)
+                           as headers. Namely, it will be sorted with the rest
+                           of the rows. Otherwise, the first row will always
+                           appear as the header row in the output.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
 ";
@@ -62,6 +63,5 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     for r in all.into_iter() {
         try!(wtr.write_bytes(r.into_iter()));
     }
-    try!(wtr.flush());
-    Ok(())
+    Ok(try!(wtr.flush()))
 }

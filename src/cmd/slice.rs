@@ -10,11 +10,16 @@ static USAGE: &'static str = "
 Returns the rows in the range specified (starting at 0, half-open interval).
 The range does not include headers.
 
-If the start of the range isn't specified, then the slice starts from the
-first record in the CSV data.
+If the start of the range isn't specified, then the slice starts from the first
+record in the CSV data.
 
 If the end of the range isn't specified, then the slice continues to the last
 record in the CSV data.
+
+This operation can be made much faster by creating an index with 'xsv index'
+first. Namely, a slice on an index requires parsing just the rows that are
+sliced. Without an index, all rows up to the first row in the slice must be
+parsed.
 
 Usage:
     xsv slice [options] [<input>]
@@ -30,8 +35,8 @@ Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
     -n, --no-headers       When set, the first row will not be interpreted
-                           as headers. (i.e., They are not searched, analyzed,
-                           sliced, etc.)
+                           as headers. Otherwise, the first row will always
+                           appear in the output as the header row.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
 ";
@@ -67,8 +72,7 @@ impl Args {
         for r in it {
             try!(wtr.write_bytes(try!(r).into_iter()));
         }
-        try!(wtr.flush());
-        Ok(())
+        Ok(try!(wtr.flush()))
     }
 
     fn with_index(&self, mut idx: Indexed<File, File>) -> CliResult<()> {
@@ -84,8 +88,7 @@ impl Args {
         for r in it {
             try!(wtr.write_bytes(try!(r).into_iter()));
         }
-        try!(wtr.flush());
-        Ok(())
+        Ok(try!(wtr.flush()))
     }
 
     fn range(&self) -> Result<(uint, uint), String> {

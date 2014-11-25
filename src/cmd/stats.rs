@@ -21,7 +21,9 @@ Computes basic statistics on CSV data.
 Basic statistics includes mean, median, mode, standard deviation, max and
 min values. Note that some statistics are expensive to compute, so they must
 be enabled explicitly. By default, the following statistics are reported for
-*every* column in the CSV data: mean, max, min and standard deviation.
+*every* column in the CSV data: mean, max, min and standard deviation. The
+default set of statistics corresponds to statistics that can be computed
+efficiently on a stream of data (i.e., constant memory).
 
 Computing statistics on a large file can be made much faster if you create
 an index for it first with 'xsv index'.

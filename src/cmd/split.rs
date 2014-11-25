@@ -1,6 +1,7 @@
 use std::error::FromError;
 use std::io;
 use std::io::fs::mkdir_recursive;
+use std::os;
 
 use csv;
 use csv::index::Indexed;
@@ -26,14 +27,16 @@ split options:
                            This only works when the given CSV data has
                            an index already created. Note that a file handle
                            is opened for each job.
-                           [default: 12]
+                           When set to '0', the number of jobs is set to the
+                           number of CPUs detected.
+                           [default: 0]
 
 Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
     -n, --no-headers       When set, the first row will NOT be interpreted
-                           as column names. Note that this has no effect when
-                           concatenating columns.
+                           as column names. Otherwise, the first row will
+                           appear in all chunks as the header row.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. [default: ,]
 ";
@@ -86,7 +89,7 @@ impl Args {
         use std::sync::TaskPool;
 
         let nchunks = util::num_of_chunks(idx.count() as uint, self.flag_size);
-        let pool = TaskPool::new(self.flag_jobs);
+        let pool = TaskPool::new(self.njobs());
         for i in range(0, nchunks) {
             let args = self.clone();
             pool.execute(proc() {
@@ -123,5 +126,9 @@ impl Args {
         Config::new(&self.arg_input)
                .delimiter(self.flag_delimiter)
                .no_headers(self.flag_no_headers)
+    }
+
+    fn njobs(&self) -> uint {
+        if self.flag_jobs == 0 { os::num_cpus() } else { self.flag_jobs }
     }
 }

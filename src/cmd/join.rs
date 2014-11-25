@@ -2,6 +2,7 @@ use std::collections::hash_map::{HashMap, Vacant, Occupied};
 use std::error::FromError;
 use std::fmt;
 use std::io;
+use std::str;
 
 use csv::{mod, ByteString};
 use csv::index::Indexed;
@@ -17,16 +18,22 @@ Joins two sets of CSV data on the specified columns.
 The default join operation is an 'inner' join. This corresponds to the
 intersection of rows on the keys specified.
 
+Joins are always done by ignoring leading and trailing whitespace. By default,
+joins are done case sensitively, but this can be disabled with the --no-case
+flag.
+
 The columns arguments specify the columns to join for each input. Columns can
 be referenced by name or index, starting at 1. Specify multiple columns by
 separating them with a comma. Specify a range of columns with `-`. Both
 columns1 and columns2 must specify exactly the same number of columns.
+(See 'xsv select --help' for the full syntax.)
 
 Usage:
     xsv join [options] <columns1> <input1> <columns2> <input2>
     xsv join --help
 
 join options:
+    --no-case              When set, joins are done case insensitively.
     --left                 Do a 'left outer' join. This returns all rows in
                            first CSV data set, including rows with no
                            corresponding row in the second data set. When no
@@ -70,6 +77,7 @@ struct Args {
     flag_cross: bool,
     flag_output: Option<String>,
     flag_no_headers: bool,
+    flag_no_case: bool,
     flag_delimiter: Delimiter,
 }
 
@@ -110,10 +118,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 struct IoState<R, W> {
     wtr: csv::Writer<W>,
     rdr1: csv::Reader<R>,
-    sel1: Selection,
+    sel1: NormalSelection,
     rdr2: csv::Reader<R>,
-    sel2: Selection,
+    sel2: NormalSelection,
     no_headers: bool,
+    casei: bool,
 }
 
 impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
@@ -127,13 +136,12 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
     }
 
     fn inner_join(mut self) -> CliResult<()> {
-        let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2.normal()));
+        let mut validx =
+            try!(ValueIndex::new(self.rdr2, &self.sel2, self.casei));
         for row in self.rdr1.byte_records() {
             let row = try!(row);
-            let val = self.sel1.select(row[])
-                               .map(ByteString::from_bytes)
-                               .collect::<Vec<ByteString>>();
-            match validx.values.get(&val) {
+            let key = get_row_key(&self.sel1, row[], self.casei);
+            match validx.values.get(&key) {
                 None => continue,
                 Some(rows) => {
                     for &rowi in rows.iter() {
@@ -157,13 +165,12 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         }
 
         let (_, pad2) = try!(self.get_padding());
-        let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2.normal()));
+        let mut validx =
+            try!(ValueIndex::new(self.rdr2, &self.sel2, self.casei));
         for row in self.rdr1.byte_records() {
             let row = try!(row);
-            let val = self.sel1.select(row[])
-                               .map(ByteString::from_bytes)
-                               .collect::<Vec<ByteString>>();
-            match validx.values.get(&val) {
+            let key = get_row_key(&self.sel1, row[], self.casei);
+            match validx.values.get(&key) {
                 None => {
                     let row1 = row.iter().map(|f| Ok(f[]));
                     let row2 = pad2.iter().map(|f| Ok(f[]));
@@ -194,17 +201,15 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
 
     fn full_outer_join(mut self) -> CliResult<()> {
         let (pad1, pad2) = try!(self.get_padding());
-        let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2.normal()));
+        let mut validx =
+            try!(ValueIndex::new(self.rdr2, &self.sel2, self.casei));
 
         // Keep track of which rows we've written from rdr2.
         let mut rdr2_written = Vec::from_elem(validx.num_rows, false);
         for row1 in self.rdr1.byte_records() {
             let row1 = try!(row1);
-
-            let val = self.sel1.select(row1[])
-                               .map(ByteString::from_bytes)
-                               .collect::<Vec<ByteString>>();
-            match validx.values.get(&val) {
+            let key = get_row_key(&self.sel1, row1[], self.casei);
+            match validx.values.get(&key) {
                 None => {
                     let row1 = row1.iter().map(|f| Ok(f[]));
                     let row2 = pad2.iter().map(|f| Ok(f[]));
@@ -291,10 +296,11 @@ impl Args {
         Ok(IoState {
             wtr: try!(Config::new(&self.flag_output).writer()),
             rdr1: rdr1,
-            sel1: sel1,
+            sel1: sel1.normal(),
             rdr2: rdr2,
-            sel2: sel2,
+            sel2: sel2.normal(),
             no_headers: self.flag_no_headers,
+            casei: self.flag_no_case,
         })
     }
 
@@ -325,10 +331,9 @@ struct ValueIndex<R> {
 }
 
 impl<R: Reader + Seek> ValueIndex<R> {
-    fn new(mut rdr: csv::Reader<R>, nsel: &NormalSelection)
+    fn new(mut rdr: csv::Reader<R>, nsel: &NormalSelection, casei: bool)
           -> CliResult<ValueIndex<R>> {
         let mut val_idx = HashMap::with_capacity(10000);
-        // let mut val_idx = BTreeMap::new(); 
         let mut rows = io::MemWriter::with_capacity(8 * 10000);
         let (mut rowi, mut count) = (0u, 0u);
         if !rdr.has_headers {
@@ -344,7 +349,7 @@ impl<R: Reader + Seek> ValueIndex<R> {
             try!(rows.write_be_u64(rdr.byte_offset()));
 
             let fields = try!(nsel.select(unsafe { rdr.byte_fields() })
-                                  .map(|v| v.map(ByteString::from_bytes))
+                                  .map(|v| v.map(|v| transform(v, casei)))
                                   .collect::<Result<Vec<_>, _>>());
             match val_idx.entry(fields) {
                 Vacant(v) => {
@@ -379,5 +384,25 @@ impl<R> fmt::Show for ValueIndex<R> {
             try!(writeln!(f, "({}) => {}", keys.connect(", "), rows))
         }
         Ok(())
+    }
+}
+
+fn get_row_key(sel: &NormalSelection, row: &[ByteString], casei: bool)
+              -> Vec<ByteString> {
+    sel.select(row.iter()).map(|v| transform(v.as_slice(), casei)).collect()
+}
+
+fn transform(bs: &[u8], casei: bool) -> ByteString {
+    match str::from_utf8(bs) {
+        None => ByteString::from_bytes(bs),
+        Some(s) => {
+            if !casei {
+                ByteString::from_bytes(s.trim())
+            } else {
+                let norm: String =
+                    s.trim().chars().map(|c| c.to_lowercase()).collect();
+                ByteString::from_bytes(norm)
+            }
+        }
     }
 }
