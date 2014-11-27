@@ -27,6 +27,10 @@ macro_rules! werr(
     )
 )
 
+macro_rules! fail(
+    ($e:expr) => (Err(::std::error::FromError::from_error($e)));
+)
+
 macro_rules! command_list(
     () => (
 "

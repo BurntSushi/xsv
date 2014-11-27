@@ -1,5 +1,3 @@
-use std::error::FromError;
-
 use csv::NextField;
 
 use CliResult;
@@ -47,8 +45,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                         match rdr.next_field() {
                             NextField::EndOfCsv => break,
                             NextField::EndOfRecord => { count += 1; break; }
-                            NextField::Error(err) =>
-                                return Err(FromError::from_error(err)),
+                            NextField::Error(err) => return fail!(err),
                             NextField::Data(_) => {}
                         }
                     }

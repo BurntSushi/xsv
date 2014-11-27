@@ -119,7 +119,7 @@ impl Args {
                             break 'OUTER;
                         }
                     }
-                    Some(Err(err)) => return Err(FromError::from_error(err)),
+                    Some(Err(err)) => return fail!(err),
                     Some(Ok(next)) => records.push(next),
                 }
             }

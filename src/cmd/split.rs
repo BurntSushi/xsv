@@ -1,4 +1,3 @@
-use std::error::FromError;
 use std::io;
 use std::io::fs::mkdir_recursive;
 use std::os;
@@ -55,7 +54,7 @@ struct Args {
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
     if args.flag_size == 0 {
-        return Err(FromError::from_error("--size must be greater than 0."));
+        return fail!("--size must be greater than 0.");
     }
     try!(mkdir_recursive(&Path::new(args.arg_outdir[]), io::ALL_PERMISSIONS));
 

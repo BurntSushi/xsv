@@ -1,5 +1,4 @@
 use std::collections::hash_map::{HashMap, Vacant, Occupied};
-use std::error::FromError;
 use std::fmt;
 use std::io;
 use std::str;
@@ -110,8 +109,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             try!(state.write_headers());
             state.inner_join()
         }
-        _ => Err(FromError::from_error(
-            "Please pick exactly one join operation."))
+        _ => fail!("Please pick exactly one join operation.")
     }
 }
 
@@ -314,10 +312,10 @@ impl Args {
         let select1 = try!(rconf1.selection(headers1[]));
         let select2 = try!(rconf2.selection(headers2[]));
         if select1.len() != select2.len() {
-            return Err(FromError::from_error(format!(
+            return fail!(format!(
                 "Column selections must have the same number of columns, \
                  but found column selections with {} and {} columns.",
-                select1.len(), select2.len())));
+                select1.len(), select2.len()));
         }
         Ok((select1, select2))
     }

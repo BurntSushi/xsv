@@ -1,5 +1,4 @@
 use std::cmp;
-use std::error::FromError;
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -49,16 +48,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let length = match args.flag_length {
         Some(length) => {
             if length == 0 {
-                return Err(FromError::from_error(
-                    "Length must be greater than 0."));
+                return fail!("Length must be greater than 0.");
             }
             length
         }
         None => {
             if config.is_std() {
-                return Err(FromError::from_error(
-                    "<stdin> cannot be used in this command. \
-                     Please specify a file path."));
+                return fail!("<stdin> cannot be used in this command. \
+                              Please specify a file path.");
             }
             let mut maxlen = 0u;
             let mut rdr = try!(config.reader());
