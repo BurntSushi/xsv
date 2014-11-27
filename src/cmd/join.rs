@@ -365,7 +365,8 @@ impl<R: Reader + Seek> ValueIndex<R> {
         try!(rows.write_be_u64(count as u64));
         Ok(ValueIndex {
             values: val_idx,
-            idx: try!(Indexed::new(rdr, io::MemReader::new(rows.unwrap()))),
+            idx: try!(Indexed::new(
+                rdr, io::MemReader::new(rows.into_inner()))),
             num_rows: rowi,
         })
     }
