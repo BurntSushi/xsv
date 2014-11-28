@@ -1,0 +1,11 @@
+#!/bin/sh
+
+version=$(git describe --abbrev=0 --tags)
+name="xsv-$version-x86_64-unknown-linux-gnu"
+
+cargo build --release
+rm -rf "/tmp/$name"
+mkdir "/tmp/$name"
+cp ./target/release/xsv "/tmp/$name/"
+tar zcf "./builds/$name.tar.gz" -C /tmp $name
+
