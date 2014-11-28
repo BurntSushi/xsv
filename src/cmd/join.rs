@@ -334,9 +334,18 @@ impl<R: Reader + Seek> ValueIndex<R> {
         let mut val_idx = HashMap::with_capacity(10000);
         let mut rows = io::MemWriter::with_capacity(8 * 10000);
         let (mut rowi, mut count) = (0u, 0u);
+
+        // This logic is kind of tricky. Basically, we want to include
+        // the header row in the line index (because that's what csv::index
+        // does), but we don't want to include header values in the ValueIndex.
         if !rdr.has_headers {
+            // ... so if there are no headers, we seek to the beginning and
+            // index everything.
             try!(rdr.seek(0, ::std::io::SeekSet));
         } else {
+            // ... and if there are headers, we make sure that we've parsed
+            // them, and write the offset of the header row to the index.
+            try!(rdr.byte_headers());
             try!(rows.write_be_u64(0));
             count += 1;
         }

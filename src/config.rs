@@ -225,9 +225,11 @@ impl Config {
     }
 
     pub fn from_writer<W: Writer>(&self, wtr: W) -> csv::Writer<W> {
+        let term = if self.crlf { csv::RecordTerminator::CRLF }
+                   else { csv::RecordTerminator::Any(b'\n') };
         csv::Writer::from_writer(wtr)
                     .flexible(self.flexible)
                     .delimiter(self.delimiter)
-                    .crlf(self.crlf)
+                    .record_terminator(term)
     }
 }

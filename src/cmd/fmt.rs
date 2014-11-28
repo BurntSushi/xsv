@@ -1,3 +1,5 @@
+use csv;
+
 use CliResult;
 use config::{Config, Delimiter};
 use util;
@@ -11,9 +13,6 @@ pipe multiple xsv commands together. However, you may want the final result to
 have a specific delimiter or record separator, and this is where 'xsv fmt' is
 useful.
 
-In the future, this command should become more flexible with respect to
-specifying record separators, quoting and escaping styles.
-
 Usage:
     xsv fmt [options] [<input>]
 
@@ -21,6 +20,7 @@ fmt options:
     -t, --out-delimiter <arg>  The field delimiter for writing CSV data.
                                [default: ,]
     --crlf                     Use '\\r\\n' line endings in the output.
+    --ascii                    Use ASCII field and record separators.
 
 Common options:
     -h, --help             Display this message
@@ -34,6 +34,7 @@ struct Args {
     arg_input: Option<String>,
     flag_out_delimiter: Delimiter,
     flag_crlf: bool,
+    flag_ascii: bool,
     flag_output: Option<String>,
     flag_delimiter: Delimiter,
 }
@@ -50,6 +51,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = try!(rconfig.reader());
     let mut wtr = try!(wconfig.writer());
 
+    if args.flag_ascii {
+        wtr = wtr.delimiter(b'\x1f')
+                 .record_terminator(csv::RecordTerminator::Any(b'\x1e'));
+    }
     for r in rdr.byte_records() {
         try!(wtr.write_bytes(try!(r).into_iter()));
     }

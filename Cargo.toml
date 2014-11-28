@@ -25,7 +25,7 @@ docopt = "0.6.*"
 quickcheck = "0.1.*"
 
 # [dependencies.csv]
-# path = "/home/andrew/data/projects/rust/rust-csv"
+# path = "/home/andrew/data/projects/rust/csv"
 # git = "git://github.com/BurntSushi/rust-csv"
 
 # [dependencies.streaming-stats]

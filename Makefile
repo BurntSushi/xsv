@@ -19,9 +19,9 @@ push:
 
 dev:
 	cargo build
-	cp ./target/xsv ~/bin/xsv
+	cp ./target/xsv ~/bin/bin/xsv
 
 release:
 	cargo build --release
-	cp ./target/release/xsv ~/bin/xsv
+	cp ./target/release/xsv ~/bin/bin/xsv
 
