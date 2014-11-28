@@ -7,10 +7,8 @@ more concrete:
    in the command line interface.
 3. xsv commands should be easily composable.
 
-As the project evolves, the importance of the following will become clearer:
-
-1. The flexibility of reading malformed CSV data.
-2. The number of features supported by xsv.
+This README contains information on how to install `xsv` and a full set of
+examples that demonstrate much of its functionality.
 
 [![Build status](https://api.travis-ci.org/BurntSushi/xsv.png)](https://travis-ci.org/BurntSushi/xsv)
 
