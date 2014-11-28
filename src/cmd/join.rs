@@ -53,6 +53,10 @@ join options:
                            data sets given. The number of rows return is
                            equal to N * M, where N and M correspond to the
                            number of rows in the given data sets, respectively.
+    --nulls                When set, joins will work on empty fields.
+                           Otherwise, empty fields are completely ignored.
+                           (In fact, any row that has an empty field in the
+                           key specified is ignored.)
 
 Common options:
     -h, --help             Display this message
@@ -77,6 +81,7 @@ struct Args {
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_no_case: bool,
+    flag_nulls: bool,
     flag_delimiter: Delimiter,
 }
 
@@ -121,6 +126,7 @@ struct IoState<R, W> {
     sel2: NormalSelection,
     no_headers: bool,
     casei: bool,
+    nulls: bool,
 }
 
 impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
@@ -134,8 +140,8 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
     }
 
     fn inner_join(mut self) -> CliResult<()> {
-        let mut validx =
-            try!(ValueIndex::new(self.rdr2, &self.sel2, self.casei));
+        let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2,
+                                              self.casei, self.nulls));
         for row in self.rdr1.byte_records() {
             let row = try!(row);
             let key = get_row_key(&self.sel1, row[], self.casei);
@@ -163,8 +169,8 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         }
 
         let (_, pad2) = try!(self.get_padding());
-        let mut validx =
-            try!(ValueIndex::new(self.rdr2, &self.sel2, self.casei));
+        let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2,
+                                              self.casei, self.nulls));
         for row in self.rdr1.byte_records() {
             let row = try!(row);
             let key = get_row_key(&self.sel1, row[], self.casei);
@@ -199,8 +205,8 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
 
     fn full_outer_join(mut self) -> CliResult<()> {
         let (pad1, pad2) = try!(self.get_padding());
-        let mut validx =
-            try!(ValueIndex::new(self.rdr2, &self.sel2, self.casei));
+        let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2,
+                                              self.casei, self.nulls));
 
         // Keep track of which rows we've written from rdr2.
         let mut rdr2_written = Vec::from_elem(validx.num_rows, false);
@@ -299,6 +305,7 @@ impl Args {
             sel2: sel2.normal(),
             no_headers: self.flag_no_headers,
             casei: self.flag_no_case,
+            nulls: self.flag_nulls,
         })
     }
 
@@ -329,7 +336,8 @@ struct ValueIndex<R> {
 }
 
 impl<R: Reader + Seek> ValueIndex<R> {
-    fn new(mut rdr: csv::Reader<R>, nsel: &NormalSelection, casei: bool)
+    fn new(mut rdr: csv::Reader<R>, nsel: &NormalSelection,
+           casei: bool, nulls: bool)
           -> CliResult<ValueIndex<R>> {
         let mut val_idx = HashMap::with_capacity(10000);
         let mut rows = io::MemWriter::with_capacity(8 * 10000);
@@ -358,13 +366,15 @@ impl<R: Reader + Seek> ValueIndex<R> {
             let fields = try!(nsel.select(unsafe { rdr.byte_fields() })
                                   .map(|v| v.map(|v| transform(v, casei)))
                                   .collect::<Result<Vec<_>, _>>());
-            match val_idx.entry(fields) {
-                Vacant(v) => {
-                    let mut rows = Vec::with_capacity(4);
-                    rows.push(rowi);
-                    v.set(rows);
+            if nulls || !fields.iter().any(|f| f.is_empty()) {
+                match val_idx.entry(fields) {
+                    Vacant(v) => {
+                        let mut rows = Vec::with_capacity(4);
+                        rows.push(rowi);
+                        v.set(rows);
+                    }
+                    Occupied(mut v) => { v.get_mut().push(rowi); }
                 }
-                Occupied(mut v) => { v.get_mut().push(rowi); }
             }
             rowi += 1;
             count += 1;
