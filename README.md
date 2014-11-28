@@ -13,6 +13,40 @@ examples that demonstrate much of its functionality.
 [![Build status](https://api.travis-ci.org/BurntSushi/xsv.png)](https://travis-ci.org/BurntSushi/xsv)
 
 
+### Available commands
+
+* **cat** - Concatenate CSV files by row or by column.
+* **count** - Count the rows in a CSV file. (Instantaneous with an index.)
+* **fixlengths** - Force a CSV file to have same-length records by either
+  padding or truncating them.
+* **flatten** - A flattened view of CSV records. Useful for viewing one record
+  at a time. e.g., `xsv slice -i 5 data.csv | xsv flatten`.
+* **fmt** - Reformat CSV data with different delimiters or record terminators.
+  (Supports ASCII delimited data.)
+* **frequency** - Build frequency tables of each column in CSV data. (Uses
+  parallelism to go faster if an index is present.)
+* **headers** - Show the headers of CSV data. Or show the intersection of all
+  headers between many CSV files.
+* **index** - Create an index for a CSV file. This is very quick and provides
+  constant time indexing into the CSV file.
+* **join** - Inner, outer and cross joins. Uses a simple hash index to make it
+  fast.
+* **sample** - Randomly draw rows from CSV data using reservoir sampling (i.e.,
+  use memory proportional to the size of the sample).
+* **search** - Run a regex over CSV data. Applies the regex to each field
+  individually and shows only matching rows.
+* **select** - Select or re-order columns from CSV data.
+* **slice** - Slice rows from any part of a CSV file. When an index is present,
+  this only has to parse the rows in the slice (instead of all rows leading up
+  to the start of the slice).
+* **sort** - Sort CSV data.
+* **split** - Split one CSV file into many CSV files of N chunks.
+* **stats** - Show basic types and statistics of each column in the CSV file.
+  (i.e., mean, standard deviation, median, range, etc.)
+* **table** - Show aligned output of any CSV data using
+  [elastic tabstops](https://github.com/BurntSushi/tabwriter).
+
+
 ### A whirlwind tour
 
 Let's say you're playing with some of the data from the
@@ -48,8 +82,8 @@ Longitude   Float    -179.983333    180            1           14          37.08
 ```
 
 The `xsv table` command takes any CSV data and formats it into aligned columns
-using [elastic tabs](https://github.com/BurntSushi/tabwriter). You'll notice
-that it even gets alignment right with respect to Unicode characters.
+using [elastic tabstops](https://github.com/BurntSushi/tabwriter). You'll
+notice that it even gets alignment right with respect to Unicode characters.
 
 So, this command takes about 12 seconds to run on my machine, but we can speed
 it up by creating an index and re-running the command:
@@ -161,7 +195,7 @@ CSV data. This one only took 5 seconds.)
 
 So it seems that most cities do not have a population count associated with
 them at all. No matter---we can adjust our previous command so that it only
-shows rows with a population cound:
+shows rows with a population count:
 
 ```bash
 $ xsv search -s Population '[0-9]' worldcitiespop.csv \
@@ -253,7 +287,8 @@ included in the CSV data.
 
 This `xsv join` command takes about 7 seconds on my machine. The performance
 comes from constructing a very simple hash index of one of the CSV data files
-given.
+given. The `join` command does an inner join by default, but it also has left,
+right and full outer join support too.
 
 
 ### Installation
@@ -288,5 +323,33 @@ cargo build --release
 Compilation will probably take 1-2 minutes depending on your machine. The
 binary will end up in `./target/release/xsv`.
 
-**WORK IN PROGRESS**.
+
+### Motivation
+
+Here are several valid criticisms of this project:
+
+1. You shouldn't be working with CSV data because CSV is a terrible format.
+2. If your data is gigabytes in size, then CSV is the wrong storage type.
+3. Various SQL databases provide all of the operations available in `xsv` with
+   more sophisticated indexing support. And the performance is a zillion times
+   better.
+
+I'm sure there are more criticisms, but the impetus for this project was a 40GB
+CSV file that was handed to me. I was tasked with figuring out the shape of the
+data inside of it and coming up with a way to integrate it into our existing
+system. It was then that I realized that every single CSV tool I knew about was
+woefully inadequate. They were just too slow or didn't provide enough
+flexibility. (Another project I had comprised of a few dozen CSV files. They
+were smaller than 40GB, but they were each supposed to represent the same kind
+of data. But they all had different column and unintuitive column names. Useful
+CSV inspection tools were critical here---and they had to be reasonably fast.)
+
+The key ingredients for helping me with my task were indexing, random sampling,
+searching, slicing and selecting columns. All of these things made dealing with
+40GB of CSV data a bit more manageable (or dozens of CSV files).
+
+Getting handed a large CSV file *once* was enough to launch me on this quest.
+From conversations I've had with others, CSV data files this large don't seem
+to be a rare event. Therefore, I believe there is room for a tool that has a
+hope of dealing with data that large.
 
