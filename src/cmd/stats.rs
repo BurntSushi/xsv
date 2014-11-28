@@ -36,6 +36,7 @@ stats options:
                            See 'xsv select --help' for the format details.
                            This is provided here because piping 'xsv select'
                            into 'xsv stats' will disable the use of indexing.
+    --everything           Show all statistics available.
     --mode                 Show the mode.
                            This requires storing all CSV data in memory.
     --cardinality          Show the cardinality.
@@ -66,6 +67,7 @@ Common options:
 struct Args {
     arg_input: Option<String>,
     flag_select: SelectColumns,
+    flag_everything: bool,
     flag_mode: bool,
     flag_cardinality: bool,
     flag_median: bool,
@@ -196,9 +198,9 @@ impl Args {
             include_nulls: self.flag_nulls,
             range: true,
             dist: true,
-            cardinality: self.flag_cardinality,
-            median: self.flag_median,
-            mode: self.flag_mode,
+            cardinality: self.flag_cardinality || self.flag_everything,
+            median: self.flag_median || self.flag_everything,
+            mode: self.flag_mode || self.flag_everything,
         }))
     }
 
@@ -207,9 +209,10 @@ impl Args {
             "field", "type", "min", "max", "min_length", "max_length",
             "mean", "stddev",
         ];
-        if self.flag_median { fields.push("median"); }
-        if self.flag_mode { fields.push("mode"); }
-        if self.flag_cardinality { fields.push("cardinality"); }
+        let all = self.flag_everything;
+        if self.flag_median || all { fields.push("median"); }
+        if self.flag_mode || all { fields.push("mode"); }
+        if self.flag_cardinality || all { fields.push("cardinality"); }
         fields.into_iter().map(|s| s.to_string()).collect()
     }
 }
