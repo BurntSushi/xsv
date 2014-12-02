@@ -185,7 +185,7 @@ impl FromError<docopt::Error> for CliError {
 impl FromError<csv::Error> for CliError {
     fn from_error(err: csv::Error) -> CliError {
         match err {
-            csv::Io(v) => FromError::from_error(v),
+            csv::Error::Io(v) => FromError::from_error(v),
             v => CliError::Csv(v),
         }
     }
