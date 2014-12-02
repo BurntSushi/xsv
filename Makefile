@@ -25,3 +25,7 @@ release:
 	cargo build --release
 	cp ./target/release/xsv ~/bin/bin/xsv
 
+github:
+	./scripts/build-release
+	./scripts/github-release
+	./scripts/github-upload
