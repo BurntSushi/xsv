@@ -19,10 +19,10 @@ opt-level = 2
 
 [dependencies]
 csv = "0.*"
-streaming-stats = "0.1.*"
-tabwriter = "0.1.*"
-docopt = "0.6.*"
-quickcheck = "0.1.*"
+streaming-stats = "0.*"
+tabwriter = "0.*"
+docopt = "0.*"
+quickcheck = "0.*"
 
 # [dependencies.csv]
 # path = "/home/andrew/data/projects/rust/csv"
