@@ -1,14 +1,13 @@
 xsv is a command line program for indexing, slicing, analyzing, splitting
-and joining CSV files. There are two primary goals: performance and
-compositionality. To be more concrete:
+and joining CSV files. Commands should be simple, fast and composable:
 
-1. With xsv, it should be easy to perform simple tasks.
-2. Behavior that affects performance should be made explicit (and documented)
-   in the command line interface.
-3. xsv commands should be composable, but not at the expense of performance.
+1. Simple tasks should be easy.
+2. Performance trade offs should be exposed in the CLI interface.
+3. Composition should not come at the expense of performance.
 
-This README contains information on how to install `xsv` and a full set of
-examples that demonstrate much of its functionality.
+This README contains information on how to
+[install `xsv`](https://github.com/BurntSushi/xsv#installation), in addition to
+a quick tour of several commands.
 
 [![Build status](https://api.travis-ci.org/BurntSushi/xsv.png)](https://travis-ci.org/BurntSushi/xsv)
 
@@ -302,11 +301,11 @@ With that said, you can grab the
 (Linux x86_64 binary) from GitHub:
 
 ```bash
-$ curl -sOL https://github.com/BurntSushi/xsv/releases/download/0.4.10/xsv-0.4.10-x86_64-unknown-linux-gnu.tar.gz
-$ tar xf xsv-0.4.10-x86_64-unknown-linux-gnu.tar.gz
-$ cd xsv-0.4.10-x86_64-unknown-linux-gnu/
+$ curl -sOL https://github.com/BurntSushi/xsv/releases/download/0.4.13/xsv-0.4.13-x86_64-unknown-linux-gnu.tar.gz
+$ tar xf xsv-0.4.13-x86_64-unknown-linux-gnu.tar.gz
+$ cd xsv-0.4.13-x86_64-unknown-linux-gnu/
 $ ./xsv --version
-0.4.10
+0.4.13
 ```
 
 Alternatively, you can compile from source by
