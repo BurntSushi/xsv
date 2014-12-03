@@ -61,6 +61,7 @@ Usage:
     xsv [options]
 
 Options:
+    --list        List all commands available.
     -h, --help    Display this message
     --version     Print version info and exit
 
@@ -69,6 +70,7 @@ Commands:", command_list!());
 #[deriving(Decodable)]
 struct Args {
     arg_command: Option<Command>,
+    flag_list: bool,
 }
 
 fn main() {
@@ -77,6 +79,11 @@ fn main() {
                                            .version(Some(util::version()))
                                            .decode())
                             .unwrap_or_else(|e| e.exit());
+    if args.flag_list {
+        let msg = concat!("Installed commands:", command_list!());
+        io::stdout().write_str(msg).unwrap();
+        return;
+    }
     match args.arg_command {
         None => {
             os::set_exit_status(0);
