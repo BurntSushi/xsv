@@ -283,7 +283,7 @@ impl OneSelector {
                 }
                 let mut num_found = 0;
                 for (i, field) in first_record.iter().enumerate() {
-                    if field.equiv(s) {
+                    if field == s {
                         if num_found == sidx {
                             return Ok(i);
                         }
