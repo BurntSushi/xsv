@@ -55,10 +55,15 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let headers = try!(rdr.byte_headers());
     let nsel = try!(rconfig.normal_selection(headers[]));
 
-    try!(rconfig.write_headers(&mut rdr, &mut wtr));
+    let mut wrote_headers = false;
+    if args.flag_no_headers { wrote_headers = true; }
     for row in rdr.records() {
         let row = try!(row);
         if nsel.select(row.iter()).any(|f| pattern.is_match(f[])) {
+            if !wrote_headers {
+                try!(wtr.write_bytes(headers.iter()));
+                wrote_headers = true;
+            }
             try!(wtr.write(row.iter().map(|f| f[])));
         }
     }
