@@ -55,7 +55,7 @@ Common options:
                            column will be 1-based indices instead of header
                            names.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. [default: ,]
+                           Must be a single character. (default: ,)
 ";
 
 #[deriving(Clone, Decodable)]
@@ -68,11 +68,12 @@ struct Args {
     flag_jobs: uint,
     flag_output: Option<String>,
     flag_no_headers: bool,
-    flag_delimiter: Delimiter,
+    flag_delimiter: Option<Delimiter>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
+    let rconfig = args.rconfig();
 
     let mut wtr = try!(Config::new(&args.flag_output).writer());
     let (headers, tables) = try!(match try!(args.rconfig().indexed()) {
@@ -83,7 +84,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     try!(wtr.write(vec!["field", "value", "count"].into_iter()));
     let head_ftables = headers.into_iter().zip(tables.into_iter());
     for (i, (mut header, ftab)) in head_ftables.enumerate() {
-        if args.flag_no_headers {
+        if rconfig.no_headers {
             header = ByteString::from_bytes((i+1).to_string());
         }
         for (value, count) in args.counts(&ftab).into_iter() {

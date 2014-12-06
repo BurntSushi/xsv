@@ -18,14 +18,14 @@ Common options:
     -n, --no-headers       When set, the first row will not be included in
                            the count.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. [default: ,]
+                           Must be a single character. (default: ,)
 ";
 
 #[deriving(Decodable)]
 struct Args {
     arg_input: Option<String>,
     flag_no_headers: bool,
-    flag_delimiter: Delimiter,
+    flag_delimiter: Option<Delimiter>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -50,7 +50,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                         }
                     }
                 }
-                if !args.flag_no_headers && count > 0 {
+                if !conf.no_headers && count > 0 {
                     count - 1
                 } else {
                     count

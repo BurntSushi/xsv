@@ -65,7 +65,7 @@ Common options:
                            as headers. (i.e., They are not searched, analyzed,
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. [default: ,]
+                           Must be a single character. (default: ,)
 ";
 
 #[deriving(Decodable)]
@@ -82,7 +82,7 @@ struct Args {
     flag_no_headers: bool,
     flag_no_case: bool,
     flag_nulls: bool,
-    flag_delimiter: Delimiter,
+    flag_delimiter: Option<Delimiter>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -303,7 +303,7 @@ impl Args {
             sel1: sel1.normal(),
             rdr2: rdr2,
             sel2: sel2.normal(),
-            no_headers: self.flag_no_headers,
+            no_headers: rconf1.no_headers,
             casei: self.flag_no_case,
             nulls: self.flag_nulls,
         })

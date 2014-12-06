@@ -25,7 +25,7 @@ Common options:
                            of the rows. Otherwise, the first row will always
                            appear as the header row in the output.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. [default: ,]
+                           Must be a single character. (default: ,)
 ";
 
 #[deriving(Decodable)]
@@ -34,7 +34,7 @@ struct Args {
     flag_select: SelectColumns,
     flag_output: Option<String>,
     flag_no_headers: bool,
-    flag_delimiter: Delimiter,
+    flag_delimiter: Option<Delimiter>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {

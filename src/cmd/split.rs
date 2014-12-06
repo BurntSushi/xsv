@@ -37,7 +37,7 @@ Common options:
                            as column names. Otherwise, the first row will
                            appear in all chunks as the header row.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. [default: ,]
+                           Must be a single character. (default: ,)
 ";
 
 #[deriving(Clone, Decodable)]
@@ -48,7 +48,7 @@ struct Args {
     flag_jobs: uint,
     flag_output: Option<String>,
     flag_no_headers: bool,
-    flag_delimiter: Delimiter,
+    flag_delimiter: Option<Delimiter>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -115,7 +115,7 @@ impl Args {
         let path = dir.join(format!("{}.csv", start));
         let spath = Some(path.display().to_string());
         let mut wtr = try!(Config::new(&spath).writer());
-        if !self.flag_no_headers {
+        if !self.rconfig().no_headers {
             try!(wtr.write_bytes(headers.iter().map(|f| f[])));
         }
         Ok(wtr)

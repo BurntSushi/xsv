@@ -60,7 +60,7 @@ Common options:
                            as column names. i.e., They will be included
                            in statistics.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. [default: ,]
+                           Must be a single character. (default: ,)
 ";
 
 #[deriving(Clone, Decodable)]
@@ -75,7 +75,7 @@ struct Args {
     flag_jobs: uint,
     flag_output: Option<String>,
     flag_no_headers: bool,
-    flag_delimiter: Delimiter,
+    flag_delimiter: Option<Delimiter>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {

@@ -15,7 +15,7 @@ Common options:
                            as headers. (i.e., They are not searched, analyzed,
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. [default: ,]
+                           Must be a single character. (default: ,)
 ";
 
 #[deriving(Decodable)]
@@ -24,7 +24,7 @@ struct Args {
     arg_selection: SelectColumns,
     flag_output: Option<String>,
     flag_no_headers: bool,
-    flag_delimiter: Delimiter,
+    flag_delimiter: Option<Delimiter>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -41,7 +41,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let headers = try!(rdr.byte_headers());
     let sel = try!(rconfig.selection(headers[]));
 
-    if !args.flag_no_headers {
+    if !rconfig.no_headers {
         try!(wtr.write_bytes(sel.select(headers[])));
     }
     for r in rdr.byte_records() {

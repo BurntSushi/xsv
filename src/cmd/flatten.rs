@@ -34,7 +34,7 @@ Common options:
                            as headers. When set, the name of each field
                            will be its index.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. [default: ,]
+                           Must be a single character. (default: ,)
 ";
 
 #[deriving(Decodable)]
@@ -43,7 +43,7 @@ struct Args {
     flag_condensed: Option<uint>,
     flag_separator: String,
     flag_no_headers: bool,
-    flag_delimiter: Delimiter,
+    flag_delimiter: Option<Delimiter>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -64,7 +64,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         first = false;
         let r = try!(r).into_iter();
         for (i, (header, field)) in headers.iter().zip(r).enumerate() {
-            if args.flag_no_headers {
+            if rconfig.no_headers {
                 try!(wtr.write_str(i.to_string().as_slice()));
             } else {
                 try!(wtr.write(&**header));

@@ -18,7 +18,7 @@ Usage:
 
 fmt options:
     -t, --out-delimiter <arg>  The field delimiter for writing CSV data.
-                               [default: ,]
+                               (default: ,)
     --crlf                     Use '\\r\\n' line endings in the output.
     --ascii                    Use ASCII field and record separators.
 
@@ -26,17 +26,17 @@ Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. [default: ,]
+                           Must be a single character. (default: ,)
 ";
 
 #[deriving(Decodable)]
 struct Args {
     arg_input: Option<String>,
-    flag_out_delimiter: Delimiter,
+    flag_out_delimiter: Option<Delimiter>,
     flag_crlf: bool,
     flag_ascii: bool,
     flag_output: Option<String>,
-    flag_delimiter: Delimiter,
+    flag_delimiter: Option<Delimiter>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {

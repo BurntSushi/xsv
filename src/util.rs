@@ -29,8 +29,8 @@ pub fn get_args<T>(usage: &str, argv: &[&str]) -> CliResult<T>
            .map_err(FromError::from_error)
 }
 
-pub fn many_configs(inps: &[String], delim: Delimiter, no_headers: bool)
-                   -> Result<Vec<Config>, String> {
+pub fn many_configs(inps: &[String], delim: Option<Delimiter>,
+                    no_headers: bool) -> Result<Vec<Config>, String> {
     let mut inps = inps.to_vec();
     if inps.is_empty() {
         inps.push("-".to_string()); // stdin

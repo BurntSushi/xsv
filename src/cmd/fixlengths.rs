@@ -28,7 +28,7 @@ Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. [default: ,]
+                           Must be a single character. (default: ,)
 ";
 
 #[deriving(Decodable)]
@@ -36,7 +36,7 @@ struct Args {
     arg_input: Option<String>,
     flag_length: Option<uint>,
     flag_output: Option<String>,
-    flag_delimiter: Delimiter,
+    flag_delimiter: Option<Delimiter>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {

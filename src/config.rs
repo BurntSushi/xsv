@@ -1,4 +1,5 @@
 use std::io;
+use std::os;
 
 use serialize::{Decodable, Decoder};
 
@@ -18,11 +19,6 @@ pub struct Delimiter(pub u8);
 /// Its purpose is to ensure that the Unicode character given decodes to a
 /// valid ASCII character as required by the CSV parser.
 impl Delimiter {
-    pub fn to_byte(self) -> u8 {
-        let Delimiter(b) = self;
-        b
-    }
-
     pub fn as_byte(self) -> u8 {
         let Delimiter(b) = self;
         b
@@ -31,13 +27,24 @@ impl Delimiter {
 
 impl<E, D: Decoder<E>> Decodable<D, E> for Delimiter {
     fn decode(d: &mut D) -> Result<Delimiter, E> {
-        let c = try!(d.read_char());
-        match c.to_ascii_opt() {
-            Some(ascii) => Ok(Delimiter(ascii.as_byte())),
-            None => {
-                let msg = format!("Could not convert '{}' \
-                                   to ASCII delimiter.", c);
-                Err(d.error(msg.as_slice()))
+        let c = try!(d.read_str());
+        match c.as_slice() {
+            r"\t" => Ok(Delimiter(b'\t')),
+            s => {
+                if s.len() != 1 {
+                    let msg = format!("Could not convert '{}' to a single \
+                                       ASCII character.", s);
+                    return Err(d.error(msg.as_slice()));
+                }
+                let c = s.char_at(0);
+                match c.to_ascii_opt() {
+                    Some(ascii) => Ok(Delimiter(ascii.as_byte())),
+                    None => {
+                        let msg = format!("Could not convert '{}' \
+                                           to ASCII delimiter.", c);
+                        Err(d.error(msg.as_slice()))
+                    }
+                }
             }
         }
     }
@@ -48,7 +55,7 @@ pub struct Config {
     idx_path: Option<Path>,
     select_columns: Option<SelectColumns>,
     delimiter: u8,
-    no_headers: bool,
+    pub no_headers: bool,
     flexible: bool,
     crlf: bool,
 }
@@ -59,23 +66,32 @@ impl Config {
             path.clone()
                 .map(|p| Path::new(p))
                 .and_then(|p| if p.as_vec() == b"-" { None } else { Some(p) });
+        let ext = path.as_ref()
+                      .and_then(|p| p.extension())
+                      .unwrap_or(b"")
+                      .clone();
         Config {
             path: path,
             idx_path: None,
             select_columns: None,
-            delimiter: b',',
+            delimiter: if ext == b"tsv" { b'\t' } else { b',' },
             no_headers: false,
             flexible: false,
             crlf: false,
         }
     }
 
-    pub fn delimiter(mut self, d: Delimiter) -> Config {
-        self.delimiter = d.as_byte();
+    pub fn delimiter(mut self, d: Option<Delimiter>) -> Config {
+        if let Some(d) = d {
+            self.delimiter = d.as_byte();
+        }
         self
     }
 
-    pub fn no_headers(mut self, yes: bool) -> Config {
+    pub fn no_headers(mut self, mut yes: bool) -> Config {
+        if os::getenv("XSV_TOGGLE_HEADERS").unwrap_or("0".into_string()) == "1" {
+            yes = !yes;
+        }
         self.no_headers = yes;
         self
     }
