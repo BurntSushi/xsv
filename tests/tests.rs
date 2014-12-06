@@ -1,7 +1,5 @@
 #![feature(if_let, macro_rules, phase)]
 
-#![allow(dead_code)]
-
 #[phase(plugin, link)] extern crate log;
 extern crate serialize;
 

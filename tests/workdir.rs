@@ -57,12 +57,6 @@ impl Workdir {
         self.run(&cmd);
     }
 
-    pub fn read<T: Csv>(&self, name: &str) -> T {
-        let mut rdr = csv::Reader::from_file(&self.path(name))
-                                  .has_headers(false);
-        Csv::from_vecs(rdr.records().collect::<Result<_, _>>().unwrap())
-    }
-
     pub fn read_stdout<T: Csv>(&self, cmd: &process::Command) -> T {
         let mut rdr = csv::Reader::from_string(self.stdout::<String>(cmd))
                                   .has_headers(false);

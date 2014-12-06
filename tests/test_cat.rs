@@ -69,6 +69,7 @@ fn prop_cat_cols() {
         }
         rassert_eq!(got, expected)
     }
+    qcheck(p);
 }
 
 #[test]

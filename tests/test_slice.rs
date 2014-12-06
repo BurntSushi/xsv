@@ -106,7 +106,7 @@ fn test_slice(name: &str, start: Option<uint>, end: Option<uint>,
 }
 
 fn test_index(name: &str, idx: uint, expected: &str,
-                headers: bool, use_index: bool) {
+              headers: bool, use_index: bool) {
     let (wrk, mut cmd) = setup(name, headers, use_index);
     cmd.arg("--index").arg(idx.to_string());
     if !headers {
@@ -129,12 +129,15 @@ slice_tests!(slice_all, None, None, &["a", "b", "c", "d", "e"])
 fn slice_index() {
     test_index("slice_index", 1, "b", true, false);
 }
+#[test]
 fn slice_index_no_headers() {
     test_index("slice_index_no_headers", 1, "b", false, false);
 }
+#[test]
 fn slice_index_withindex() {
     test_index("slice_index_withindex", 1, "b", true, true);
 }
+#[test]
 fn slice_index_no_headers_withindex() {
     test_index("slice_index_no_headers_withindex", 1, "b", false, true);
 }
