@@ -326,8 +326,8 @@ binary will end up in `./target/release/xsv`.
 ### Benchmarks
 
 I've compiled some [very rough
-benchmarks](https://github.com/BurntSushi/xsv/blob/master/README.md) of various
-`xsv` commands.
+benchmarks](https://github.com/BurntSushi/xsv/blob/master/BENCHMARKS.md) of
+various `xsv` commands.
 
 
 ### Motivation
