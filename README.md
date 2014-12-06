@@ -323,6 +323,13 @@ Compilation will probably take 1-2 minutes depending on your machine. The
 binary will end up in `./target/release/xsv`.
 
 
+### Benchmarks
+
+I've compiled some [very rough
+benchmarks](https://github.com/BurntSushi/xsv/blob/master/README.md) of various
+`xsv` commands.
+
+
 ### Motivation
 
 Here are several valid criticisms of this project:
