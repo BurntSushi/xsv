@@ -10,6 +10,15 @@ readme = "README.md"
 keywords = ["csv", "tsv", "slice", "command"]
 license = "Unlicense"
 
+[[bin]]
+name = "xsv"
+test = false
+bench = false
+doctest = false
+
+[[test]]
+name = "tests"
+
 [profile.release]
 opt-level = 3
 lto = true
@@ -18,11 +27,11 @@ lto = true
 opt-level = 2
 
 [dependencies]
-csv = "0.*"
-streaming-stats = "0.*"
-tabwriter = "0.*"
-docopt = "0.*"
-quickcheck = "0.*"
+csv = "*"
+streaming-stats = "*"
+tabwriter = "*"
+docopt = "*"
+quickcheck = "*"
 
 # [dependencies.csv]
 # path = "/home/andrew/data/projects/rust/csv"
@@ -43,10 +52,3 @@ quickcheck = "0.*"
 # [dev-dependencies.quickcheck]
 # path = "/home/andrew/data/projects/rust/quickcheck"
 # git = "git://github.com/BurntSushi/quickcheck"
-
-[[bin]]
-name = "xsv"
-test = false
-
-[[test]]
-name = "tests"
