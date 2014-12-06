@@ -1,6 +1,6 @@
 [root]
 name = "xsv"
-version = "0.4.13"
+version = "0.4.14"
 dependencies = [
  "csv 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "docopt 0.6.12 (registry+https://github.com/rust-lang/crates.io-index)",
