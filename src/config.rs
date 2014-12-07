@@ -164,7 +164,7 @@ impl Config {
 
     pub fn index_files(&self)
            -> io::IoResult<Option<(csv::Reader<io::File>, io::File)>> {
-        let (mut csv_file, mut idx_file) = match (&self.path, &self.idx_path) {
+        let (csv_file, idx_file) = match (&self.path, &self.idx_path) {
             (&None, &None) => return Ok(None),
             (&None, &Some(ref p)) => return Err(io::IoError {
                 kind: io::OtherIoError,
