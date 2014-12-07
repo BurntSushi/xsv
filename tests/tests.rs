@@ -1,4 +1,4 @@
-#![feature(if_let, macro_rules, phase)]
+#![feature(macro_rules, phase)]
 
 #[phase(plugin, link)] extern crate log;
 extern crate serialize;
