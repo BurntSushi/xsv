@@ -356,7 +356,7 @@ impl Commute for Stats {
     }
 }
 
-#[deriving(Clone, PartialEq)]
+#[deriving(Clone, Copy, PartialEq)]
 enum FieldType {
     TUnknown,
     TNull,

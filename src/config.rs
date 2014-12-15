@@ -10,7 +10,7 @@ use CliResult;
 use select::{SelectColumns, Selection, NormalSelection};
 use util;
 
-#[deriving(Clone, Show)]
+#[deriving(Clone, Copy, Show)]
 pub struct Delimiter(pub u8);
 
 /// Delimiter represents values that can be passed from the command line that
@@ -69,7 +69,7 @@ impl Config {
         let ext = path.as_ref()
                       .and_then(|p| p.extension())
                       .unwrap_or(b"")
-                      .clone();
+                      .to_vec();
         Config {
             path: path,
             idx_path: None,
