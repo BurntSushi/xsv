@@ -91,7 +91,7 @@ impl Args {
         let pool = TaskPool::new(self.njobs());
         for i in range(0, nchunks) {
             let args = self.clone();
-            pool.execute(proc() {
+            pool.execute(move || {
                 let conf = args.rconfig();
                 let mut idx = conf.indexed().unwrap().unwrap();
                 let headers = idx.csv().byte_headers().unwrap();

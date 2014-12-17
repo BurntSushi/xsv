@@ -152,7 +152,7 @@ impl Args {
         let (send, recv) = channel();
         for i in range(0, nchunks) {
             let (send, args, sel) = (send.clone(), self.clone(), sel.clone());
-            pool.execute(proc() {
+            pool.execute(move || {
                 let mut idx = args.rconfig().indexed().unwrap().unwrap();
                 idx.seek((i * chunk_size) as u64).unwrap();
                 let it = idx.csv().byte_records().take(chunk_size);
