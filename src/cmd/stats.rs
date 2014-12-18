@@ -331,8 +331,9 @@ impl Stats {
             }
             Some(ref mut v) => {
                 if self.which.mode {
-                    let lossy: |ByteString| -> String =
-                        |s| String::from_utf8_lossy(s[]).into_string();
+                    let lossy = |&: s: ByteString| -> String {
+                        String::from_utf8_lossy(s[]).into_string()
+                    };
                     pieces.push(
                         v.mode().map(lossy).unwrap_or("N/A".into_string()));
                 }

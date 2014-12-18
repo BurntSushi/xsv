@@ -329,13 +329,20 @@ pub struct Selection(Vec<uint>);
 
 impl Selection {
     pub fn select<'a, 'b>(&'a self, row: &'b [csv::ByteString])
-                 -> iter::Scan<&'a uint,
-                               &'b [u8],
-                               slice::Items<'a, uint>,
-                               &'b [csv::ByteString]> {
+                 -> iter::Scan<
+                        &'a uint,
+                        &'b [u8],
+                        slice::Items<'a, uint>,
+                        &'b [csv::ByteString],
+                        for <'c> fn(&mut &'c [csv::ByteString], &uint)
+                                 -> Option<&'c [u8]>,
+                    > {
         // This is horrifying.
-        // Help me closure reform, you're my only hope.
-        self.as_slice().iter().scan(row, |row, &idx| Some(row[idx].as_slice()))
+        fn get_field<'c>(row: &mut &'c [csv::ByteString], idx: &uint)
+                        -> Option<&'c [u8]> {
+            Some(row[*idx].as_slice())
+        }
+        self.as_slice().iter().scan(row, get_field)
     }
 
     pub fn normal(&self) -> NormalSelection {
@@ -366,16 +373,30 @@ impl AsSlice<uint> for Selection {
 #[deriving(Clone, Show)]
 pub struct NormalSelection(Vec<bool>);
 
+type _NormalScan<'a, T, I> = iter::Scan<
+    (uint, T),
+    Option<T>,
+    iter::Enumerate<I>,
+    &'a [bool],
+    fn(&mut &[bool], (uint, T)) -> Option<Option<T>>,
+>;
+
+type _NormalFilterMap<'a, T, I> = iter::FilterMap<
+    Option<T>,
+    T,
+    _NormalScan<'a, T, I>,
+    fn(Option<T>) -> Option<T>
+>;
+
 impl NormalSelection {
-    pub fn select<'a, 'b, T, I: Iterator<T>>(&'a self, row: I)
-                 -> iter::FilterMap<Option<T>, T,
-                                    iter::Scan<(uint, T),
-                                               Option<T>,
-                                               iter::Enumerate<I>,
-                                               &'a [bool]>> {
-        row.enumerate().scan(self.as_slice(), |set, (i, v)| {
+    pub fn select<'a, T, I>(&'a self, row: I) -> _NormalFilterMap<'a, T, I>
+                 where I: Iterator<T> {
+        fn filmap<T>(v: Option<T>) -> Option<T> { v }
+        fn get_field<T>(set: &mut &[bool], t: (uint, T)) -> Option<Option<T>> {
+            let (i, v) = t;
             if i < set.len() && set[i] { Some(Some(v)) } else { Some(None) }
-        }).filter_map(|v| v)
+        }
+        row.enumerate().scan(self.as_slice(), get_field).filter_map(filmap)
     }
 
     pub fn len(&self) -> uint {
