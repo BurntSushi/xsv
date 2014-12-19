@@ -258,14 +258,13 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
             while !self.rdr2.done() {
                 // Skip the header row. The raw byte interface won't
                 // do it for us.
-                if !self.no_headers && first {
-                    for f in unsafe { self.rdr2.byte_fields() } { try!(f); }
+                if first && !self.no_headers {
+                    while let Some(f) =
+                        self.rdr2.next_field().into_iter_result() { try!(f); }
                     first = false;
                 }
                 let row1 = row1.iter().map(|f| Ok(f[]));
-                let row2 = unsafe {
-                    self.rdr2.byte_fields()
-                };
+                let row2 = unsafe { self.rdr2.byte_fields() };
                 try!(self.wtr.write_results(row1.chain(row2)));
             }
         }

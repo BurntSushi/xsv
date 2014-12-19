@@ -114,8 +114,30 @@ join_test!(join_outer_full,
 })
 
 #[test]
-fn join_outer_cross() {
-    let wrk = Workdir::new("join_outer_cross");
+fn join_cross() {
+    let wrk = Workdir::new("join_cross");
+    wrk.create("letters.csv",
+               vec![svec!["h1", "h2"], svec!["a", "b"], svec!["c", "d"]]);
+    wrk.create("numbers.csv",
+               vec![svec!["h3", "h4"], svec!["1", "2"], svec!["3", "4"]]);
+
+    let mut cmd = wrk.command("join");
+    cmd.arg("--cross")
+       .args(&["", "letters.csv", "", "numbers.csv"]);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let expected = vec![
+        svec!["h1", "h2", "h3", "h4"],
+        svec!["a", "b", "1", "2"],
+        svec!["a", "b", "3", "4"],
+        svec!["c", "d", "1", "2"],
+        svec!["c", "d", "3", "4"],
+    ];
+    assert_eq!(got, expected);
+}
+
+#[test]
+fn join_cross_no_headers() {
+    let wrk = Workdir::new("join_cross_no_headers");
     wrk.create("letters.csv", vec![svec!["a", "b"], svec!["c", "d"]]);
     wrk.create("numbers.csv", vec![svec!["1", "2"], svec!["3", "4"]]);
 
