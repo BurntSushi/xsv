@@ -18,20 +18,20 @@ use std::os;
 
 use docopt::Docopt;
 
-macro_rules! werr(
+macro_rules! werr {
     ($($arg:tt)*) => (
         match ::std::io::stderr().write_str(format!($($arg)*).as_slice()) {
             Ok(_) => (),
             Err(err) => fail!("{}", err),
         }
     )
-)
+}
 
-macro_rules! fail(
+macro_rules! fail {
     ($e:expr) => (Err(::std::error::FromError::from_error($e)));
-)
+}
 
-macro_rules! command_list(
+macro_rules! command_list {
     () => (
 "
     cat         Concatenate by row or column
@@ -53,7 +53,7 @@ macro_rules! command_list(
     table       Align CSV data into columns
 "
     )
-)
+}
 
 static USAGE: &'static str = concat!("
 Usage:

@@ -69,7 +69,7 @@ join_test!(join_inner, |wrk: Workdir, cmd: process::Command, headers: bool| {
         svec!["Buffalo", "NY", "Buffalo", "Ralph Wilson Stadium"],
     ]);
     assert_eq!(got, expected);
-})
+});
 
 join_test!(join_outer_left,
            |wrk: Workdir, mut cmd: process::Command, headers: bool| {
@@ -83,7 +83,7 @@ join_test!(join_outer_left,
         svec!["Buffalo", "NY", "Buffalo", "Ralph Wilson Stadium"],
     ]);
     assert_eq!(got, expected);
-})
+});
 
 join_test!(join_outer_right,
            |wrk: Workdir, mut cmd: process::Command, headers: bool| {
@@ -96,7 +96,7 @@ join_test!(join_outer_right,
         svec!["", "", "Orlando", "Disney World"],
     ]);
     assert_eq!(got, expected);
-})
+});
 
 join_test!(join_outer_full,
            |wrk: Workdir, mut cmd: process::Command, headers: bool| {
@@ -111,7 +111,7 @@ join_test!(join_outer_full,
         svec!["", "", "Orlando", "Disney World"],
     ]);
     assert_eq!(got, expected);
-})
+});
 
 #[test]
 fn join_cross() {

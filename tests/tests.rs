@@ -20,11 +20,11 @@ macro_rules! svec[
                      .collect::<Vec<String>>()
     );
     ($($x:expr,)*) => (svec![$($x),*]);
-]
+];
 
-macro_rules! rassert_eq(
+macro_rules! rassert_eq {
     ($given:expr, $expected:expr) => ({assert_eq!($given, $expected); true});
-)
+}
 
 mod workdir;
 
