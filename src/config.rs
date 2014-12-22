@@ -215,9 +215,11 @@ impl Config {
 
     pub fn io_reader(&self) -> io::IoResult<Box<io::Reader+'static>> {
         Ok(match self.path {
-            None => box io::stdin() as Box<io::Reader+'static>,
-            Some(ref p) =>
-                box try!(io::File::open(p)) as Box<io::Reader+'static>,
+            None => box io::stdin() as Box<io::Reader>,
+            Some(ref p) => {
+                let f = try!(io::File::open(p));
+                box f as Box<io::Reader>
+            }
         })
     }
 
@@ -230,12 +232,10 @@ impl Config {
 
     pub fn io_writer(&self) -> io::IoResult<Box<io::Writer+'static>> {
         Ok(match self.path {
-            None => box io::stdout() as Box<io::Writer+'static>,
+            None => box io::stdout() as Box<io::Writer>,
             Some(ref p) => {
-                let f = box {
-                    try!(io::File::create(p))
-                } as Box<io::Writer+'static>;
-                f
+                let f = try!(io::File::create(p));
+                box f as Box<io::Writer>
             }
         })
     }
