@@ -12,14 +12,14 @@ This mode is particularly useful for viewing one record at a time. Each
 record is separated by a special '#' character (on a line by itself), which
 can be changed with the --separator flag.
 
-There is also a condensed view (-c or --condensed) that will shorten the
+There is also a condensed view (-c or --condense) that will shorten the
 contents of each field to provide a summary view.
 
 Usage:
     xsv flatten [options] [<input>]
 
 flatten options:
-    -c, --condensed <arg>  Limits the length of each field to the value
+    -c, --condense <arg>  Limits the length of each field to the value
                            specified. If the field is UTF-8 encoded, then
                            <arg> refers to the number of code points.
                            Otherwise, it refers to the number of bytes.
@@ -40,7 +40,7 @@ Common options:
 #[deriving(Decodable)]
 struct Args {
     arg_input: Option<String>,
-    flag_condensed: Option<uint>,
+    flag_condense: Option<uint>,
     flag_separator: String,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
@@ -70,22 +70,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 try!(wtr.write(&**header));
             }
             try!(wtr.write_u8(b'\t'));
-            match args.flag_condensed {
-                None => try!(wtr.write(&*field)),
-                Some(n) => {
-                    match ::std::str::from_utf8(&*field) {
-                        None if n < field.len() => {
-                            try!(wtr.write(field[..n]));
-                            try!(wtr.write_str("..."));
-                        }
-                        Some(s) if n < s.char_len() => {
-                            try!(wtr.write_str(s.slice_chars(0, n)));
-                            try!(wtr.write_str("..."));
-                        }
-                        _ => try!(wtr.write(&*field)),
-                    }
-                }
-            }
+            try!(wtr.write(&*util::condense(field[], args.flag_condense)));
             try!(wtr.write_u8(b'\n'));
         }
     }

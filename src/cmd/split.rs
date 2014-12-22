@@ -77,7 +77,7 @@ impl Args {
                 wtr = try!(self.new_writer(headers[], i));
             }
             let row = try!(row);
-            try!(wtr.write_bytes(row.into_iter()));
+            try!(wtr.write(row.into_iter()));
         }
         try!(wtr.flush());
         Ok(())
@@ -101,7 +101,7 @@ impl Args {
                 idx.seek((i * args.flag_size) as u64).unwrap();
                 for row in idx.csv().byte_records().take(args.flag_size) {
                     let row = row.unwrap();
-                    wtr.write_bytes(row.into_iter()).unwrap();
+                    wtr.write(row.into_iter()).unwrap();
                 }
                 wtr.flush().unwrap();
             });
@@ -116,7 +116,7 @@ impl Args {
         let spath = Some(path.display().to_string());
         let mut wtr = try!(Config::new(&spath).writer());
         if !self.rconfig().no_headers {
-            try!(wtr.write_bytes(headers.iter().map(|f| f[])));
+            try!(wtr.write(headers.iter().map(|f| f[])));
         }
         Ok(wtr)
     }

@@ -90,7 +90,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         for (value, count) in args.counts(&ftab).into_iter() {
             let count = count.to_string();
             let row = vec![header[], value[], count.as_bytes()];
-            try!(wtr.write_bytes(row.into_iter()));
+            try!(wtr.write(row.into_iter()));
         }
     }
     Ok(())

@@ -134,7 +134,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         if !self.no_headers {
             let mut headers = try!(self.rdr1.byte_headers());
             headers.extend(try!(self.rdr2.byte_headers()).into_iter());
-            try!(self.wtr.write_bytes(headers.into_iter()));
+            try!(self.wtr.write(headers.into_iter()));
         }
         Ok(())
     }
@@ -154,7 +154,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                         let mut row1 = row.iter().map(|f| Ok(f.as_slice()));
                         let row2 = unsafe { validx.idx.csv().byte_fields() };
                         let combined = row1.by_ref().chain(row2);
-                        try!(self.wtr.write_results(combined));
+                        try!(self.wtr.write_iter(combined));
                     }
                 }
             }
@@ -179,9 +179,9 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                     let row1 = row.iter().map(|f| Ok(f[]));
                     let row2 = pad2.iter().map(|f| Ok(f[]));
                     if right {
-                        try!(self.wtr.write_results(row2.chain(row1)));
+                        try!(self.wtr.write_iter(row2.chain(row1)));
                     } else {
-                        try!(self.wtr.write_results(row1.chain(row2)));
+                        try!(self.wtr.write_iter(row1.chain(row2)));
                     }
                 }
                 Some(rows) => {
@@ -192,9 +192,9 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                             validx.idx.csv().byte_fields()
                         };
                         if right {
-                            try!(self.wtr.write_results(row2.chain(row1)));
+                            try!(self.wtr.write_iter(row2.chain(row1)));
                         } else {
-                            try!(self.wtr.write_results(row1.chain(row2)));
+                            try!(self.wtr.write_iter(row1.chain(row2)));
                         }
                     }
                 }
@@ -217,7 +217,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                 None => {
                     let row1 = row1.iter().map(|f| Ok(f[]));
                     let row2 = pad2.iter().map(|f| Ok(f[]));
-                    try!(self.wtr.write_results(row1.chain(row2)));
+                    try!(self.wtr.write_iter(row1.chain(row2)));
                 }
                 Some(rows) => {
                     for &rowi in rows.iter() {
@@ -228,7 +228,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                         let row2 = unsafe {
                             validx.idx.csv().byte_fields()
                         };
-                        try!(self.wtr.write_results(row1.chain(row2)));
+                        try!(self.wtr.write_iter(row1.chain(row2)));
                     }
                 }
             }
@@ -243,7 +243,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                 let row2 = unsafe {
                     validx.idx.csv().byte_fields()
                 };
-                try!(self.wtr.write_results(row1.chain(row2)));
+                try!(self.wtr.write_iter(row1.chain(row2)));
             }
         }
         Ok(())
@@ -265,7 +265,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                 }
                 let row1 = row1.iter().map(|f| Ok(f[]));
                 let row2 = unsafe { self.rdr2.byte_fields() };
-                try!(self.wtr.write_results(row1.chain(row2)));
+                try!(self.wtr.write_iter(row1.chain(row2)));
             }
         }
         Ok(())

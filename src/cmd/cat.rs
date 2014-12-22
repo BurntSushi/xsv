@@ -79,7 +79,7 @@ impl Args {
                 try!(conf.write_headers(&mut rdr, &mut wtr));
             }
             for r in rdr.byte_records() {
-                try!(wtr.write_bytes(try!(r).into_iter()));
+                try!(wtr.write(try!(r).into_iter()));
             }
         }
         wtr.flush().map_err(FromError::from_error)
@@ -130,7 +130,7 @@ impl Args {
                 break 'OUTER;
             }
             let row = records.as_slice().concat_vec();
-            try!(wtr.write_bytes(row.into_iter()));
+            try!(wtr.write(row.into_iter()));
         }
         wtr.flush().map_err(FromError::from_error)
     }

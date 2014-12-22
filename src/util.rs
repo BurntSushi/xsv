@@ -1,5 +1,7 @@
+use std::borrow::{Cow, IntoCow};
 use std::error::FromError;
 use std::path::BytesContainer;
+use std::str;
 
 use csv;
 use docopt::Docopt;
@@ -73,6 +75,38 @@ pub fn num_of_chunks(nitems: uint, chunk_size: uint) -> uint {
         n += 1;
     }
     n
+}
+
+pub fn condense<'a, V>(val: V, n: Option<uint>) -> Cow<'a, Vec<u8>, [u8]>
+        where V: Deref<[u8]> + IntoCow<'a, Vec<u8>, [u8]> {
+    match n {
+        None => val.into_cow(),
+        Some(n) => {
+            // It would be much nicer to just use a `match` here, but the
+            // borrow checker won't allow it. ---AG
+            //
+            // (We could circumvent it by allocating a new Unicode string,
+            // but that seems excessive.)
+            let mut is_short_utf8 = false;
+            if let Some(s) = str::from_utf8(&*val) {
+                if n >= s.char_len() {
+                    is_short_utf8 = true;
+                } else {
+                    let mut s = s.slice_chars(0, n).into_string();
+                    s.push_str("...");
+                    return s.into_bytes().into_cow();
+                }
+            }
+            if is_short_utf8 || n >= (*val).len() { // already short enough
+                val.into_cow()
+            } else {
+                // This is a non-Unicode string, so we just trim on bytes.
+                let mut s = val[0..n].to_vec();
+                s.push_all(b"...");
+                s.into_cow()
+            }
+        }
+    }
 }
 
 pub fn idx_path(csv_path: &Path) -> Path {

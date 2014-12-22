@@ -85,7 +85,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         } else {
             r.truncate(length);
         }
-        try!(wtr.write_bytes(r.into_iter()));
+        try!(wtr.write(r.into_iter()));
     }
     try!(wtr.flush());
     Ok(())

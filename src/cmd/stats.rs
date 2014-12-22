@@ -98,7 +98,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     for (header, stat) in headers.iter().zip(stats.into_iter()) {
         let row = vec![header[]].into_iter()
                                 .chain(stat.iter().map(|f| f.as_bytes()));
-        try!(wtr.write_bytes(row));
+        try!(wtr.write(row));
     }
     Ok(())
 }

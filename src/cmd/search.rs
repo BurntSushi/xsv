@@ -61,7 +61,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         let row = try!(row);
         if nsel.select(row.iter()).any(|f| pattern.is_match(f[])) {
             if !wrote_headers {
-                try!(wtr.write_bytes(headers.iter()));
+                try!(wtr.write(headers.iter()));
                 wrote_headers = true;
             }
             try!(wtr.write(row.iter().map(|f| f[])));

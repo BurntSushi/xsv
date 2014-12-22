@@ -56,7 +56,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                  .record_terminator(csv::RecordTerminator::Any(b'\x1e'));
     }
     for r in rdr.byte_records() {
-        try!(wtr.write_bytes(try!(r).into_iter()));
+        try!(wtr.write(try!(r).into_iter()));
     }
     try!(wtr.flush());
     Ok(())

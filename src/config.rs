@@ -135,7 +135,7 @@ impl Config {
         if !self.no_headers {
             let r = try!(r.byte_headers());
             if !r.is_empty() {
-                try!(w.write_bytes(r.into_iter()));
+                try!(w.write(r.into_iter()));
             }
         }
         Ok(())

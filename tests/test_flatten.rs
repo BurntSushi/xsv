@@ -68,9 +68,9 @@ h2  stuvwx\
 }
 
 #[test]
-fn flatten_condensed() {
-    let (wrk, mut cmd) = setup("flatten_condensed");
-    cmd.args(&["--condensed", "2"]);
+fn flatten_condense() {
+    let (wrk, mut cmd) = setup("flatten_condense");
+    cmd.args(&["--condense", "2"]);
 
     let got: String = wrk.stdout(&cmd);
     let expected = "\

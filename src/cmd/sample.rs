@@ -72,7 +72,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
     };
     for row in sampled.into_iter() {
-        try!(wtr.write_bytes(row.into_iter()));
+        try!(wtr.write(row.into_iter()));
     }
     Ok(try!(wtr.flush()))
 }

@@ -21,6 +21,10 @@ table options:
                            [default: 2]
     -p, --pad <arg>        The minimum number of spaces between each column.
                            [default: 2]
+    -c, --condense <arg>  Limits the length of each field to the value
+                           specified. If the field is UTF-8 encoded, then
+                           <arg> refers to the number of code points.
+                           Otherwise, it refers to the number of bytes.
 
 Common options:
     -h, --help             Display this message
@@ -36,6 +40,7 @@ struct Args {
     flag_pad: uint,
     flag_output: Option<String>,
     flag_delimiter: Option<Delimiter>,
+    flag_condense: Option<uint>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -54,7 +59,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = try!(rconfig.reader());
 
     for r in rdr.byte_records() {
-        try!(wtr.write_bytes(try!(r).into_iter()));
+        let r = try!(r);
+        let row = r.iter().map(|f| util::condense(f[], args.flag_condense));
+        try!(wtr.write(row));
     }
     try!(wtr.flush());
     Ok(())
