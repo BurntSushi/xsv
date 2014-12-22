@@ -31,6 +31,8 @@ csv = "*"
 streaming-stats = "*"
 tabwriter = "*"
 docopt = "*"
+
+[dev-dependencies]
 quickcheck = "*"
 
 # [dependencies.csv]
