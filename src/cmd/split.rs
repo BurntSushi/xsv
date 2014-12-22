@@ -85,12 +85,15 @@ impl Args {
 
     fn parallel_split(&self, idx: Indexed<io::File, io::File>)
                      -> CliResult<()> {
+        use std::comm::channel;
         use std::sync::TaskPool;
 
         let nchunks = util::num_of_chunks(idx.count() as uint, self.flag_size);
         let pool = TaskPool::new(self.njobs());
+        let (tx, rx) = channel();
         for i in range(0, nchunks) {
             let args = self.clone();
+            let tx = tx.clone();
             pool.execute(move || {
                 let conf = args.rconfig();
                 let mut idx = conf.indexed().unwrap().unwrap();
@@ -104,8 +107,11 @@ impl Args {
                     wtr.write(row.into_iter()).unwrap();
                 }
                 wtr.flush().unwrap();
+                tx.send(());
             });
         }
+        drop(tx);
+        for _ in rx.iter() {}
         Ok(())
     }
 
