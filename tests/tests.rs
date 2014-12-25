@@ -1,7 +1,7 @@
 #![feature(macro_rules, phase)]
 
 #[phase(plugin, link)] extern crate log;
-extern crate serialize;
+extern crate "rustc-serialize" as rustc_serialize;
 
 extern crate csv;
 extern crate quickcheck;

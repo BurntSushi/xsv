@@ -1,7 +1,8 @@
+use std::borrow::ToOwned;
 use std::io;
 use std::os;
 
-use serialize::{Decodable, Decoder};
+use rustc_serialize::{Decodable, Decoder};
 
 use csv;
 use csv::index::Indexed;
@@ -89,7 +90,7 @@ impl Config {
     }
 
     pub fn no_headers(mut self, mut yes: bool) -> Config {
-        if os::getenv("XSV_TOGGLE_HEADERS").unwrap_or("0".into_string()) == "1" {
+        if os::getenv("XSV_TOGGLE_HEADERS").unwrap_or("0".to_owned()) == "1" {
             yes = !yes;
         }
         self.no_headers = yes;

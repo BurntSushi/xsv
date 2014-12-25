@@ -4,17 +4,18 @@
 These are some docs.
 */
 
-extern crate regex;
-extern crate serialize;
 
 extern crate csv;
 extern crate docopt;
+extern crate regex;
+extern crate "rustc-serialize" as rustc_serialize;
 extern crate stats;
 extern crate tabwriter;
 
 use std::error::FromError;
 use std::io;
 use std::os;
+use csv::StrAllocating;
 
 use docopt::Docopt;
 
@@ -67,7 +68,7 @@ Options:
 
 Commands:", command_list!());
 
-#[deriving(Decodable)]
+#[deriving(RustcDecodable)]
 struct Args {
     arg_command: Option<Command>,
     flag_list: bool,
@@ -125,7 +126,7 @@ Please choose one of the following commands:",
     }
 }
 
-#[deriving(Decodable, Show)]
+#[deriving(RustcDecodable, Show)]
 enum Command {
     Cat,
     Count,
@@ -206,7 +207,7 @@ impl FromError<io::IoError> for CliError {
 
 impl<T: StrAllocating> FromError<T> for CliError {
     fn from_error(err: T) -> CliError {
-        CliError::Other(err.into_string())
+        CliError::Other(err.into_str())
     }
 }
 

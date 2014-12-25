@@ -1,8 +1,9 @@
+use std::borrow::ToOwned;
 use std::default::Default;
 use std::fmt;
 use std::io::{mod, File};
 use std::os;
-use std::str::{mod, FromStr, from_str};
+use std::str::{mod, FromStr};
 
 use csv::{mod, ByteString};
 use csv::index::Indexed;
@@ -63,7 +64,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[deriving(Clone, Decodable)]
+#[deriving(Clone, RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
     flag_select: SelectColumns,
@@ -332,10 +333,10 @@ impl Stats {
             Some(ref mut v) => {
                 if self.which.mode {
                     let lossy = |&: s: ByteString| -> String {
-                        String::from_utf8_lossy(s[]).into_string()
+                        String::from_utf8_lossy(s[]).into_owned()
                     };
                     pieces.push(
-                        v.mode().map(lossy).unwrap_or("N/A".into_string()));
+                        v.mode().map(lossy).unwrap_or("N/A".to_owned()));
                 }
                 if self.which.cardinality {
                     pieces.push(v.cardinality().to_string());
@@ -372,11 +373,11 @@ impl FieldType {
             return TNull;
         }
         let string = match str::from_utf8(sample) {
-            None => return TUnknown,
-            Some(s) => s,
+            Err(_) => return TUnknown,
+            Ok(s) => s,
         };
-        if let Some(_) = from_str::<i64>(string) { return TInteger; }
-        if let Some(_) = from_str::<f64>(string) { return TFloat; }
+        if let Some(_) = string.parse::<i64>() { return TInteger; }
+        if let Some(_) = string.parse::<f64>() { return TFloat; }
         TUnicode
     }
 
@@ -448,14 +449,16 @@ impl TypedMinMax {
             TUnicode | TUnknown | TNull => {}
             TFloat => {
                 let n = str::from_utf8(sample[])
-                            .and_then(|s| from_str::<f64>(s))
+                            .ok()
+                            .and_then(|s| s.parse::<f64>())
                             .unwrap();
                 self.floats.add(n);
                 self.integers.add(n as i64);
             }
             TInteger => {
                 let n = str::from_utf8(sample[])
-                            .and_then(|s| from_str::<i64>(s))
+                            .ok()
+                            .and_then(|s| s.parse::<i64>())
                             .unwrap();
                 self.integers.add(n);
                 self.floats.add(n as f64);
@@ -524,5 +527,5 @@ impl Commute for TypedMinMax {
 }
 
 fn from_bytes<T: FromStr>(bytes: &[u8]) -> Option<T> {
-    str::from_utf8(bytes).and_then(from_str)
+    str::from_utf8(bytes).ok().and_then(|s| s.parse())
 }

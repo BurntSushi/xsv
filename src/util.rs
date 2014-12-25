@@ -1,10 +1,11 @@
-use std::borrow::{Cow, IntoCow};
+use std::borrow::{Cow, IntoCow, ToOwned};
 use std::error::FromError;
 use std::path::BytesContainer;
 use std::str;
 
 use csv;
 use docopt::Docopt;
+use rustc_serialize::Decodable;
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -23,7 +24,7 @@ pub fn version() -> String {
 }
 
 pub fn get_args<T>(usage: &str, argv: &[&str]) -> CliResult<T>
-       where T: ::serialize::Decodable<::docopt::Decoder, ::docopt::Error> {
+       where T: Decodable<::docopt::Decoder, ::docopt::Error> {
     Docopt::new(usage)
            .and_then(|d| d.argv(argv.iter().map(|&x| x))
                           .version(Some(version()))
@@ -88,11 +89,11 @@ pub fn condense<'a, V>(val: V, n: Option<uint>) -> Cow<'a, Vec<u8>, [u8]>
             // (We could circumvent it by allocating a new Unicode string,
             // but that seems excessive.)
             let mut is_short_utf8 = false;
-            if let Some(s) = str::from_utf8(&*val) {
-                if n >= s.char_len() {
+            if let Ok(s) = str::from_utf8(&*val) {
+                if n >= s.chars().count() {
                     is_short_utf8 = true;
                 } else {
-                    let mut s = s.slice_chars(0, n).into_string();
+                    let mut s = s.slice_chars(0, n).to_owned();
                     s.push_str("...");
                     return s.into_bytes().into_cow();
                 }

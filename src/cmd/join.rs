@@ -1,4 +1,4 @@
-use std::collections::hash_map::{HashMap, Vacant, Occupied};
+use std::collections::hash_map::{HashMap, Entry};
 use std::fmt;
 use std::io;
 use std::str;
@@ -68,7 +68,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[deriving(Decodable)]
+#[deriving(RustcDecodable)]
 struct Args {
     arg_columns1: SelectColumns,
     arg_input1: String,
@@ -367,12 +367,12 @@ impl<R: Reader + Seek> ValueIndex<R> {
                                   .collect::<Result<Vec<_>, _>>());
             if nulls || !fields.iter().any(|f| f.is_empty()) {
                 match val_idx.entry(fields) {
-                    Vacant(v) => {
+                    Entry::Vacant(v) => {
                         let mut rows = Vec::with_capacity(4);
                         rows.push(rowi);
                         v.set(rows);
                     }
-                    Occupied(mut v) => { v.get_mut().push(rowi); }
+                    Entry::Occupied(mut v) => { v.get_mut().push(rowi); }
                 }
             }
             rowi += 1;
@@ -411,8 +411,8 @@ fn get_row_key(sel: &NormalSelection, row: &[ByteString], casei: bool)
 
 fn transform(bs: &[u8], casei: bool) -> ByteString {
     match str::from_utf8(bs) {
-        None => ByteString::from_bytes(bs),
-        Some(s) => {
+        Err(_) => ByteString::from_bytes(bs),
+        Ok(s) => {
             if !casei {
                 ByteString::from_bytes(s.trim())
             } else {

@@ -4,7 +4,7 @@ use std::iter;
 use std::slice;
 use std::str::FromStr;
 
-use serialize::{Decodable, Decoder};
+use rustc_serialize::{Decodable, Decoder};
 
 use csv;
 
@@ -332,7 +332,7 @@ impl Selection {
                  -> iter::Scan<
                         &'a uint,
                         &'b [u8],
-                        slice::Items<'a, uint>,
+                        slice::Iter<'a, uint>,
                         &'b [csv::ByteString],
                         for <'c> fn(&mut &'c [csv::ByteString], &uint)
                                  -> Option<&'c [u8]>,
@@ -342,7 +342,10 @@ impl Selection {
                         -> Option<&'c [u8]> {
             Some(row[*idx].as_slice())
         }
-        self.as_slice().iter().scan(row, get_field)
+        self.as_slice().iter().scan(
+            row,
+            get_field as for <'c> fn(&mut &'c [csv::ByteString], &uint)
+                                    -> Option<&'c [u8]>)
     }
 
     pub fn normal(&self) -> NormalSelection {
@@ -396,7 +399,12 @@ impl NormalSelection {
             let (i, v) = t;
             if i < set.len() && set[i] { Some(Some(v)) } else { Some(None) }
         }
-        row.enumerate().scan(self.as_slice(), get_field).filter_map(filmap)
+        row.enumerate()
+           .scan(
+               self.as_slice(),
+               get_field as fn(&mut &[bool], (uint, T)) -> Option<Option<T>>
+            )
+           .filter_map(filmap as fn(Option<T>) -> Option<T>)
     }
 
     pub fn len(&self) -> uint {

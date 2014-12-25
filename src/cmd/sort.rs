@@ -28,7 +28,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[deriving(Decodable)]
+#[deriving(RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
     flag_select: SelectColumns,

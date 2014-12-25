@@ -40,7 +40,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[deriving(Clone, Decodable)]
+#[deriving(Clone, RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
     arg_outdir: String,
