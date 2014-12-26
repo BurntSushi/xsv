@@ -38,7 +38,7 @@ fn prop_cat_rows() {
                                    rows1, rows2, no_headers);
         rassert_eq!(got, expected)
     }
-    qcheck(p);
+    qcheck(p as fn(CsvData) -> bool);
 }
 
 #[test]
@@ -69,7 +69,7 @@ fn prop_cat_cols() {
         }
         rassert_eq!(got, expected)
     }
-    qcheck(p);
+    qcheck(p as fn(CsvData, CsvData) -> bool);
 }
 
 #[test]

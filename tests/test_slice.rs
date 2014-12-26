@@ -1,3 +1,4 @@
+use std::borrow::ToOwned;
 use std::io::process;
 
 use workdir::Workdir;
@@ -79,8 +80,8 @@ fn setup(name: &str, headers: bool, use_index: bool)
 }
 
 fn test_slice(name: &str, start: Option<uint>, end: Option<uint>,
-                expected: &[&str], headers: bool,
-                use_index: bool, as_len: bool) {
+              expected: &[&str], headers: bool,
+              use_index: bool, as_len: bool) {
     let (wrk, mut cmd) = setup(name, headers, use_index);
     if let Some(start) = start {
         cmd.arg("--start").arg(start.to_string());
@@ -99,7 +100,7 @@ fn test_slice(name: &str, start: Option<uint>, end: Option<uint>,
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
     let mut expected = expected.iter()
-                               .map(|s| vec![s.into_string()])
+                               .map(|&s| vec![s.to_owned()])
                                .collect::<Vec<Vec<String>>>();
     if headers { expected.insert(0, svec!["header"]); }
     assert_eq!(got, expected);
@@ -114,7 +115,7 @@ fn test_index(name: &str, idx: uint, expected: &str,
     }
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
-    let mut expected = vec![vec![expected.into_string()]];
+    let mut expected = vec![vec![expected.to_owned()]];
     if headers { expected.insert(0, svec!["header"]); }
     assert_eq!(got, expected);
 }

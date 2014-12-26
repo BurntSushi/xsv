@@ -1,4 +1,5 @@
-use std::collections::hash_map::{HashMap, Occupied, Vacant};
+use std::borrow::ToOwned;
+use std::collections::hash_map::{HashMap, Entry};
 use std::io::process;
 
 use csv;
@@ -132,7 +133,7 @@ fn prop_frequency() {
     }
     // Run on really small values because we are incredibly careless
     // with allocation.
-    qcheck_sized(p, 2);
+    qcheck_sized(p as fn(CsvData) -> bool, 2);
 }
 
 // This tests that a frequency table computed by `xsv` (with an index) is
@@ -144,7 +145,7 @@ fn prop_frequency_indexed() {
     }
     // Run on really small values because we are incredibly careless
     // with allocation.
-    qcheck_sized(p, 2);
+    qcheck_sized(p as fn(CsvData) -> bool, 2);
 }
 
 fn param_prop_frequency(name: &str, rows: CsvData, idx: bool) -> bool {
@@ -165,7 +166,7 @@ fn param_prop_frequency(name: &str, rows: CsvData, idx: bool) -> bool {
 
 type FTables = HashMap<String, Frequencies<String>>;
 
-#[deriving(Decodable)]
+#[deriving(RustcDecodable)]
 struct FRow {
     field: String,
     value: String,
@@ -180,13 +181,13 @@ fn ftables_from_rows<T: Csv>(rows: T) -> FTables {
 
     let header = rows.remove(0).unwrap();
     let mut ftables = HashMap::new();
-    for field in header.iter() { 
+    for field in header.iter() {
         ftables.insert(field.clone(), Frequencies::new());
     }
     for row in rows.into_iter() {
         for (i, mut field) in row.into_iter().enumerate() {
             if field.is_empty() {
-                field = "(NULL)".into_string();
+                field = "(NULL)".to_owned();
             }
             ftables.get_mut(&header[i]).unwrap().add(field);
         }
@@ -200,14 +201,14 @@ fn ftables_from_csv_string(data: String) -> FTables {
     for frow in rdr.decode() {
         let frow: FRow = frow.unwrap();
         match ftables.entry(frow.field) {
-            Vacant(v) => {
+            Entry::Vacant(v) => {
                 let mut ftable = Frequencies::new();
                 for _ in range(0, frow.count) {
                     ftable.add(frow.value.clone());
                 }
                 v.set(ftable);
             }
-            Occupied(mut v) => {
+            Entry::Occupied(mut v) => {
                 for _ in range(0, frow.count) {
                     v.get_mut().add(frow.value.clone());
                 }

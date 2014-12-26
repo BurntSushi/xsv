@@ -34,7 +34,7 @@ fn prop_count() {
     fn p(rows: CsvData) -> bool {
         prop_count_len("prop_count", rows, false, false)
     }
-    qcheck(p);
+    qcheck(p as fn(CsvData) -> bool);
 }
 
 #[test]
@@ -42,7 +42,7 @@ fn prop_count_headers() {
     fn p(rows: CsvData) -> bool {
         prop_count_len("prop_count_headers", rows, true, false)
     }
-    qcheck(p);
+    qcheck(p as fn(CsvData) -> bool);
 }
 
 #[test]
@@ -50,7 +50,7 @@ fn prop_count_indexed() {
     fn p(rows: CsvData) -> bool {
         prop_count_len("prop_count_indexed", rows, false, true)
     }
-    qcheck(p);
+    qcheck(p as fn(CsvData) -> bool);
 }
 
 #[test]
@@ -58,5 +58,5 @@ fn prop_count_indexed_headers() {
     fn p(rows: CsvData) -> bool {
         prop_count_len("prop_count_indexed_headers", rows, true, true)
     }
-    qcheck(p);
+    qcheck(p as fn(CsvData) -> bool);
 }

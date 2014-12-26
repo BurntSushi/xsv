@@ -3,7 +3,7 @@ use std::io;
 use std::io::fs::{mod, PathExtensions};
 use std::io::process;
 use std::os;
-use std::str::{FromStr, from_str};
+use std::str::FromStr;
 use std::sync::atomic;
 
 use csv;
@@ -66,7 +66,7 @@ impl Workdir {
     pub fn from_str<T: FromStr>(&self, name: &Path) -> T {
         let o = io::File::open(name).unwrap()
                          .read_to_string().unwrap();
-        from_str(o.as_slice()).expect("fromstr")
+        o.as_slice().parse().expect("fromstr")
     }
 
     pub fn command(&self, sub_command: &str) -> process::Command {
@@ -99,7 +99,7 @@ impl Workdir {
     pub fn stdout<T: FromStr>(&self, cmd: &process::Command) -> T {
         let o = self.output(cmd);
         let stdout = String::from_utf8_lossy(o.output.as_slice());
-        from_str(stdout.as_slice().trim()).expect(
+        stdout.as_slice().trim().parse().expect(
             format!("Could not convert from string: '{}'",
                     stdout.as_slice()).as_slice())
     }

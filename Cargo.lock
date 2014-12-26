@@ -5,7 +5,7 @@ dependencies = [
  "csv 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "docopt 0.6.19 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickcheck 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
- "streaming-stats 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "streaming-stats 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "tabwriter 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -43,7 +43,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "streaming-stats"
-version = "0.1.7"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]

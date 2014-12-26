@@ -271,7 +271,11 @@ impl Stats {
         self.mode.as_mut().map(|v| v.add(ByteString::from_bytes(sample)));
         match self.typ {
             TUnknown => {}
-            TNull => {}
+            TNull => {
+                if self.which.include_nulls {
+                    self.online.as_mut().map(|v| { v.add_null(); });
+                }
+            }
             TUnicode => {}
             TFloat | TInteger => {
                 if sample_type.is_null() {

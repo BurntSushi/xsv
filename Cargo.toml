@@ -40,7 +40,7 @@ quickcheck = "*"
 # git = "git://github.com/BurntSushi/rust-csv"
 
 # [dependencies.streaming-stats]
-# path = "/home/andrew/data/projects/rust/rust-stats"
+# path = "/home/andrew/data/projects/rust/streaming-stats"
 # git = "git://github.com/BurntSushi/rust-stats"
 #
 # [dependencies.tabwriter]

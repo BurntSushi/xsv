@@ -29,7 +29,7 @@ fn prop_sort_headers() {
     fn p(rows: CsvData) -> bool {
         prop_sort("prop_sort_headers", rows, true)
     }
-    qcheck(p);
+    qcheck(p as fn(CsvData) -> bool);
 }
 
 #[test]
@@ -37,7 +37,7 @@ fn prop_sort_no_headers() {
     fn p(rows: CsvData) -> bool {
         prop_sort("prop_sort_no_headers", rows, false)
     }
-    qcheck(p);
+    qcheck(p as fn(CsvData) -> bool);
 }
 
 #[test]

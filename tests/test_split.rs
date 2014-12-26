@@ -1,9 +1,11 @@
+use std::borrow::ToOwned;
+
 use workdir::Workdir;
 
 macro_rules! split_eq {
     ($wrk:expr, $path:expr, $expected:expr) => (
         assert_eq!($wrk.from_str::<String>(&$wrk.path($path)),
-                   $expected.into_string());
+                   $expected.to_owned());
     );
 }
 

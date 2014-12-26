@@ -23,7 +23,7 @@ fn prop_fixlengths_all_maxlen() {
         for r in got.iter() { assert_eq!(r.as_slice().len(), got_len) }
         TestResult::from_bool(rassert_eq!(got_len, expected_len))
     }
-    qcheck(p);
+    qcheck(p as fn(Vec<CsvRecord>) -> TestResult);
 }
 
 #[test]
@@ -44,5 +44,5 @@ fn prop_fixlengths_explicit_len() {
         for r in got.iter() { assert_eq!(r.as_slice().len(), got_len) }
         TestResult::from_bool(rassert_eq!(got_len, expected_len))
     }
-    qcheck(p);
+    qcheck(p as fn(Vec<CsvRecord>, uint) -> TestResult);
 }

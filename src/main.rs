@@ -23,9 +23,9 @@ macro_rules! werr {
     ($($arg:tt)*) => (
         match ::std::io::stderr().write_str(format!($($arg)*).as_slice()) {
             Ok(_) => (),
-            Err(err) => fail!("{}", err),
+            Err(err) => panic!("{}", err),
         }
-    )
+    );
 }
 
 macro_rules! fail {

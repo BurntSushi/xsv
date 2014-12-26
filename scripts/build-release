@@ -3,6 +3,7 @@
 version=$(git describe --abbrev=0 --tags)
 name="xsv-$version-x86_64-unknown-linux-gnu"
 
+mkdir -p ./builds/
 cargo build --release
 rm -rf "/tmp/$name"
 mkdir "/tmp/$name"
