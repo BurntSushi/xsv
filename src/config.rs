@@ -1,3 +1,4 @@
+use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::io;
 use std::os;
@@ -38,13 +39,12 @@ impl<E, D: Decoder<E>> Decodable<D, E> for Delimiter {
                     return Err(d.error(msg.as_slice()));
                 }
                 let c = s.char_at(0);
-                match c.to_ascii_opt() {
-                    Some(ascii) => Ok(Delimiter(ascii.as_byte())),
-                    None => {
-                        let msg = format!("Could not convert '{}' \
-                                           to ASCII delimiter.", c);
-                        Err(d.error(msg.as_slice()))
-                    }
+                if c.is_ascii() {
+                    Ok(Delimiter(c as u8))
+                } else {
+                    let msg = format!("Could not convert '{}' \
+                                       to ASCII delimiter.", c);
+                    Err(d.error(msg.as_slice()))
                 }
             }
         }
