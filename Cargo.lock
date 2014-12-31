@@ -2,7 +2,7 @@
 name = "xsv"
 version = "0.8.8"
 dependencies = [
- "csv 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "csv 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "docopt 0.6.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickcheck 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "streaming-stats 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -11,7 +11,7 @@ dependencies = [
 
 [[package]]
 name = "csv"
-version = "0.12.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "rustc-serialize 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
