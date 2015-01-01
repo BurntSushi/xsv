@@ -1,6 +1,7 @@
 use std::collections::hash_map::{HashMap, Entry};
 use std::fmt;
 use std::io;
+use std::iter::repeat;
 use std::str;
 
 use csv::{mod, ByteString};
@@ -209,7 +210,8 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                                               self.casei, self.nulls));
 
         // Keep track of which rows we've written from rdr2.
-        let mut rdr2_written = Vec::from_elem(validx.num_rows, false);
+        let mut rdr2_written: Vec<_> =
+            repeat(false).take(validx.num_rows).collect();
         for row1 in self.rdr1.byte_records() {
             let row1 = try!(row1);
             let key = get_row_key(&self.sel1, row1[], self.casei);
@@ -275,8 +277,10 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                   -> CliResult<(Vec<ByteString>, Vec<ByteString>)> {
         let len1 = try!(self.rdr1.byte_headers()).len();
         let len2 = try!(self.rdr2.byte_headers()).len();
-        let (nada1, nada2) = (util::empty_field(), util::empty_field());
-        Ok((Vec::from_elem(len1, nada1), Vec::from_elem(len2, nada2)))
+        Ok((
+            repeat(util::empty_field()).take(len1).collect(),
+            repeat(util::empty_field()).take(len2).collect(),
+        ))
     }
 }
 

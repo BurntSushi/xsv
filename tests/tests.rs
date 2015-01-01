@@ -8,8 +8,9 @@ extern crate quickcheck;
 extern crate stats;
 
 use std::fmt;
+use std::iter::range;
 use std::mem::transmute;
-use std::rand::{Rng, task_rng};
+use std::rand::{Rng, thread_rng};
 
 use quickcheck::{Arbitrary, Gen, QuickCheck, Shrinker, StdGen, Testable};
 
@@ -46,11 +47,11 @@ mod test_stats;
 mod test_table;
 
 fn qcheck<T: Testable>(p: T) {
-    QuickCheck::new().gen(StdGen::new(task_rng(), 5)).quickcheck(p);
+    QuickCheck::new().gen(StdGen::new(thread_rng(), 5)).quickcheck(p);
 }
 
 fn qcheck_sized<T: Testable>(p: T, size: uint) {
-    QuickCheck::new().gen(StdGen::new(task_rng(), size)).quickcheck(p);
+    QuickCheck::new().gen(StdGen::new(thread_rng(), size)).quickcheck(p);
 }
 
 type CsvVecs = Vec<Vec<String>>;
@@ -93,7 +94,7 @@ impl fmt::Show for CsvRecord {
 impl Arbitrary for CsvRecord {
     fn arbitrary<G: Gen>(g: &mut G) -> CsvRecord {
         let size = { let s = g.size(); g.gen_range(1, s) };
-        CsvRecord(Vec::from_fn(size, |_| Arbitrary::arbitrary(g)))
+        CsvRecord(range(0, size).map(|_| Arbitrary::arbitrary(g)).collect())
     }
 
     fn shrink(&self) -> Box<Shrinker<CsvRecord>+'static> {
@@ -130,12 +131,13 @@ impl CsvData {
 impl Arbitrary for CsvData {
     fn arbitrary<G: Gen>(g: &mut G) -> CsvData {
         let record_len = { let s = g.size(); g.gen_range(1, s) };
-        let num_records = g.gen_range(0, 100);
+        let num_records: uint = g.gen_range(0, 100);
         CsvData{
-            data: Vec::from_fn(num_records, |_| {
-                CsvRecord(
-                    Vec::from_fn(record_len, |_| Arbitrary::arbitrary(g)))
-            }),
+            data: range(0, num_records).map(|_| {
+                CsvRecord(range(0, record_len)
+                          .map(|_| Arbitrary::arbitrary(g))
+                          .collect())
+            }).collect(),
             record_len: record_len,
         }
     }

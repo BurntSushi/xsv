@@ -90,7 +90,7 @@ fn get_field_value(wrk: &Workdir, cmd: &mut process::Command, field: &str)
     if field == "mode" { cmd.arg("--mode"); }
 
     let mut rows: Vec<Vec<String>> = wrk.read_stdout(cmd);
-    let headers = rows.remove(0).unwrap();
+    let headers = rows.remove(0);
     for row in rows.iter() {
         for (h, val) in headers.iter().zip(row.iter()) {
             if h.as_slice() == field {

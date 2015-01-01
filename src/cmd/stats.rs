@@ -2,6 +2,7 @@ use std::borrow::ToOwned;
 use std::default::Default;
 use std::fmt;
 use std::io::{mod, File};
+use std::iter::repeat;
 use std::os;
 use std::str::{mod, FromStr};
 
@@ -149,7 +150,7 @@ impl Args {
         use std::comm::channel;
         use std::sync::TaskPool;
 
-        let mut records = Vec::from_elem(stats.len(), vec![]);
+        let mut records: Vec<_> = repeat(vec![]).take(stats.len()).collect();
         let pool = TaskPool::new(self.njobs());
         let mut results = vec![];
         for mut stat in stats.into_iter() {
@@ -195,14 +196,14 @@ impl Args {
     }
 
     fn new_stats(&self, record_len: uint) -> Vec<Stats> {
-        Vec::from_elem(record_len, Stats::new(WhichStats {
+        repeat(Stats::new(WhichStats {
             include_nulls: self.flag_nulls,
             range: true,
             dist: true,
             cardinality: self.flag_cardinality || self.flag_everything,
             median: self.flag_median || self.flag_everything,
             mode: self.flag_mode || self.flag_everything,
-        }))
+        })).take(record_len).collect()
     }
 
     fn stat_headers(&self) -> Vec<String> {

@@ -1,4 +1,5 @@
 use std::io::{mod, File};
+use std::iter::range;
 use std::os;
 
 use csv::{mod, ByteString};
@@ -168,7 +169,8 @@ impl Args {
               -> CliResult<FTables> {
         let null = ByteString::from_bytes(b"");
         let nsel = sel.normal();
-        let mut tabs = Vec::from_fn(nsel.len(), |_| Frequencies::new());
+        let mut tabs: Vec<_> =
+            range(0, nsel.len()).map(|_| Frequencies::new()).collect();
         for row in it {
             let row = try!(row);
             for (i, field) in nsel.select(row.into_iter()).enumerate() {

@@ -2,43 +2,43 @@
 name = "xsv"
 version = "0.8.9"
 dependencies = [
- "csv 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "docopt 0.6.20 (registry+https://github.com/rust-lang/crates.io-index)",
- "quickcheck 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "csv 0.12.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "docopt 0.6.21 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quickcheck 0.1.21 (registry+https://github.com/rust-lang/crates.io-index)",
  "streaming-stats 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "tabwriter 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tabwriter 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "csv"
-version = "0.12.1"
+version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "rustc-serialize 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "docopt"
-version = "0.6.20"
+version = "0.6.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "regex 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "quickcheck"
-version = "0.1.20"
+version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "regex"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rustc-serialize"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -48,9 +48,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "tabwriter"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "docopt 0.6.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "docopt 0.6.21 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

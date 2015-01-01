@@ -15,7 +15,7 @@ fn prop_sort(name: &str, rows: CsvData, headers: bool) -> bool {
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
     let mut expected = rows.to_vecs();
     let headers = if headers && !expected.is_empty() {
-        expected.remove(0).unwrap()
+        expected.remove(0)
     } else {
         vec![]
     };

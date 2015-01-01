@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::fmt;
-use std::iter;
+use std::iter::{mod, range, repeat};
 use std::slice;
 use std::str::FromStr;
 
@@ -36,7 +36,7 @@ impl SelectColumns {
                 // Inverting everything means we get nothing.
                 vec![]
             } else {
-                Vec::from_fn(first_record.len(), |i| i)
+                range(0, first_record.len()).collect()
             }));
         }
 
@@ -357,7 +357,8 @@ impl Selection {
         let mut normal = inds.clone();
         normal.sort();
         normal.dedup();
-        let mut set = Vec::from_elem(normal[normal.len()-1] + 1, false);
+        let mut set: Vec<_> =
+            repeat(false).take(normal[normal.len()-1] + 1).collect();
         for i in normal.into_iter() {
             set[i] = true;
         }

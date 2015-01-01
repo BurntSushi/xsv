@@ -1,4 +1,5 @@
 use std::error::FromError;
+use std::iter::repeat;
 
 use csv;
 
@@ -113,8 +114,10 @@ impl Args {
                             // This can probably be optimized by
                             // pre-allocating. It would avoid the intermediate
                             // `Vec`.
-                            let pad = Vec::from_elem(len, util::empty_field());
-                            records.push(pad);
+                            records.push(
+                                repeat(util::empty_field())
+                                .take(len)
+                                .collect());
                         } else {
                             break 'OUTER;
                         }
@@ -129,8 +132,7 @@ impl Args {
             if num_done >= iters.len() {
                 break 'OUTER;
             }
-            let row = records.as_slice().concat_vec();
-            try!(wtr.write(row.into_iter()));
+            try!(wtr.write(records.as_slice().concat().into_iter()));
         }
         wtr.flush().map_err(FromError::from_error)
     }

@@ -179,7 +179,7 @@ fn ftables_from_rows<T: Csv>(rows: T) -> FTables {
         return HashMap::new();
     }
 
-    let header = rows.remove(0).unwrap();
+    let header = rows.remove(0);
     let mut ftables = HashMap::new();
     for field in header.iter() {
         ftables.insert(field.clone(), Frequencies::new());
