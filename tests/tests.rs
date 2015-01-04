@@ -1,4 +1,5 @@
 #![feature(macro_rules, phase)]
+#![feature(old_orphan_check)] // see rustc commit c61a00
 
 #[phase(plugin, link)] extern crate log;
 extern crate "rustc-serialize" as rustc_serialize;
@@ -66,7 +67,7 @@ impl Csv for CsvVecs {
     fn from_vecs(vecs: CsvVecs) -> CsvVecs { vecs }
 }
 
-#[deriving(Clone, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
 struct CsvRecord(Vec<String>);
 
 impl CsvRecord {
@@ -112,7 +113,7 @@ impl Csv for Vec<CsvRecord> {
     }
 }
 
-#[deriving(Clone, Eq, Ord, PartialOrd, Show)]
+#[derive(Clone, Eq, Ord, PartialOrd, Show)]
 struct CsvData {
     data: Vec<CsvRecord>,
     record_len: uint,

@@ -1,6 +1,7 @@
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::fmt;
-use std::iter::{mod, range, repeat};
+use std::iter::{self, range, repeat};
 use std::slice;
 use std::str::FromStr;
 
@@ -8,7 +9,7 @@ use rustc_serialize::{Decodable, Decoder};
 
 use csv;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct SelectColumns {
     selectors: Vec<Selector>,
     invert: bool,
@@ -217,13 +218,13 @@ impl SelectorParser {
     }
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 enum Selector {
     One(OneSelector),
     Range(OneSelector, OneSelector),
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 enum OneSelector {
     Start,
     End,
@@ -242,9 +243,9 @@ impl Selector {
                 let i1 = try!(sel1.index(first_record, use_names));
                 let i2 = try!(sel2.index(first_record, use_names));
                 Ok(match i1.cmp(&i2) {
-                    Equal => vec!(i1),
-                    Less => iter::range_inclusive(i1, i2).collect(),
-                    Greater => {
+                    Ordering::Equal => vec!(i1),
+                    Ordering::Less => iter::range_inclusive(i1, i2).collect(),
+                    Ordering::Greater => {
                         iter::range_step_inclusive(i1 as int, i2 as int, -1)
                              .map(|i| i as uint).collect()
                     }
@@ -324,7 +325,7 @@ impl fmt::Show for OneSelector {
     }
 }
 
-#[deriving(Clone, Show)]
+#[derive(Clone, Show)]
 pub struct Selection(Vec<uint>);
 
 impl Selection {
@@ -374,7 +375,7 @@ impl AsSlice<uint> for Selection {
     fn as_slice(&self) -> &[uint] { self.0[] }
 }
 
-#[deriving(Clone, Show)]
+#[derive(Clone, Show)]
 pub struct NormalSelection(Vec<bool>);
 
 type _NormalScan<'a, T, I> = iter::Scan<
@@ -394,7 +395,7 @@ type _NormalFilterMap<'a, T, I> = iter::FilterMap<
 
 impl NormalSelection {
     pub fn select<'a, T, I>(&'a self, row: I) -> _NormalFilterMap<'a, T, I>
-                 where I: Iterator<T> {
+             where I: Iterator<Item=T> {
         fn filmap<T>(v: Option<T>) -> Option<T> { v }
         fn get_field<T>(set: &mut &[bool], t: (uint, T)) -> Option<Option<T>> {
             let (i, v) = t;

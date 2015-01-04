@@ -1,6 +1,6 @@
 use std::fmt;
 use std::io;
-use std::io::fs::{mod, PathExtensions};
+use std::io::fs::{self, PathExtensions};
 use std::io::process;
 use std::os;
 use std::str::FromStr;
@@ -12,7 +12,7 @@ use Csv;
 
 static XSV_INTEGRATION_TEST_DIR: &'static str = "xit";
 
-static NEXT_ID: atomic::AtomicUint = atomic::INIT_ATOMIC_UINT;
+static NEXT_ID: atomic::AtomicUint = atomic::ATOMIC_UINT_INIT;
 
 pub struct Workdir {
     root: Path,

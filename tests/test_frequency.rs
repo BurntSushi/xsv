@@ -166,7 +166,7 @@ fn param_prop_frequency(name: &str, rows: CsvData, idx: bool) -> bool {
 
 type FTables = HashMap<String, Frequencies<String>>;
 
-#[deriving(RustcDecodable)]
+#[derive(RustcDecodable)]
 struct FRow {
     field: String,
     value: String,

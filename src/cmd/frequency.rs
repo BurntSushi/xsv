@@ -1,8 +1,8 @@
-use std::io::{mod, File};
+use std::io::{self, File};
 use std::iter::range;
 use std::os;
 
-use csv::{mod, ByteString};
+use csv::{self, ByteString};
 use csv::index::Indexed;
 use stats::{Frequencies, merge_all};
 
@@ -59,7 +59,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[deriving(Clone, RustcDecodable)]
+#[derive(Clone, RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
     flag_select: SelectColumns,
@@ -136,8 +136,8 @@ impl Args {
 
     fn parallel_ftables(&self, idx: &mut Indexed<io::File, io::File>)
                        -> CliResult<(Headers, FTables)> {
-        use std::comm::channel;
         use std::sync::TaskPool;
+        use std::sync::mpsc::channel;
 
         let mut rdr = try!(self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
@@ -157,16 +157,15 @@ impl Args {
                 let mut idx = args.rconfig().indexed().unwrap().unwrap();
                 idx.seek((i * chunk_size) as u64).unwrap();
                 let it = idx.csv().byte_records().take(chunk_size);
-                send.send(args.ftables(&sel, it).unwrap());
+                send.send(args.ftables(&sel, it).unwrap()).unwrap();
             });
         }
         drop(send);
         Ok((headers, merge_all(recv.iter()).unwrap()))
     }
 
-    fn ftables<I: Iterator<csv::CsvResult<ByteRow>>>
-              (&self, sel: &Selection, mut it: I)
-              -> CliResult<FTables> {
+    fn ftables<I>(&self, sel: &Selection, mut it: I) -> CliResult<FTables>
+            where I: Iterator<Item=csv::CsvResult<ByteRow>> {
         let null = ByteString::from_bytes(b"");
         let nsel = sel.normal();
         let mut tabs: Vec<_> =

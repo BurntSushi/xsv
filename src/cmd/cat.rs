@@ -41,7 +41,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[deriving(RustcDecodable)]
+#[derive(RustcDecodable)]
 struct Args {
     cmd_rows: bool,
     cmd_columns: bool,

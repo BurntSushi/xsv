@@ -1,6 +1,6 @@
 use std::rand::Rng;
 
-use csv::{mod, ByteString};
+use csv::{self, ByteString};
 use csv::index::Indexed;
 
 use CliResult;
@@ -37,7 +37,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[deriving(RustcDecodable)]
+#[derive(RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
     arg_sample_size: u64,

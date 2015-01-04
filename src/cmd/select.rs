@@ -18,7 +18,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[deriving(RustcDecodable)]
+#[derive(RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
     arg_selection: SelectColumns,
@@ -42,12 +42,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let sel = try!(rconfig.selection(headers[]));
 
     if !rconfig.no_headers {
-        try!(wtr.write(sel.select(headers[])));
+        try!(wtr.write(sel.as_slice().iter().map(|&i| headers[i].as_slice())));
     }
     for r in rdr.byte_records() {
         // TODO: I don't think we can do any better here. Since selection
         // operates on indices, some kind of allocation is probably required.
-        try!(wtr.write(sel.select(try!(r)[])))
+        // try!(wtr.write(sel.select(try!(r)[])))
+        let r = try!(r);
+        try!(wtr.write(sel.as_slice().iter().map(|&i| r[i].as_slice())));
     }
     try!(wtr.flush());
     Ok(())

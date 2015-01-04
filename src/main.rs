@@ -1,9 +1,11 @@
-#![feature(macro_rules, slicing_syntax)]
-
 /*!
 These are some docs.
 */
 
+#![feature(macro_rules, slicing_syntax)]
+#![feature(old_orphan_check)] // see rustc commit c61a00
+
+#![allow(dead_code, unused_variables)]
 
 extern crate csv;
 extern crate docopt;
@@ -68,7 +70,7 @@ Options:
 
 Commands:", command_list!());
 
-#[deriving(RustcDecodable)]
+#[derive(RustcDecodable)]
 struct Args {
     arg_command: Option<Command>,
     flag_list: bool,
@@ -126,7 +128,7 @@ Please choose one of the following commands:",
     }
 }
 
-#[deriving(RustcDecodable, Show)]
+#[derive(RustcDecodable, Show)]
 enum Command {
     Cat,
     Count,
@@ -176,7 +178,7 @@ impl Command {
 
 type CliResult<T> = Result<T, CliError>;
 
-#[deriving(Show)]
+#[derive(Show)]
 enum CliError {
     Flag(docopt::Error),
     Csv(csv::Error),

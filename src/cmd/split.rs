@@ -40,7 +40,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[deriving(Clone, RustcDecodable)]
+#[derive(Clone, RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
     arg_outdir: String,
@@ -85,8 +85,8 @@ impl Args {
 
     fn parallel_split(&self, idx: Indexed<io::File, io::File>)
                      -> CliResult<()> {
-        use std::comm::channel;
         use std::sync::TaskPool;
+        use std::sync::mpsc::channel;
 
         let nchunks = util::num_of_chunks(idx.count() as uint, self.flag_size);
         let pool = TaskPool::new(self.njobs());
@@ -107,7 +107,7 @@ impl Args {
                     wtr.write(row.into_iter()).unwrap();
                 }
                 wtr.flush().unwrap();
-                tx.send(());
+                tx.send(()).unwrap();
             });
         }
         drop(tx);

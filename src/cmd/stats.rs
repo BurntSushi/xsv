@@ -1,12 +1,12 @@
 use std::borrow::ToOwned;
 use std::default::Default;
 use std::fmt;
-use std::io::{mod, File};
+use std::io::{self, File};
 use std::iter::repeat;
 use std::os;
-use std::str::{mod, FromStr};
+use std::str::{self, FromStr};
 
-use csv::{mod, ByteString};
+use csv::{self, ByteString};
 use csv::index::Indexed;
 use stats::{Commute, OnlineStats, MinMax, Unsorted, merge_all};
 
@@ -65,7 +65,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[deriving(Clone, RustcDecodable)]
+#[derive(Clone, RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
     flag_select: SelectColumns,
@@ -116,8 +116,8 @@ impl Args {
 
     fn parallel_stats(&self, idx: Indexed<io::File, io::File>)
                      -> CliResult<(Vec<ByteString>, Vec<Stats>)> {
-        use std::comm::channel;
         use std::sync::TaskPool;
+        use std::sync::mpsc::channel;
 
         // N.B. This method doesn't handle the case when the number of records
         // is zero correctly. (So we use `sequential_stats` instead.
@@ -139,7 +139,7 @@ impl Args {
                 let mut idx = args.rconfig().indexed().unwrap().unwrap();
                 idx.seek((i * chunk_size) as u64).unwrap();
                 let it = idx.csv().byte_records().take(chunk_size);
-                send.send(args.compute(&sel, it).unwrap());
+                send.send(args.compute(&sel, it).unwrap()).unwrap();
             });
         }
         drop(send);
@@ -147,8 +147,8 @@ impl Args {
     }
 
     fn stats_to_records(&self, stats: Vec<Stats>) -> Vec<Vec<String>> {
-        use std::comm::channel;
         use std::sync::TaskPool;
+        use std::sync::mpsc::channel;
 
         let mut records: Vec<_> = repeat(vec![]).take(stats.len()).collect();
         let pool = TaskPool::new(self.njobs());
@@ -156,17 +156,17 @@ impl Args {
         for mut stat in stats.into_iter() {
             let (tx, rx) = channel();
             results.push(rx);
-            pool.execute(move || { tx.send(stat.to_record()); });
+            pool.execute(move || { tx.send(stat.to_record()).unwrap(); });
         }
         for (i, rx) in results.into_iter().enumerate() {
-            records[i] = rx.recv();
+            // This unwrap seems suspicious. What could go wrong? ---AG
+            records[i] = rx.recv().unwrap();
         }
         records
     }
 
-    fn compute<I: Iterator<csv::CsvResult<Vec<ByteString>>>>
-              (&self, sel: &Selection, mut it: I)
-              -> CliResult<Vec<Stats>> {
+    fn compute<I>(&self, sel: &Selection, mut it: I) -> CliResult<Vec<Stats>>
+            where I: Iterator<Item=csv::CsvResult<Vec<ByteString>>> {
         let mut stats = self.new_stats(sel.len());
         for row in it {
             let row = try!(row);
@@ -219,7 +219,7 @@ impl Args {
     }
 }
 
-#[deriving(Clone, Eq, PartialEq, Show)]
+#[derive(Clone, Eq, PartialEq, Show)]
 struct WhichStats {
     include_nulls: bool,
     range: bool,
@@ -235,7 +235,7 @@ impl Commute for WhichStats {
     }
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 struct Stats {
     typ: FieldType,
     minmax: Option<TypedMinMax>,
@@ -363,7 +363,7 @@ impl Commute for Stats {
     }
 }
 
-#[deriving(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 enum FieldType {
     TUnknown,
     TNull,
@@ -435,7 +435,7 @@ impl fmt::Show for FieldType {
 
 /// TypedMinMax keeps track of minimum/maximum values for each possible type
 /// where min/max makes sense.
-#[deriving(Clone)]
+#[derive(Clone)]
 struct TypedMinMax {
     strings: MinMax<ByteString>,
     str_len: MinMax<uint>,

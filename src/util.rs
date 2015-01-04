@@ -1,5 +1,6 @@
 use std::borrow::{Cow, IntoCow, ToOwned};
 use std::error::FromError;
+use std::ops::Deref;
 use std::path::BytesContainer;
 use std::str;
 
@@ -79,7 +80,7 @@ pub fn num_of_chunks(nitems: uint, chunk_size: uint) -> uint {
 }
 
 pub fn condense<'a, V>(val: V, n: Option<uint>) -> Cow<'a, Vec<u8>, [u8]>
-        where V: Deref<[u8]> + IntoCow<'a, Vec<u8>, [u8]> {
+        where V: Deref<Target=[u8]> + IntoCow<'a, Vec<u8>, [u8]> {
     match n {
         None => val.into_cow(),
         Some(n) => {

@@ -4,7 +4,7 @@ use std::io;
 use std::iter::repeat;
 use std::str;
 
-use csv::{mod, ByteString};
+use csv::{self, ByteString};
 use csv::index::Indexed;
 
 use CliResult;
@@ -69,7 +69,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[deriving(RustcDecodable)]
+#[derive(RustcDecodable)]
 struct Args {
     arg_columns1: SelectColumns,
     arg_input1: String,
