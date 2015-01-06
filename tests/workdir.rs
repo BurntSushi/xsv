@@ -22,7 +22,7 @@ pub struct Workdir {
 
 impl Workdir {
     pub fn new(name: &str) -> Workdir {
-        let id = NEXT_ID.fetch_add(1, atomic::SeqCst);
+        let id = NEXT_ID.fetch_add(1, atomic::Ordering::SeqCst);
         let root = os::self_exe_path().unwrap();
         let dir = root.clone()
                       .join(XSV_INTEGRATION_TEST_DIR)

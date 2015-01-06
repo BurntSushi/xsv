@@ -200,13 +200,13 @@ fn ftables_from_csv_string(data: String) -> FTables {
     let mut ftables = HashMap::new();
     for frow in rdr.decode() {
         let frow: FRow = frow.unwrap();
-        match ftables.entry(frow.field) {
+        match ftables.entry(&frow.field) {
             Entry::Vacant(v) => {
                 let mut ftable = Frequencies::new();
                 for _ in range(0, frow.count) {
                     ftable.add(frow.value.clone());
                 }
-                v.set(ftable);
+                v.insert(ftable);
             }
             Entry::Occupied(mut v) => {
                 for _ in range(0, frow.count) {
@@ -219,7 +219,7 @@ fn ftables_from_csv_string(data: String) -> FTables {
 }
 
 fn freq_data<T>(ftable: &Frequencies<T>) -> Vec<(&T, u64)>
-            where T: ::std::hash::Hash + Ord {
+            where T: ::std::hash::Hash + Ord + Clone {
     let mut freqs = ftable.most_frequent();
     freqs.sort();
     freqs

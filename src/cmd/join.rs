@@ -370,11 +370,11 @@ impl<R: Reader + Seek> ValueIndex<R> {
                                   .map(|v| v.map(|v| transform(v, casei)))
                                   .collect::<Result<Vec<_>, _>>());
             if nulls || !fields.iter().any(|f| f.is_empty()) {
-                match val_idx.entry(fields) {
+                match val_idx.entry(&fields) {
                     Entry::Vacant(v) => {
                         let mut rows = Vec::with_capacity(4);
                         rows.push(rowi);
-                        v.set(rows);
+                        v.insert(rows);
                     }
                     Entry::Occupied(mut v) => { v.get_mut().push(rowi); }
                 }

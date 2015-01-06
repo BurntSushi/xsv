@@ -17,10 +17,10 @@ macro_rules! select_test {
 
                 let expected = vec![
                     $expected_headers.iter()
-                                     .map(|s| s.into_string())
+                                     .map(|s| s.to_string())
                                      .collect::<Vec<String>>(),
                     $expected_rows.iter()
-                                  .map(|s| s.into_string())
+                                  .map(|s| s.to_string())
                                   .collect::<Vec<String>>(),
                 ];
                 assert_eq!(got, expected);
@@ -37,7 +37,7 @@ macro_rules! select_test {
 
                 let expected = vec![
                     $expected_rows.iter()
-                                  .map(|s| s.into_string())
+                                  .map(|s| s.to_string())
                                   .collect::<Vec<String>>(),
                 ];
                 assert_eq!(got, expected);
