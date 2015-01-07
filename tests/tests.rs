@@ -1,7 +1,4 @@
-#![feature(macro_rules, phase)]
-#![feature(old_orphan_check)] // see rustc commit c61a00
-
-#[phase(plugin, link)] extern crate log;
+#[macro_use] extern crate log;
 extern crate "rustc-serialize" as rustc_serialize;
 
 extern crate csv;

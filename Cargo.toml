@@ -35,6 +35,7 @@ docopt = "*"
 [dev-dependencies]
 quickcheck = "*"
 log = "*"
+rustc-serialize = "*"
 
 # [dependencies.csv]
 # path = "/home/andrew/data/projects/rust/csv"

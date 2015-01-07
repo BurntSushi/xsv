@@ -2,7 +2,7 @@
 These are some docs.
 */
 
-#![feature(macro_rules, slicing_syntax)]
+#![feature(slicing_syntax)]
 
 #![allow(dead_code, unused_variables)]
 

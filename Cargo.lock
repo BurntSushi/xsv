@@ -2,60 +2,61 @@
 name = "xsv"
 version = "0.8.13"
 dependencies = [
- "csv 0.12.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "docopt 0.6.25 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "quickcheck 0.1.24 (registry+https://github.com/rust-lang/crates.io-index)",
- "streaming-stats 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "csv 0.12.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "docopt 0.6.26 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quickcheck 0.1.25 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "streaming-stats 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "tabwriter 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "csv"
-version = "0.12.5"
+version = "0.12.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "rustc-serialize 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "docopt"
-version = "0.6.25"
+version = "0.6.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "regex 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "log"
-version = "0.1.7"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "regex 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "quickcheck"
-version = "0.1.24"
+version = "0.1.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "log 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "regex"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rustc-serialize"
-version = "0.2.5"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "streaming-stats"
-version = "0.1.12"
+version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -63,6 +64,6 @@ name = "tabwriter"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "docopt 0.6.25 (registry+https://github.com/rust-lang/crates.io-index)",
+ "docopt 0.6.26 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
