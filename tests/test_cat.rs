@@ -11,9 +11,9 @@ fn pad(cmd: &mut process::Command) {
     cmd.arg("--pad");
 }
 
-fn run_cat<X, Y, Z>(test_name: &str, which: &str, rows1: X, rows2: Y,
-                    modify_cmd: |&mut process::Command|) -> Z
-          where X: Csv, Y: Csv, Z: Csv {
+fn run_cat<X, Y, Z, F>(test_name: &str, which: &str, rows1: X, rows2: Y,
+                       modify_cmd: F) -> Z
+          where X: Csv, Y: Csv, Z: Csv, F: FnOnce(&mut process::Command) {
     let wrk = Workdir::new(test_name);
     wrk.create("in1.csv", rows1);
     wrk.create("in2.csv", rows2);

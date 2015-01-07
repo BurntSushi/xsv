@@ -27,8 +27,8 @@ impl Delimiter {
     }
 }
 
-impl<E, D: Decoder<E>> Decodable<D, E> for Delimiter {
-    fn decode(d: &mut D) -> Result<Delimiter, E> {
+impl Decodable for Delimiter {
+    fn decode<D: Decoder>(d: &mut D) -> Result<Delimiter, D::Error> {
         let c = try!(d.read_str());
         match c.as_slice() {
             r"\t" => Ok(Delimiter(b'\t')),

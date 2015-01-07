@@ -72,8 +72,8 @@ impl fmt::Show for SelectColumns {
     }
 }
 
-impl <E, D: Decoder<E>> Decodable<D, E> for SelectColumns {
-    fn decode(d: &mut D) -> Result<SelectColumns, E> {
+impl Decodable for SelectColumns {
+    fn decode<D: Decoder>(d: &mut D) -> Result<SelectColumns, D::Error> {
         SelectColumns::parse(try!(d.read_str()).as_slice())
                       .map_err(|e| d.error(e.as_slice()))
     }

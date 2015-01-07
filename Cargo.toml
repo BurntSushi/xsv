@@ -34,6 +34,7 @@ docopt = "*"
 
 [dev-dependencies]
 quickcheck = "*"
+log = "*"
 
 # [dependencies.csv]
 # path = "/home/andrew/data/projects/rust/csv"

@@ -25,7 +25,7 @@ pub fn version() -> String {
 }
 
 pub fn get_args<T>(usage: &str, argv: &[&str]) -> CliResult<T>
-       where T: Decodable<::docopt::Decoder, ::docopt::Error> {
+        where T: Decodable {
     Docopt::new(usage)
            .and_then(|d| d.argv(argv.iter().map(|&x| x))
                           .version(Some(version()))
@@ -124,7 +124,7 @@ pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
     let (s, e) =
         match index {
             Some(i) => {
-                let exists = |i: Idx| i.is_some();
+                let exists = |&: i: Idx| i.is_some();
                 if exists(start) || exists(end) || exists(len) {
                     return Err("--index cannot be used with \
                                 --start, --end or --len".to_string());

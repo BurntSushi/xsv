@@ -3,7 +3,6 @@ These are some docs.
 */
 
 #![feature(macro_rules, slicing_syntax)]
-#![feature(old_orphan_check)] // see rustc commit c61a00
 
 #![allow(dead_code, unused_variables)]
 
@@ -14,10 +13,10 @@ extern crate "rustc-serialize" as rustc_serialize;
 extern crate stats;
 extern crate tabwriter;
 
+use std::borrow::ToOwned;
 use std::error::FromError;
 use std::io;
 use std::os;
-use csv::StrAllocating;
 
 use docopt::Docopt;
 
@@ -207,9 +206,15 @@ impl FromError<io::IoError> for CliError {
     }
 }
 
-impl<T: StrAllocating> FromError<T> for CliError {
-    fn from_error(err: T) -> CliError {
-        CliError::Other(err.into_str())
+impl FromError<String> for CliError {
+    fn from_error(err: String) -> CliError {
+        CliError::Other(err)
+    }
+}
+
+impl<'a> FromError<&'a str> for CliError {
+    fn from_error(err: &'a str) -> CliError {
+        CliError::Other(err.to_owned())
     }
 }
 

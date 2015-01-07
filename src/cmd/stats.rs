@@ -295,7 +295,7 @@ impl Stats {
     fn to_record(&mut self) -> Vec<String> {
         let typ = self.typ;
         let mut pieces = vec![];
-        let empty = || "".to_string();
+        let empty = |&:| "".to_string();
 
         pieces.push(self.typ.to_string());
         match self.minmax.as_ref().and_then(|mm| mm.show(typ)) {
