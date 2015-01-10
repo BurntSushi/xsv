@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::fmt;
 use std::iter::{self, range, repeat};
+use std::ops;
 use std::slice;
 use std::str::FromStr;
 
@@ -75,8 +76,8 @@ impl fmt::Show for SelectColumns {
 
 impl Decodable for SelectColumns {
     fn decode<D: Decoder>(d: &mut D) -> Result<SelectColumns, D::Error> {
-        SelectColumns::parse(try!(d.read_str()).as_slice())
-                      .map_err(|e| d.error(e.as_slice()))
+        SelectColumns::parse(&*try!(d.read_str()))
+                      .map_err(|e| d.error(&*e))
     }
 }
 
@@ -345,9 +346,9 @@ impl Selection {
         // This is horrifying.
         fn get_field<'c>(row: &mut &'c [csv::ByteString], idx: &usize)
                         -> Option<&'c [u8]> {
-            Some(row[*idx].as_slice())
+            Some(&*row[*idx])
         }
-        self.as_slice().iter().scan(
+        self.iter().scan(
             row,
             get_field as for <'c> fn(&mut &'c [csv::ByteString], &usize)
                                     -> Option<&'c [u8]>)
@@ -375,8 +376,12 @@ impl Selection {
     }
 }
 
-impl AsSlice<usize> for Selection {
-    fn as_slice(&self) -> &[usize] { &*self.0 }
+impl ops::Deref for Selection {
+    type Target = [usize];
+
+    fn deref<'a>(&'a self) -> &'a [usize] {
+        &*self.0
+    }
 }
 
 #[derive(Clone, Show)]
@@ -408,17 +413,21 @@ impl NormalSelection {
         }
         row.enumerate()
            .scan(
-               self.as_slice(),
+               &**self,
                get_field as fn(&mut &[bool], (usize, T)) -> Option<Option<T>>
             )
            .filter_map(filmap as fn(Option<T>) -> Option<T>)
     }
 
     pub fn len(&self) -> usize {
-        self.as_slice().iter().filter(|b| **b).count()
+        self.iter().filter(|b| **b).count()
     }
 }
 
-impl AsSlice<bool> for NormalSelection {
-    fn as_slice(&self) -> &[bool] { &*self.0 }
+impl ops::Deref for NormalSelection {
+    type Target = [bool];
+
+    fn deref<'a>(&'a self) -> &'a [bool] {
+        &*self.0
+    }
 }

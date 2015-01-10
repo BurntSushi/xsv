@@ -120,7 +120,7 @@ impl Args {
             counts = counts.into_iter().take(self.flag_limit).collect();
         }
         counts.into_iter().map(|(bs, c)| {
-            if b"" == bs.as_slice() {
+            if b"" == &**bs {
                 (ByteString::from_bytes(b"(NULL)"), c)
             } else {
                 (bs.clone(), c)

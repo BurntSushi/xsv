@@ -58,14 +58,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut first = true;
     for r in rdr.byte_records() {
         if !first && !args.flag_separator.is_empty() {
-            try!(wtr.write_str(args.flag_separator.as_slice()));
+            try!(wtr.write_str(&*args.flag_separator));
             try!(wtr.write_u8(b'\n'));
         }
         first = false;
         let r = try!(r).into_iter();
         for (i, (header, field)) in headers.iter().zip(r).enumerate() {
             if rconfig.no_headers {
-                try!(wtr.write_str(i.to_string().as_slice()));
+                try!(wtr.write_str(&*i.to_string()));
             } else {
                 try!(wtr.write(&**header));
             }

@@ -21,7 +21,7 @@ use docopt::Docopt;
 
 macro_rules! werr {
     ($($arg:tt)*) => (
-        match ::std::io::stderr().write_str(format!($($arg)*).as_slice()) {
+        match ::std::io::stderr().write_str(&*format!($($arg)*)) {
             Ok(_) => (),
             Err(err) => panic!("{}", err),
         }
@@ -102,7 +102,7 @@ Please choose one of the following commands:",
                 Err(CliError::Csv(err)) => {
                     os::set_exit_status(1);
                     io::stderr()
-                       .write_str(format!("{}\n", err.to_string()).as_slice())
+                       .write_str(&*format!("{}\n", err.to_string()))
                        .unwrap();
                 }
                 Err(CliError::Io(
@@ -112,13 +112,13 @@ Please choose one of the following commands:",
                 Err(CliError::Io(err)) => {
                     os::set_exit_status(1);
                     io::stderr()
-                       .write_str(format!("{}\n", err.to_string()).as_slice())
+                       .write_str(&*format!("{}\n", err.to_string()))
                        .unwrap();
                 }
                 Err(CliError::Other(msg)) => {
                     os::set_exit_status(1);
                     io::stderr()
-                       .write_str(format!("{}\n", msg).as_slice())
+                       .write_str(&*format!("{}\n", msg))
                        .unwrap();
                 }
             }

@@ -152,7 +152,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                     for &rowi in rows.iter() {
                         try!(validx.idx.seek(rowi as u64));
 
-                        let mut row1 = row.iter().map(|f| Ok(f.as_slice()));
+                        let mut row1 = row.iter().map(|f| Ok(&**f));
                         let row2 = unsafe { validx.idx.csv().byte_fields() };
                         let combined = row1.by_ref().chain(row2);
                         try!(self.wtr.write_iter(combined));
@@ -188,7 +188,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                 Some(rows) => {
                     for &rowi in rows.iter() {
                         try!(validx.idx.seek(rowi as u64));
-                        let row1 = row.iter().map(|f| Ok(f.as_slice()));
+                        let row1 = row.iter().map(|f| Ok(&**f));
                         let row2 = unsafe {
                             validx.idx.csv().byte_fields()
                         };
@@ -410,7 +410,7 @@ impl<R> fmt::Show for ValueIndex<R> {
 
 fn get_row_key(sel: &NormalSelection, row: &[ByteString], casei: bool)
               -> Vec<ByteString> {
-    sel.select(row.iter()).map(|v| transform(v.as_slice(), casei)).collect()
+    sel.select(row.iter()).map(|v| transform(&**v, casei)).collect()
 }
 
 fn transform(bs: &[u8], casei: bool) -> ByteString {

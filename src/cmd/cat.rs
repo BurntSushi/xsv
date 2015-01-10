@@ -66,7 +66,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
 impl Args {
     fn configs(&self) -> CliResult<Vec<Config>> {
-        util::many_configs(self.arg_input.as_slice(),
+        util::many_configs(&*self.arg_input,
                            self.flag_delimiter,
                            self.flag_no_headers)
              .map_err(FromError::from_error)
@@ -132,7 +132,7 @@ impl Args {
             if num_done >= iters.len() {
                 break 'OUTER;
             }
-            try!(wtr.write(records.as_slice().concat().into_iter()));
+            try!(wtr.write(records.concat().into_iter()));
         }
         wtr.flush().map_err(FromError::from_error)
     }

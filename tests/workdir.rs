@@ -66,7 +66,7 @@ impl Workdir {
     pub fn from_str<T: FromStr>(&self, name: &Path) -> T {
         let o = io::File::open(name).unwrap()
                          .read_to_string().unwrap();
-        o.as_slice().parse().expect("fromstr")
+        o.parse().expect("fromstr")
     }
 
     pub fn command(&self, sub_command: &str) -> process::Command {
@@ -86,8 +86,8 @@ impl Workdir {
                     \n\nstdout: {}\n\nstderr: {}\
                     \n\n=====\n",
                    cmd, self.dir.display(), o.status,
-                   String::from_utf8_lossy(o.output.as_slice()),
-                   String::from_utf8_lossy(o.error.as_slice()))
+                   String::from_utf8_lossy(&*o.output),
+                   String::from_utf8_lossy(&*o.error))
         }
         o
     }
@@ -98,10 +98,9 @@ impl Workdir {
 
     pub fn stdout<T: FromStr>(&self, cmd: &process::Command) -> T {
         let o = self.output(cmd);
-        let stdout = String::from_utf8_lossy(o.output.as_slice());
-        stdout.as_slice().trim().parse().expect(
-            format!("Could not convert from string: '{}'",
-                    stdout.as_slice()).as_slice())
+        let stdout = String::from_utf8_lossy(&*o.output);
+        stdout.trim().parse().expect(
+            &*format!("Could not convert from string: '{}'", stdout))
     }
 
     pub fn assert_err(&self, cmd: &process::Command) {

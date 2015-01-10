@@ -44,7 +44,7 @@ pub fn many_configs(inps: &[String], delim: Option<Delimiter>,
                                     .delimiter(delim)
                                     .no_headers(no_headers))
                     .collect::<Vec<_>>();
-    try!(errif_greater_one_stdin(confs.as_slice()));
+    try!(errif_greater_one_stdin(&*confs));
     Ok(confs)
 }
 

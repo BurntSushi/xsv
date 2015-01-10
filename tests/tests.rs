@@ -10,6 +10,7 @@ extern crate stats;
 use std::fmt;
 use std::iter::range;
 use std::mem::transmute;
+use std::ops;
 use std::rand::{Rng, thread_rng};
 
 use quickcheck::{Arbitrary, Gen, QuickCheck, Shrinker, StdGen, Testable};
@@ -74,17 +75,16 @@ impl CsvRecord {
         let CsvRecord(v) = self;
         v
     }
+}
 
-    fn as_slice(&self) -> &[String] {
-        let CsvRecord(ref v) = *self;
-        v.as_slice()
-    }
+impl ops::Deref for CsvRecord {
+    type Target = [String];
+    fn deref<'a>(&'a self) -> &'a [String] { &*self.0 }
 }
 
 impl fmt::Show for CsvRecord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let bytes: Vec<_> = self.as_slice()
-                                .iter()
+        let bytes: Vec<_> = self.iter()
                                 .map(|s| s.as_bytes())
                                 .collect();
         write!(f, "{:?}", bytes)
@@ -121,11 +121,14 @@ struct CsvData {
 impl CsvData {
     fn unwrap(self) -> Vec<CsvRecord> { self.data }
 
-    fn as_slice(&self) -> &[CsvRecord] { self.data.as_slice() }
-
-    fn len(&self) -> usize { self.as_slice().len() }
+    fn len(&self) -> usize { (&**self).len() }
 
     fn is_empty(&self) -> bool { self.len() == 0 }
+}
+
+impl ops::Deref for CsvData {
+    type Target = [CsvRecord];
+    fn deref<'a>(&'a self) -> &'a [CsvRecord] { &*self.data }
 }
 
 impl Arbitrary for CsvData {
@@ -148,7 +151,7 @@ impl Arbitrary for CsvData {
             self.clone()
                 .unwrap()
                 .shrink()
-                .filter(|rows| rows.iter().all(|r| r.as_slice().len() == len))
+                .filter(|rows| rows.iter().all(|r| r.len() == len))
                 .map(|rows| CsvData { data: rows, record_len: len })
                 .collect();
         // We should also introduce CSV data with fewer columns...
@@ -158,7 +161,7 @@ impl Arbitrary for CsvData {
                     .unwrap()
                     .shrink()
                     .filter(|rows|
-                        rows.iter().all(|r| r.as_slice().len() == len - 1))
+                        rows.iter().all(|r| r.len() == len - 1))
                     .map(|rows| CsvData { data: rows, record_len: len }));
         }
         Box::new(rows.into_iter())

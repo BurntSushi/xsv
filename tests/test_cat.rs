@@ -31,7 +31,7 @@ fn prop_cat_rows() {
             if rows.is_empty() {
                 (vec![], vec![])
             } else {
-                let (rows1, rows2) = rows.as_slice().split_at(rows.len() / 2);
+                let (rows1, rows2) = rows.split_at(rows.len() / 2);
                 (rows1.to_vec(), rows2.to_vec())
             };
         let got: CsvData = run_cat("cat_rows", "rows",

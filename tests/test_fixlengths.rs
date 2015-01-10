@@ -7,7 +7,7 @@ use workdir::Workdir;
 fn prop_fixlengths_all_maxlen() {
     fn p(rows: Vec<CsvRecord>) -> TestResult {
         let expected_len =
-            match rows.iter().map(|r| r.as_slice().len()).max() {
+            match rows.iter().map(|r| r.len()).max() {
                 None => return TestResult::discard(),
                 Some(n) => n,
             };
@@ -19,8 +19,8 @@ fn prop_fixlengths_all_maxlen() {
         cmd.arg("in.csv");
 
         let got: Vec<CsvRecord> = wrk.read_stdout(&cmd);
-        let got_len = got.iter().map(|r| r.as_slice().len()).max().unwrap();
-        for r in got.iter() { assert_eq!(r.as_slice().len(), got_len) }
+        let got_len = got.iter().map(|r| r.len()).max().unwrap();
+        for r in got.iter() { assert_eq!(r.len(), got_len) }
         TestResult::from_bool(rassert_eq!(got_len, expected_len))
     }
     qcheck(p as fn(Vec<CsvRecord>) -> TestResult);
@@ -37,11 +37,11 @@ fn prop_fixlengths_explicit_len() {
         wrk.create("in.csv", rows);
 
         let mut cmd = wrk.command("fixlengths");
-        cmd.arg("in.csv").args(&["-l", expected_len.to_string().as_slice()]);
+        cmd.arg("in.csv").args(&["-l", &*expected_len.to_string()]);
 
         let got: Vec<CsvRecord> = wrk.read_stdout(&cmd);
-        let got_len = got.iter().map(|r| r.as_slice().len()).max().unwrap();
-        for r in got.iter() { assert_eq!(r.as_slice().len(), got_len) }
+        let got_len = got.iter().map(|r| r.len()).max().unwrap();
+        for r in got.iter() { assert_eq!(r.len(), got_len) }
         TestResult::from_bool(rassert_eq!(got_len, expected_len))
     }
     qcheck(p as fn(Vec<CsvRecord>, usize) -> TestResult);

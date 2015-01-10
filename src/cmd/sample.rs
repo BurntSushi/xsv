@@ -82,7 +82,7 @@ fn sample_random_access<R: Reader + Seek, I: Reader + Seek>
                        -> CliResult<Vec<Vec<ByteString>>> {
     let mut all_indices = range(0, idx.count()).collect::<Vec<_>>();
     let mut rng = ::std::rand::thread_rng();
-    rng.shuffle(all_indices.as_mut_slice());
+    rng.shuffle(&mut *all_indices);
 
     let mut sampled = Vec::with_capacity(sample_size as usize);
     for i in all_indices.into_iter().take(sample_size as usize) {

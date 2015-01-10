@@ -93,7 +93,7 @@ fn get_field_value(wrk: &Workdir, cmd: &mut process::Command, field: &str)
     let headers = rows.remove(0);
     for row in rows.iter() {
         for (h, val) in headers.iter().zip(row.iter()) {
-            if h.as_slice() == field {
+            if &**h == field {
                 return val.clone();
             }
         }

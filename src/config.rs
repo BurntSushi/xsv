@@ -30,13 +30,13 @@ impl Delimiter {
 impl Decodable for Delimiter {
     fn decode<D: Decoder>(d: &mut D) -> Result<Delimiter, D::Error> {
         let c = try!(d.read_str());
-        match c.as_slice() {
+        match &*c {
             r"\t" => Ok(Delimiter(b'\t')),
             s => {
                 if s.len() != 1 {
                     let msg = format!("Could not convert '{}' to a single \
                                        ASCII character.", s);
-                    return Err(d.error(msg.as_slice()));
+                    return Err(d.error(&*msg));
                 }
                 let c = s.char_at(0);
                 if c.is_ascii() {
@@ -44,7 +44,7 @@ impl Decodable for Delimiter {
                 } else {
                     let msg = format!("Could not convert '{}' \
                                        to ASCII delimiter.", c);
-                    Err(d.error(msg.as_slice()))
+                    Err(d.error(&*msg))
                 }
             }
         }

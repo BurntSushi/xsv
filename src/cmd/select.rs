@@ -42,14 +42,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let sel = try!(rconfig.selection(&*headers));
 
     if !rconfig.no_headers {
-        try!(wtr.write(sel.as_slice().iter().map(|&i| headers[i].as_slice())));
+        try!(wtr.write(sel.iter().map(|&i| &*headers[i])));
     }
     for r in rdr.byte_records() {
         // TODO: I don't think we can do any better here. Since selection
         // operates on indices, some kind of allocation is probably required.
         // try!(wtr.write(sel.select(try!(r)[])))
         let r = try!(r);
-        try!(wtr.write(sel.as_slice().iter().map(|&i| r[i].as_slice())));
+        try!(wtr.write(sel.iter().map(|&i| &*r[i])));
     }
     try!(wtr.flush());
     Ok(())

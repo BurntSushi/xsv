@@ -41,7 +41,7 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
-    let configs = try!(util::many_configs(args.arg_input.as_slice(),
+    let configs = try!(util::many_configs(&*args.arg_input,
                                           args.flag_delimiter, true));
 
     let num_inputs = configs.len();
@@ -63,10 +63,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         };
     for (i, header) in headers.into_iter().enumerate() {
         if num_inputs == 1 && !args.flag_just_names {
-            try!(wtr.write_str((i + 1).to_string().as_slice()));
+            try!(wtr.write_str(&*(i + 1).to_string()));
             try!(wtr.write_u8(b'\t'));
         }
-        try!(wtr.write(header.as_slice()));
+        try!(wtr.write(&*header));
         try!(wtr.write_u8(b'\n'));
     }
     try!(wtr.flush());
