@@ -25,7 +25,7 @@ fn prop_count_len(name: &str, rows: CsvData,
     }
     cmd.arg("in.csv");
 
-    let got_count: uint = wrk.stdout(&cmd);
+    let got_count: usize = wrk.stdout(&cmd);
     rassert_eq!(got_count, expected_count)
 }
 

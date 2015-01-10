@@ -1,3 +1,5 @@
+#![allow(unstable)]
+
 #[macro_use] extern crate log;
 extern crate "rustc-serialize" as rustc_serialize;
 
@@ -48,7 +50,7 @@ fn qcheck<T: Testable>(p: T) {
     QuickCheck::new().gen(StdGen::new(thread_rng(), 5)).quickcheck(p);
 }
 
-fn qcheck_sized<T: Testable>(p: T, size: uint) {
+fn qcheck_sized<T: Testable>(p: T, size: usize) {
     QuickCheck::new().gen(StdGen::new(thread_rng(), size)).quickcheck(p);
 }
 
@@ -85,7 +87,7 @@ impl fmt::Show for CsvRecord {
                                 .iter()
                                 .map(|s| s.as_bytes())
                                 .collect();
-        write!(f, "{}", bytes)
+        write!(f, "{:?}", bytes)
     }
 }
 
@@ -96,8 +98,8 @@ impl Arbitrary for CsvRecord {
     }
 
     fn shrink(&self) -> Box<Shrinker<CsvRecord>+'static> {
-        box self.clone().unwrap()
-                .shrink().filter(|r| r.len() > 0).map(CsvRecord)
+        Box::new(self.clone().unwrap()
+                     .shrink().filter(|r| r.len() > 0).map(CsvRecord))
     }
 }
 
@@ -113,7 +115,7 @@ impl Csv for Vec<CsvRecord> {
 #[derive(Clone, Eq, Ord, PartialOrd, Show)]
 struct CsvData {
     data: Vec<CsvRecord>,
-    record_len: uint,
+    record_len: usize,
 }
 
 impl CsvData {
@@ -121,7 +123,7 @@ impl CsvData {
 
     fn as_slice(&self) -> &[CsvRecord] { self.data.as_slice() }
 
-    fn len(&self) -> uint { self.as_slice().len() }
+    fn len(&self) -> usize { self.as_slice().len() }
 
     fn is_empty(&self) -> bool { self.len() == 0 }
 }
@@ -129,7 +131,7 @@ impl CsvData {
 impl Arbitrary for CsvData {
     fn arbitrary<G: Gen>(g: &mut G) -> CsvData {
         let record_len = { let s = g.size(); g.gen_range(1, s) };
-        let num_records: uint = g.gen_range(0, 100);
+        let num_records: usize = g.gen_range(0, 100);
         CsvData{
             data: range(0, num_records).map(|_| {
                 CsvRecord(range(0, record_len)
@@ -159,7 +161,7 @@ impl Arbitrary for CsvData {
                         rows.iter().all(|r| r.as_slice().len() == len - 1))
                     .map(|rows| CsvData { data: rows, record_len: len }));
         }
-        box rows.into_iter()
+        Box::new(rows.into_iter())
     }
 }
 

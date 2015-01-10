@@ -43,7 +43,7 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
-    let pattern = try!(Regex::new(args.arg_regex[]));
+    let pattern = try!(Regex::new(&*args.arg_regex));
     let rconfig = Config::new(&args.arg_input)
                          .delimiter(args.flag_delimiter)
                          .no_headers(args.flag_no_headers)
@@ -53,18 +53,18 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut wtr = try!(Config::new(&args.flag_output).writer());
 
     let headers = try!(rdr.byte_headers());
-    let nsel = try!(rconfig.normal_selection(headers[]));
+    let nsel = try!(rconfig.normal_selection(&*headers));
 
     let mut wrote_headers = false;
     if rconfig.no_headers { wrote_headers = true; }
     for row in rdr.records() {
         let row = try!(row);
-        if nsel.select(row.iter()).any(|f| pattern.is_match(f[])) {
+        if nsel.select(row.iter()).any(|f| pattern.is_match(&**f)) {
             if !wrote_headers {
                 try!(wtr.write(headers.iter()));
                 wrote_headers = true;
             }
-            try!(wtr.write(row.iter().map(|f| f[])));
+            try!(wtr.write(row.iter().map(|f| &**f)));
         }
     }
     Ok(try!(wtr.flush()))

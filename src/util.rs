@@ -60,7 +60,7 @@ pub fn empty_field() -> csv::ByteString {
     csv::ByteString::from_bytes::<&[u8]>(&[])
 }
 
-pub fn chunk_size(nitems: uint, njobs: uint) -> uint {
+pub fn chunk_size(nitems: usize, njobs: usize) -> usize {
     if nitems < njobs {
         nitems
     } else {
@@ -68,7 +68,7 @@ pub fn chunk_size(nitems: uint, njobs: uint) -> uint {
     }
 }
 
-pub fn num_of_chunks(nitems: uint, chunk_size: uint) -> uint {
+pub fn num_of_chunks(nitems: usize, chunk_size: usize) -> usize {
     if chunk_size == 0 {
         return nitems;
     }
@@ -79,7 +79,7 @@ pub fn num_of_chunks(nitems: uint, chunk_size: uint) -> uint {
     n
 }
 
-pub fn condense<'a, V>(val: V, n: Option<uint>) -> Cow<'a, Vec<u8>, [u8]>
+pub fn condense<'a, V>(val: V, n: Option<usize>) -> Cow<'a, Vec<u8>, [u8]>
         where V: Deref<Target=[u8]> + IntoCow<'a, Vec<u8>, [u8]> {
     match n {
         None => val.into_cow(),
@@ -117,10 +117,10 @@ pub fn idx_path(csv_path: &Path) -> Path {
     Path::new(p)
 }
 
-type Idx = Option<uint>;
+type Idx = Option<usize>;
 
 pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
-            -> Result<(uint, uint), String> {
+            -> Result<(usize, usize), String> {
     let (s, e) =
         match index {
             Some(i) => {
@@ -137,7 +137,7 @@ pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
                     (&Some(_), &Some(_)) =>
                         return Err("--end and --len cannot be used
                                     at the same time.".to_string()),
-                    (&None, &None) => ::std::uint::MAX,
+                    (&None, &None) => ::std::usize::MAX,
                     (&Some(e), &None) => e,
                     (&None, &Some(l)) => s + l,
                 };

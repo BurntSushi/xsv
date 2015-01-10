@@ -20,7 +20,8 @@ macro_rules! join_test {
 
             #[test]
             fn no_headers() {
-                let wrk = setup(stringify!($name_no_headers), false);
+                let n = stringify!(concat_idents!($name, _no_headers));
+                let wrk = setup(n, false);
                 let mut cmd = wrk.command("join");
                 cmd.arg("--no-headers");
                 cmd.args(&["1", "cities.csv", "1", "places.csv"]);

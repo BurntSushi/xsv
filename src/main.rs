@@ -2,8 +2,7 @@
 These are some docs.
 */
 
-#![feature(slicing_syntax)]
-
+#![allow(unstable)]
 #![allow(dead_code, unused_variables)]
 
 extern crate csv;
@@ -151,8 +150,8 @@ enum Command {
 impl Command {
     fn run(self) -> CliResult<()> {
         let argv = os::args();
-        let argv: Vec<_> = argv.iter().map(|s| s[]).collect();
-        let argv = argv[];
+        let argv: Vec<_> = argv.iter().map(|s| &**s).collect();
+        let argv = &*argv;
         match self {
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),

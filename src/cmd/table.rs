@@ -36,11 +36,11 @@ Common options:
 #[derive(RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
-    flag_width: uint,
-    flag_pad: uint,
+    flag_width: usize,
+    flag_pad: usize,
     flag_output: Option<String>,
     flag_delimiter: Option<Delimiter>,
-    flag_condense: Option<uint>,
+    flag_condense: Option<usize>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -60,7 +60,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     for r in rdr.byte_records() {
         let r = try!(r);
-        let row = r.iter().map(|f| util::condense(f[], args.flag_condense));
+        let row = r.iter().map(|f| util::condense(&**f, args.flag_condense));
         try!(wtr.write(row));
     }
     try!(wtr.flush());

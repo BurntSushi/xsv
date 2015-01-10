@@ -44,10 +44,10 @@ Common options:
 #[derive(RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
-    flag_start: Option<uint>,
-    flag_end: Option<uint>,
-    flag_len: Option<uint>,
-    flag_index: Option<uint>,
+    flag_start: Option<usize>,
+    flag_end: Option<usize>,
+    flag_len: Option<usize>,
+    flag_index: Option<usize>,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
@@ -91,7 +91,7 @@ impl Args {
         Ok(try!(wtr.flush()))
     }
 
-    fn range(&self) -> Result<(uint, uint), String> {
+    fn range(&self) -> Result<(usize, usize), String> {
         util::range(self.flag_start, self.flag_end,
                     self.flag_len, self.flag_index)
     }

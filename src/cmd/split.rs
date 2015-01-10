@@ -44,8 +44,8 @@ Common options:
 struct Args {
     arg_input: Option<String>,
     arg_outdir: String,
-    flag_size: uint,
-    flag_jobs: uint,
+    flag_size: usize,
+    flag_jobs: usize,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
@@ -56,7 +56,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     if args.flag_size == 0 {
         return fail!("--size must be greater than 0.");
     }
-    try!(mkdir_recursive(&Path::new(args.arg_outdir[]), io::ALL_PERMISSIONS));
+    try!(mkdir_recursive(&Path::new(&*args.arg_outdir), io::ALL_PERMISSIONS));
 
     match try!(args.rconfig().indexed()) {
         Some(idx) => args.parallel_split(idx),
@@ -70,11 +70,11 @@ impl Args {
         let mut rdr = try!(rconfig.reader());
         let headers = try!(rdr.byte_headers());
 
-        let mut wtr = try!(self.new_writer(headers[], 0));
+        let mut wtr = try!(self.new_writer(&*headers, 0));
         for (i, row) in rdr.byte_records().enumerate() {
             if i > 0 && i % self.flag_size == 0 {
                 try!(wtr.flush());
-                wtr = try!(self.new_writer(headers[], i));
+                wtr = try!(self.new_writer(&*headers, i));
             }
             let row = try!(row);
             try!(wtr.write(row.into_iter()));
@@ -88,7 +88,8 @@ impl Args {
         use std::sync::TaskPool;
         use std::sync::mpsc::channel;
 
-        let nchunks = util::num_of_chunks(idx.count() as uint, self.flag_size);
+        let nchunks = util::num_of_chunks(idx.count() as usize,
+                                          self.flag_size);
         let pool = TaskPool::new(self.njobs());
         let (tx, rx) = channel();
         for i in range(0, nchunks) {
@@ -98,7 +99,7 @@ impl Args {
                 let conf = args.rconfig();
                 let mut idx = conf.indexed().unwrap().unwrap();
                 let headers = idx.csv().byte_headers().unwrap();
-                let mut wtr = args.new_writer(headers[], i * args.flag_size)
+                let mut wtr = args.new_writer(&*headers, i * args.flag_size)
                                   .unwrap();
 
                 idx.seek((i * args.flag_size) as u64).unwrap();
@@ -115,14 +116,14 @@ impl Args {
         Ok(())
     }
 
-    fn new_writer(&self, headers: &[csv::ByteString], start: uint)
+    fn new_writer(&self, headers: &[csv::ByteString], start: usize)
                  -> CliResult<csv::Writer<Box<io::Writer+'static>>> {
         let dir = Path::new(self.arg_outdir.clone());
         let path = dir.join(format!("{}.csv", start));
         let spath = Some(path.display().to_string());
         let mut wtr = try!(Config::new(&spath).writer());
         if !self.rconfig().no_headers {
-            try!(wtr.write(headers.iter().map(|f| f[])));
+            try!(wtr.write(headers.iter().map(|f| &**f)));
         }
         Ok(wtr)
     }
@@ -133,7 +134,7 @@ impl Args {
                .no_headers(self.flag_no_headers)
     }
 
-    fn njobs(&self) -> uint {
+    fn njobs(&self) -> usize {
         if self.flag_jobs == 0 { os::num_cpus() } else { self.flag_jobs }
     }
 }

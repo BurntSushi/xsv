@@ -40,7 +40,7 @@ Common options:
 #[derive(RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
-    flag_condense: Option<uint>,
+    flag_condense: Option<usize>,
     flag_separator: String,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
@@ -70,7 +70,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 try!(wtr.write(&**header));
             }
             try!(wtr.write_u8(b'\t'));
-            try!(wtr.write(&*util::condense(field[], args.flag_condense)));
+            try!(wtr.write(&*util::condense(&*field, args.flag_condense)));
             try!(wtr.write_u8(b'\n'));
         }
     }

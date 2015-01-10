@@ -34,7 +34,7 @@ Common options:
 #[derive(RustcDecodable)]
 struct Args {
     arg_input: Option<String>,
-    flag_length: Option<uint>,
+    flag_length: Option<usize>,
     flag_output: Option<String>,
     flag_delimiter: Option<Delimiter>,
 }
@@ -57,10 +57,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 return fail!("<stdin> cannot be used in this command. \
                               Please specify a file path.");
             }
-            let mut maxlen = 0u;
+            let mut maxlen = 0us;
             let mut rdr = try!(config.reader());
             while !rdr.done() {
-                let mut count = 0u;
+                let mut count = 0us;
                 loop {
                     match rdr.next_field().into_iter_result() {
                         None => break,

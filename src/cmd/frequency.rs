@@ -63,10 +63,10 @@ Common options:
 struct Args {
     arg_input: Option<String>,
     flag_select: SelectColumns,
-    flag_limit: uint,
+    flag_limit: usize,
     flag_asc: bool,
     flag_no_nulls: bool,
-    flag_jobs: uint,
+    flag_jobs: usize,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
@@ -90,7 +90,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
         for (value, count) in args.counts(&ftab).into_iter() {
             let count = count.to_string();
-            let row = vec![header[], value[], count.as_bytes()];
+            let row = vec![&*header, &*value, count.as_bytes()];
             try!(wtr.write(row.into_iter()));
         }
     }
@@ -146,8 +146,8 @@ impl Args {
             return Ok((headers, vec![]));
         }
 
-        let chunk_size = util::chunk_size(idx.count() as uint, self.njobs());
-        let nchunks = util::num_of_chunks(idx.count() as uint, chunk_size);
+        let chunk_size = util::chunk_size(idx.count() as usize, self.njobs());
+        let nchunks = util::num_of_chunks(idx.count() as usize, chunk_size);
 
         let pool = TaskPool::new(self.njobs());
         let (send, recv) = channel();
@@ -188,11 +188,11 @@ impl Args {
     fn sel_headers<R: Reader>(&self, rdr: &mut csv::Reader<R>)
                   -> CliResult<(ByteRow, Selection)> {
         let headers = try!(rdr.byte_headers());
-        let sel = try!(self.rconfig().selection(headers[]));
-        Ok((sel.select(headers[]).map(ByteString::from_bytes).collect(), sel))
+        let sel = try!(self.rconfig().selection(&*headers));
+        Ok((sel.select(&*headers).map(ByteString::from_bytes).collect(), sel))
     }
 
-    fn njobs(&self) -> uint {
+    fn njobs(&self) -> usize {
         if self.flag_jobs == 0 { os::num_cpus() } else { self.flag_jobs }
     }
 }

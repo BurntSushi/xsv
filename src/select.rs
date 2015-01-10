@@ -19,7 +19,7 @@ impl SelectColumns {
     fn parse(mut s: &str) -> Result<SelectColumns, String> {
         let invert =
             if !s.is_empty() && s.as_bytes()[0] == b'!' {
-                s = s[1..];
+                s = &s[1..];
                 true
             } else {
                 false
@@ -66,7 +66,8 @@ impl fmt::Show for SelectColumns {
             write!(f, "<All>")
         } else {
             let strs: Vec<_> =
-                self.selectors.iter().map(|sel| sel.to_string()).collect();
+                self.selectors
+                    .iter().map(|sel| format!("{:?}", sel)).collect();
             write!(f, "{}", strs.connect(", "))
         }
     }
@@ -81,7 +82,7 @@ impl Decodable for SelectColumns {
 
 struct SelectorParser {
     chars: Vec<char>,
-    pos: uint,
+    pos: usize,
 }
 
 impl SelectorParser {
@@ -138,7 +139,7 @@ impl SelectorParser {
             let idx = try!(self.parse_index());
             OneSelector::IndexedName(name, idx)
         } else {
-            match FromStr::from_str(name[]) {
+            match FromStr::from_str(&*name) {
                 None => OneSelector::IndexedName(name, 0),
                 Some(idx) => OneSelector::Index(idx),
             }
@@ -180,7 +181,7 @@ impl SelectorParser {
         Ok(name)
     }
 
-    fn parse_index(&mut self) -> Result<uint, String> {
+    fn parse_index(&mut self) -> Result<usize, String> {
         assert_eq!(self.cur().unwrap(), '[');
         self.bump();
 
@@ -195,14 +196,14 @@ impl SelectorParser {
                 Some(c) => { idx.push(c); self.bump(); }
             }
         }
-        match FromStr::from_str(idx[]) {
+        match FromStr::from_str(&*idx) {
             None => Err(format!("Could not convert '{}' to an integer.", idx)),
             Some(idx) => Ok(idx),
         }
     }
 
     fn cur(&self) -> Option<char> {
-        self.chars[].get(self.pos).map(|c| *c)
+        self.chars.get(self.pos).map(|c| *c)
     }
 
     fn is_end_of_field(&self) -> bool {
@@ -228,13 +229,13 @@ enum Selector {
 enum OneSelector {
     Start,
     End,
-    Index(uint),
-    IndexedName(String, uint),
+    Index(usize),
+    IndexedName(String, usize),
 }
 
 impl Selector {
     fn indices(&self, first_record: &[csv::ByteString], use_names: bool)
-              -> Result<Vec<uint>, String> {
+              -> Result<Vec<usize>, String> {
         match self {
             &Selector::One(ref sel) => {
                 sel.index(first_record, use_names).map(|i| vec![i])
@@ -246,8 +247,10 @@ impl Selector {
                     Ordering::Equal => vec!(i1),
                     Ordering::Less => iter::range_inclusive(i1, i2).collect(),
                     Ordering::Greater => {
-                        iter::range_step_inclusive(i1 as int, i2 as int, -1)
-                             .map(|i| i as uint).collect()
+                        iter::range_step_inclusive(i1 as isize,
+                                                   i2 as isize,
+                                                   -1)
+                             .map(|i| i as usize).collect()
                     }
                 })
             }
@@ -257,7 +260,7 @@ impl Selector {
 
 impl OneSelector {
     fn index(&self, first_record: &[csv::ByteString], use_names: bool)
-            -> Result<uint, String> {
+            -> Result<usize, String> {
         match *self {
             OneSelector::Start => Ok(0),
             OneSelector::End => Ok(
@@ -308,7 +311,8 @@ impl fmt::Show for Selector {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Selector::One(ref sel) => sel.fmt(f),
-            Selector::Range(ref s, ref e) => write!(f, "Range({}, {})", s, e),
+            Selector::Range(ref s, ref e) =>
+                write!(f, "Range({:?}, {:?})", s, e),
         }
     }
 }
@@ -326,26 +330,26 @@ impl fmt::Show for OneSelector {
 }
 
 #[derive(Clone, Show)]
-pub struct Selection(Vec<uint>);
+pub struct Selection(Vec<usize>);
 
 impl Selection {
     pub fn select<'a, 'b>(&'a self, row: &'b [csv::ByteString])
                  -> iter::Scan<
-                        &'a uint,
+                        &'a usize,
                         &'b [u8],
-                        slice::Iter<'a, uint>,
+                        slice::Iter<'a, usize>,
                         &'b [csv::ByteString],
-                        for <'c> fn(&mut &'c [csv::ByteString], &uint)
+                        for <'c> fn(&mut &'c [csv::ByteString], &usize)
                                  -> Option<&'c [u8]>,
                     > {
         // This is horrifying.
-        fn get_field<'c>(row: &mut &'c [csv::ByteString], idx: &uint)
+        fn get_field<'c>(row: &mut &'c [csv::ByteString], idx: &usize)
                         -> Option<&'c [u8]> {
             Some(row[*idx].as_slice())
         }
         self.as_slice().iter().scan(
             row,
-            get_field as for <'c> fn(&mut &'c [csv::ByteString], &uint)
+            get_field as for <'c> fn(&mut &'c [csv::ByteString], &usize)
                                     -> Option<&'c [u8]>)
     }
 
@@ -366,24 +370,24 @@ impl Selection {
         NormalSelection(set)
     }
 
-    pub fn len(&self) -> uint {
+    pub fn len(&self) -> usize {
         self.0.len()
     }
 }
 
-impl AsSlice<uint> for Selection {
-    fn as_slice(&self) -> &[uint] { self.0[] }
+impl AsSlice<usize> for Selection {
+    fn as_slice(&self) -> &[usize] { &*self.0 }
 }
 
 #[derive(Clone, Show)]
 pub struct NormalSelection(Vec<bool>);
 
 type _NormalScan<'a, T, I> = iter::Scan<
-    (uint, T),
+    (usize, T),
     Option<T>,
     iter::Enumerate<I>,
     &'a [bool],
-    fn(&mut &[bool], (uint, T)) -> Option<Option<T>>,
+    fn(&mut &[bool], (usize, T)) -> Option<Option<T>>,
 >;
 
 type _NormalFilterMap<'a, T, I> = iter::FilterMap<
@@ -397,23 +401,24 @@ impl NormalSelection {
     pub fn select<'a, T, I>(&'a self, row: I) -> _NormalFilterMap<'a, T, I>
              where I: Iterator<Item=T> {
         fn filmap<T>(v: Option<T>) -> Option<T> { v }
-        fn get_field<T>(set: &mut &[bool], t: (uint, T)) -> Option<Option<T>> {
+        fn get_field<T>(set: &mut &[bool], t: (usize, T))
+                       -> Option<Option<T>> {
             let (i, v) = t;
             if i < set.len() && set[i] { Some(Some(v)) } else { Some(None) }
         }
         row.enumerate()
            .scan(
                self.as_slice(),
-               get_field as fn(&mut &[bool], (uint, T)) -> Option<Option<T>>
+               get_field as fn(&mut &[bool], (usize, T)) -> Option<Option<T>>
             )
            .filter_map(filmap as fn(Option<T>) -> Option<T>)
     }
 
-    pub fn len(&self) -> uint {
+    pub fn len(&self) -> usize {
         self.as_slice().iter().filter(|b| **b).count()
     }
 }
 
 impl AsSlice<bool> for NormalSelection {
-    fn as_slice(&self) -> &[bool] { self.0[] }
+    fn as_slice(&self) -> &[bool] { &*self.0 }
 }

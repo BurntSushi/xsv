@@ -49,14 +49,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut wtr = try!(Config::new(&args.flag_output).writer());
 
     let headers = try!(rdr.byte_headers());
-    let sel = try!(rconfig.selection(headers[]));
+    let sel = try!(rconfig.selection(&*headers));
 
     let mut all = try!(rdr.byte_records().collect::<Result<Vec<_>, _>>());
     all.sort_by(|r1, r2| {
         // TODO: Numeric sorting. The tricky part, IMO, is figuring out
         // how to expose it in the CLI interface. Not sure of the right
         // answer at the moment.
-        iter::order::cmp(sel.select(r1[]), sel.select(r2[]))
+        iter::order::cmp(sel.select(&**r1), sel.select(&**r2))
     });
 
     try!(rconfig.write_headers(&mut rdr, &mut wtr));

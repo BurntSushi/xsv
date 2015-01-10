@@ -74,7 +74,7 @@ struct Args {
     flag_cardinality: bool,
     flag_median: bool,
     flag_nulls: bool,
-    flag_jobs: uint,
+    flag_jobs: usize,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
@@ -98,8 +98,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     try!(wtr.write(args.stat_headers().iter()));
     for (header, stat) in headers.iter().zip(stats.into_iter()) {
-        let row = vec![header[]].into_iter()
-                                .chain(stat.iter().map(|f| f.as_bytes()));
+        let row = vec![&**header].into_iter()
+                                 .chain(stat.iter().map(|f| f.as_bytes()));
         try!(wtr.write(row));
     }
     Ok(())
@@ -128,8 +128,8 @@ impl Args {
         let mut rdr = try!(self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
 
-        let chunk_size = util::chunk_size(idx.count() as uint, self.njobs());
-        let nchunks = util::num_of_chunks(idx.count() as uint, chunk_size);
+        let chunk_size = util::chunk_size(idx.count() as usize, self.njobs());
+        let nchunks = util::num_of_chunks(idx.count() as usize, chunk_size);
 
         let pool = TaskPool::new(self.njobs());
         let (send, recv) = channel();
@@ -170,7 +170,7 @@ impl Args {
         let mut stats = self.new_stats(sel.len());
         for row in it {
             let row = try!(row);
-            for (i, field) in sel.select(row[]).enumerate() {
+            for (i, field) in sel.select(&*row).enumerate() {
                 stats[i].add(field);
             }
         }
@@ -180,8 +180,8 @@ impl Args {
     fn sel_headers<R: Reader>(&self, rdr: &mut csv::Reader<R>)
                   -> CliResult<(Vec<ByteString>, Selection)> {
         let headers = try!(rdr.byte_headers());
-        let sel = try!(self.rconfig().selection(headers[]));
-        Ok((sel.select(headers[]).map(ByteString::from_bytes).collect(), sel))
+        let sel = try!(self.rconfig().selection(&*headers));
+        Ok((sel.select(&*headers).map(ByteString::from_bytes).collect(), sel))
     }
 
     fn rconfig(&self) -> Config {
@@ -191,11 +191,11 @@ impl Args {
                .select(self.flag_select.clone())
     }
 
-    fn njobs(&self) -> uint {
+    fn njobs(&self) -> usize {
         if self.flag_jobs == 0 { os::num_cpus() } else { self.flag_jobs }
     }
 
-    fn new_stats(&self, record_len: uint) -> Vec<Stats> {
+    fn new_stats(&self, record_len: usize) -> Vec<Stats> {
         repeat(Stats::new(WhichStats {
             include_nulls: self.flag_nulls,
             range: true,
@@ -338,7 +338,7 @@ impl Stats {
             Some(ref mut v) => {
                 if self.which.mode {
                     let lossy = |&: s: ByteString| -> String {
-                        String::from_utf8_lossy(s[]).into_owned()
+                        String::from_utf8_lossy(&*s).into_owned()
                     };
                     pieces.push(
                         v.mode().map(lossy).unwrap_or("N/A".to_owned()));
@@ -421,7 +421,7 @@ impl Default for FieldType {
     fn default() -> FieldType { TNull }
 }
 
-impl fmt::Show for FieldType {
+impl fmt::String for FieldType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             TUnknown => write!(f, "Unknown"),
@@ -438,7 +438,7 @@ impl fmt::Show for FieldType {
 #[derive(Clone)]
 struct TypedMinMax {
     strings: MinMax<ByteString>,
-    str_len: MinMax<uint>,
+    str_len: MinMax<usize>,
     integers: MinMax<i64>,
     floats: MinMax<f64>,
 }
@@ -453,7 +453,7 @@ impl TypedMinMax {
         match typ {
             TUnicode | TUnknown | TNull => {}
             TFloat => {
-                let n = str::from_utf8(sample[])
+                let n = str::from_utf8(&*sample)
                             .ok()
                             .and_then(|s| s.parse::<f64>())
                             .unwrap();
@@ -461,7 +461,7 @@ impl TypedMinMax {
                 self.integers.add(n as i64);
             }
             TInteger => {
-                let n = str::from_utf8(sample[])
+                let n = str::from_utf8(&*sample)
                             .ok()
                             .and_then(|s| s.parse::<i64>())
                             .unwrap();
@@ -484,8 +484,8 @@ impl TypedMinMax {
             TUnicode | TUnknown => {
                 match (self.strings.min(), self.strings.max()) {
                     (Some(min), Some(max)) => {
-                        let min = String::from_utf8_lossy(min[]).to_string();
-                        let max = String::from_utf8_lossy(max[]).to_string();
+                        let min = String::from_utf8_lossy(&**min).to_string();
+                        let max = String::from_utf8_lossy(&**max).to_string();
                         Some((min, max))
                     }
                     _ => None

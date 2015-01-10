@@ -145,7 +145,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                                               self.casei, self.nulls));
         for row in self.rdr1.byte_records() {
             let row = try!(row);
-            let key = get_row_key(&self.sel1, row[], self.casei);
+            let key = get_row_key(&self.sel1, &*row, self.casei);
             match validx.values.get(&key) {
                 None => continue,
                 Some(rows) => {
@@ -174,11 +174,11 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                                               self.casei, self.nulls));
         for row in self.rdr1.byte_records() {
             let row = try!(row);
-            let key = get_row_key(&self.sel1, row[], self.casei);
+            let key = get_row_key(&self.sel1, &*row, self.casei);
             match validx.values.get(&key) {
                 None => {
-                    let row1 = row.iter().map(|f| Ok(f[]));
-                    let row2 = pad2.iter().map(|f| Ok(f[]));
+                    let row1 = row.iter().map(|f| Ok(&**f));
+                    let row2 = pad2.iter().map(|f| Ok(&**f));
                     if right {
                         try!(self.wtr.write_iter(row2.chain(row1)));
                     } else {
@@ -214,11 +214,11 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
             repeat(false).take(validx.num_rows).collect();
         for row1 in self.rdr1.byte_records() {
             let row1 = try!(row1);
-            let key = get_row_key(&self.sel1, row1[], self.casei);
+            let key = get_row_key(&self.sel1, &*row1, self.casei);
             match validx.values.get(&key) {
                 None => {
-                    let row1 = row1.iter().map(|f| Ok(f[]));
-                    let row2 = pad2.iter().map(|f| Ok(f[]));
+                    let row1 = row1.iter().map(|f| Ok(&**f));
+                    let row2 = pad2.iter().map(|f| Ok(&**f));
                     try!(self.wtr.write_iter(row1.chain(row2)));
                 }
                 Some(rows) => {
@@ -226,7 +226,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                         rdr2_written[rowi] = true;
 
                         try!(validx.idx.seek(rowi as u64));
-                        let row1 = row1.iter().map(|f| Ok(f[]));
+                        let row1 = row1.iter().map(|f| Ok(&**f));
                         let row2 = unsafe {
                             validx.idx.csv().byte_fields()
                         };
@@ -241,7 +241,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         for (i, &written) in rdr2_written.iter().enumerate() {
             if !written {
                 try!(validx.idx.seek(i as u64));
-                let row1 = pad1.iter().map(|f| Ok(f[]));
+                let row1 = pad1.iter().map(|f| Ok(&**f));
                 let row2 = unsafe {
                     validx.idx.csv().byte_fields()
                 };
@@ -265,7 +265,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
                         self.rdr2.next_field().into_iter_result() { try!(f); }
                     first = false;
                 }
-                let row1 = row1.iter().map(|f| Ok(f[]));
+                let row1 = row1.iter().map(|f| Ok(&**f));
                 let row2 = unsafe { self.rdr2.byte_fields() };
                 try!(self.wtr.write_iter(row1.chain(row2)));
             }
@@ -319,8 +319,8 @@ impl Args {
                      -> CliResult<(Selection, Selection)> {
         let headers1 = try!(rdr1.byte_headers());
         let headers2 = try!(rdr2.byte_headers());
-        let select1 = try!(rconf1.selection(headers1[]));
-        let select2 = try!(rconf2.selection(headers2[]));
+        let select1 = try!(rconf1.selection(&*headers1));
+        let select2 = try!(rconf2.selection(&*headers2));
         if select1.len() != select2.len() {
             return fail!(format!(
                 "Column selections must have the same number of columns, \
@@ -333,9 +333,9 @@ impl Args {
 
 struct ValueIndex<R> {
     // This maps tuples of values to corresponding rows.
-    values: HashMap<Vec<ByteString>, Vec<uint>>,
+    values: HashMap<Vec<ByteString>, Vec<usize>>,
     idx: Indexed<R, io::MemReader>,
-    num_rows: uint,
+    num_rows: usize,
 }
 
 impl<R: Reader + Seek> ValueIndex<R> {
@@ -344,7 +344,7 @@ impl<R: Reader + Seek> ValueIndex<R> {
           -> CliResult<ValueIndex<R>> {
         let mut val_idx = HashMap::with_capacity(10000);
         let mut rows = io::MemWriter::with_capacity(8 * 10000);
-        let (mut rowi, mut count) = (0u, 0u);
+        let (mut rowi, mut count) = (0us, 0us);
 
         // This logic is kind of tricky. Basically, we want to include
         // the header row in the line index (because that's what csv::index
@@ -370,7 +370,7 @@ impl<R: Reader + Seek> ValueIndex<R> {
                                   .map(|v| v.map(|v| transform(v, casei)))
                                   .collect::<Result<Vec<_>, _>>());
             if nulls || !fields.iter().any(|f| f.is_empty()) {
-                match val_idx.entry(&fields) {
+                match val_idx.entry(fields) {
                     Entry::Vacant(v) => {
                         let mut rows = Vec::with_capacity(4);
                         rows.push(rowi);
@@ -400,9 +400,9 @@ impl<R> fmt::Show for ValueIndex<R> {
         for (keys, rows) in kvs.into_iter() {
             // This is just for debugging, so assume Unicode for now.
             let keys = keys.iter()
-                           .map(|k| String::from_utf8(k[].to_vec()).unwrap())
+                           .map(|k| String::from_utf8(k.to_vec()).unwrap())
                            .collect::<Vec<_>>();
-            try!(writeln!(f, "({}) => {}", keys.connect(", "), rows))
+            try!(writeln!(f, "({}) => {:?}", keys.connect(", "), rows))
         }
         Ok(())
     }

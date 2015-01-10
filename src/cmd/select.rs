@@ -39,7 +39,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut wtr = try!(Config::new(&args.flag_output).writer());
 
     let headers = try!(rdr.byte_headers());
-    let sel = try!(rconfig.selection(headers[]));
+    let sel = try!(rconfig.selection(&*headers));
 
     if !rconfig.no_headers {
         try!(wtr.write(sel.as_slice().iter().map(|&i| headers[i].as_slice())));

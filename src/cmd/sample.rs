@@ -84,8 +84,8 @@ fn sample_random_access<R: Reader + Seek, I: Reader + Seek>
     let mut rng = ::std::rand::thread_rng();
     rng.shuffle(all_indices.as_mut_slice());
 
-    let mut sampled = Vec::with_capacity(sample_size as uint);
-    for i in all_indices.into_iter().take(sample_size as uint) {
+    let mut sampled = Vec::with_capacity(sample_size as usize);
+    for i in all_indices.into_iter().take(sample_size as usize) {
         try!(idx.seek(i));
         let mut rdr = idx.csv();
         sampled.push(try!(rdr.byte_records().next().unwrap()));
@@ -98,7 +98,7 @@ fn sample_reservoir<R: Reader>
                    -> CliResult<Vec<Vec<ByteString>>> {
     // The following algorithm has been adapted from:
     // http://en.wikipedia.org/wiki/Reservoir_sampling
-    let mut reservoir = Vec::with_capacity(sample_size as uint);
+    let mut reservoir = Vec::with_capacity(sample_size as usize);
     let mut records = rdr.byte_records().enumerate();
     for (_, row) in records.by_ref().take(reservoir.capacity()) {
         reservoir.push(try!(row));
@@ -108,7 +108,7 @@ fn sample_reservoir<R: Reader>
     let mut rng = ::std::rand::thread_rng();
     for (i, row) in records {
         let random = rng.gen_range(0, i+1);
-        if random < sample_size as uint {
+        if random < sample_size as usize {
             reservoir[random] = try!(row);
         }
     }

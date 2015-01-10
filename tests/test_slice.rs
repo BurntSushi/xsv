@@ -79,7 +79,7 @@ fn setup(name: &str, headers: bool, use_index: bool)
     (wrk, cmd)
 }
 
-fn test_slice(name: &str, start: Option<uint>, end: Option<uint>,
+fn test_slice(name: &str, start: Option<usize>, end: Option<usize>,
               expected: &[&str], headers: bool,
               use_index: bool, as_len: bool) {
     let (wrk, mut cmd) = setup(name, headers, use_index);
@@ -106,7 +106,7 @@ fn test_slice(name: &str, start: Option<uint>, end: Option<uint>,
     assert_eq!(got, expected);
 }
 
-fn test_index(name: &str, idx: uint, expected: &str,
+fn test_index(name: &str, idx: usize, expected: &str,
               headers: bool, use_index: bool) {
     let (wrk, mut cmd) = setup(name, headers, use_index);
     cmd.arg("--index").arg(idx.to_string());
