@@ -73,22 +73,20 @@ function run {
   fi
 }
 
-{
-  run count xsv count "$data"
-  run flatten xsv flatten "$data"
-  run flatten_condensed xsv flatten "$data" --condensed 50
-  run frequency xsv frequency "$data"
-  run index xsv index "$data"
-  run sample_10 xsv sample 10 "$data"
-  run sample_1000 xsv sample 1000 "$data"
-  run sample_100000 xsv sample 100000 "$data"
-  run search xsv search -s Country "'(?i)us'" "$data"
-  run select xsv select Country "$data"
-  run sort xsv sort -s AccentCity "$data"
-  run slice_one_middle xsv slice -i 500000 "$data"
-  run --index slice_one_middle_index xsv slice -i 500000 "$data"
-  run stats xsv stats "$data"
-  run --index stats_index xsv stats "$data"
-  run stats_everything xsv stats "$data" --everything
-  run --index stats_everything_index xsv stats "$data" --everything
-} | column -t -s'	'
+run count xsv count "$data"
+run flatten xsv flatten "$data"
+run flatten_condensed xsv flatten "$data" --condense 50
+run frequency xsv frequency "$data"
+run index xsv index "$data"
+run sample_10 xsv sample 10 "$data"
+run sample_1000 xsv sample 1000 "$data"
+run sample_100000 xsv sample 100000 "$data"
+run search xsv search -s Country "'(?i)us'" "$data"
+run select xsv select Country "$data"
+run sort xsv sort -s AccentCity "$data"
+run slice_one_middle xsv slice -i 500000 "$data"
+run --index slice_one_middle_index xsv slice -i 500000 "$data"
+run stats xsv stats "$data"
+run --index stats_index xsv stats "$data"
+run stats_everything xsv stats "$data" --everything
+run --index stats_everything_index xsv stats "$data" --everything
