@@ -219,7 +219,7 @@ impl<'a> FromError<&'a str> for CliError {
 
 impl FromError<regex::Error> for CliError {
     fn from_error(err: regex::Error) -> CliError {
-        CliError::Other(err.to_string())
+        CliError::Other(format!("{:?}", err))
     }
 }
 

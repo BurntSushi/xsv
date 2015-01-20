@@ -12,7 +12,7 @@ use Csv;
 
 static XSV_INTEGRATION_TEST_DIR: &'static str = "xit";
 
-static NEXT_ID: atomic::AtomicUint = atomic::ATOMIC_UINT_INIT;
+static NEXT_ID: atomic::AtomicUsize = atomic::ATOMIC_USIZE_INIT;
 
 pub struct Workdir {
     root: Path,
