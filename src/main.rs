@@ -14,6 +14,7 @@ extern crate tabwriter;
 
 use std::borrow::ToOwned;
 use std::error::FromError;
+use std::fmt;
 use std::io;
 use std::os;
 
@@ -126,7 +127,7 @@ Please choose one of the following commands:",
     }
 }
 
-#[derive(RustcDecodable, Show)]
+#[derive(Debug, RustcDecodable)]
 enum Command {
     Cat,
     Count,
@@ -176,12 +177,23 @@ impl Command {
 
 type CliResult<T> = Result<T, CliError>;
 
-#[derive(Show)]
+#[derive(Debug)]
 enum CliError {
     Flag(docopt::Error),
     Csv(csv::Error),
     Io(io::IoError),
     Other(String),
+}
+
+impl fmt::Display for CliError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            CliError::Flag(ref e) => { e.fmt(f) }
+            CliError::Csv(ref e) => { e.fmt(f) }
+            CliError::Io(ref e) => { e.fmt(f) }
+            CliError::Other(ref s) => { f.write_str(&**s) }
+        }
+    }
 }
 
 impl FromError<docopt::Error> for CliError {

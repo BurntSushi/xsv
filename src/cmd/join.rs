@@ -392,7 +392,7 @@ impl<R: Reader + Seek> ValueIndex<R> {
     }
 }
 
-impl<R> fmt::Show for ValueIndex<R> {
+impl<R> fmt::Debug for ValueIndex<R> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Sort the values by order of first appearance.
         let mut kvs = self.values.iter().collect::<Vec<_>>();

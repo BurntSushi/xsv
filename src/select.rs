@@ -61,7 +61,7 @@ impl SelectColumns {
     }
 }
 
-impl fmt::Show for SelectColumns {
+impl fmt::Debug for SelectColumns {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.selectors.is_empty() {
             write!(f, "<All>")
@@ -308,7 +308,7 @@ impl OneSelector {
     }
 }
 
-impl fmt::Show for Selector {
+impl fmt::Debug for Selector {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Selector::One(ref sel) => sel.fmt(f),
@@ -318,7 +318,7 @@ impl fmt::Show for Selector {
     }
 }
 
-impl fmt::Show for OneSelector {
+impl fmt::Debug for OneSelector {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             OneSelector::Start => write!(f, "Start"),
@@ -330,7 +330,7 @@ impl fmt::Show for OneSelector {
     }
 }
 
-#[derive(Clone, Show)]
+#[derive(Clone, Debug)]
 pub struct Selection(Vec<usize>);
 
 impl Selection {

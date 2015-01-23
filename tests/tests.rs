@@ -82,7 +82,7 @@ impl ops::Deref for CsvRecord {
     fn deref<'a>(&'a self) -> &'a [String] { &*self.0 }
 }
 
-impl fmt::Show for CsvRecord {
+impl fmt::Debug for CsvRecord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let bytes: Vec<_> = self.iter()
                                 .map(|s| s.as_bytes())

@@ -99,7 +99,7 @@ fn get_field_value(wrk: &Workdir, cmd: &mut process::Command, field: &str)
         }
     }
     panic!("BUG: Could not find field '{}' in headers '{:?}' \
-            for command '{}'.", field, headers, cmd);
+            for command '{:?}'.", field, headers, cmd);
 }
 
 stats_tests!(stats_infer_unicode, "type", &["a"], "Unicode");

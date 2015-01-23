@@ -76,10 +76,10 @@ impl Workdir {
     }
 
     pub fn output(&self, cmd: &process::Command) -> process::ProcessOutput {
-        debug!("[{}]: {}", self.dir.display(), cmd);
+        debug!("[{}]: {:?}", self.dir.display(), cmd);
         let o = cmd.output().unwrap();
         if !o.status.success() {
-            panic!("\n\n===== {} =====\n\
+            panic!("\n\n===== {:?} =====\n\
                     command failed but expected success!\
                     \n\ncwd: {}\
                     \n\nstatus: {}\
@@ -106,7 +106,7 @@ impl Workdir {
     pub fn assert_err(&self, cmd: &process::Command) {
         let o = cmd.output().unwrap();
         if o.status.success() {
-            panic!("\n\n===== {} =====\n\
+            panic!("\n\n===== {:?} =====\n\
                     command succeeded but expected failure!\
                     \n\ncwd: {}\
                     \n\nstatus: {}\
@@ -127,7 +127,7 @@ impl Workdir {
     }
 }
 
-impl fmt::Show for Workdir {
+impl fmt::Debug for Workdir {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "path={}", self.dir.display())
     }

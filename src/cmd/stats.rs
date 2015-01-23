@@ -421,7 +421,7 @@ impl Default for FieldType {
     fn default() -> FieldType { TNull }
 }
 
-impl fmt::String for FieldType {
+impl fmt::Display for FieldType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             TUnknown => write!(f, "Unknown"),
