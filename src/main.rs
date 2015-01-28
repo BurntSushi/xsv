@@ -15,14 +15,14 @@ extern crate tabwriter;
 use std::borrow::ToOwned;
 use std::error::FromError;
 use std::fmt;
-use std::io;
+use std::old_io as io;
 use std::os;
 
 use docopt::Docopt;
 
 macro_rules! werr {
     ($($arg:tt)*) => (
-        match ::std::io::stderr().write_str(&*format!($($arg)*)) {
+        match ::std::old_io::stderr().write_str(&*format!($($arg)*)) {
             Ok(_) => (),
             Err(err) => panic!("{}", err),
         }

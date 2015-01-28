@@ -1,5 +1,5 @@
-use std::io;
-use std::io::fs::mkdir_recursive;
+use std::old_io as io;
+use std::old_io::fs::mkdir_recursive;
 use std::os;
 
 use csv;

@@ -28,10 +28,11 @@ opt-level = 2
 
 [dependencies]
 csv = "*"
+docopt = "*"
+regex = "*"
+rustc-serialize = "*"
 streaming-stats = "*"
 tabwriter = "*"
-docopt = "*"
-rustc-serialize = "*"
 
 [dev-dependencies]
 quickcheck = "*"

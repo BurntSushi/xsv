@@ -1,6 +1,6 @@
 use std::collections::hash_map::{HashMap, Entry};
 use std::fmt;
-use std::io;
+use std::old_io as io;
 use std::iter::repeat;
 use std::str;
 
@@ -352,7 +352,7 @@ impl<R: Reader + Seek> ValueIndex<R> {
         if !rdr.has_headers {
             // ... so if there are no headers, we seek to the beginning and
             // index everything.
-            try!(rdr.seek(0, ::std::io::SeekSet));
+            try!(rdr.seek(0, io::SeekSet));
         } else {
             // ... and if there are headers, we make sure that we've parsed
             // them, and write the offset of the header row to the index.

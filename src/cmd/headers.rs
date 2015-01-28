@@ -1,4 +1,4 @@
-use std::io;
+use std::old_io as io;
 
 use tabwriter::TabWriter;
 
@@ -66,7 +66,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             try!(wtr.write_str(&*(i + 1).to_string()));
             try!(wtr.write_u8(b'\t'));
         }
-        try!(wtr.write(&*header));
+        try!(wtr.write_all(&*header));
         try!(wtr.write_u8(b'\n'));
     }
     try!(wtr.flush());

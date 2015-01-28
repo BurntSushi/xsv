@@ -1,6 +1,6 @@
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
-use std::io;
+use std::old_io as io;
 use std::os;
 
 use rustc_serialize::{Decodable, Decoder};

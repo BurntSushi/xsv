@@ -1,4 +1,4 @@
-use std::io::{BufferedWriter, File};
+use std::old_io::{BufferedWriter, File};
 
 use csv;
 

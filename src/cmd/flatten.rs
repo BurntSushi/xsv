@@ -1,4 +1,4 @@
-use std::io;
+use std::old_io as io;
 
 use tabwriter::TabWriter;
 
@@ -67,10 +67,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             if rconfig.no_headers {
                 try!(wtr.write_str(&*i.to_string()));
             } else {
-                try!(wtr.write(&**header));
+                try!(wtr.write_all(&**header));
             }
             try!(wtr.write_u8(b'\t'));
-            try!(wtr.write(&*util::condense(&*field, args.flag_condense)));
+            try!(wtr.write_all(&*util::condense(&*field, args.flag_condense)));
             try!(wtr.write_u8(b'\n'));
         }
     }

@@ -1,7 +1,7 @@
 use std::fmt;
-use std::io;
-use std::io::fs::{self, PathExtensions};
-use std::io::process;
+use std::old_io as io;
+use std::old_io::fs::{self, PathExtensions};
+use std::old_io::process;
 use std::os;
 use std::str::FromStr;
 use std::sync::atomic;

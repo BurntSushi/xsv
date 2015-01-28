@@ -5,7 +5,7 @@ use workdir::Workdir;
 macro_rules! join_test {
     ($name:ident, $fun:expr) => (
         mod $name {
-            use std::io::process;
+            use std::old_io::process;
 
             use workdir::Workdir;
             use super::{make_rows, setup};

@@ -1,4 +1,4 @@
-use std::io::{self, File};
+use std::old_io as io;
 use std::iter::range;
 use std::os;
 

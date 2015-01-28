@@ -1,4 +1,4 @@
-use std::io::process;
+use std::old_io::process;
 
 use workdir::Workdir;
 

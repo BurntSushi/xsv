@@ -1,6 +1,6 @@
 use std::borrow::ToOwned;
 use std::collections::hash_map::{HashMap, Hasher, Entry};
-use std::io::process;
+use std::old_io::process;
 
 use csv;
 use stats::Frequencies;
