@@ -2,8 +2,9 @@
 These are some docs.
 */
 
-#![allow(unstable)]
 #![allow(dead_code, unused_variables)]
+
+#![feature(collections, core, io, os, path, rand, std_misc, unicode)]
 
 extern crate csv;
 extern crate docopt;
