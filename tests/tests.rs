@@ -112,7 +112,7 @@ impl Csv for Vec<CsvRecord> {
     }
 }
 
-#[derive(Clone, Eq, Ord, PartialOrd, Show)]
+#[derive(Clone, Debug, Eq, Ord, PartialOrd)]
 struct CsvData {
     data: Vec<CsvRecord>,
     record_len: usize,

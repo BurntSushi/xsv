@@ -12,7 +12,7 @@ use CliResult;
 use select::{SelectColumns, Selection, NormalSelection};
 use util;
 
-#[derive(Clone, Copy, Show)]
+#[derive(Clone, Copy, Debug)]
 pub struct Delimiter(pub u8);
 
 /// Delimiter represents values that can be passed from the command line that

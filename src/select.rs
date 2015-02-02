@@ -384,7 +384,7 @@ impl ops::Deref for Selection {
     }
 }
 
-#[derive(Clone, Show)]
+#[derive(Clone, Debug)]
 pub struct NormalSelection(Vec<bool>);
 
 type _NormalScan<'a, T, I> = iter::Scan<

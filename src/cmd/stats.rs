@@ -219,7 +219,7 @@ impl Args {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Show)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct WhichStats {
     include_nulls: bool,
     range: bool,
