@@ -68,8 +68,7 @@ impl Args {
         try!(self.rconfig().write_headers(&mut rdr, &mut wtr));
 
         let (start, end) = try!(self.range());
-        let mut it = rdr.byte_records().skip(start).take(end - start);
-        for r in it {
+        for r in rdr.byte_records().skip(start).take(end - start) {
             try!(wtr.write(try!(r).into_iter()));
         }
         Ok(try!(wtr.flush()))
@@ -84,8 +83,7 @@ impl Args {
             return Ok(());
         }
         try!(idx.seek(start as u64));
-        let mut it = idx.csv().byte_records().take(end - start);
-        for r in it {
+        for r in idx.csv().byte_records().take(end - start) {
             try!(wtr.write(try!(r).into_iter()));
         }
         Ok(try!(wtr.flush()))

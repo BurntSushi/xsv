@@ -164,7 +164,7 @@ impl Args {
         Ok((headers, merge_all(recv.iter()).unwrap()))
     }
 
-    fn ftables<I>(&self, sel: &Selection, mut it: I) -> CliResult<FTables>
+    fn ftables<I>(&self, sel: &Selection, it: I) -> CliResult<FTables>
             where I: Iterator<Item=csv::CsvResult<ByteRow>> {
         let null = ByteString::from_bytes(b"");
         let nsel = sel.normal();

@@ -66,7 +66,7 @@ impl Workdir {
     pub fn from_str<T: FromStr>(&self, name: &Path) -> T {
         let o = io::File::open(name).unwrap()
                          .read_to_string().unwrap();
-        o.parse().expect("fromstr")
+        o.parse().ok().expect("fromstr")
     }
 
     pub fn command(&self, sub_command: &str) -> process::Command {
@@ -99,8 +99,8 @@ impl Workdir {
     pub fn stdout<T: FromStr>(&self, cmd: &process::Command) -> T {
         let o = self.output(cmd);
         let stdout = String::from_utf8_lossy(&*o.output);
-        stdout.trim().parse().expect(
-            &*format!("Could not convert from string: '{}'", stdout))
+        stdout.trim().parse().ok().expect(
+            &format!("Could not convert from string: '{}'", stdout))
     }
 
     pub fn assert_err(&self, cmd: &process::Command) {

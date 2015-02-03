@@ -77,7 +77,7 @@ impl fmt::Debug for SelectColumns {
 impl Decodable for SelectColumns {
     fn decode<D: Decoder>(d: &mut D) -> Result<SelectColumns, D::Error> {
         SelectColumns::parse(&*try!(d.read_str()))
-                      .map_err(|e| d.error(&*e))
+                      .map_err(|e| d.error(&e))
     }
 }
 
@@ -140,9 +140,9 @@ impl SelectorParser {
             let idx = try!(self.parse_index());
             OneSelector::IndexedName(name, idx)
         } else {
-            match FromStr::from_str(&*name) {
-                None => OneSelector::IndexedName(name, 0),
-                Some(idx) => OneSelector::Index(idx),
+            match FromStr::from_str(&name) {
+                Err(_) => OneSelector::IndexedName(name, 0),
+                Ok(idx) => OneSelector::Index(idx),
             }
         })
     }
@@ -197,10 +197,9 @@ impl SelectorParser {
                 Some(c) => { idx.push(c); self.bump(); }
             }
         }
-        match FromStr::from_str(&*idx) {
-            None => Err(format!("Could not convert '{}' to an integer.", idx)),
-            Some(idx) => Ok(idx),
-        }
+        FromStr::from_str(&idx).map_err(|err| {
+            format!("Could not convert '{}' to an integer: {}", idx, err)
+        })
     }
 
     fn cur(&self) -> Option<char> {
@@ -346,7 +345,7 @@ impl Selection {
         // This is horrifying.
         fn get_field<'c>(row: &mut &'c [csv::ByteString], idx: &usize)
                         -> Option<&'c [u8]> {
-            Some(&*row[*idx])
+            Some(&row[*idx])
         }
         self.iter().scan(
             row,
@@ -380,7 +379,7 @@ impl ops::Deref for Selection {
     type Target = [usize];
 
     fn deref<'a>(&'a self) -> &'a [usize] {
-        &*self.0
+        &self.0
     }
 }
 
@@ -428,6 +427,6 @@ impl ops::Deref for NormalSelection {
     type Target = [bool];
 
     fn deref<'a>(&'a self) -> &'a [bool] {
-        &*self.0
+        &self.0
     }
 }

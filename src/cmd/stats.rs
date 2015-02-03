@@ -165,7 +165,7 @@ impl Args {
         records
     }
 
-    fn compute<I>(&self, sel: &Selection, mut it: I) -> CliResult<Vec<Stats>>
+    fn compute<I>(&self, sel: &Selection, it: I) -> CliResult<Vec<Stats>>
             where I: Iterator<Item=csv::CsvResult<Vec<ByteString>>> {
         let mut stats = self.new_stats(sel.len());
         for row in it {
@@ -381,8 +381,8 @@ impl FieldType {
             Err(_) => return TUnknown,
             Ok(s) => s,
         };
-        if let Some(_) = string.parse::<i64>() { return TInteger; }
-        if let Some(_) = string.parse::<f64>() { return TFloat; }
+        if let Ok(_) = string.parse::<i64>() { return TInteger; }
+        if let Ok(_) = string.parse::<f64>() { return TFloat; }
         TUnicode
     }
 
@@ -455,7 +455,7 @@ impl TypedMinMax {
             TFloat => {
                 let n = str::from_utf8(&*sample)
                             .ok()
-                            .and_then(|s| s.parse::<f64>())
+                            .and_then(|s| s.parse::<f64>().ok())
                             .unwrap();
                 self.floats.add(n);
                 self.integers.add(n as i64);
@@ -463,7 +463,7 @@ impl TypedMinMax {
             TInteger => {
                 let n = str::from_utf8(&*sample)
                             .ok()
-                            .and_then(|s| s.parse::<i64>())
+                            .and_then(|s| s.parse::<i64>().ok())
                             .unwrap();
                 self.integers.add(n);
                 self.floats.add(n as f64);
@@ -532,5 +532,5 @@ impl Commute for TypedMinMax {
 }
 
 fn from_bytes<T: FromStr>(bytes: &[u8]) -> Option<T> {
-    str::from_utf8(bytes).ok().and_then(|s| s.parse())
+    str::from_utf8(bytes).ok().and_then(|s| s.parse().ok())
 }
