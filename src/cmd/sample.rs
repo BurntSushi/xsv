@@ -1,7 +1,6 @@
-use std::rand::Rng;
-
 use csv::{self, ByteString};
 use csv::index::Indexed;
+use rand::Rng;
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -81,7 +80,7 @@ fn sample_random_access<R: Reader + Seek, I: Reader + Seek>
                        (idx: &mut Indexed<R, I>, sample_size: u64)
                        -> CliResult<Vec<Vec<ByteString>>> {
     let mut all_indices = range(0, idx.count()).collect::<Vec<_>>();
-    let mut rng = ::std::rand::thread_rng();
+    let mut rng = ::rand::thread_rng();
     rng.shuffle(&mut *all_indices);
 
     let mut sampled = Vec::with_capacity(sample_size as usize);
@@ -105,7 +104,7 @@ fn sample_reservoir<R: Reader>
     }
 
     // Now do the sampling.
-    let mut rng = ::std::rand::thread_rng();
+    let mut rng = ::rand::thread_rng();
     for (i, row) in records {
         let random = rng.gen_range(0, i+1);
         if random < sample_size as usize {

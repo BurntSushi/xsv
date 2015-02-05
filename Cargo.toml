@@ -29,6 +29,7 @@ opt-level = 2
 [dependencies]
 csv = "*"
 docopt = "*"
+rand = "*"
 regex = "*"
 rustc-serialize = "*"
 streaming-stats = "*"

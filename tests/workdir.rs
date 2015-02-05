@@ -1,8 +1,8 @@
+use std::env;
 use std::fmt;
 use std::old_io as io;
 use std::old_io::fs::{self, PathExtensions};
 use std::old_io::process;
-use std::os;
 use std::str::FromStr;
 use std::sync::atomic;
 
@@ -23,7 +23,7 @@ pub struct Workdir {
 impl Workdir {
     pub fn new(name: &str) -> Workdir {
         let id = NEXT_ID.fetch_add(1, atomic::Ordering::SeqCst);
-        let root = os::self_exe_path().unwrap();
+        let root = env::current_exe().unwrap().dir_path();
         let dir = root.clone()
                       .join(XSV_INTEGRATION_TEST_DIR)
                       .join(name)

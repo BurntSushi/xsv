@@ -1,19 +1,20 @@
-#![feature(core, io, os, path, rand, std_misc)]
+#![feature(core, env, io, path, std_misc)]
 
 #[macro_use] extern crate log;
 extern crate "rustc-serialize" as rustc_serialize;
 
 extern crate csv;
 extern crate quickcheck;
+extern crate rand;
 extern crate stats;
 
 use std::fmt;
 use std::iter::range;
 use std::mem::transmute;
 use std::ops;
-use std::rand::{Rng, thread_rng};
 
 use quickcheck::{Arbitrary, Gen, QuickCheck, Shrinker, StdGen, Testable};
+use rand::{Rng, thread_rng};
 
 macro_rules! svec[
     ($($x:expr),*) => (

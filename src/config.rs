@@ -1,12 +1,11 @@
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
+use std::env;
 use std::old_io as io;
-use std::os;
-
-use rustc_serialize::{Decodable, Decoder};
 
 use csv;
 use csv::index::Indexed;
+use rustc_serialize::{Decodable, Decoder};
 
 use CliResult;
 use select::{SelectColumns, Selection, NormalSelection};
@@ -90,7 +89,8 @@ impl Config {
     }
 
     pub fn no_headers(mut self, mut yes: bool) -> Config {
-        if os::getenv("XSV_TOGGLE_HEADERS").unwrap_or("0".to_owned()) == "1" {
+        let toggle = env::var_string("XSV_TOGGLE_HEADERS");
+        if toggle.unwrap_or("0".to_owned()) == "1" {
             yes = !yes;
         }
         self.no_headers = yes;

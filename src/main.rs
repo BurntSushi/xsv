@@ -4,10 +4,11 @@ These are some docs.
 
 #![allow(dead_code, unused_variables)]
 
-#![feature(collections, core, io, os, path, rand, std_misc, unicode)]
+#![feature(collections, core, env, io, os, path, std_misc, unicode)]
 
 extern crate csv;
 extern crate docopt;
+extern crate rand;
 extern crate regex;
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate stats;
@@ -15,9 +16,9 @@ extern crate tabwriter;
 
 use std::borrow::ToOwned;
 use std::error::FromError;
+use std::env;
 use std::fmt;
 use std::old_io as io;
-use std::os;
 
 use docopt::Docopt;
 
@@ -89,7 +90,7 @@ fn main() {
     }
     match args.arg_command {
         None => {
-            os::set_exit_status(0);
+            env::set_exit_status(0);
             let msg = concat!(
                 "xsv is a suite of CSV command line utilities.
 
@@ -99,26 +100,26 @@ Please choose one of the following commands:",
         }
         Some(cmd) => {
             match cmd.run() {
-                Ok(()) => os::set_exit_status(0),
+                Ok(()) => env::set_exit_status(0),
                 Err(CliError::Flag(err)) => err.exit(),
                 Err(CliError::Csv(err)) => {
-                    os::set_exit_status(1);
+                    env::set_exit_status(1);
                     io::stderr()
                        .write_str(&*format!("{}\n", err.to_string()))
                        .unwrap();
                 }
                 Err(CliError::Io(
                         io::IoError { kind: io::BrokenPipe, .. })) => {
-                    os::set_exit_status(0);
+                    env::set_exit_status(0);
                 }
                 Err(CliError::Io(err)) => {
-                    os::set_exit_status(1);
+                    env::set_exit_status(1);
                     io::stderr()
                        .write_str(&*format!("{}\n", err.to_string()))
                        .unwrap();
                 }
                 Err(CliError::Other(msg)) => {
-                    os::set_exit_status(1);
+                    env::set_exit_status(1);
                     io::stderr()
                        .write_str(&*format!("{}\n", msg))
                        .unwrap();
@@ -151,7 +152,8 @@ enum Command {
 
 impl Command {
     fn run(self) -> CliResult<()> {
-        let argv = os::args();
+        let argv: Vec<_> = env::args()
+                               .map(|v| v.into_string().unwrap()).collect();
         let argv: Vec<_> = argv.iter().map(|s| &**s).collect();
         let argv = &*argv;
         match self {

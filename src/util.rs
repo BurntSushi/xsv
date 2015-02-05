@@ -1,7 +1,7 @@
 use std::borrow::{Cow, IntoCow, ToOwned};
 use std::error::FromError;
 use std::ops::Deref;
-use std::path::BytesContainer;
+use std::old_path::BytesContainer;
 use std::str;
 
 use csv;

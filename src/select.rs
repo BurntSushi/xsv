@@ -335,8 +335,6 @@ pub struct Selection(Vec<usize>);
 impl Selection {
     pub fn select<'a, 'b>(&'a self, row: &'b [csv::ByteString])
                  -> iter::Scan<
-                        &'a usize,
-                        &'b [u8],
                         slice::Iter<'a, usize>,
                         &'b [csv::ByteString],
                         for <'c> fn(&mut &'c [csv::ByteString], &usize)
@@ -387,16 +385,12 @@ impl ops::Deref for Selection {
 pub struct NormalSelection(Vec<bool>);
 
 type _NormalScan<'a, T, I> = iter::Scan<
-    (usize, T),
-    Option<T>,
     iter::Enumerate<I>,
     &'a [bool],
     fn(&mut &[bool], (usize, T)) -> Option<Option<T>>,
 >;
 
 type _NormalFilterMap<'a, T, I> = iter::FilterMap<
-    Option<T>,
-    T,
     _NormalScan<'a, T, I>,
     fn(Option<T>) -> Option<T>
 >;
