@@ -89,8 +89,7 @@ impl Config {
     }
 
     pub fn no_headers(mut self, mut yes: bool) -> Config {
-        let toggle = env::var_string("XSV_TOGGLE_HEADERS");
-        if toggle.unwrap_or("0".to_owned()) == "1" {
+        if env::var("XSV_TOGGLE_HEADERS").unwrap_or("0".to_owned()) == "1" {
             yes = !yes;
         }
         self.no_headers = yes;
