@@ -57,10 +57,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 return fail!("<stdin> cannot be used in this command. \
                               Please specify a file path.");
             }
-            let mut maxlen = 0us;
+            let mut maxlen = 0usize;
             let mut rdr = try!(config.reader());
             while !rdr.done() {
-                let mut count = 0us;
+                let mut count = 0usize;
                 loop {
                     match rdr.next_field().into_iter_result() {
                         None => break,

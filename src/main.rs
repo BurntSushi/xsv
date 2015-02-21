@@ -4,7 +4,7 @@ These are some docs.
 
 #![allow(dead_code, unused_variables)]
 
-#![feature(collections, core, env, io, os, path, std_misc, unicode)]
+#![feature(collections, core, env, old_io, os, old_path, std_misc, unicode)]
 
 extern crate csv;
 extern crate docopt;

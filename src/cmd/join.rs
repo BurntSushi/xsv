@@ -344,7 +344,7 @@ impl<R: Reader + Seek> ValueIndex<R> {
           -> CliResult<ValueIndex<R>> {
         let mut val_idx = HashMap::with_capacity(10000);
         let mut rows = io::MemWriter::with_capacity(8 * 10000);
-        let (mut rowi, mut count) = (0us, 0us);
+        let (mut rowi, mut count) = (0usize, 0usize);
 
         // This logic is kind of tricky. Basically, we want to include
         // the header row in the line index (because that's what csv::index

@@ -1,5 +1,5 @@
 use std::borrow::ToOwned;
-use std::collections::hash_map::{HashMap, Hasher, Entry};
+use std::collections::hash_map::{HashMap, Entry};
 use std::old_io::process;
 
 use csv;
@@ -219,7 +219,7 @@ fn ftables_from_csv_string(data: String) -> FTables {
 }
 
 fn freq_data<T>(ftable: &Frequencies<T>) -> Vec<(&T, u64)>
-        where T: ::std::hash::Hash<Hasher> + Ord + Clone {
+        where T: ::std::hash::Hash + Ord + Clone {
     let mut freqs = ftable.most_frequent();
     freqs.sort();
     freqs

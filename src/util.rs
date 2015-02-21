@@ -79,8 +79,8 @@ pub fn num_of_chunks(nitems: usize, chunk_size: usize) -> usize {
     n
 }
 
-pub fn condense<'a, V>(val: V, n: Option<usize>) -> Cow<'a, Vec<u8>, [u8]>
-        where V: Deref<Target=[u8]> + IntoCow<'a, Vec<u8>, [u8]> {
+pub fn condense<'a, V>(val: V, n: Option<usize>) -> Cow<'a, [u8]>
+        where V: Deref<Target=[u8]> + IntoCow<'a, [u8]> {
     match n {
         None => val.into_cow(),
         Some(n) => {
