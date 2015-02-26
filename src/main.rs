@@ -13,6 +13,7 @@ extern crate regex;
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate stats;
 extern crate tabwriter;
+extern crate threadpool;
 
 use std::borrow::ToOwned;
 use std::error::FromError;

@@ -34,6 +34,7 @@ regex = "*"
 rustc-serialize = "*"
 streaming-stats = "*"
 tabwriter = "*"
+threadpool = "*"
 
 [dev-dependencies]
 quickcheck = "*"

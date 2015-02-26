@@ -85,12 +85,12 @@ impl Args {
 
     fn parallel_split(&self, idx: Indexed<io::File, io::File>)
                      -> CliResult<()> {
-        use std::sync::TaskPool;
+        use threadpool::ThreadPool;
         use std::sync::mpsc::channel;
 
         let nchunks = util::num_of_chunks(idx.count() as usize,
                                           self.flag_size);
-        let pool = TaskPool::new(self.njobs());
+        let pool = ThreadPool::new(self.njobs());
         let (tx, rx) = channel();
         for i in range(0, nchunks) {
             let args = self.clone();

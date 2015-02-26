@@ -3,6 +3,7 @@ use std::fmt;
 use std::old_io as io;
 use std::old_io::fs::{self, PathExtensions};
 use std::old_io::process;
+use std::old_path::Path;
 use std::str::FromStr;
 use std::sync::atomic;
 
@@ -23,7 +24,12 @@ pub struct Workdir {
 impl Workdir {
     pub fn new(name: &str) -> Workdir {
         let id = NEXT_ID.fetch_add(1, atomic::Ordering::SeqCst);
-        let root = env::current_exe().unwrap().dir_path();
+        // temporary junk until IO reform completes...
+        let root = Path::new(env::current_exe()
+                                 .unwrap()
+                                 .into_os_string()
+                                 .into_string()
+                                 .unwrap()).dir_path();
         let dir = root.clone()
                       .join(XSV_INTEGRATION_TEST_DIR)
                       .join(name)

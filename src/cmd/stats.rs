@@ -116,7 +116,7 @@ impl Args {
 
     fn parallel_stats(&self, idx: Indexed<io::File, io::File>)
                      -> CliResult<(Vec<ByteString>, Vec<Stats>)> {
-        use std::sync::TaskPool;
+        use threadpool::ThreadPool;
         use std::sync::mpsc::channel;
 
         // N.B. This method doesn't handle the case when the number of records
@@ -131,7 +131,7 @@ impl Args {
         let chunk_size = util::chunk_size(idx.count() as usize, self.njobs());
         let nchunks = util::num_of_chunks(idx.count() as usize, chunk_size);
 
-        let pool = TaskPool::new(self.njobs());
+        let pool = ThreadPool::new(self.njobs());
         let (send, recv) = channel();
         for i in range(0, nchunks) {
             let (send, args, sel) = (send.clone(), self.clone(), sel.clone());
@@ -147,11 +147,11 @@ impl Args {
     }
 
     fn stats_to_records(&self, stats: Vec<Stats>) -> Vec<Vec<String>> {
-        use std::sync::TaskPool;
+        use threadpool::ThreadPool;
         use std::sync::mpsc::channel;
 
         let mut records: Vec<_> = repeat(vec![]).take(stats.len()).collect();
-        let pool = TaskPool::new(self.njobs());
+        let pool = ThreadPool::new(self.njobs());
         let mut results = vec![];
         for mut stat in stats.into_iter() {
             let (tx, rx) = channel();
