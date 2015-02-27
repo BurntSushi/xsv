@@ -13,7 +13,7 @@ use std::iter::range;
 use std::mem::transmute;
 use std::ops;
 
-use quickcheck::{Arbitrary, Gen, QuickCheck, Shrinker, StdGen, Testable};
+use quickcheck::{Arbitrary, Gen, QuickCheck, StdGen, Testable};
 use rand::{Rng, thread_rng};
 
 macro_rules! svec[
@@ -98,7 +98,7 @@ impl Arbitrary for CsvRecord {
         CsvRecord(range(0, size).map(|_| Arbitrary::arbitrary(g)).collect())
     }
 
-    fn shrink(&self) -> Box<Shrinker<CsvRecord>+'static> {
+    fn shrink(&self) -> Box<Iterator<Item=CsvRecord>+'static> {
         Box::new(self.clone().unwrap()
                      .shrink().filter(|r| r.len() > 0).map(CsvRecord))
     }
@@ -146,7 +146,7 @@ impl Arbitrary for CsvData {
         }
     }
 
-    fn shrink(&self) -> Box<Shrinker<CsvData>+'static> {
+    fn shrink(&self) -> Box<Iterator<Item=CsvData>+'static> {
         let len = self.record_len;
         let mut rows: Vec<CsvData> =
             self.clone()
