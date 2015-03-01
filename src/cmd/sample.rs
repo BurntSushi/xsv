@@ -79,7 +79,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 fn sample_random_access<R: Reader + Seek, I: Reader + Seek>
                        (idx: &mut Indexed<R, I>, sample_size: u64)
                        -> CliResult<Vec<Vec<ByteString>>> {
-    let mut all_indices = range(0, idx.count()).collect::<Vec<_>>();
+    let mut all_indices = (0..idx.count()).collect::<Vec<_>>();
     let mut rng = ::rand::thread_rng();
     rng.shuffle(&mut *all_indices);
 

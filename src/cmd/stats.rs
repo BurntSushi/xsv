@@ -133,7 +133,7 @@ impl Args {
 
         let pool = ThreadPool::new(self.njobs());
         let (send, recv) = channel();
-        for i in range(0, nchunks) {
+        for i in 0..nchunks {
             let (send, args, sel) = (send.clone(), self.clone(), sel.clone());
             pool.execute(move || {
                 let mut idx = args.rconfig().indexed().unwrap().unwrap();
@@ -295,7 +295,7 @@ impl Stats {
     fn to_record(&mut self) -> Vec<String> {
         let typ = self.typ;
         let mut pieces = vec![];
-        let empty = |&:| "".to_string();
+        let empty = || "".to_string();
 
         pieces.push(self.typ.to_string());
         match self.minmax.as_ref().and_then(|mm| mm.show(typ)) {
@@ -337,7 +337,7 @@ impl Stats {
             }
             Some(ref mut v) => {
                 if self.which.mode {
-                    let lossy = |&: s: ByteString| -> String {
+                    let lossy = |s: ByteString| -> String {
                         String::from_utf8_lossy(&*s).into_owned()
                     };
                     pieces.push(

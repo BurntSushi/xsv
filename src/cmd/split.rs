@@ -92,7 +92,7 @@ impl Args {
                                           self.flag_size);
         let pool = ThreadPool::new(self.njobs());
         let (tx, rx) = channel();
-        for i in range(0, nchunks) {
+        for i in 0..nchunks {
             let args = self.clone();
             let tx = tx.clone();
             pool.execute(move || {

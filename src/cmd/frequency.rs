@@ -1,5 +1,4 @@
 use std::old_io as io;
-use std::iter::range;
 use std::os;
 
 use csv::{self, ByteString};
@@ -151,7 +150,7 @@ impl Args {
 
         let pool = ThreadPool::new(self.njobs());
         let (send, recv) = channel();
-        for i in range(0, nchunks) {
+        for i in 0..nchunks {
             let (send, args, sel) = (send.clone(), self.clone(), sel.clone());
             pool.execute(move || {
                 let mut idx = args.rconfig().indexed().unwrap().unwrap();
@@ -169,7 +168,7 @@ impl Args {
         let null = ByteString::from_bytes(b"");
         let nsel = sel.normal();
         let mut tabs: Vec<_> =
-            range(0, nsel.len()).map(|_| Frequencies::new()).collect();
+            (0..nsel.len()).map(|_| Frequencies::new()).collect();
         for row in it {
             let row = try!(row);
             for (i, field) in nsel.select(row.into_iter()).enumerate() {

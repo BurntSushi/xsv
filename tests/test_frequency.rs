@@ -203,13 +203,13 @@ fn ftables_from_csv_string(data: String) -> FTables {
         match ftables.entry(frow.field) {
             Entry::Vacant(v) => {
                 let mut ftable = Frequencies::new();
-                for _ in range(0, frow.count) {
+                for _ in 0..frow.count {
                     ftable.add(frow.value.clone());
                 }
                 v.insert(ftable);
             }
             Entry::Occupied(mut v) => {
-                for _ in range(0, frow.count) {
+                for _ in 0..frow.count {
                     v.get_mut().add(frow.value.clone());
                 }
             }

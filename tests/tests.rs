@@ -1,4 +1,4 @@
-#![feature(core, env, old_io, old_path, os, path, std_misc)]
+#![feature(core, old_io, old_path, os, path, std_misc)]
 
 #[macro_use] extern crate log;
 extern crate "rustc-serialize" as rustc_serialize;
@@ -9,7 +9,6 @@ extern crate rand;
 extern crate stats;
 
 use std::fmt;
-use std::iter::range;
 use std::mem::transmute;
 use std::ops;
 
@@ -95,7 +94,7 @@ impl fmt::Debug for CsvRecord {
 impl Arbitrary for CsvRecord {
     fn arbitrary<G: Gen>(g: &mut G) -> CsvRecord {
         let size = { let s = g.size(); g.gen_range(1, s) };
-        CsvRecord(range(0, size).map(|_| Arbitrary::arbitrary(g)).collect())
+        CsvRecord((0..size).map(|_| Arbitrary::arbitrary(g)).collect())
     }
 
     fn shrink(&self) -> Box<Iterator<Item=CsvRecord>+'static> {
@@ -137,8 +136,8 @@ impl Arbitrary for CsvData {
         let record_len = { let s = g.size(); g.gen_range(1, s) };
         let num_records: usize = g.gen_range(0, 100);
         CsvData{
-            data: range(0, num_records).map(|_| {
-                CsvRecord(range(0, record_len)
+            data: (0..num_records).map(|_| {
+                CsvRecord((0..record_len)
                           .map(|_| Arbitrary::arbitrary(g))
                           .collect())
             }).collect(),

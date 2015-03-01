@@ -79,7 +79,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     for r in rdr.byte_records() {
         let mut r = try!(r);
         if length >= r.len() {
-            for _ in range(r.len(), length) {
+            for _ in r.len()..length {
                 r.push(util::empty_field());
             }
         } else {

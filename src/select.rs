@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::fmt;
-use std::iter::{self, range, repeat};
+use std::iter::{self, repeat};
 use std::ops;
 use std::slice;
 use std::str::FromStr;
@@ -38,7 +38,7 @@ impl SelectColumns {
                 // Inverting everything means we get nothing.
                 vec![]
             } else {
-                range(0, first_record.len()).collect()
+                (0..first_record.len()).collect()
             }));
         }
 
@@ -50,7 +50,7 @@ impl SelectColumns {
         if self.invert {
             let set: HashSet<_> = map.into_iter().collect();
             let mut map = vec![];
-            for i in range(0, first_record.len()) {
+            for i in 0..first_record.len() {
                 if !set.contains(&i) {
                     map.push(i);
                 }

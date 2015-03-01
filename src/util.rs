@@ -1,4 +1,4 @@
-use std::borrow::{Cow, IntoCow, ToOwned};
+use std::borrow::{Cow, IntoCow};
 use std::error::FromError;
 use std::ops::Deref;
 use std::old_path::BytesContainer;
@@ -94,7 +94,7 @@ pub fn condense<'a, V>(val: V, n: Option<usize>) -> Cow<'a, [u8]>
                 if n >= s.chars().count() {
                     is_short_utf8 = true;
                 } else {
-                    let mut s = s.slice_chars(0, n).to_owned();
+                    let mut s = s.chars().take(n).collect::<String>();
                     s.push_str("...");
                     return s.into_bytes().into_cow();
                 }
@@ -104,7 +104,7 @@ pub fn condense<'a, V>(val: V, n: Option<usize>) -> Cow<'a, [u8]>
             } else {
                 // This is a non-Unicode string, so we just trim on bytes.
                 let mut s = val[0..n].to_vec();
-                s.push_all(b"...");
+                s.extend(b"...".iter().map(|&x|x));
                 s.into_cow()
             }
         }
@@ -113,7 +113,7 @@ pub fn condense<'a, V>(val: V, n: Option<usize>) -> Cow<'a, [u8]>
 
 pub fn idx_path(csv_path: &Path) -> Path {
     let mut p = csv_path.container_as_bytes().to_vec();
-    p.push_all(".idx".as_bytes());
+    p.extend(".idx".as_bytes().iter().map(|&x|x));
     Path::new(p)
 }
 
@@ -124,7 +124,7 @@ pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
     let (s, e) =
         match index {
             Some(i) => {
-                let exists = |&: i: Idx| i.is_some();
+                let exists = |i: Idx| i.is_some();
                 if exists(start) || exists(end) || exists(len) {
                     return Err("--index cannot be used with \
                                 --start, --end or --len".to_string());

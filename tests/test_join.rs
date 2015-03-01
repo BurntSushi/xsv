@@ -63,7 +63,7 @@ fn make_rows(headers: bool, rows: Vec<Vec<String>>) -> Vec<Vec<String>> {
 }
 
 join_test!(join_inner,
-           |&: wrk: Workdir, cmd: process::Command, headers: bool| {
+           |wrk: Workdir, cmd: process::Command, headers: bool| {
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
     let expected = make_rows(headers, vec![
         svec!["Boston", "MA", "Boston", "Logan Airport"],
@@ -74,7 +74,7 @@ join_test!(join_inner,
 });
 
 join_test!(join_outer_left,
-           |&: wrk: Workdir, mut cmd: process::Command, headers: bool| {
+           |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--left");
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
     let expected = make_rows(headers, vec![
@@ -88,7 +88,7 @@ join_test!(join_outer_left,
 });
 
 join_test!(join_outer_right,
-           |&: wrk: Workdir, mut cmd: process::Command, headers: bool| {
+           |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--right");
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
     let expected = make_rows(headers, vec![
@@ -101,7 +101,7 @@ join_test!(join_outer_right,
 });
 
 join_test!(join_outer_full,
-           |&: wrk: Workdir, mut cmd: process::Command, headers: bool| {
+           |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--full");
     let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
     let expected = make_rows(headers, vec![

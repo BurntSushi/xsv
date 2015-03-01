@@ -55,17 +55,18 @@ macro_rules! stats_test_no_headers {
     );
 }
 
-fn test_stats<S: Str>(name: S, field: &str, rows: &[&str], expected: &str,
-                      headers: bool, use_index: bool, nulls: bool) {
+fn test_stats<S>(name: S, field: &str, rows: &[&str], expected: &str,
+                 headers: bool, use_index: bool, nulls: bool)
+        where S: ::std::ops::Deref<Target=str> {
     let (wrk, mut cmd) = setup(name, rows, headers, use_index, nulls);
     let field_val = get_field_value(&wrk, &mut cmd, field);
     assert_eq!(field_val, expected.to_owned());
 }
 
-fn setup<S: Str>(name: S, rows: &[&str],
-                 headers: bool, use_index: bool, nulls: bool)
-                -> (Workdir, process::Command) {
-    let wrk = Workdir::new(name.as_slice());
+fn setup<S>(name: S, rows: &[&str], headers: bool,
+            use_index: bool, nulls: bool) -> (Workdir, process::Command)
+        where S: ::std::ops::Deref<Target=str> {
+    let wrk = Workdir::new(&name);
     let mut data: Vec<Vec<String>> =
         rows.iter().map(|&s| vec![s.to_owned()]).collect();
     if headers { data.insert(0, svec!["header"]); }
