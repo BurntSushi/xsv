@@ -90,7 +90,7 @@ fn main() {
                                            .decode())
                             .unwrap_or_else(|e| e.exit());
     if args.flag_list {
-        werr!(concat!("Installed commands:", command_list!()));
+        wout!(concat!("Installed commands:", command_list!()));
         return;
     }
     match args.arg_command {
