@@ -1,4 +1,3 @@
 language: rust
 script:
  - cargo build --verbose
- - RUST_BACKTRACE=1 cargo test --verbose
