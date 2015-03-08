@@ -2,7 +2,7 @@
 name = "xsv"
 version = "0.8.33"
 dependencies = [
- "byteorder 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "byteorder 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "csv 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "docopt 0.6.45 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -22,7 +22,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "byteorder"
-version = "0.2.13"
+version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bswap 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -33,7 +33,7 @@ name = "csv"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "byteorder 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "byteorder 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
