@@ -36,9 +36,11 @@ impl Workdir {
                 panic!("{}", err);
             }
         }
-        if let Err(err) = fs::create_dir_all(&dir) {
-            panic!("{}", err);
-        }
+        // Explicitly ignoring an error here seems wrong, but for whatever
+        // reason, this appears to fail non-deterministically in Travis because
+        // the "path already exists." Does that mean `NEXT_ID` isn't really
+        // atomic? Really? Very strange and baffling. ---AG
+        let _ = fs::create_dir_all(&dir);
         Workdir { root: root, dir: dir, flexible: false }
     }
 
