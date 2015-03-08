@@ -32,9 +32,13 @@ impl Workdir {
                       .join(name)
                       .join(&format!("test-{}", id));
         if dir.exists() {
-            fs::remove_dir_all(&dir).unwrap();
+            if let Err(err) = fs::remove_dir_all(&dir) {
+                panic!("{}", err);
+            }
         }
-        fs::create_dir_all(&dir).unwrap();
+        if let Err(err) = fs::create_dir_all(&dir) {
+            panic!("{}", err);
+        }
         Workdir { root: root, dir: dir, flexible: false }
     }
 
