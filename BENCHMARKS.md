@@ -29,6 +29,27 @@ stats_everything        4.84 seconds  9.40 MB/sec
 stats_everything_index  3.58 seconds  12.71 MB/sec
 ```
 
+After conversion to `std::io` (owch):
+
+```
+count                   0.57 seconds    79.84 MB/sec
+flatten                 6.16 seconds    7.38 MB/sec
+flatten_condensed       6.20 seconds    7.34 MB/sec
+frequency               9.53 seconds    4.77 MB/sec
+index                   0.61 seconds    74.61 MB/sec
+sample_10               0.88 seconds    51.72 MB/sec
+sample_1000             0.90 seconds    50.57 MB/sec
+sample_100000           1.05 seconds    43.34 MB/sec
+search                  1.25 seconds    36.41 MB/sec
+select                  0.88 seconds    51.72 MB/sec
+sort                    11.11 seconds   4.09 MB/sec
+slice_one_middle        0.47 seconds    96.83 MB/sec
+slice_one_middle_index  0.10 seconds    455.13 MB/sec
+stats                   2.23 seconds    20.40 MB/sec
+stats_index             1.52 seconds    29.94 MB/sec
+stats_everything        13.48 seconds   3.37 MB/sec
+stats_everything_index  12.47 seconds   3.64 MB/sec
+```
 
 ### Details
 

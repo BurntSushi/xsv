@@ -1,5 +1,5 @@
 use std::borrow::ToOwned;
-use std::old_io::process;
+use std::process;
 
 use workdir::Workdir;
 

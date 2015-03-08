@@ -1,5 +1,5 @@
 use std::borrow::ToOwned;
-use std::old_io::process;
+use std::process;
 
 use workdir::Workdir;
 
@@ -84,21 +84,21 @@ fn test_slice(name: &str, start: Option<usize>, end: Option<usize>,
               use_index: bool, as_len: bool) {
     let (wrk, mut cmd) = setup(name, headers, use_index);
     if let Some(start) = start {
-        cmd.arg("--start").arg(start.to_string());
+        cmd.arg("--start").arg(&start.to_string());
     }
     if let Some(end) = end {
         if as_len {
             let start = start.unwrap_or(0);
-            cmd.arg("--len").arg((end - start).to_string());
+            cmd.arg("--len").arg(&(end - start).to_string());
         } else {
-            cmd.arg("--end").arg(end.to_string());
+            cmd.arg("--end").arg(&end.to_string());
         }
     }
     if !headers {
         cmd.arg("--no-headers");
     }
 
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let mut expected = expected.iter()
                                .map(|&s| vec![s.to_owned()])
                                .collect::<Vec<Vec<String>>>();
@@ -109,12 +109,12 @@ fn test_slice(name: &str, start: Option<usize>, end: Option<usize>,
 fn test_index(name: &str, idx: usize, expected: &str,
               headers: bool, use_index: bool) {
     let (wrk, mut cmd) = setup(name, headers, use_index);
-    cmd.arg("--index").arg(idx.to_string());
+    cmd.arg("--index").arg(&idx.to_string());
     if !headers {
         cmd.arg("--no-headers");
     }
 
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let mut expected = vec![vec![expected.to_owned()]];
     if headers { expected.insert(0, svec!["header"]); }
     assert_eq!(got, expected);

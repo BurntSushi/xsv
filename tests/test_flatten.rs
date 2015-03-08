@@ -1,4 +1,4 @@
-use std::old_io::process;
+use std::process;
 
 use workdir::Workdir;
 
@@ -20,8 +20,8 @@ fn setup(name: &str) -> (Workdir, process::Command) {
 
 #[test]
 fn flatten_basic() {
-    let (wrk, cmd) = setup("flatten_basic");
-    let got: String = wrk.stdout(&cmd);
+    let (wrk, mut cmd) = setup("flatten_basic");
+    let got: String = wrk.stdout(&mut cmd);
     let expected = "\
 h1  abcdef
 h2  ghijkl
@@ -37,7 +37,7 @@ fn flatten_no_headers() {
     let (wrk, mut cmd) = setup("flatten_no_headers");
     cmd.arg("--no-headers");
 
-    let got: String = wrk.stdout(&cmd);
+    let got: String = wrk.stdout(&mut cmd);
     let expected = "\
 0   h1
 1   h2
@@ -56,7 +56,7 @@ fn flatten_separator() {
     let (wrk, mut cmd) = setup("flatten_separator");
     cmd.args(&["--separator", "!mysep!"]);
 
-    let got: String = wrk.stdout(&cmd);
+    let got: String = wrk.stdout(&mut cmd);
     let expected = "\
 h1  abcdef
 h2  ghijkl
@@ -72,7 +72,7 @@ fn flatten_condense() {
     let (wrk, mut cmd) = setup("flatten_condense");
     cmd.args(&["--condense", "2"]);
 
-    let got: String = wrk.stdout(&cmd);
+    let got: String = wrk.stdout(&mut cmd);
     let expected = "\
 h1  ab...
 h2  gh...

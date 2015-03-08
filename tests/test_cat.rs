@@ -1,4 +1,4 @@
-use std::old_io::process;
+use std::process;
 
 use {Csv, CsvData, qcheck};
 use workdir::Workdir;
@@ -20,7 +20,7 @@ fn run_cat<X, Y, Z, F>(test_name: &str, which: &str, rows1: X, rows2: Y,
 
     let mut cmd = wrk.command("cat");
     modify_cmd(cmd.arg(which).arg("in1.csv").arg("in2.csv"));
-    wrk.read_stdout(&cmd)
+    wrk.read_stdout(&mut cmd)
 }
 
 #[test]

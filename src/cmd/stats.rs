@@ -1,7 +1,8 @@
 use std::borrow::ToOwned;
 use std::default::Default;
 use std::fmt;
-use std::old_io as io;
+use std::fs;
+use std::io;
 use std::iter::repeat;
 use std::os;
 use std::str::{self, FromStr};
@@ -114,7 +115,7 @@ impl Args {
         Ok((headers, stats))
     }
 
-    fn parallel_stats(&self, idx: Indexed<io::File, io::File>)
+    fn parallel_stats(&self, idx: Indexed<fs::File, fs::File>)
                      -> CliResult<(Vec<ByteString>, Vec<Stats>)> {
         use threadpool::ThreadPool;
         use std::sync::mpsc::channel;
@@ -166,7 +167,7 @@ impl Args {
     }
 
     fn compute<I>(&self, sel: &Selection, it: I) -> CliResult<Vec<Stats>>
-            where I: Iterator<Item=csv::CsvResult<Vec<ByteString>>> {
+            where I: Iterator<Item=csv::Result<Vec<ByteString>>> {
         let mut stats = self.new_stats(sel.len());
         for row in it {
             let row = try!(row);
@@ -177,7 +178,7 @@ impl Args {
         Ok(stats)
     }
 
-    fn sel_headers<R: Reader>(&self, rdr: &mut csv::Reader<R>)
+    fn sel_headers<R: io::Read>(&self, rdr: &mut csv::Reader<R>)
                   -> CliResult<(Vec<ByteString>, Selection)> {
         let headers = try!(rdr.byte_headers());
         let sel = try!(self.rconfig().selection(&*headers));

@@ -1,4 +1,4 @@
-use std::old_io as io;
+use std::io::{self, Write};
 
 use tabwriter::TabWriter;
 
@@ -58,20 +58,19 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut first = true;
     for r in rdr.byte_records() {
         if !first && !args.flag_separator.is_empty() {
-            try!(wtr.write_str(&*args.flag_separator));
-            try!(wtr.write_u8(b'\n'));
+            try!(writeln!(&mut wtr, "{}", args.flag_separator));
         }
         first = false;
         let r = try!(r).into_iter();
         for (i, (header, field)) in headers.iter().zip(r).enumerate() {
             if rconfig.no_headers {
-                try!(wtr.write_str(&*i.to_string()));
+                try!(write!(&mut wtr, "{}", i));
             } else {
-                try!(wtr.write_all(&**header));
+                try!(wtr.write_all(&header));
             }
-            try!(wtr.write_u8(b'\t'));
+            try!(wtr.write_all(b"\t"));
             try!(wtr.write_all(&*util::condense(&*field, args.flag_condense)));
-            try!(wtr.write_u8(b'\n'));
+            try!(wtr.write_all(b"\n"));
         }
     }
     try!(wtr.flush());

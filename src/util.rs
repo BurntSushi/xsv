@@ -1,7 +1,7 @@
 use std::borrow::{Cow, IntoCow};
 use std::error::FromError;
 use std::ops::Deref;
-use std::old_path::BytesContainer;
+use std::path::{Path, PathBuf};
 use std::str;
 
 use csv;
@@ -111,10 +111,10 @@ pub fn condense<'a, V>(val: V, n: Option<usize>) -> Cow<'a, [u8]>
     }
 }
 
-pub fn idx_path(csv_path: &Path) -> Path {
-    let mut p = csv_path.container_as_bytes().to_vec();
-    p.extend(".idx".as_bytes().iter().map(|&x|x));
-    Path::new(p)
+pub fn idx_path(csv_path: &Path) -> PathBuf {
+    let mut p = csv_path.to_path_buf().into_os_string().into_string().unwrap();
+    p.push_str(".idx");
+    PathBuf::new(&p)
 }
 
 type Idx = Option<usize>;

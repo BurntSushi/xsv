@@ -1,6 +1,7 @@
-use std::old_io as io;
-use std::old_io::fs::mkdir_recursive;
+use std::fs;
+use std::io;
 use std::os;
+use std::path::Path;
 
 use csv;
 use csv::index::Indexed;
@@ -56,7 +57,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     if args.flag_size == 0 {
         return fail!("--size must be greater than 0.");
     }
-    try!(mkdir_recursive(&Path::new(&*args.arg_outdir), io::ALL_PERMISSIONS));
+    try!(fs::create_dir_all(&args.arg_outdir));
 
     match try!(args.rconfig().indexed()) {
         Some(idx) => args.parallel_split(idx),
@@ -83,7 +84,7 @@ impl Args {
         Ok(())
     }
 
-    fn parallel_split(&self, idx: Indexed<io::File, io::File>)
+    fn parallel_split(&self, idx: Indexed<fs::File, fs::File>)
                      -> CliResult<()> {
         use threadpool::ThreadPool;
         use std::sync::mpsc::channel;
@@ -117,9 +118,9 @@ impl Args {
     }
 
     fn new_writer(&self, headers: &[csv::ByteString], start: usize)
-                 -> CliResult<csv::Writer<Box<io::Writer+'static>>> {
-        let dir = Path::new(self.arg_outdir.clone());
-        let path = dir.join(format!("{}.csv", start));
+                 -> CliResult<csv::Writer<Box<io::Write+'static>>> {
+        let dir = Path::new(&self.arg_outdir);
+        let path = dir.join(&format!("{}.csv", start));
         let spath = Some(path.display().to_string());
         let mut wtr = try!(Config::new(&spath).writer());
         if !self.rconfig().no_headers {

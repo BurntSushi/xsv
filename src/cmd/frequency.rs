@@ -1,4 +1,5 @@
-use std::old_io as io;
+use std::fs;
+use std::io;
 use std::os;
 
 use csv::{self, ByteString};
@@ -85,7 +86,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let head_ftables = headers.into_iter().zip(tables.into_iter());
     for (i, (mut header, ftab)) in head_ftables.enumerate() {
         if rconfig.no_headers {
-            header = ByteString::from_bytes((i+1).to_string());
+            header = ByteString::from_bytes((i+1).to_string().into_bytes());
         }
         for (value, count) in args.counts(&ftab).into_iter() {
             let count = count.to_string();
@@ -133,7 +134,7 @@ impl Args {
         Ok((headers, try!(self.ftables(&sel, rdr.byte_records()))))
     }
 
-    fn parallel_ftables(&self, idx: &mut Indexed<io::File, io::File>)
+    fn parallel_ftables(&self, idx: &mut Indexed<fs::File, fs::File>)
                        -> CliResult<(Headers, FTables)> {
         use threadpool::ThreadPool;
         use std::sync::mpsc::channel;
@@ -164,7 +165,7 @@ impl Args {
     }
 
     fn ftables<I>(&self, sel: &Selection, it: I) -> CliResult<FTables>
-            where I: Iterator<Item=csv::CsvResult<ByteRow>> {
+            where I: Iterator<Item=csv::Result<ByteRow>> {
         let null = ByteString::from_bytes(b"");
         let nsel = sel.normal();
         let mut tabs: Vec<_> =
@@ -184,7 +185,7 @@ impl Args {
         Ok(tabs)
     }
 
-    fn sel_headers<R: Reader>(&self, rdr: &mut csv::Reader<R>)
+    fn sel_headers<R: io::Read>(&self, rdr: &mut csv::Reader<R>)
                   -> CliResult<(ByteRow, Selection)> {
         let headers = try!(rdr.byte_headers());
         let sel = try!(self.rconfig().selection(&*headers));
@@ -198,7 +199,7 @@ impl Args {
 
 fn trim(bs: ByteString) -> ByteString {
     match bs.into_utf8_string() {
-        Ok(s) => ByteString::from_bytes(s.trim()),
+        Ok(s) => ByteString::from_bytes(s.trim().as_bytes()),
         Err(bs) => bs,
     }
 }

@@ -1,9 +1,9 @@
 use std::env;
 use std::fmt;
-use std::old_io as io;
-use std::old_io::fs::{self, PathExtensions};
-use std::old_io::process;
-use std::old_path::Path;
+use std::fs::{self, PathExt};
+use std::io::Read;
+use std::path::{Path, PathBuf};
+use std::process;
 use std::str::FromStr;
 use std::sync::atomic;
 
@@ -16,28 +16,25 @@ static XSV_INTEGRATION_TEST_DIR: &'static str = "xit";
 static NEXT_ID: atomic::AtomicUsize = atomic::ATOMIC_USIZE_INIT;
 
 pub struct Workdir {
-    root: Path,
-    dir: Path,
+    root: PathBuf,
+    dir: PathBuf,
     flexible: bool,
 }
 
 impl Workdir {
     pub fn new(name: &str) -> Workdir {
         let id = NEXT_ID.fetch_add(1, atomic::Ordering::SeqCst);
-        // temporary junk until IO reform completes...
-        let root = Path::new(env::current_exe()
-                                 .unwrap()
-                                 .into_os_string()
-                                 .into_string()
-                                 .unwrap()).dir_path();
-        let dir = root.clone()
-                      .join(XSV_INTEGRATION_TEST_DIR)
+        let root = PathBuf::new(&env::current_exe().unwrap())
+                           .parent()
+                           .expect("executable's directory")
+                           .to_path_buf();
+        let dir = root.join(XSV_INTEGRATION_TEST_DIR)
                       .join(name)
-                      .join(format!("test-{}", id));
+                      .join(&format!("test-{}", id));
         if dir.exists() {
-            fs::rmdir_recursive(&dir).unwrap();
+            fs::remove_dir_all(&dir).unwrap();
         }
-        fs::mkdir_recursive(&dir, io::USER_DIR).unwrap();
+        fs::create_dir_all(&dir).unwrap();
         Workdir { root: root, dir: dir, flexible: false }
     }
 
@@ -47,7 +44,7 @@ impl Workdir {
     }
 
     pub fn create<T: Csv>(&self, name: &str, rows: T) {
-        let mut wtr = csv::Writer::from_file(&self.path(name))
+        let mut wtr = csv::Writer::from_file(&self.path(name)).unwrap()
                                   .flexible(self.flexible);
         for row in rows.to_vecs().into_iter() {
             wtr.write(row.iter()).unwrap();
@@ -60,28 +57,22 @@ impl Workdir {
 
         let mut cmd = self.command("index");
         cmd.arg(name);
-        self.run(&cmd);
+        self.run(&mut cmd);
     }
 
-    pub fn read_stdout<T: Csv>(&self, cmd: &process::Command) -> T {
+    pub fn read_stdout<T: Csv>(&self, cmd: &mut process::Command) -> T {
         let mut rdr = csv::Reader::from_string(self.stdout::<String>(cmd))
                                   .has_headers(false);
         Csv::from_vecs(rdr.records().collect::<Result<_, _>>().unwrap())
     }
 
-    pub fn from_str<T: FromStr>(&self, name: &Path) -> T {
-        let o = io::File::open(name).unwrap()
-                         .read_to_string().unwrap();
-        o.parse().ok().expect("fromstr")
-    }
-
     pub fn command(&self, sub_command: &str) -> process::Command {
-        let mut cmd = process::Command::new(self.xsv_bin());
-        cmd.cwd(&self.dir).arg(sub_command);
+        let mut cmd = process::Command::new(&self.xsv_bin());
+        cmd.current_dir(&self.dir).arg(sub_command);
         cmd
     }
 
-    pub fn output(&self, cmd: &process::Command) -> process::ProcessOutput {
+    pub fn output(&self, cmd: &mut process::Command) -> process::Output {
         debug!("[{}]: {:?}", self.dir.display(), cmd);
         let o = cmd.output().unwrap();
         if !o.status.success() {
@@ -92,24 +83,24 @@ impl Workdir {
                     \n\nstdout: {}\n\nstderr: {}\
                     \n\n=====\n",
                    cmd, self.dir.display(), o.status,
-                   String::from_utf8_lossy(&*o.output),
-                   String::from_utf8_lossy(&*o.error))
+                   String::from_utf8_lossy(&o.stdout),
+                   String::from_utf8_lossy(&o.stderr))
         }
         o
     }
 
-    pub fn run(&self, cmd: &process::Command) {
+    pub fn run(&self, cmd: &mut process::Command) {
         self.output(cmd);
     }
 
-    pub fn stdout<T: FromStr>(&self, cmd: &process::Command) -> T {
+    pub fn stdout<T: FromStr>(&self, cmd: &mut process::Command) -> T {
         let o = self.output(cmd);
-        let stdout = String::from_utf8_lossy(&*o.output);
+        let stdout = String::from_utf8_lossy(&o.stdout);
         stdout.trim().parse().ok().expect(
             &format!("Could not convert from string: '{}'", stdout))
     }
 
-    pub fn assert_err(&self, cmd: &process::Command) {
+    pub fn assert_err(&self, cmd: &mut process::Command) {
         let o = cmd.output().unwrap();
         if o.status.success() {
             panic!("\n\n===== {:?} =====\n\
@@ -119,17 +110,23 @@ impl Workdir {
                     \n\nstdout: {}\n\nstderr: {}\
                     \n\n=====\n",
                    cmd, self.dir.display(), o.status,
-                   String::from_utf8_lossy(o.output.as_slice()),
-                   String::from_utf8_lossy(o.error.as_slice()))
+                   String::from_utf8_lossy(&o.stdout),
+                   String::from_utf8_lossy(&o.stderr));
         }
     }
 
-    pub fn path(&self, name: &str) -> Path {
+    pub fn from_str<T: FromStr>(&self, name: &Path) -> T {
+        let mut o = String::new();
+        fs::File::open(name).unwrap().read_to_string(&mut o).unwrap();
+        o.parse().ok().expect("fromstr")
+    }
+
+    pub fn path(&self, name: &str) -> PathBuf {
         self.dir.join(name)
     }
 
-    pub fn xsv_bin(&self) -> Path {
-        self.root.join("xsv").clone()
+    pub fn xsv_bin(&self) -> PathBuf {
+        self.root.join("xsv")
     }
 }
 

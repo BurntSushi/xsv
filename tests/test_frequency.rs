@@ -1,6 +1,6 @@
 use std::borrow::ToOwned;
 use std::collections::hash_map::{HashMap, Entry};
-use std::old_io::process;
+use std::process;
 
 use csv;
 use stats::Frequencies;
@@ -33,7 +33,7 @@ fn frequency_no_headers() {
     let (wrk, mut cmd) = setup("frequency_no_headers");
     cmd.args(&["--limit", "0"]).args(&["--select", "1"]).arg("--no-headers");
 
-    let mut got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let mut got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     got = got.into_iter().skip(1).collect();
     got.sort();
     let expected = vec![
@@ -51,7 +51,7 @@ fn frequency_no_nulls() {
     let (wrk, mut cmd) = setup("frequency_no_nulls");
     cmd.arg("--no-nulls").args(&["--limit", "0"]).args(&["--select", "h1"]);
 
-    let mut got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let mut got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     got.sort();
     let expected = vec![
         svec!["field", "value", "count"],
@@ -67,7 +67,7 @@ fn frequency_nulls() {
     let (wrk, mut cmd) = setup("frequency_nulls");
     cmd.args(&["--limit", "0"]).args(&["--select", "h1"]);
 
-    let mut got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let mut got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     got.sort();
     let expected = vec![
         svec!["field", "value", "count"],
@@ -84,7 +84,7 @@ fn frequency_limit() {
     let (wrk, mut cmd) = setup("frequency_limit");
     cmd.args(&["--limit", "1"]);
 
-    let mut got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let mut got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     got.sort();
     let expected = vec![
         svec!["field", "value", "count"],
@@ -99,7 +99,7 @@ fn frequency_asc() {
     let (wrk, mut cmd) = setup("frequency_asc");
     cmd.args(&["--limit", "1"]).args(&["--select", "h2"]).arg("--asc");
 
-    let mut got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let mut got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     got.sort();
     let expected = vec![
         svec!["field", "value", "count"],
@@ -113,7 +113,7 @@ fn frequency_select() {
     let (wrk, mut cmd) = setup("frequency_select");
     cmd.args(&["--limit", "0"]).args(&["--select", "h2"]);
 
-    let mut got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let mut got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     got.sort();
     let expected = vec![
         svec!["field", "value", "count"],
@@ -159,7 +159,7 @@ fn param_prop_frequency(name: &str, rows: CsvData, idx: bool) -> bool {
     let mut cmd = wrk.command("frequency");
     cmd.arg("in.csv").args(&["-j", "4"]).args(&["--limit", "0"]);
 
-    let got_ftables = ftables_from_csv_string(wrk.stdout::<String>(&cmd));
+    let got_ftables = ftables_from_csv_string(wrk.stdout::<String>(&mut cmd));
     let expected_ftables = ftables_from_rows(rows);
     assert_eq_ftables(&got_ftables, &expected_ftables)
 }

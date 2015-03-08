@@ -2,9 +2,9 @@
 These are some docs.
 */
 
-#![feature(collections, core, exit_status,
-           old_io, os, old_path, std_misc, unicode)]
+#![feature(collections, core, exit_status, fs, io, os, path, std_misc, unicode)]
 
+extern crate byteorder;
 extern crate csv;
 extern crate docopt;
 extern crate rand;
@@ -18,17 +18,22 @@ use std::borrow::ToOwned;
 use std::error::FromError;
 use std::env;
 use std::fmt;
-use std::old_io as io;
+use std::io::{self, Write};
 
 use docopt::Docopt;
 
+macro_rules! wout {
+    ($($arg:tt)*) => ({
+        use std::io::Write;
+        (writeln!(&mut ::std::io::stdout(), $($arg)*)).unwrap();
+    });
+}
+
 macro_rules! werr {
-    ($($arg:tt)*) => (
-        match ::std::old_io::stderr().write_str(&*format!($($arg)*)) {
-            Ok(_) => (),
-            Err(err) => panic!("{}", err),
-        }
-    );
+    ($($arg:tt)*) => ({
+        use std::io::Write;
+        (writeln!(&mut ::std::io::stderr(), $($arg)*)).unwrap();
+    });
 }
 
 macro_rules! fail {
@@ -84,19 +89,17 @@ fn main() {
                                            .decode())
                             .unwrap_or_else(|e| e.exit());
     if args.flag_list {
-        let msg = concat!("Installed commands:", command_list!());
-        io::stdout().write_str(msg).unwrap();
+        werr!(concat!("Installed commands:", command_list!()));
         return;
     }
     match args.arg_command {
         None => {
             env::set_exit_status(0);
-            let msg = concat!(
+            werr!(concat!(
                 "xsv is a suite of CSV command line utilities.
 
 Please choose one of the following commands:",
-                command_list!());
-            io::stderr().write_str(msg).unwrap();
+                command_list!()));
         }
         Some(cmd) => {
             match cmd.run() {
@@ -104,25 +107,19 @@ Please choose one of the following commands:",
                 Err(CliError::Flag(err)) => err.exit(),
                 Err(CliError::Csv(err)) => {
                     env::set_exit_status(1);
-                    io::stderr()
-                       .write_str(&*format!("{}\n", err.to_string()))
-                       .unwrap();
+                    werr!("{}", err);
                 }
-                Err(CliError::Io(
-                        io::IoError { kind: io::BrokenPipe, .. })) => {
+                Err(CliError::Io(ref err))
+                        if err.kind() == io::ErrorKind::BrokenPipe => {
                     env::set_exit_status(0);
                 }
                 Err(CliError::Io(err)) => {
                     env::set_exit_status(1);
-                    io::stderr()
-                       .write_str(&*format!("{}\n", err.to_string()))
-                       .unwrap();
+                    werr!("{}", err);
                 }
                 Err(CliError::Other(msg)) => {
                     env::set_exit_status(1);
-                    io::stderr()
-                       .write_str(&*format!("{}\n", msg))
-                       .unwrap();
+                    werr!("{}", msg);
                 }
             }
         }
@@ -183,7 +180,7 @@ type CliResult<T> = Result<T, CliError>;
 enum CliError {
     Flag(docopt::Error),
     Csv(csv::Error),
-    Io(io::IoError),
+    Io(io::Error),
     Other(String),
 }
 
@@ -194,6 +191,18 @@ impl fmt::Display for CliError {
             CliError::Csv(ref e) => { e.fmt(f) }
             CliError::Io(ref e) => { e.fmt(f) }
             CliError::Other(ref s) => { f.write_str(&**s) }
+        }
+    }
+}
+
+impl FromError<byteorder::Error> for CliError {
+    fn from_error(err: byteorder::Error) -> CliError {
+        match err {
+            byteorder::Error::UnexpectedEOF => {
+                CliError::Other(
+                    "Got unexpected EOF when reading index.".to_owned())
+            }
+            byteorder::Error::Io(err) => FromError::from_error(err),
         }
     }
 }
@@ -213,8 +222,8 @@ impl FromError<csv::Error> for CliError {
     }
 }
 
-impl FromError<io::IoError> for CliError {
-    fn from_error(err: io::IoError) -> CliError {
+impl FromError<io::Error> for CliError {
+    fn from_error(err: io::Error) -> CliError {
         CliError::Io(err)
     }
 }

@@ -1,9 +1,11 @@
 use std::collections::hash_map::{HashMap, Entry};
 use std::fmt;
-use std::old_io as io;
+use std::fs;
+use std::io;
 use std::iter::repeat;
 use std::str;
 
+use byteorder::{WriteBytesExt, BigEndian};
 use csv::{self, ByteString};
 use csv::index::Indexed;
 
@@ -130,7 +132,7 @@ struct IoState<R, W> {
     nulls: bool,
 }
 
-impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
+impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
     fn write_headers(&mut self) -> CliResult<()> {
         if !self.no_headers {
             let mut headers = try!(self.rdr1.byte_headers());
@@ -255,7 +257,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
         for row1 in self.rdr1.byte_records() {
             let row1 = try!(row1);
 
-            try!(self.rdr2.seek(0, io::SeekSet));
+            try!(self.rdr2.seek(0));
             let mut first = true;
             while !self.rdr2.done() {
                 // Skip the header row. The raw byte interface won't
@@ -286,7 +288,7 @@ impl<R: io::Reader + io::Seek, W: io::Writer> IoState<R, W> {
 
 impl Args {
     fn new_io_state(&self)
-        -> CliResult<IoState<io::File, Box<io::Writer+'static>>> {
+        -> CliResult<IoState<fs::File, Box<io::Write+'static>>> {
         let rconf1 = Config::new(&Some(self.arg_input1.clone()))
                             .delimiter(self.flag_delimiter)
                             .no_headers(self.flag_no_headers)
@@ -312,7 +314,7 @@ impl Args {
         })
     }
 
-    fn get_selections<R: Reader>
+    fn get_selections<R: io::Read>
                      (&self,
                       rconf1: &Config, rdr1: &mut csv::Reader<R>,
                       rconf2: &Config, rdr2: &mut csv::Reader<R>)
@@ -334,16 +336,16 @@ impl Args {
 struct ValueIndex<R> {
     // This maps tuples of values to corresponding rows.
     values: HashMap<Vec<ByteString>, Vec<usize>>,
-    idx: Indexed<R, io::MemReader>,
+    idx: Indexed<R, io::Cursor<Vec<u8>>>,
     num_rows: usize,
 }
 
-impl<R: Reader + Seek> ValueIndex<R> {
+impl<R: io::Read + io::Seek> ValueIndex<R> {
     fn new(mut rdr: csv::Reader<R>, nsel: &NormalSelection,
            casei: bool, nulls: bool)
           -> CliResult<ValueIndex<R>> {
         let mut val_idx = HashMap::with_capacity(10000);
-        let mut rows = io::MemWriter::with_capacity(8 * 10000);
+        let mut rows = io::Cursor::new(Vec::with_capacity(8 * 10000));
         let (mut rowi, mut count) = (0usize, 0usize);
 
         // This logic is kind of tricky. Basically, we want to include
@@ -352,19 +354,19 @@ impl<R: Reader + Seek> ValueIndex<R> {
         if !rdr.has_headers {
             // ... so if there are no headers, we seek to the beginning and
             // index everything.
-            try!(rdr.seek(0, io::SeekSet));
+            try!(rdr.seek(0));
         } else {
             // ... and if there are headers, we make sure that we've parsed
             // them, and write the offset of the header row to the index.
             try!(rdr.byte_headers());
-            try!(rows.write_be_u64(0));
+            try!(rows.write_u64::<BigEndian>(0));
             count += 1;
         }
         while !rdr.done() {
             // This is a bit hokey. We're doing this manually instead of
             // calling `csv::index::create` so we can create both indexes
             // in one pass.
-            try!(rows.write_be_u64(rdr.byte_offset()));
+            try!(rows.write_u64::<BigEndian>(rdr.byte_offset()));
 
             let fields = try!(nsel.select(unsafe { rdr.byte_fields() })
                                   .map(|v| v.map(|v| transform(v, casei)))
@@ -382,11 +384,11 @@ impl<R: Reader + Seek> ValueIndex<R> {
             rowi += 1;
             count += 1;
         }
-        try!(rows.write_be_u64(count as u64));
+        try!(rows.write_u64::<BigEndian>(count as u64));
         Ok(ValueIndex {
             values: val_idx,
             idx: try!(Indexed::new(
-                rdr, io::MemReader::new(rows.into_inner()))),
+                rdr, io::Cursor::new(rows.into_inner()))),
             num_rows: rowi,
         })
     }
@@ -418,11 +420,11 @@ fn transform(bs: &[u8], casei: bool) -> ByteString {
         Err(_) => ByteString::from_bytes(bs),
         Ok(s) => {
             if !casei {
-                ByteString::from_bytes(s.trim())
+                ByteString::from_bytes(s.trim().as_bytes())
             } else {
                 let norm: String =
                     s.trim().chars().map(|c| c.to_lowercase()).collect();
-                ByteString::from_bytes(norm)
+                ByteString::from_bytes(norm.into_bytes())
             }
         }
     }

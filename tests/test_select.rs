@@ -13,7 +13,7 @@ macro_rules! select_test {
                 wrk.create("data.csv", data(true));
                 let mut cmd = wrk.command("select");
                 cmd.arg("--").arg($select).arg("data.csv");
-                let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+                let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
 
                 let expected = vec![
                     $expected_headers.iter()
@@ -33,7 +33,7 @@ macro_rules! select_test {
                 let mut cmd = wrk.command("select");
                 cmd.arg("--no-headers")
                    .arg("--").arg($select_no_headers).arg("data.csv");
-                let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+                let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
 
                 let expected = vec![
                     $expected_rows.iter()
@@ -54,7 +54,7 @@ macro_rules! select_test_err {
             wrk.create("data.csv", data(true));
             let mut cmd = wrk.command("select");
             cmd.arg($select).arg("data.csv");
-            wrk.assert_err(&cmd);
+            wrk.assert_err(&mut cmd);
         }
     );
 }

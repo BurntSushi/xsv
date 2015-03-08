@@ -1,4 +1,4 @@
-use std::old_io::process;
+use std::process;
 
 use workdir::Workdir;
 
@@ -23,7 +23,7 @@ fn fmt_delimiter() {
     let (wrk, mut cmd) = setup("fmt_delimiter");
     cmd.args(&["--out-delimiter", "\t"]);
 
-    let got: String = wrk.stdout(&cmd);
+    let got: String = wrk.stdout(&mut cmd);
     let expected = "\
 h1\th2
 abcdef\tghijkl
@@ -36,7 +36,7 @@ fn fmt_weird_delimiter() {
     let (wrk, mut cmd) = setup("fmt_weird_delimiter");
     cmd.args(&["--out-delimiter", "h"]);
 
-    let got: String = wrk.stdout(&cmd);
+    let got: String = wrk.stdout(&mut cmd);
     let expected = "\
 \"h1\"h\"h2\"
 abcdefh\"ghijkl\"
@@ -49,7 +49,7 @@ fn fmt_crlf() {
     let (wrk, mut cmd) = setup("fmt_crlf");
     cmd.arg("--crlf");
 
-    let got: String = wrk.stdout(&cmd);
+    let got: String = wrk.stdout(&mut cmd);
     let expected = "\
 h1,h2\r
 abcdef,ghijkl\r

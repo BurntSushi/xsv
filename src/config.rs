@@ -1,7 +1,10 @@
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::env;
-use std::old_io as io;
+use std::fs;
+use std::io::{self, Read, Write};
+use std::ops::Deref;
+use std::path::PathBuf;
 
 use csv;
 use csv::index::Indexed;
@@ -51,8 +54,8 @@ impl Decodable for Delimiter {
 }
 
 pub struct Config {
-    path: Option<Path>, // None implies <stdin>
-    idx_path: Option<Path>,
+    path: Option<PathBuf>, // None implies <stdin>
+    idx_path: Option<PathBuf>,
     select_columns: Option<SelectColumns>,
     delimiter: u8,
     pub no_headers: bool,
@@ -62,19 +65,25 @@ pub struct Config {
 
 impl Config {
     pub fn new(path: &Option<String>) -> Config {
-        let path =
-            path.clone()
-                .map(|p| Path::new(p))
-                .and_then(|p| if p.as_vec() == b"-" { None } else { Some(p) });
-        let ext = path.as_ref()
-                      .and_then(|p| p.extension())
-                      .unwrap_or(b"")
-                      .to_vec();
+        let (path, delim) = match *path {
+            None => (None, b','),
+            Some(ref s) if s.deref() == "-" => (None, b','),
+            Some(ref s) => {
+                let path = PathBuf::new(s);
+                let delim =
+                    if path.extension().map(|v| v == "tsv").unwrap_or(false) {
+                        b'\t'
+                    } else {
+                        b','
+                    };
+                (Some(path), delim)
+            }
+        };
         Config {
             path: path,
             idx_path: None,
             select_columns: None,
-            delimiter: if ext == b"tsv" { b'\t' } else { b',' },
+            delimiter: delim,
             no_headers: false,
             flexible: false,
             crlf: false,
@@ -129,9 +138,9 @@ impl Config {
         self.selection(first_record).map(|sel| sel.normal())
     }
 
-    pub fn write_headers<R: io::Reader, W: io::Writer>
+    pub fn write_headers<R: io::Read, W: io::Write>
                         (&self, r: &mut csv::Reader<R>, w: &mut csv::Writer<W>)
-                        -> csv::CsvResult<()> {
+                        -> csv::Result<()> {
         if !self.no_headers {
             let r = try!(r.byte_headers());
             if !r.is_empty() {
@@ -142,105 +151,103 @@ impl Config {
     }
 
     pub fn writer(&self)
-                 -> io::IoResult<csv::Writer<Box<io::Writer+'static>>> {
+                 -> io::Result<csv::Writer<Box<io::Write+'static>>> {
         Ok(self.from_writer(try!(self.io_writer())))
     }
 
     pub fn reader(&self)
-                 -> io::IoResult<csv::Reader<Box<io::Reader+'static>>> {
+                 -> io::Result<csv::Reader<Box<io::Read+'static>>> {
         Ok(self.from_reader(try!(self.io_reader())))
     }
 
-    pub fn reader_file(&self) -> io::IoResult<csv::Reader<io::File>> {
+    pub fn reader_file(&self) -> io::Result<csv::Reader<fs::File>> {
         match self.path {
-            None => Err(io::IoError {
-                kind: io::OtherIoError,
-                desc: "Cannot use <stdin> here",
-                detail: None,
-            }),
-            Some(ref p) => io::File::open(p).map(|f| self.from_reader(f)),
+            None => Err(io::Error::new(
+                io::ErrorKind::Other, "Cannot use <stdin> here", None,
+            )),
+            Some(ref p) => fs::File::open(p).map(|f| self.from_reader(f)),
         }
     }
 
     pub fn index_files(&self)
-           -> io::IoResult<Option<(csv::Reader<io::File>, io::File)>> {
+           -> io::Result<Option<(csv::Reader<fs::File>, fs::File)>> {
         let (csv_file, idx_file) = match (&self.path, &self.idx_path) {
             (&None, &None) => return Ok(None),
-            (&None, &Some(ref p)) => return Err(io::IoError {
-                kind: io::OtherIoError,
-                desc: "Cannot use <stdin> with indexes",
-                detail: Some(format!("index file: {}", p.display())),
-            }),
+            (&None, &Some(ref p)) => return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Cannot use <stdin> with indexes",
+                Some(format!("index file: {}", p.display()))
+            )),
             (&Some(ref p), &None) => {
                 // We generally don't want to report an error here, since we're
                 // passively trying to find an index.
-                let idx_file = match io::File::open(&util::idx_path(p)) {
+                let idx_file = match fs::File::open(&util::idx_path(p)) {
                     // TODO: Maybe we should report an error if the file exists
                     // but is not readable.
                     Err(_) => return Ok(None),
                     Ok(f) => f,
                 };
-                (try!(io::File::open(p)), idx_file)
+                (try!(fs::File::open(p)), idx_file)
             }
             (&Some(ref p), &Some(ref ip)) => {
-                (try!(io::File::open(p)), try!(io::File::open(ip)))
+                (try!(fs::File::open(p)), try!(fs::File::open(ip)))
             }
         };
         // If the CSV data was last modified after the index file was last
         // modified, then return an error and demand the user regenerate the
         // index.
-        let data_modified = try!(csv_file.stat()).modified;
-        let idx_modified = try!(idx_file.stat()).modified;
+        let data_modified = try!(csv_file.metadata()).modified();
+        let idx_modified = try!(idx_file.metadata()).modified();
         if data_modified > idx_modified {
-            return Err(io::IoError {
-                kind: io::OtherIoError,
-                desc: "The CSV file was modified after the index file. \
-                       Please re-create the index.",
-                detail: Some(format!("CSV file: {}, index file: {}",
-                                     csv_file.path().display(),
-                                     idx_file.path().display())),
-            });
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "The CSV file was modified after the index file. \
+                 Please re-create the index.",
+                Some(format!("CSV file: {}, index file: {}",
+                             csv_file.path().unwrap().to_string_lossy(),
+                             idx_file.path().unwrap().to_string_lossy())),
+            ));
         }
         let csv_rdr = self.from_reader(csv_file);
         Ok(Some((csv_rdr, idx_file)))
     }
 
     pub fn indexed(&self)
-                  -> CliResult<Option<Indexed<io::File, io::File>>> {
+                  -> CliResult<Option<Indexed<fs::File, fs::File>>> {
         match try!(self.index_files()) {
             None => Ok(None),
             Some((r, i)) => Ok(Some(try!(Indexed::new(r, i)))),
         }
     }
 
-    pub fn io_reader(&self) -> io::IoResult<Box<io::Reader+'static>> {
+    pub fn io_reader(&self) -> io::Result<Box<io::Read+'static>> {
         Ok(match self.path {
-            None => Box::new(io::stdin()) as Box<io::Reader>,
+            None => Box::new(io::stdin()) as Box<io::Read>,
             Some(ref p) => {
-                let f = try!(io::File::open(p));
-                Box::new(f) as Box<io::Reader>
+                let f = try!(fs::File::open(p));
+                Box::new(f) as Box<io::Read>
             }
         })
     }
 
-    pub fn from_reader<R: Reader>(&self, rdr: R) -> csv::Reader<R> {
+    pub fn from_reader<R: Read>(&self, rdr: R) -> csv::Reader<R> {
         csv::Reader::from_reader(rdr)
                     .flexible(self.flexible)
                     .delimiter(self.delimiter)
                     .has_headers(!self.no_headers)
     }
 
-    pub fn io_writer(&self) -> io::IoResult<Box<io::Writer+'static>> {
+    pub fn io_writer(&self) -> io::Result<Box<io::Write+'static>> {
         Ok(match self.path {
-            None => Box::new(io::stdout()) as Box<io::Writer>,
+            None => Box::new(io::stdout()) as Box<io::Write>,
             Some(ref p) => {
-                let f = try!(io::File::create(p));
-                Box::new(f) as Box<io::Writer>
+                let f = try!(fs::File::create(p));
+                Box::new(f) as Box<io::Write>
             }
         })
     }
 
-    pub fn from_writer<W: Writer>(&self, wtr: W) -> csv::Writer<W> {
+    pub fn from_writer<W: io::Write>(&self, wtr: W) -> csv::Writer<W> {
         let term = if self.crlf { csv::RecordTerminator::CRLF }
                    else { csv::RecordTerminator::Any(b'\n') };
         csv::Writer::from_writer(wtr)

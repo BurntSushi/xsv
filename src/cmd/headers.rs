@@ -1,4 +1,4 @@
-use std::old_io as io;
+use std::io;
 
 use tabwriter::TabWriter;
 
@@ -55,19 +55,18 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
     }
 
-    let mut wtr: Box<Writer> =
+    let mut wtr: Box<io::Write> =
         if args.flag_just_names {
-            Box::new(io::stdout()) as Box<Writer>
+            Box::new(io::stdout()) as Box<io::Write>
         } else {
-            Box::new(TabWriter::new(io::stdout())) as Box<Writer>
+            Box::new(TabWriter::new(io::stdout())) as Box<io::Write>
         };
     for (i, header) in headers.into_iter().enumerate() {
         if num_inputs == 1 && !args.flag_just_names {
-            try!(wtr.write_str(&*(i + 1).to_string()));
-            try!(wtr.write_u8(b'\t'));
+            try!(write!(&mut wtr, "{}\t", i+1));
         }
-        try!(wtr.write_all(&*header));
-        try!(wtr.write_u8(b'\n'));
+        try!(wtr.write_all(&header));
+        try!(wtr.write_all(b"\n"));
     }
     try!(wtr.flush());
     Ok(())

@@ -5,7 +5,7 @@ use workdir::Workdir;
 macro_rules! join_test {
     ($name:ident, $fun:expr) => (
         mod $name {
-            use std::old_io::process;
+            use std::process;
 
             use workdir::Workdir;
             use super::{make_rows, setup};
@@ -63,8 +63,8 @@ fn make_rows(headers: bool, rows: Vec<Vec<String>>) -> Vec<Vec<String>> {
 }
 
 join_test!(join_inner,
-           |wrk: Workdir, cmd: process::Command, headers: bool| {
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+           |wrk: Workdir, mut cmd: process::Command, headers: bool| {
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = make_rows(headers, vec![
         svec!["Boston", "MA", "Boston", "Logan Airport"],
         svec!["Boston", "MA", "Boston", "Boston Garden"],
@@ -76,7 +76,7 @@ join_test!(join_inner,
 join_test!(join_outer_left,
            |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--left");
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = make_rows(headers, vec![
         svec!["Boston", "MA", "Boston", "Logan Airport"],
         svec!["Boston", "MA", "Boston", "Boston Garden"],
@@ -90,7 +90,7 @@ join_test!(join_outer_left,
 join_test!(join_outer_right,
            |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--right");
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = make_rows(headers, vec![
         svec!["Boston", "MA", "Boston", "Logan Airport"],
         svec!["Boston", "MA", "Boston", "Boston Garden"],
@@ -103,7 +103,7 @@ join_test!(join_outer_right,
 join_test!(join_outer_full,
            |wrk: Workdir, mut cmd: process::Command, headers: bool| {
     cmd.arg("--full");
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = make_rows(headers, vec![
         svec!["Boston", "MA", "Boston", "Logan Airport"],
         svec!["Boston", "MA", "Boston", "Boston Garden"],
@@ -126,7 +126,7 @@ fn join_cross() {
     let mut cmd = wrk.command("join");
     cmd.arg("--cross")
        .args(&["", "letters.csv", "", "numbers.csv"]);
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
         svec!["h1", "h2", "h3", "h4"],
         svec!["a", "b", "1", "2"],
@@ -146,7 +146,7 @@ fn join_cross_no_headers() {
     let mut cmd = wrk.command("join");
     cmd.arg("--cross").arg("--no-headers")
        .args(&["", "letters.csv", "", "numbers.csv"]);
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
         svec!["a", "b", "1", "2"],
         svec!["a", "b", "3", "4"],

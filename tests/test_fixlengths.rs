@@ -18,7 +18,7 @@ fn prop_fixlengths_all_maxlen() {
         let mut cmd = wrk.command("fixlengths");
         cmd.arg("in.csv");
 
-        let got: Vec<CsvRecord> = wrk.read_stdout(&cmd);
+        let got: Vec<CsvRecord> = wrk.read_stdout(&mut cmd);
         let got_len = got.iter().map(|r| r.len()).max().unwrap();
         for r in got.iter() { assert_eq!(r.len(), got_len) }
         TestResult::from_bool(rassert_eq!(got_len, expected_len))
@@ -39,7 +39,7 @@ fn prop_fixlengths_explicit_len() {
         let mut cmd = wrk.command("fixlengths");
         cmd.arg("in.csv").args(&["-l", &*expected_len.to_string()]);
 
-        let got: Vec<CsvRecord> = wrk.read_stdout(&cmd);
+        let got: Vec<CsvRecord> = wrk.read_stdout(&mut cmd);
         let got_len = got.iter().map(|r| r.len()).max().unwrap();
         for r in got.iter() { assert_eq!(r.len(), got_len) }
         TestResult::from_bool(rassert_eq!(got_len, expected_len))

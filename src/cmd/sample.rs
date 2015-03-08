@@ -1,3 +1,5 @@
+use std::io;
+
 use csv::{self, ByteString};
 use csv::index::Indexed;
 use rand::Rng;
@@ -76,7 +78,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     Ok(try!(wtr.flush()))
 }
 
-fn sample_random_access<R: Reader + Seek, I: Reader + Seek>
+fn sample_random_access<R: io::Read + io::Seek, I: io::Read + io::Seek>
                        (idx: &mut Indexed<R, I>, sample_size: u64)
                        -> CliResult<Vec<Vec<ByteString>>> {
     let mut all_indices = (0..idx.count()).collect::<Vec<_>>();
@@ -92,7 +94,7 @@ fn sample_random_access<R: Reader + Seek, I: Reader + Seek>
     Ok(sampled)
 }
 
-fn sample_reservoir<R: Reader>
+fn sample_reservoir<R: io::Read>
                    (rdr: &mut csv::Reader<R>, sample_size: u64)
                    -> CliResult<Vec<Vec<ByteString>>> {
     // The following algorithm has been adapted from:

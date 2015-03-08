@@ -17,7 +17,7 @@ fn search() {
     let mut cmd = wrk.command("search");
     cmd.arg("^foo").arg("data.csv");
 
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
         svec!["h1", "h2"],
         svec!["foobar", "barfoo"],
@@ -34,7 +34,7 @@ fn search_no_headers() {
     cmd.arg("^foo").arg("data.csv");
     cmd.arg("--no-headers");
 
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
         svec!["foobar", "barfoo"],
         svec!["barfoo", "foobar"],
@@ -50,7 +50,7 @@ fn search_select() {
     cmd.arg("^foo").arg("data.csv");
     cmd.arg("--select").arg("h2");
 
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
         svec!["h1", "h2"],
         svec!["barfoo", "foobar"],
@@ -67,7 +67,7 @@ fn search_select_no_headers() {
     cmd.arg("--select").arg("2");
     cmd.arg("--no-headers");
 
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
         svec!["barfoo", "foobar"],
     ];

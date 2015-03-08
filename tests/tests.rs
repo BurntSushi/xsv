@@ -1,4 +1,4 @@
-#![feature(core, old_io, old_path, os, path, std_misc)]
+#![feature(core, fs, io, path, std_misc)]
 
 #[macro_use] extern crate log;
 extern crate "rustc-serialize" as rustc_serialize;

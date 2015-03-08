@@ -12,7 +12,7 @@ fn prop_sort(name: &str, rows: CsvData, headers: bool) -> bool {
     cmd.arg("in.csv");
     if !headers { cmd.arg("--no-headers"); }
 
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let mut expected = rows.to_vecs();
     let headers = if headers && !expected.is_empty() {
         expected.remove(0)
@@ -48,7 +48,7 @@ fn sort_select() {
     let mut cmd = wrk.command("sort");
     cmd.arg("--no-headers").args(&["--select", "2"]).arg("in.csv");
 
-    let got: Vec<Vec<String>> = wrk.read_stdout(&cmd);
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![svec!["2", "a"], svec!["1", "b"]];
     assert_eq!(got, expected);
 }

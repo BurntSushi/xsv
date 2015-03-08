@@ -1,4 +1,4 @@
-use std::old_io::File;
+use std::fs;
 
 use csv::index::Indexed;
 
@@ -74,7 +74,8 @@ impl Args {
         Ok(try!(wtr.flush()))
     }
 
-    fn with_index(&self, mut idx: Indexed<File, File>) -> CliResult<()> {
+    fn with_index(&self, mut idx: Indexed<fs::File, fs::File>)
+                 -> CliResult<()> {
         let mut wtr = try!(self.wconfig().writer());
         try!(self.rconfig().write_headers(idx.csv(), &mut wtr));
 

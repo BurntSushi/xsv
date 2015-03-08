@@ -1,4 +1,6 @@
-use std::old_io::{BufferedWriter, File};
+use std::fs;
+use std::io;
+use std::path::{Path, PathBuf};
 
 use csv;
 
@@ -43,14 +45,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
 
     let pidx = match args.flag_output {
-        None => util::idx_path(&Path::new(&*args.arg_input)),
-        Some(p) => Path::new(p),
+        None => util::idx_path(&Path::new(&args.arg_input)),
+        Some(p) => PathBuf::new(&p),
     };
 
     let rconfig = Config::new(&Some(args.arg_input))
                          .delimiter(args.flag_delimiter);
     let rdr = try!(rconfig.reader_file());
-    let idx = BufferedWriter::new(try!(File::create(&pidx)));
+    let idx = io::BufWriter::new(try!(fs::File::create(&pidx)));
     let _ = try!(csv::index::create(rdr, idx));
     Ok(())
 }
