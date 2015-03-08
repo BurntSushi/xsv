@@ -25,10 +25,6 @@ lto = true
 
 [profile.test]
 opt-level = 2
-debug = false
-
-[profile.dev]
-debug = false
 
 [dependencies]
 byteorder = "*"
