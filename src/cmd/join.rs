@@ -423,7 +423,8 @@ fn transform(bs: &[u8], casei: bool) -> ByteString {
                 ByteString::from_bytes(s.trim().as_bytes())
             } else {
                 let norm: String =
-                    s.trim().chars().map(|c| c.to_lowercase()).collect();
+                    s.trim().chars()
+                     .map(|c| c.to_lowercase().next().unwrap()).collect();
                 ByteString::from_bytes(norm.into_bytes())
             }
         }

@@ -3,7 +3,7 @@ These are some docs.
 */
 
 #![feature(collections, core, exit_status, file_path, fs_time, io, os,
-           path, std_misc, unicode)]
+           path, std_misc)]
 
 extern crate byteorder;
 extern crate csv;
