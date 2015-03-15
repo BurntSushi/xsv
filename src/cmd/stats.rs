@@ -4,7 +4,6 @@ use std::fmt;
 use std::fs;
 use std::io;
 use std::iter::repeat;
-use std::os;
 use std::str::{self, FromStr};
 
 use csv::{self, ByteString};
@@ -193,7 +192,7 @@ impl Args {
     }
 
     fn njobs(&self) -> usize {
-        if self.flag_jobs == 0 { os::num_cpus() } else { self.flag_jobs }
+        if self.flag_jobs == 0 { util::num_cpus() } else { self.flag_jobs }
     }
 
     fn new_stats(&self, record_len: usize) -> Vec<Stats> {

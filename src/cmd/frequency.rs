@@ -1,6 +1,5 @@
 use std::fs;
 use std::io;
-use std::os;
 
 use csv::{self, ByteString};
 use csv::index::Indexed;
@@ -193,7 +192,7 @@ impl Args {
     }
 
     fn njobs(&self) -> usize {
-        if self.flag_jobs == 0 { os::num_cpus() } else { self.flag_jobs }
+        if self.flag_jobs == 0 { util::num_cpus() } else { self.flag_jobs }
     }
 }
 

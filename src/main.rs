@@ -2,12 +2,12 @@
 These are some docs.
 */
 
-#![feature(collections, core, exit_status, file_path, fs_time, io, os,
-           path, std_misc)]
+#![feature(collections, core, exit_status, file_path, fs_time, io, std_misc)]
 
 extern crate byteorder;
 extern crate csv;
 extern crate docopt;
+extern crate libc;
 extern crate rand;
 extern crate regex;
 extern crate "rustc-serialize" as rustc_serialize;

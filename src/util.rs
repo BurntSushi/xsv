@@ -11,6 +11,16 @@ use rustc_serialize::Decodable;
 use CliResult;
 use config::{Config, Delimiter};
 
+pub fn num_cpus() -> usize {
+    unsafe {
+        return rust_get_num_cpus() as usize;
+    }
+
+    extern {
+        fn rust_get_num_cpus() -> ::libc::uintptr_t;
+    }
+}
+
 pub fn version() -> String {
     let (maj, min, pat) = (
         option_env!("CARGO_PKG_VERSION_MAJOR"),

@@ -30,6 +30,7 @@ opt-level = 2
 byteorder = "*"
 csv = "*"
 docopt = "*"
+libc = "*"
 rand = "*"
 regex = "*"
 rustc-serialize = "*"
