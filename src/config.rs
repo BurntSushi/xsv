@@ -40,7 +40,7 @@ impl Decodable for Delimiter {
                                        ASCII character.", s);
                     return Err(d.error(&*msg));
                 }
-                let c = s.char_at(0);
+                let c = s.chars().next().unwrap();
                 if c.is_ascii() {
                     Ok(Delimiter(c as u8))
                 } else {

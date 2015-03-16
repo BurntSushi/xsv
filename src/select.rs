@@ -245,11 +245,9 @@ impl Selector {
                 let i2 = try!(sel2.index(first_record, use_names));
                 Ok(match i1.cmp(&i2) {
                     Ordering::Equal => vec!(i1),
-                    Ordering::Less => iter::range_inclusive(i1, i2).collect(),
+                    Ordering::Less => (i1..(i2 + 1)).collect(),
                     Ordering::Greater => {
-                        iter::range_step_inclusive(i1 as isize,
-                                                   i2 as isize,
-                                                   -1)
+                        iter::range_step(i1 as isize, i2 as isize - 1, -1)
                              .map(|i| i as usize).collect()
                     }
                 })

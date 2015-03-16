@@ -2,7 +2,7 @@
 These are some docs.
 */
 
-#![feature(collections, core, exit_status, file_path, fs_time, io, std_misc)]
+#![feature(core, exit_status, file_path, fs_time, io, std_misc)]
 
 extern crate byteorder;
 extern crate csv;
