@@ -247,8 +247,8 @@ impl Selector {
                     Ordering::Equal => vec!(i1),
                     Ordering::Less => (i1..(i2 + 1)).collect(),
                     Ordering::Greater => {
-                        iter::range_step(i1 as isize, i2 as isize - 1, -1)
-                             .map(|i| i as usize).collect()
+                        (i1 as isize..(i2 as isize - 1))
+                        .step_by(-1).map(|i| i as usize).collect()
                     }
                 })
             }
