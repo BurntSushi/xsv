@@ -120,7 +120,7 @@ impl Args {
         }
         counts.into_iter().map(|(bs, c)| {
             if b"" == &**bs {
-                (ByteString::from_bytes(b"(NULL)"), c)
+                (ByteString::from_bytes(&b"(NULL)"[..]), c)
             } else {
                 (bs.clone(), c)
             }
@@ -165,7 +165,7 @@ impl Args {
 
     fn ftables<I>(&self, sel: &Selection, it: I) -> CliResult<FTables>
             where I: Iterator<Item=csv::Result<ByteRow>> {
-        let null = ByteString::from_bytes(b"");
+        let null = ByteString::from_bytes(&b""[..]);
         let nsel = sel.normal();
         let mut tabs: Vec<_> =
             (0..nsel.len()).map(|_| Frequencies::new()).collect();

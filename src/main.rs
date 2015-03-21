@@ -175,10 +175,10 @@ impl Command {
     }
 }
 
-type CliResult<T> = Result<T, CliError>;
+pub type CliResult<T> = Result<T, CliError>;
 
 #[derive(Debug)]
-enum CliError {
+pub enum CliError {
     Flag(docopt::Error),
     Csv(csv::Error),
     Io(io::Error),

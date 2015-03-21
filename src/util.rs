@@ -127,7 +127,7 @@ pub fn idx_path(csv_path: &Path) -> PathBuf {
     PathBuf::new(&p)
 }
 
-type Idx = Option<usize>;
+pub type Idx = Option<usize>;
 
 pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
             -> Result<(usize, usize), String> {
