@@ -193,3 +193,9 @@ mod stats_zero_median {
     use super::test_stats;
     stats_test_headers!(stats_zero_median, "median", &[], "");
 }
+
+mod stats_header_fields {
+    use super::test_stats;
+    stats_test_headers!(stats_header_field_name, "field", &["a"], "header");
+    stats_test_no_headers!(stats_header_no_field_name, "field", &["a"], "0");
+}
