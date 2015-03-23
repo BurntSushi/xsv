@@ -51,6 +51,7 @@ macro_rules! command_list {
     fmt         Format CSV output (change field delimiter)
     frequency   Show frequency tables
     headers     Show header names
+    help        Show this usage message.
     index       Create CSV index for faster access
     join        Join CSV files
     sample      Randomly sample CSV data
@@ -136,6 +137,7 @@ enum Command {
     Fmt,
     Frequency,
     Headers,
+    Help,
     Index,
     Join,
     Sample,
@@ -161,6 +163,7 @@ impl Command {
             Command::Fmt => cmd::fmt::run(argv),
             Command::Frequency => cmd::frequency::run(argv),
             Command::Headers => cmd::headers::run(argv),
+            Command::Help => { wout!("{}", USAGE); Ok(()) }
             Command::Index => cmd::index::run(argv),
             Command::Join => cmd::join::run(argv),
             Command::Sample => cmd::sample::run(argv),
