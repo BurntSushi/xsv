@@ -2,7 +2,7 @@
 These are some docs.
 */
 
-#![feature(core, exit_status, file_path, fs_time, io, std_misc, step_by)]
+#![feature(convert, exit_status, file_path, fs_time, into_cow, io, step_by)]
 
 extern crate byteorder;
 extern crate csv;
@@ -10,7 +10,7 @@ extern crate docopt;
 extern crate libc;
 extern crate rand;
 extern crate regex;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 extern crate stats;
 extern crate tabwriter;
 extern crate threadpool;

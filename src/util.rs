@@ -124,7 +124,7 @@ pub fn condense<'a, V>(val: V, n: Option<usize>) -> Cow<'a, [u8]>
 pub fn idx_path(csv_path: &Path) -> PathBuf {
     let mut p = csv_path.to_path_buf().into_os_string().into_string().unwrap();
     p.push_str(".idx");
-    PathBuf::new(&p)
+    PathBuf::from(&p)
 }
 
 pub type Idx = Option<usize>;

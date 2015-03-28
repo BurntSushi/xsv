@@ -69,7 +69,7 @@ impl Config {
             None => (None, b','),
             Some(ref s) if s.deref() == "-" => (None, b','),
             Some(ref s) => {
-                let path = PathBuf::new(s);
+                let path = PathBuf::from(s);
                 let delim =
                     if path.extension().map(|v| v == "tsv").unwrap_or(false) {
                         b'\t'
@@ -222,11 +222,8 @@ impl Config {
 
     pub fn io_reader(&self) -> io::Result<Box<io::Read+'static>> {
         Ok(match self.path {
-            None => Box::new(io::stdin()) as Box<io::Read>,
-            Some(ref p) => {
-                let f = try!(fs::File::open(p));
-                Box::new(f) as Box<io::Read>
-            }
+            None => Box::new(io::stdin()),
+            Some(ref p) => Box::new(try!(fs::File::open(p))),
         })
     }
 
@@ -239,11 +236,8 @@ impl Config {
 
     pub fn io_writer(&self) -> io::Result<Box<io::Write+'static>> {
         Ok(match self.path {
-            None => Box::new(io::stdout()) as Box<io::Write>,
-            Some(ref p) => {
-                let f = try!(fs::File::create(p));
-                Box::new(f) as Box<io::Write>
-            }
+            None => Box::new(io::stdout()),
+            Some(ref p) => Box::new(try!(fs::File::create(p))),
         })
     }
 

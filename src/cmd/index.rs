@@ -46,7 +46,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let pidx = match args.flag_output {
         None => util::idx_path(&Path::new(&args.arg_input)),
-        Some(p) => PathBuf::new(&p),
+        Some(p) => PathBuf::from(&p),
     };
 
     let rconfig = Config::new(&Some(args.arg_input))

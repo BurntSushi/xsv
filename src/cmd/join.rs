@@ -121,7 +121,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 }
 
-struct IoState<R, W> {
+struct IoState<R, W: io::Write> {
     wtr: csv::Writer<W>,
     rdr1: csv::Reader<R>,
     sel1: NormalSelection,

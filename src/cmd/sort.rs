@@ -1,4 +1,4 @@
-use std::iter;
+use std::cmp;
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -56,7 +56,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         // TODO: Numeric sorting. The tricky part, IMO, is figuring out
         // how to expose it in the CLI interface. Not sure of the right
         // answer at the moment.
-        iter::order::cmp(sel.select(&**r1), sel.select(&**r2))
+        iter_cmp(sel.select(&**r1), sel.select(&**r2))
     });
 
     try!(rconfig.write_headers(&mut rdr, &mut wtr));
@@ -64,4 +64,20 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         try!(wtr.write(r.into_iter()));
     }
     Ok(try!(wtr.flush()))
+}
+
+/// Order `a` and `b` lexicographically using `Ord`
+pub fn iter_cmp<A, L, R>(mut a: L, mut b: R) -> cmp::Ordering
+        where A: Ord, L: Iterator<Item=A>, R: Iterator<Item=A> {
+    loop {
+        match (a.next(), b.next()) {
+            (None, None) => return cmp::Ordering::Equal,
+            (None, _   ) => return cmp::Ordering::Less,
+            (_   , None) => return cmp::Ordering::Greater,
+            (Some(x), Some(y)) => match x.cmp(&y) {
+                cmp::Ordering::Equal => (),
+                non_eq => return non_eq,
+            },
+        }
+    }
 }

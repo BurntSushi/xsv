@@ -57,9 +57,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut wtr: Box<io::Write> =
         if args.flag_just_names {
-            Box::new(io::stdout()) as Box<io::Write>
+            Box::new(io::stdout())
         } else {
-            Box::new(TabWriter::new(io::stdout())) as Box<io::Write>
+            Box::new(TabWriter::new(io::stdout()))
         };
     for (i, header) in headers.into_iter().enumerate() {
         if num_inputs == 1 && !args.flag_just_names {

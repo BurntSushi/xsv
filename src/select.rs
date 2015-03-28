@@ -330,23 +330,23 @@ impl fmt::Debug for OneSelector {
 #[derive(Clone, Debug)]
 pub struct Selection(Vec<usize>);
 
+type _GetField = for <'c> fn(&mut &'c [csv::ByteString], &usize)
+                            -> Option<&'c [u8]>;
+
 impl Selection {
     pub fn select<'a, 'b>(&'a self, row: &'b [csv::ByteString])
                  -> iter::Scan<
                         slice::Iter<'a, usize>,
                         &'b [csv::ByteString],
-                        for <'c> fn(&mut &'c [csv::ByteString], &usize)
-                                 -> Option<&'c [u8]>,
+                        _GetField,
                     > {
         // This is horrifying.
         fn get_field<'c>(row: &mut &'c [csv::ByteString], idx: &usize)
                         -> Option<&'c [u8]> {
             Some(&row[*idx])
         }
-        self.iter().scan(
-            row,
-            get_field as for <'c> fn(&mut &'c [csv::ByteString], &usize)
-                                    -> Option<&'c [u8]>)
+        let _get_field: _GetField = get_field;
+        self.iter().scan(row, _get_field)
     }
 
     pub fn normal(&self) -> NormalSelection {
@@ -385,13 +385,15 @@ pub struct NormalSelection(Vec<bool>);
 type _NormalScan<'a, T, I> = iter::Scan<
     iter::Enumerate<I>,
     &'a [bool],
-    fn(&mut &[bool], (usize, T)) -> Option<Option<T>>,
+    _NormalGetField<T>,
 >;
 
 type _NormalFilterMap<'a, T, I> = iter::FilterMap<
     _NormalScan<'a, T, I>,
     fn(Option<T>) -> Option<T>
 >;
+
+type _NormalGetField<T> = fn(&mut &[bool], (usize, T)) -> Option<Option<T>>;
 
 impl NormalSelection {
     pub fn select<'a, T, I>(&'a self, row: I) -> _NormalFilterMap<'a, T, I>
@@ -402,12 +404,9 @@ impl NormalSelection {
             let (i, v) = t;
             if i < set.len() && set[i] { Some(Some(v)) } else { Some(None) }
         }
-        row.enumerate()
-           .scan(
-               &**self,
-               get_field as fn(&mut &[bool], (usize, T)) -> Option<Option<T>>
-            )
-           .filter_map(filmap as fn(Option<T>) -> Option<T>)
+        let _get_field: _NormalGetField<T> = get_field;
+        let _filmap: fn(Option<T>) -> Option<T> = filmap;
+        row.enumerate().scan(&**self, _get_field).filter_map(_filmap)
     }
 
     pub fn len(&self) -> usize {

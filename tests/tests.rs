@@ -1,7 +1,8 @@
-#![feature(core, fs_time, path_ext, std_misc)]
+#![allow(trivial_casts)] // for quickcheck; remove with type ascription?
+#![feature(core, fs_time, path_ext)]
 
 #[macro_use] extern crate log;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 
 extern crate csv;
 extern crate quickcheck;
