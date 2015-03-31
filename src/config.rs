@@ -24,8 +24,7 @@ pub struct Delimiter(pub u8);
 /// valid ASCII character as required by the CSV parser.
 impl Delimiter {
     pub fn as_byte(self) -> u8 {
-        let Delimiter(b) = self;
-        b
+        self.0
     }
 }
 
