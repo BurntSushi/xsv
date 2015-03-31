@@ -66,6 +66,11 @@ macro_rules! command_list {
     )
 }
 
+mod cmd;
+mod config;
+mod select;
+mod util;
+
 static USAGE: &'static str = concat!("
 Usage:
     xsv <command> [<args>...]
@@ -249,8 +254,3 @@ impl FromError<regex::Error> for CliError {
         CliError::Other(format!("{:?}", err))
     }
 }
-
-mod cmd;
-mod config;
-mod select;
-mod util;
