@@ -20,14 +20,15 @@ a quick tour of several commands.
   padding or truncating them.
 * **flatten** - A flattened view of CSV records. Useful for viewing one record
   at a time. e.g., `xsv slice -i 5 data.csv | xsv flatten`.
-* **fmt** - Reformat CSV data with different delimiters or record terminators.
-  (Supports ASCII delimited data.)
+* **fmt** - Reformat CSV data with different delimiters, record terminators
+  or quoting rules. (Supports ASCII delimited data.)
 * **frequency** - Build frequency tables of each column in CSV data. (Uses
   parallelism to go faster if an index is present.)
 * **headers** - Show the headers of CSV data. Or show the intersection of all
   headers between many CSV files.
 * **index** - Create an index for a CSV file. This is very quick and provides
   constant time indexing into the CSV file.
+* **input** - Read CSV data with exotic quoting/escaping rules.
 * **join** - Inner, outer and cross joins. Uses a simple hash index to make it
   fast.
 * **sample** - Randomly draw rows from CSV data using reservoir sampling (i.e.,
