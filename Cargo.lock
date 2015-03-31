@@ -4,7 +4,7 @@ version = "0.8.42"
 dependencies = [
  "byteorder 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "csv 0.13.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "docopt 0.6.55 (registry+https://github.com/rust-lang/crates.io-index)",
+ "docopt 0.6.56 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickcheck 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -32,7 +32,7 @@ dependencies = [
 
 [[package]]
 name = "docopt"
-version = "0.6.55"
+version = "0.6.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -91,7 +91,7 @@ name = "tabwriter"
 version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "docopt 0.6.55 (registry+https://github.com/rust-lang/crates.io-index)",
+ "docopt 0.6.56 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
