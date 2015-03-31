@@ -18,15 +18,18 @@ Usage:
 
 fmt options:
     -t, --out-delimiter <arg>  The field delimiter for writing CSV data.
-                               (default: ,)
+                               [default: ,]
     --crlf                     Use '\\r\\n' line endings in the output.
     --ascii                    Use ASCII field and record separators.
+    --quote <arg>              The quote character to use. [default: \"]
+    --escape <arg>             The escape character to use. When not specified,
+                               quotes are escaped by doubling them.
 
 Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. (default: ,)
+                           Must be a single character. [default: ,]
 ";
 
 #[derive(RustcDecodable)]
@@ -37,6 +40,8 @@ struct Args {
     flag_ascii: bool,
     flag_output: Option<String>,
     flag_delimiter: Option<Delimiter>,
+    flag_quote: Delimiter,
+    flag_escape: Option<Delimiter>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -55,6 +60,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         wtr = wtr.delimiter(b'\x1f')
                  .record_terminator(csv::RecordTerminator::Any(b'\x1e'));
     }
+    if let Some(escape) = args.flag_escape {
+        wtr = wtr.escape(escape.as_byte()).double_quote(false);
+    }
+    wtr = wtr.quote(args.flag_quote.as_byte());
     for r in rdr.byte_records() {
         try!(wtr.write(try!(r).into_iter()));
     }

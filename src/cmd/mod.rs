@@ -6,6 +6,7 @@ pub mod fmt;
 pub mod frequency;
 pub mod headers;
 pub mod index;
+pub mod input;
 pub mod join;
 pub mod sample;
 pub mod search;

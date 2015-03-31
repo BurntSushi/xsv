@@ -53,6 +53,7 @@ macro_rules! command_list {
     headers     Show header names
     help        Show this usage message.
     index       Create CSV index for faster access
+    input       Read CSV data with special quoting rules
     join        Join CSV files
     sample      Randomly sample CSV data
     search      Search CSV data with regexes
@@ -144,6 +145,7 @@ enum Command {
     Headers,
     Help,
     Index,
+    Input,
     Join,
     Sample,
     Search,
@@ -170,6 +172,7 @@ impl Command {
             Command::Headers => cmd::headers::run(argv),
             Command::Help => { wout!("{}", USAGE); Ok(()) }
             Command::Index => cmd::index::run(argv),
+            Command::Input => cmd::input::run(argv),
             Command::Join => cmd::join::run(argv),
             Command::Sample => cmd::sample::run(argv),
             Command::Search => cmd::search::run(argv),
