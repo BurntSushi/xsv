@@ -1,4 +1,3 @@
-use std::error::FromError;
 use std::iter::repeat;
 
 use csv;
@@ -69,7 +68,7 @@ impl Args {
         util::many_configs(&*self.arg_input,
                            self.flag_delimiter,
                            self.flag_no_headers)
-             .map_err(FromError::from_error)
+             .map_err(From::from)
     }
 
     fn cat_rows(&self) -> CliResult<()> {
@@ -83,7 +82,7 @@ impl Args {
                 try!(wtr.write(try!(r).into_iter()));
             }
         }
-        wtr.flush().map_err(FromError::from_error)
+        wtr.flush().map_err(From::from)
     }
 
     fn cat_columns(&self) -> CliResult<()> {
@@ -134,6 +133,6 @@ impl Args {
             }
             try!(wtr.write(records.concat().into_iter()));
         }
-        wtr.flush().map_err(FromError::from_error)
+        wtr.flush().map_err(From::from)
     }
 }

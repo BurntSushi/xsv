@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use tabwriter::TabWriter;
 
 use CliResult;
@@ -60,7 +62,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     for r in rdr.byte_records() {
         let r = try!(r);
-        let row = r.iter().map(|f| util::condense(&**f, args.flag_condense));
+        let row = r.iter().map(|f| util::condense(Cow::Borrowed(&**f),
+                                                  args.flag_condense));
         try!(wtr.write(row));
     }
     try!(wtr.flush());

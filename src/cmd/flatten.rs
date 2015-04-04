@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::io::{self, Write};
 
 use tabwriter::TabWriter;
@@ -69,7 +70,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 try!(wtr.write_all(&header));
             }
             try!(wtr.write_all(b"\t"));
-            try!(wtr.write_all(&*util::condense(&*field, args.flag_condense)));
+            try!(wtr.write_all(&*util::condense(Cow::Borrowed(&*field),
+                                                args.flag_condense)));
             try!(wtr.write_all(b"\n"));
         }
     }

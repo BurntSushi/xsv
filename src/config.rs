@@ -162,7 +162,7 @@ impl Config {
     pub fn reader_file(&self) -> io::Result<csv::Reader<fs::File>> {
         match self.path {
             None => Err(io::Error::new(
-                io::ErrorKind::Other, "Cannot use <stdin> here", None,
+                io::ErrorKind::Other, "Cannot use <stdin> here",
             )),
             Some(ref p) => fs::File::open(p).map(|f| self.from_reader(f)),
         }
@@ -172,10 +172,10 @@ impl Config {
            -> io::Result<Option<(csv::Reader<fs::File>, fs::File)>> {
         let (csv_file, idx_file) = match (&self.path, &self.idx_path) {
             (&None, &None) => return Ok(None),
-            (&None, &Some(ref p)) => return Err(io::Error::new(
+            (&None, &Some(_)) => return Err(io::Error::new(
                 io::ErrorKind::Other,
                 "Cannot use <stdin> with indexes",
-                Some(format!("index file: {}", p.display()))
+                // Some(format!("index file: {}", p.display()))
             )),
             (&Some(ref p), &None) => {
                 // We generally don't want to report an error here, since we're
@@ -202,9 +202,9 @@ impl Config {
                 io::ErrorKind::Other,
                 "The CSV file was modified after the index file. \
                  Please re-create the index.",
-                Some(format!("CSV file: {}, index file: {}",
-                             csv_file.path().unwrap().to_string_lossy(),
-                             idx_file.path().unwrap().to_string_lossy())),
+                // Some(format!("CSV file: {}, index file: {}",
+                             // csv_file.path().unwrap().to_string_lossy(),
+                             // idx_file.path().unwrap().to_string_lossy())),
             ));
         }
         let csv_rdr = self.from_reader(csv_file);

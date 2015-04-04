@@ -1,6 +1,4 @@
-use std::borrow::{Cow, IntoCow};
-use std::error::FromError;
-use std::ops::Deref;
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::str;
 
@@ -40,7 +38,7 @@ pub fn get_args<T>(usage: &str, argv: &[&str]) -> CliResult<T>
            .and_then(|d| d.argv(argv.iter().map(|&x| x))
                           .version(Some(version()))
                           .decode())
-           .map_err(FromError::from_error)
+           .map_err(From::from)
 }
 
 pub fn many_configs(inps: &[String], delim: Option<Delimiter>,
@@ -89,10 +87,9 @@ pub fn num_of_chunks(nitems: usize, chunk_size: usize) -> usize {
     n
 }
 
-pub fn condense<'a, V>(val: V, n: Option<usize>) -> Cow<'a, [u8]>
-        where V: Deref<Target=[u8]> + IntoCow<'a, [u8]> {
+pub fn condense<'a>(val: Cow<'a, [u8]>, n: Option<usize>) -> Cow<'a, [u8]> {
     match n {
-        None => val.into_cow(),
+        None => val,
         Some(n) => {
             // It would be much nicer to just use a `match` here, but the
             // borrow checker won't allow it. ---AG
@@ -106,16 +103,16 @@ pub fn condense<'a, V>(val: V, n: Option<usize>) -> Cow<'a, [u8]>
                 } else {
                     let mut s = s.chars().take(n).collect::<String>();
                     s.push_str("...");
-                    return s.into_bytes().into_cow();
+                    return Cow::Owned(s.into_bytes());
                 }
             }
             if is_short_utf8 || n >= (*val).len() { // already short enough
-                val.into_cow()
+                val
             } else {
                 // This is a non-Unicode string, so we just trim on bytes.
                 let mut s = val[0..n].to_vec();
-                s.extend(b"...".iter().map(|&x|x));
-                s.into_cow()
+                s.extend(b"...".iter().cloned());
+                Cow::Owned(s)
             }
         }
     }

@@ -2,7 +2,7 @@
 These are some docs.
 */
 
-#![feature(convert, exit_status, file_path, fs_time, into_cow, io, step_by)]
+#![feature(fs_time, step_by)]
 
 extern crate byteorder;
 extern crate csv;
@@ -16,10 +16,10 @@ extern crate tabwriter;
 extern crate threadpool;
 
 use std::borrow::ToOwned;
-use std::error::FromError;
 use std::env;
 use std::fmt;
 use std::io::{self, Write};
+use std::process;
 
 use docopt::Docopt;
 
@@ -38,7 +38,7 @@ macro_rules! werr {
 }
 
 macro_rules! fail {
-    ($e:expr) => (Err(::std::error::FromError::from_error($e)));
+    ($e:expr) => (Err(::std::convert::From::from($e)));
 }
 
 macro_rules! command_list {
@@ -102,32 +102,32 @@ fn main() {
     }
     match args.arg_command {
         None => {
-            env::set_exit_status(0);
             werr!(concat!(
                 "xsv is a suite of CSV command line utilities.
 
 Please choose one of the following commands:",
                 command_list!()));
+            process::exit(0);
         }
         Some(cmd) => {
             match cmd.run() {
-                Ok(()) => env::set_exit_status(0),
+                Ok(()) => process::exit(0),
                 Err(CliError::Flag(err)) => err.exit(),
                 Err(CliError::Csv(err)) => {
-                    env::set_exit_status(1);
                     werr!("{}", err);
+                    process::exit(1);
                 }
                 Err(CliError::Io(ref err))
                         if err.kind() == io::ErrorKind::BrokenPipe => {
-                    env::set_exit_status(0);
+                    process::exit(0);
                 }
                 Err(CliError::Io(err)) => {
-                    env::set_exit_status(1);
                     werr!("{}", err);
+                    process::exit(1);
                 }
                 Err(CliError::Other(msg)) => {
-                    env::set_exit_status(1);
                     werr!("{}", msg);
+                    process::exit(1);
                 }
             }
         }
@@ -207,53 +207,53 @@ impl fmt::Display for CliError {
     }
 }
 
-impl FromError<byteorder::Error> for CliError {
-    fn from_error(err: byteorder::Error) -> CliError {
+impl From<byteorder::Error> for CliError {
+    fn from(err: byteorder::Error) -> CliError {
         match err {
             byteorder::Error::UnexpectedEOF => {
                 CliError::Other(
                     "Got unexpected EOF when reading index.".to_owned())
             }
-            byteorder::Error::Io(err) => FromError::from_error(err),
+            byteorder::Error::Io(err) => From::from(err),
         }
     }
 }
 
-impl FromError<docopt::Error> for CliError {
-    fn from_error(err: docopt::Error) -> CliError {
+impl From<docopt::Error> for CliError {
+    fn from(err: docopt::Error) -> CliError {
         CliError::Flag(err)
     }
 }
 
-impl FromError<csv::Error> for CliError {
-    fn from_error(err: csv::Error) -> CliError {
+impl From<csv::Error> for CliError {
+    fn from(err: csv::Error) -> CliError {
         match err {
-            csv::Error::Io(v) => FromError::from_error(v),
+            csv::Error::Io(v) => From::from(v),
             v => CliError::Csv(v),
         }
     }
 }
 
-impl FromError<io::Error> for CliError {
-    fn from_error(err: io::Error) -> CliError {
+impl From<io::Error> for CliError {
+    fn from(err: io::Error) -> CliError {
         CliError::Io(err)
     }
 }
 
-impl FromError<String> for CliError {
-    fn from_error(err: String) -> CliError {
+impl From<String> for CliError {
+    fn from(err: String) -> CliError {
         CliError::Other(err)
     }
 }
 
-impl<'a> FromError<&'a str> for CliError {
-    fn from_error(err: &'a str) -> CliError {
+impl<'a> From<&'a str> for CliError {
+    fn from(err: &'a str) -> CliError {
         CliError::Other(err.to_owned())
     }
 }
 
-impl FromError<regex::Error> for CliError {
-    fn from_error(err: regex::Error) -> CliError {
+impl From<regex::Error> for CliError {
+    fn from(err: regex::Error) -> CliError {
         CliError::Other(format!("{:?}", err))
     }
 }
