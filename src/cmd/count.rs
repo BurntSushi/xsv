@@ -40,14 +40,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             None => {
                 let mut rdr = try!(conf.reader());
                 let mut count = 0u64;
-                while !rdr.done() {
-                    loop {
-                        match rdr.next_field() {
-                            NextField::EndOfCsv => break,
-                            NextField::EndOfRecord => { count += 1; break; }
-                            NextField::Error(err) => return fail!(err),
-                            NextField::Data(_) => {}
-                        }
+                loop {
+                    match rdr.next_bytes() {
+                        NextField::EndOfCsv => break,
+                        NextField::EndOfRecord => { count += 1; }
+                        NextField::Error(err) => return fail!(err),
+                        NextField::Data(_) => {}
                     }
                 }
                 if !conf.no_headers && count > 0 {

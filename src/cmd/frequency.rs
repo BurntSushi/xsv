@@ -85,7 +85,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let head_ftables = headers.into_iter().zip(tables.into_iter());
     for (i, (mut header, ftab)) in head_ftables.enumerate() {
         if rconfig.no_headers {
-            header = ByteString::from_bytes((i+1).to_string().into_bytes());
+            header = (i+1).to_string().into_bytes();
         }
         for (value, count) in args.counts(&ftab).into_iter() {
             let count = count.to_string();
@@ -120,7 +120,7 @@ impl Args {
         }
         counts.into_iter().map(|(bs, c)| {
             if b"" == &**bs {
-                (ByteString::from_bytes(&b"(NULL)"[..]), c)
+                (b"(NULL)"[..].to_vec(), c)
             } else {
                 (bs.clone(), c)
             }
@@ -155,7 +155,7 @@ impl Args {
             pool.execute(move || {
                 let mut idx = args.rconfig().indexed().unwrap().unwrap();
                 idx.seek((i * chunk_size) as u64).unwrap();
-                let it = idx.csv().byte_records().take(chunk_size);
+                let it = idx.byte_records().take(chunk_size);
                 send.send(args.ftables(&sel, it).unwrap()).unwrap();
             });
         }
@@ -165,7 +165,7 @@ impl Args {
 
     fn ftables<I>(&self, sel: &Selection, it: I) -> CliResult<FTables>
             where I: Iterator<Item=csv::Result<ByteRow>> {
-        let null = ByteString::from_bytes(&b""[..]);
+        let null = &b""[..].to_vec();
         let nsel = sel.normal();
         let mut tabs: Vec<_> =
             (0..nsel.len()).map(|_| Frequencies::new()).collect();
@@ -188,7 +188,7 @@ impl Args {
                   -> CliResult<(ByteRow, Selection)> {
         let headers = try!(rdr.byte_headers());
         let sel = try!(self.rconfig().selection(&*headers));
-        Ok((sel.select(&*headers).map(ByteString::from_bytes).collect(), sel))
+        Ok((sel.select(&*headers).map(|h| h.to_vec()).collect(), sel))
     }
 
     fn njobs(&self) -> usize {
@@ -197,8 +197,8 @@ impl Args {
 }
 
 fn trim(bs: ByteString) -> ByteString {
-    match bs.into_utf8_string() {
-        Ok(s) => ByteString::from_bytes(s.trim().as_bytes()),
-        Err(bs) => bs,
+    match String::from_utf8(bs) {
+        Ok(s) => s.trim().as_bytes().to_vec(),
+        Err(bs) => bs.into_bytes(),
     }
 }

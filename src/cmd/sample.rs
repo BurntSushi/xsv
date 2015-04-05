@@ -58,7 +58,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let sampled = match try!(rconfig.indexed()) {
         Some(mut idx) => {
             if do_random_access(sample_size, idx.count()) {
-                try!(rconfig.write_headers(idx.csv(), &mut wtr));
+                try!(rconfig.write_headers(&mut *idx, &mut wtr));
                 try!(sample_random_access(&mut idx, sample_size))
             } else {
                 let mut rdr = try!(rconfig.reader());
@@ -88,8 +88,7 @@ fn sample_random_access<R: io::Read + io::Seek, I: io::Read + io::Seek>
     let mut sampled = Vec::with_capacity(sample_size as usize);
     for i in all_indices.into_iter().take(sample_size as usize) {
         try!(idx.seek(i));
-        let mut rdr = idx.csv();
-        sampled.push(try!(rdr.byte_records().next().unwrap()));
+        sampled.push(try!(idx.byte_records().next().unwrap()));
     }
     Ok(sampled)
 }

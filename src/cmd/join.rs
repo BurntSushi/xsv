@@ -155,7 +155,7 @@ impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
                         try!(validx.idx.seek(rowi as u64));
 
                         let mut row1 = row.iter().map(|f| Ok(&**f));
-                        let row2 = unsafe { validx.idx.csv().byte_fields() };
+                        let row2 = unsafe { validx.idx.byte_fields() };
                         let combined = row1.by_ref().chain(row2);
                         try!(self.wtr.write_iter(combined));
                     }
@@ -192,7 +192,7 @@ impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
                         try!(validx.idx.seek(rowi as u64));
                         let row1 = row.iter().map(|f| Ok(&**f));
                         let row2 = unsafe {
-                            validx.idx.csv().byte_fields()
+                            validx.idx.byte_fields()
                         };
                         if right {
                             try!(self.wtr.write_iter(row2.chain(row1)));
@@ -230,7 +230,7 @@ impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
                         try!(validx.idx.seek(rowi as u64));
                         let row1 = row1.iter().map(|f| Ok(&**f));
                         let row2 = unsafe {
-                            validx.idx.csv().byte_fields()
+                            validx.idx.byte_fields()
                         };
                         try!(self.wtr.write_iter(row1.chain(row2)));
                     }
@@ -245,7 +245,7 @@ impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
                 try!(validx.idx.seek(i as u64));
                 let row1 = pad1.iter().map(|f| Ok(&**f));
                 let row2 = unsafe {
-                    validx.idx.csv().byte_fields()
+                    validx.idx.byte_fields()
                 };
                 try!(self.wtr.write_iter(row1.chain(row2)));
             }
@@ -264,7 +264,7 @@ impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
                 // do it for us.
                 if first && !self.no_headers {
                     while let Some(f) =
-                        self.rdr2.next_field().into_iter_result() { try!(f); }
+                        self.rdr2.next_bytes().into_iter_result() { try!(f); }
                     first = false;
                 }
                 let row1 = row1.iter().map(|f| Ok(&**f));
@@ -387,8 +387,7 @@ impl<R: io::Read + io::Seek> ValueIndex<R> {
         try!(rows.write_u64::<BigEndian>(count as u64));
         Ok(ValueIndex {
             values: val_idx,
-            idx: try!(Indexed::new(
-                rdr, io::Cursor::new(rows.into_inner()))),
+            idx: try!(Indexed::open(rdr, io::Cursor::new(rows.into_inner()))),
             num_rows: rowi,
         })
     }
@@ -417,15 +416,15 @@ fn get_row_key(sel: &NormalSelection, row: &[ByteString], casei: bool)
 
 fn transform(bs: &[u8], casei: bool) -> ByteString {
     match str::from_utf8(bs) {
-        Err(_) => ByteString::from_bytes(bs),
+        Err(_) => bs.to_vec(),
         Ok(s) => {
             if !casei {
-                ByteString::from_bytes(s.trim().as_bytes())
+                s.trim().as_bytes().to_vec()
             } else {
                 let norm: String =
                     s.trim().chars()
                      .map(|c| c.to_lowercase().next().unwrap()).collect();
-                ByteString::from_bytes(norm.into_bytes())
+                norm.into_bytes()
             }
         }
     }

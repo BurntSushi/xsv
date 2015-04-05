@@ -64,9 +64,7 @@ pub fn errif_greater_one_stdin(inps: &[Config]) -> Result<(), String> {
     Ok(())
 }
 
-pub fn empty_field() -> csv::ByteString {
-    csv::ByteString::from_bytes::<&[u8]>(&[])
-}
+pub fn empty_field() -> csv::ByteString { vec![] }
 
 pub fn chunk_size(nitems: usize, njobs: usize) -> usize {
     if nitems < njobs {

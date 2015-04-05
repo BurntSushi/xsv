@@ -100,7 +100,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let fields = headers.iter().zip(stats.into_iter());
     for (i, (header, stat)) in fields.enumerate() {
         let header = if args.flag_no_headers {
-            ByteString::from_bytes(i.to_string().into_bytes())
+            i.to_string().into_bytes()
         } else {
             header.clone()
         };
@@ -144,7 +144,7 @@ impl Args {
             pool.execute(move || {
                 let mut idx = args.rconfig().indexed().unwrap().unwrap();
                 idx.seek((i * chunk_size) as u64).unwrap();
-                let it = idx.csv().byte_records().take(chunk_size);
+                let it = idx.byte_records().take(chunk_size);
                 send.send(args.compute(&sel, it).unwrap()).unwrap();
             });
         }
@@ -187,7 +187,7 @@ impl Args {
                   -> CliResult<(Vec<ByteString>, Selection)> {
         let headers = try!(rdr.byte_headers());
         let sel = try!(self.rconfig().selection(&*headers));
-        Ok((sel.select(&*headers).map(ByteString::from_bytes).collect(), sel))
+        Ok((sel.select(&*headers).map(|h| h.to_vec()).collect(), sel))
     }
 
     fn rconfig(&self) -> Config {
@@ -275,7 +275,7 @@ impl Stats {
 
         let t = self.typ;
         self.minmax.as_mut().map(|v| v.add(t, sample));
-        self.mode.as_mut().map(|v| v.add(ByteString::from_bytes(sample)));
+        self.mode.as_mut().map(|v| v.add(sample.to_vec()));
         match self.typ {
             TUnknown => {}
             TNull => {
@@ -455,7 +455,7 @@ impl TypedMinMax {
         if sample.is_empty() {
             return;
         }
-        self.strings.add(ByteString::from_bytes(sample));
+        self.strings.add(sample.to_vec());
         match typ {
             TUnicode | TUnknown | TNull => {}
             TFloat => {

@@ -62,7 +62,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             while !rdr.done() {
                 let mut count = 0usize;
                 loop {
-                    match rdr.next_field().into_iter_result() {
+                    match rdr.next_bytes().into_iter_result() {
                         None => break,
                         Some(r) => { try!(r); }
                     }

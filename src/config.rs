@@ -215,7 +215,7 @@ impl Config {
                   -> CliResult<Option<Indexed<fs::File, fs::File>>> {
         match try!(self.index_files()) {
             None => Ok(None),
-            Some((r, i)) => Ok(Some(try!(Indexed::new(r, i)))),
+            Some((r, i)) => Ok(Some(try!(Indexed::open(r, i)))),
         }
     }
 

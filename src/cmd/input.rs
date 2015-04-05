@@ -44,9 +44,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = try!(rconfig.reader());
     let mut wtr = try!(wconfig.writer());
 
-    rdr = rdr.quote(Some(args.flag_quote.as_byte()));
+    rdr = rdr.quote(args.flag_quote.as_byte());
     if let Some(escape) = args.flag_escape {
-        rdr = rdr.escape(escape.as_byte()).double_quote(false);
+        rdr = rdr.escape(Some(escape.as_byte())).double_quote(false);
     }
     for r in rdr.byte_records() {
         try!(wtr.write(try!(r).into_iter()));

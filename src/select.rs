@@ -285,7 +285,7 @@ impl OneSelector {
                 }
                 let mut num_found = 0;
                 for (i, field) in first_record.iter().enumerate() {
-                    if field == s {
+                    if *field == s.as_bytes() {
                         if num_found == sidx {
                             return Ok(i);
                         }
@@ -293,13 +293,14 @@ impl OneSelector {
                     }
                 }
                 if num_found == 0 {
-                    return Err(format!("Selector name '{}' does not exist \
-                                        as a named header in the given CSV \
-                                        data.", s));
+                    Err(format!("Selector name '{}' does not exist \
+                                 as a named header in the given CSV \
+                                 data.", s))
+                } else {
+                    Err(format!("Selector index '{}' for name '{}' is \
+                                 out of bounds. Must be >= 0 and <= {}.",
+                                 sidx, s, num_found - 1))
                 }
-                Err(format!("Selector index '{}' for name '{}' is \
-                             out of bounds. Must be >= 0 and <= {}.",
-                             sidx, s, num_found - 1))
             }
         }
     }

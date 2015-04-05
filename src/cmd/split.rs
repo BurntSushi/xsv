@@ -98,12 +98,12 @@ impl Args {
             pool.execute(move || {
                 let conf = args.rconfig();
                 let mut idx = conf.indexed().unwrap().unwrap();
-                let headers = idx.csv().byte_headers().unwrap();
+                let headers = idx.byte_headers().unwrap();
                 let mut wtr = args.new_writer(&*headers, i * args.flag_size)
                                   .unwrap();
 
                 idx.seek((i * args.flag_size) as u64).unwrap();
-                for row in idx.csv().byte_records().take(args.flag_size) {
+                for row in idx.byte_records().take(args.flag_size) {
                     let row = row.unwrap();
                     wtr.write(row.into_iter()).unwrap();
                 }

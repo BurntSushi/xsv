@@ -43,7 +43,7 @@ quickcheck = "*"
 log = "*"
 
 # [dependencies.csv]
-# path = "/home/andrew/data/projects/rust/csv"
+# path = "/home/andrew/rust/csv"
 # git = "git://github.com/BurntSushi/rust-csv"
 
 # [dependencies.streaming-stats]

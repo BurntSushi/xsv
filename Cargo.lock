@@ -3,7 +3,7 @@ name = "xsv"
 version = "0.8.44"
 dependencies = [
  "byteorder 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "csv 0.13.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "csv 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "docopt 0.6.59 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -23,7 +23,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "csv"
-version = "0.13.8"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",

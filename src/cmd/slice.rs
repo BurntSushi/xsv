@@ -77,14 +77,14 @@ impl Args {
     fn with_index(&self, mut idx: Indexed<fs::File, fs::File>)
                  -> CliResult<()> {
         let mut wtr = try!(self.wconfig().writer());
-        try!(self.rconfig().write_headers(idx.csv(), &mut wtr));
+        try!(self.rconfig().write_headers(&mut *idx, &mut wtr));
 
         let (start, end) = try!(self.range());
         if end - start == 0 {
             return Ok(());
         }
         try!(idx.seek(start as u64));
-        for r in idx.csv().byte_records().take(end - start) {
+        for r in idx.byte_records().take(end - start) {
             try!(wtr.write(try!(r).into_iter()));
         }
         Ok(try!(wtr.flush()))
