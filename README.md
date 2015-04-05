@@ -302,11 +302,11 @@ With that said, you can grab the
 (Linux x86_64 binary) from GitHub:
 
 ```bash
-$ curl -sOL https://github.com/BurntSushi/xsv/releases/download/0.8.43/xsv-0.8.43-x86_64-unknown-linux-gnu.tar.gz
-$ tar xf xsv-0.8.43-x86_64-unknown-linux-gnu.tar.gz
-$ cd xsv-0.8.43-x86_64-unknown-linux-gnu/
+$ curl -sOL https://github.com/BurntSushi/xsv/releases/download/0.0.0/xsv-0.9.0-x86_64-unknown-linux-gnu.tar.gz
+$ tar xf xsv-0.9.0-x86_64-unknown-linux-gnu.tar.gz
+$ cd xsv-0.9.0-x86_64-unknown-linux-gnu/
 $ ./xsv --version
-0.8.43
+0.9.0
 ```
 
 Alternatively, you can compile from source by
