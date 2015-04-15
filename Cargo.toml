@@ -8,7 +8,7 @@ homepage = "https://github.com/BurntSushi/xsv"
 repository = "https://github.com/BurntSushi/xsv"
 readme = "README.md"
 keywords = ["csv", "tsv", "slice", "command"]
-license = "Unlicense"
+license = "Unlicense/MIT"
 
 [[bin]]
 name = "xsv"

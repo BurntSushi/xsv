@@ -11,6 +11,8 @@ a quick tour of several commands.
 
 [![Build status](https://api.travis-ci.org/BurntSushi/xsv.png)](https://travis-ci.org/BurntSushi/xsv)
 
+Dual-licensed under MIT or the [UNLICENSE](http://unlicense.org).
+
 
 ### Available commands
 
