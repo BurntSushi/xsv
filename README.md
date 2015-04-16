@@ -10,6 +10,7 @@ This README contains information on how to
 a quick tour of several commands.
 
 [![Build status](https://api.travis-ci.org/BurntSushi/xsv.png)](https://travis-ci.org/BurntSushi/xsv)
+[![](http://meritbadge.herokuapp.com/xsv)](https://crates.io/crates/xsv)
 
 Dual-licensed under MIT or the [UNLICENSE](http://unlicense.org).
 
