@@ -58,6 +58,7 @@ log = "*"
 # path = "/home/andrew/data/projects/rust/docopt"
 # git = "git://github.com/docopt/docopt.rs"
 #
+
 # [dev-dependencies.quickcheck]
-# path = "/home/andrew/data/projects/rust/quickcheck"
-# git = "git://github.com/BurntSushi/quickcheck"
+# version = "*"
+# path = "/home/andrew/rust/quickcheck"
