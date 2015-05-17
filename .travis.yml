@@ -1,5 +1,5 @@
 language: rust
 script:
  - cargo build --verbose
- - tree
+ - ls -l --recursive
  - RUST_BACKTRACE=1 cargo test --verbose
