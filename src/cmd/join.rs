@@ -145,11 +145,9 @@ impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
     fn inner_join(mut self) -> CliResult<()> {
         let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2,
                                               self.casei, self.nulls));
-        // println!("{:?}", validx);
         for row in self.rdr1.byte_records() {
             let row = try!(row);
             let key = get_row_key(&self.sel1, &row, self.casei);
-            // println!("row key: {:?}", key);
             match validx.values.get(&key) {
                 None => continue,
                 Some(rows) => {
