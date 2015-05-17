@@ -1,6 +1,6 @@
 use std::env;
 use std::fmt;
-use std::fs::{self, PathExt};
+use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process;
@@ -31,19 +31,6 @@ impl Workdir {
         let dir = root.join(XSV_INTEGRATION_TEST_DIR)
                       .join(name)
                       .join(&format!("test-{}", id));
-
-        // I don't get why this is necessary, but Travis seems to need it?
-        // let md = fs::metadata(&dir);
-        // if fs::metadata(&dir).map(|md| md.is_dir()).unwrap_or(false) {
-            // if let Err(err) = fs::remove_dir_all(&dir) {
-                // panic!("Could not remove directory '{:?}': {}", dir, err);
-            // }
-        // }
-        // if fs::metadata(&dir).map(|md| md.is_file()).unwrap_or(false) {
-            // if let Err(err) = fs::remove_file(&dir) {
-                // panic!("Could not remove file '{:?}': {}", dir, err);
-            // }
-        // }
         if let Err(err) = create_dir_all(&dir) {
             panic!("Could not create '{:?}': {}", dir, err);
         }
@@ -56,11 +43,7 @@ impl Workdir {
     }
 
     pub fn create<T: Csv>(&self, name: &str, rows: T) {
-        let mut wtr = match csv::Writer::from_file(&self.path(name)) {
-            Ok(wtr) => wtr.flexible(self.flexible),
-            Err(err) => panic!("Could not open '{:?}': {}",
-                                self.path(name), err),
-        };
+        let mut wtr = csv::Writer::from_file(&self.path(name)).unwrap();
         for row in rows.to_vecs().into_iter() {
             wtr.write(row.iter()).unwrap();
         }
