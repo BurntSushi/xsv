@@ -43,7 +43,8 @@ impl Workdir {
     }
 
     pub fn create<T: Csv>(&self, name: &str, rows: T) {
-        let mut wtr = csv::Writer::from_file(&self.path(name)).unwrap();
+        let mut wtr = csv::Writer::from_file(&self.path(name))
+                                  .unwrap().flexible(self.flexible);
         for row in rows.to_vecs().into_iter() {
             wtr.write(row.iter()).unwrap();
         }
