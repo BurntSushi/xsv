@@ -134,6 +134,9 @@ impl fmt::Debug for Workdir {
     }
 }
 
+// For whatever reason, `fs::create_dir_all` fails intermittently on Travis
+// with a weird "file exists" error. Despite my best efforts to get to the
+// bottom of it, I've decided a try-wait-and-retry hack is good enough.
 fn create_dir_all<P: AsRef<Path>>(p: P) -> io::Result<()> {
     let mut last_err = None;
     for _ in 0..10 {
