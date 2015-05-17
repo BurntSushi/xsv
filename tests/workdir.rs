@@ -50,8 +50,11 @@ impl Workdir {
     }
 
     pub fn create<T: Csv>(&self, name: &str, rows: T) {
-        let mut wtr = csv::Writer::from_file(&self.path(name)).unwrap()
-                                  .flexible(self.flexible);
+        let mut wtr = match csv::Writer::from_file(&self.path(name)) {
+            Ok(wtr) => wtr.flexible(self.flexible),
+            Err(err) => panic!("Could not open '{:?}': {}",
+                                self.path(name), err),
+        };
         for row in rows.to_vecs().into_iter() {
             wtr.write(row.iter()).unwrap();
         }
