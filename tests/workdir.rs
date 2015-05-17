@@ -33,19 +33,21 @@ impl Workdir {
                       .join(&format!("test-{}", id));
 
         // I don't get why this is necessary, but Travis seems to need it?
-        let md = fs::metadata(&dir);
-        if fs::metadata(&dir).map(|md| md.is_dir()).unwrap_or(false) {
-            if let Err(err) = fs::remove_dir_all(&dir) {
-                panic!("Could not remove directory '{:?}': {}", dir, err);
-            }
-        }
-        if fs::metadata(&dir).map(|md| md.is_file()).unwrap_or(false) {
-            if let Err(err) = fs::remove_file(&dir) {
-                panic!("Could not remove file '{:?}': {}", dir, err);
-            }
-        }
+        // let md = fs::metadata(&dir);
+        // if fs::metadata(&dir).map(|md| md.is_dir()).unwrap_or(false) {
+            // if let Err(err) = fs::remove_dir_all(&dir) {
+                // panic!("Could not remove directory '{:?}': {}", dir, err);
+            // }
+        // }
+        // if fs::metadata(&dir).map(|md| md.is_file()).unwrap_or(false) {
+            // if let Err(err) = fs::remove_file(&dir) {
+                // panic!("Could not remove file '{:?}': {}", dir, err);
+            // }
+        // }
         if let Err(err) = fs::create_dir_all(&dir) {
-            panic!("Could not create '{:?}': {}", dir, err);
+            let md = fs::metadata(&dir).unwrap();
+            panic!("Could not create '{:?}': {} -- {}, {}, {}",
+                   dir, err, md.is_dir(), md.is_file(), md.len());
         }
         Workdir { root: root, dir: dir, flexible: false }
     }
