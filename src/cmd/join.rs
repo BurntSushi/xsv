@@ -11,7 +11,7 @@ use csv::index::Indexed;
 
 use CliResult;
 use config::{Config, Delimiter};
-use select::{SelectColumns, Selection, NormalSelection};
+use select::{SelectColumns, Selection};
 use util;
 
 static USAGE: &'static str = "
@@ -124,9 +124,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 struct IoState<R, W: io::Write> {
     wtr: csv::Writer<W>,
     rdr1: csv::Reader<R>,
-    sel1: NormalSelection,
+    sel1: Selection,
     rdr2: csv::Reader<R>,
-    sel2: NormalSelection,
+    sel2: Selection,
     no_headers: bool,
     casei: bool,
     nulls: bool,
@@ -145,9 +145,11 @@ impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
     fn inner_join(mut self) -> CliResult<()> {
         let mut validx = try!(ValueIndex::new(self.rdr2, &self.sel2,
                                               self.casei, self.nulls));
+        // println!("{:?}", validx);
         for row in self.rdr1.byte_records() {
             let row = try!(row);
-            let key = get_row_key(&self.sel1, &*row, self.casei);
+            let key = get_row_key(&self.sel1, &row, self.casei);
+            // println!("row key: {:?}", key);
             match validx.values.get(&key) {
                 None => continue,
                 Some(rows) => {
@@ -305,9 +307,9 @@ impl Args {
         Ok(IoState {
             wtr: try!(Config::new(&self.flag_output).writer()),
             rdr1: rdr1,
-            sel1: sel1.normal(),
+            sel1: sel1,
             rdr2: rdr2,
-            sel2: sel2.normal(),
+            sel2: sel2,
             no_headers: rconf1.no_headers,
             casei: self.flag_no_case,
             nulls: self.flag_nulls,
@@ -341,12 +343,13 @@ struct ValueIndex<R> {
 }
 
 impl<R: io::Read + io::Seek> ValueIndex<R> {
-    fn new(mut rdr: csv::Reader<R>, nsel: &NormalSelection,
+    fn new(mut rdr: csv::Reader<R>, sel: &Selection,
            casei: bool, nulls: bool)
           -> CliResult<ValueIndex<R>> {
         let mut val_idx = HashMap::with_capacity(10000);
-        let mut rows = io::Cursor::new(Vec::with_capacity(8 * 10000));
+        let mut row_idx = io::Cursor::new(Vec::with_capacity(8 * 10000));
         let (mut rowi, mut count) = (0usize, 0usize);
+        let row_len = try!(rdr.byte_headers()).len();
 
         // This logic is kind of tricky. Basically, we want to include
         // the header row in the line index (because that's what csv::index
@@ -359,18 +362,21 @@ impl<R: io::Read + io::Seek> ValueIndex<R> {
             // ... and if there are headers, we make sure that we've parsed
             // them, and write the offset of the header row to the index.
             try!(rdr.byte_headers());
-            try!(rows.write_u64::<BigEndian>(0));
+            try!(row_idx.write_u64::<BigEndian>(0));
             count += 1;
         }
         while !rdr.done() {
             // This is a bit hokey. We're doing this manually instead of
             // calling `csv::index::create` so we can create both indexes
             // in one pass.
-            try!(rows.write_u64::<BigEndian>(rdr.byte_offset()));
+            try!(row_idx.write_u64::<BigEndian>(rdr.byte_offset()));
 
-            let fields = try!(nsel.select(unsafe { rdr.byte_fields() })
-                                  .map(|v| v.map(|v| transform(v, casei)))
-                                  .collect::<Result<Vec<_>, _>>());
+            let mut row = Vec::with_capacity(row_len);
+            while let Some(r) = rdr.next_bytes().into_iter_result() {
+                row.push(try!(r).to_vec());
+            }
+
+            let fields: Vec<_> = sel.select(&row).map(|v| transform(v, casei)).collect();
             if nulls || !fields.iter().any(|f| f.is_empty()) {
                 match val_idx.entry(fields) {
                     Entry::Vacant(v) => {
@@ -384,10 +390,11 @@ impl<R: io::Read + io::Seek> ValueIndex<R> {
             rowi += 1;
             count += 1;
         }
-        try!(rows.write_u64::<BigEndian>(count as u64));
+        try!(row_idx.write_u64::<BigEndian>(count as u64));
         Ok(ValueIndex {
             values: val_idx,
-            idx: try!(Indexed::open(rdr, io::Cursor::new(rows.into_inner()))),
+            idx: try!(Indexed::open(rdr,
+                                    io::Cursor::new(row_idx.into_inner()))),
             num_rows: rowi,
         })
     }
@@ -409,9 +416,9 @@ impl<R> fmt::Debug for ValueIndex<R> {
     }
 }
 
-fn get_row_key(sel: &NormalSelection, row: &[ByteString], casei: bool)
+fn get_row_key(sel: &Selection, row: &[ByteString], casei: bool)
               -> Vec<ByteString> {
-    sel.select(row.iter()).map(|v| transform(&**v, casei)).collect()
+    sel.select(row).map(|v| transform(&v, casei)).collect()
 }
 
 fn transform(bs: &[u8], casei: bool) -> ByteString {

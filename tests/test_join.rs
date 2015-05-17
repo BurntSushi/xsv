@@ -116,6 +116,35 @@ join_test!(join_outer_full,
 });
 
 #[test]
+fn join_inner_issue11() {
+    let a = vec![
+        svec!["1", "2"],
+        svec!["3", "4"],
+        svec!["5", "6"],
+    ];
+    let b = vec![
+        svec!["2", "1"],
+        svec!["4", "3"],
+        svec!["6", "5"],
+    ];
+
+    let wrk = Workdir::new("join_inner_issue11");
+    wrk.create("a.csv", a);
+    wrk.create("b.csv", b);
+
+    let mut cmd = wrk.command("join");
+    cmd.args(&["1,2", "a.csv", "2,1", "b.csv"]);
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["1", "2", "2", "1"],
+        svec!["3", "4", "4", "3"],
+        svec!["5", "6", "6", "5"],
+    ];
+    assert_eq!(got, expected);
+}
+
+#[test]
 fn join_cross() {
     let wrk = Workdir::new("join_cross");
     wrk.create("letters.csv",
