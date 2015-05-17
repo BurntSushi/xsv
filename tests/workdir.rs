@@ -45,7 +45,11 @@ impl Workdir {
             // }
         // }
         if let Err(err) = fs::create_dir_all(&dir) {
-            let md = fs::metadata(&dir).unwrap();
+            let md = match fs::metadata(&dir) {
+                Ok(md) => md,
+                Err(err) => panic!("Could not get metadata '{:?}': {}",
+                                   dir, err),
+            };
             panic!("Could not create '{:?}': {} -- {}, {}, {}",
                    dir, err, md.is_dir(), md.is_file(), md.len());
         }
