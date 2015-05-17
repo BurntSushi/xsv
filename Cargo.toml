@@ -23,13 +23,14 @@ name = "tests"
 opt-level = 3
 lto = true
 
-[profile.test]
-opt-level = 2
+# [profile.test]
+# opt-level = 2
 
 [dependencies]
 byteorder = "*"
 csv = "*"
 docopt = "*"
+filetime = "*"
 libc = "*"
 rand = "*"
 regex = "*"

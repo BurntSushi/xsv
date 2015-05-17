@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::str;
 
@@ -83,6 +84,11 @@ pub fn num_of_chunks(nitems: usize, chunk_size: usize) -> usize {
         n += 1;
     }
     n
+}
+
+pub fn last_modified(md: &fs::Metadata) -> u64 {
+    use filetime::FileTime;
+    FileTime::from_last_modification_time(md).seconds_relative_to_1970()
 }
 
 pub fn condense<'a>(val: Cow<'a, [u8]>, n: Option<usize>) -> Cow<'a, [u8]> {

@@ -151,11 +151,13 @@ stats_tests!(stats_len_min_null, "min_length", &["", "aa", "a"], "0");
 stats_tests!(stats_len_max_null, "max_length", &["a", "aa", ""], "2");
 
 stats_tests!(stats_mean, "mean", &["5", "15", "10"], "10");
-stats_tests!(stats_stddev, "stddev", &["1", "2", "3"], "0.816497");
+stats_tests!(stats_stddev, "stddev", &["1", "2", "3"], "0.816496580927726");
 stats_tests!(stats_mean_null, "mean", &["", "5", "15", "10"], "10");
-stats_tests!(stats_stddev_null, "stddev", &["1", "2", "3", ""], "0.816497");
+stats_tests!(stats_stddev_null, "stddev", &["1", "2", "3", ""],
+             "0.816496580927726");
 stats_tests!(stats_mean_mix, "mean", &["5", "15.1", "9.9"], "10");
-stats_tests!(stats_stddev_mix, "stddev", &["1", "2.1", "2.9"], "0.778888");
+stats_tests!(stats_stddev_mix, "stddev", &["1", "2.1", "2.9"],
+             "0.7788880963698614");
 
 stats_tests!(stats_cardinality, "cardinality", &["a", "b", "a"], "2");
 stats_tests!(stats_mode, "mode", &["a", "b", "a"], "a");

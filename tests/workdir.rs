@@ -31,7 +31,7 @@ impl Workdir {
         let dir = root.join(XSV_INTEGRATION_TEST_DIR)
                       .join(name)
                       .join(&format!("test-{}", id));
-        if dir.exists() {
+        if fs::metadata(&dir).map(|md| md.is_dir()).unwrap_or(false) {
             if let Err(err) = fs::remove_dir_all(&dir) {
                 panic!("{}", err);
             }

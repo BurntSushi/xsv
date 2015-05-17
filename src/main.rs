@@ -2,11 +2,12 @@
 These are some docs.
 */
 
-#![feature(fs_time, step_by)]
+#![feature(step_by)]
 
 extern crate byteorder;
 extern crate csv;
 extern crate docopt;
+extern crate filetime;
 extern crate libc;
 extern crate rand;
 extern crate regex;

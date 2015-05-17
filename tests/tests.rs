@@ -1,9 +1,10 @@
-#![feature(fs_time, path_ext)]
+#![feature(fs_time)]
 
 #[macro_use] extern crate log;
 extern crate rustc_serialize;
 
 extern crate csv;
+extern crate filetime;
 extern crate quickcheck;
 extern crate rand;
 extern crate stats;

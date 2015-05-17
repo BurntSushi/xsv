@@ -195,8 +195,8 @@ impl Config {
         // If the CSV data was last modified after the index file was last
         // modified, then return an error and demand the user regenerate the
         // index.
-        let data_modified = try!(csv_file.metadata()).modified();
-        let idx_modified = try!(idx_file.metadata()).modified();
+        let data_modified = util::last_modified(&try!(csv_file.metadata()));
+        let idx_modified = util::last_modified(&try!(idx_file.metadata()));
         if data_modified > idx_modified {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
