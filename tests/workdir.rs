@@ -1,7 +1,7 @@
 use std::env;
 use std::fmt;
 use std::fs::{self, PathExt};
-use std::io::Read;
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process;
 use std::str::FromStr;
@@ -44,15 +44,8 @@ impl Workdir {
                 // panic!("Could not remove file '{:?}': {}", dir, err);
             // }
         // }
-        if let Err(err) = fs::create_dir_all(&dir) {
-            let md = match fs::metadata(&dir) {
-                Ok(md) => md,
-                Err(err2) => panic!("Could not get metadata '{:?}': {} \
-                                     (other error: {})",
-                                    dir, err2, err),
-            };
-            panic!("Could not create '{:?}': {} -- {}, {}, {}",
-                   dir, err, md.is_dir(), md.is_file(), md.len());
+        if let Err(err) = create_dir_all(&dir) {
+            panic!("Could not create '{:?}': {}", dir, err);
         }
         Workdir { root: root, dir: dir, flexible: false }
     }
@@ -156,4 +149,17 @@ impl fmt::Debug for Workdir {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "path={}", self.dir.display())
     }
+}
+
+fn create_dir_all<P: AsRef<Path>>(p: P) -> io::Result<()> {
+    let mut last_err = None;
+    for _ in 0..10 {
+        if let Err(err) = fs::create_dir_all(&p) {
+            last_err = Some(err);
+            ::std::thread::sleep_ms(500);
+        } else {
+            return Ok(())
+        }
+    }
+    Err(last_err.unwrap())
 }
