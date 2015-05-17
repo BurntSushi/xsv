@@ -33,14 +33,16 @@ impl Workdir {
                       .join(&format!("test-{}", id));
         if fs::metadata(&dir).map(|md| md.is_dir()).unwrap_or(false) {
             if let Err(err) = fs::remove_dir_all(&dir) {
-                panic!("{}", err);
+                panic!("Could not remove '{:?}': {}", dir, err);
             }
         }
         // Explicitly ignoring an error here seems wrong, but for whatever
         // reason, this appears to fail non-deterministically in Travis because
         // the "path already exists." Does that mean `NEXT_ID` isn't really
         // atomic? Really? Very strange and baffling. ---AG
-        let _ = fs::create_dir_all(&dir);
+        if let Err(err) = fs::create_dir_all(&dir) {
+            panic!("Could not create '{:?}': {}", dir, err);
+        }
         Workdir { root: root, dir: dir, flexible: false }
     }
 
