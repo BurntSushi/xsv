@@ -132,33 +132,25 @@ pub type Idx = Option<usize>;
 
 pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
             -> Result<(usize, usize), String> {
-    let (s, e) =
-        match index {
-            Some(i) => {
-                let exists = |i: Idx| i.is_some();
-                if exists(start) || exists(end) || exists(len) {
-                    return Err("--index cannot be used with \
-                                --start, --end or --len".to_string());
-                }
-                (i, i+1)
+    match (start, end, len, index) {
+        (None, None, None, Some(i)) => Ok((i, i+1)),
+        (_, _, _, Some(_)) =>
+            Err("--index cannot be used with --start, --end or --len".to_string()),
+        (_, Some(_), Some(_), None) =>
+            Err("--end and --len cannot be used at the same time.".to_string()),
+        (_, None, None, None) => return Ok((start.unwrap_or(0), ::std::usize::MAX)),
+        (_, Some(e), None, None) => {
+            let s = start.unwrap_or(0);
+            if s > e {
+                Err(format!("The end of the range ({}) must be greater than or\n\
+                             equal to the start of the range ({}).", e, s))
+            } else {
+                Ok((s, e))
             }
-            None => {
-                let s = start.unwrap_or(0);
-                let e = match (&end, &len) {
-                    (&Some(_), &Some(_)) =>
-                        return Err("--end and --len cannot be used
-                                    at the same time.".to_string()),
-                    (&None, &None) => ::std::usize::MAX,
-                    (&Some(e), &None) => e,
-                    (&None, &Some(l)) => s + l,
-                };
-                (s, e)
-            }
-        };
-    if s > e {
-        return Err(format!(
-            "The end of the range ({}) must be greater than or\n\
-             equal to the start of the range ({}).", e, s));
+        }
+        (_, None, Some(l), None) => {
+            let s = start.unwrap_or(0);
+            Ok((s, s + l))
+        }
     }
-    Ok((s, e))
 }
