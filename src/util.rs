@@ -133,9 +133,8 @@ pub type Idx = Option<usize>;
 pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
             -> Result<(usize, usize), String> {
     match (start, end, len, index) {
-        (Some(_), _, _, Some(_)) | 
-        (_, Some(_), _, Some(_)) | 
-        (_, _, Some(_), Some(_)) => {
+        (None, None, None, Some(i)) => return Ok((i, i+1)),
+        (_, _, _, Some(_)) => {
             return Err("--index cannot be used with \
                         --start, --end or --len".to_string());
         }
