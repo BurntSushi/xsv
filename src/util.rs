@@ -133,29 +133,24 @@ pub type Idx = Option<usize>;
 pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
             -> Result<(usize, usize), String> {
     match (start, end, len, index) {
-        (None, None, None, Some(i)) => return Ok((i, i+1)),
-        (_, _, _, Some(_)) => {
-            return Err("--index cannot be used with \
-                        --start, --end or --len".to_string());
-        }
-        (_, Some(_), Some(_), None) => {
-            return Err("--end and --len cannot be used
-                        at the same time.".to_string());
-        }
+        (None, None, None, Some(i)) => Ok((i, i+1)),
+        (_, _, _, Some(_)) =>
+            Err("--index cannot be used with --start, --end or --len".to_string()),
+        (_, Some(_), Some(_), None) =>
+            Err("--end and --len cannot be used at the same time.".to_string()),
         (_, None, None, None) => return Ok((start.unwrap_or(0), ::std::usize::MAX)),
         (_, Some(e), None, None) => {
             let s = start.unwrap_or(0);
             if s > e {
-                return Err(format!(
-                    "The end of the range ({}) must be greater than or\n\
-                     equal to the start of the range ({}).", e, s));
+                Err(format!("The end of the range ({}) must be greater than or\n\
+                             equal to the start of the range ({}).", e, s))
             } else {
-                return Ok((start.unwrap_or(0), e));
+                Ok((s, e))
             }
         }
         (_, None, Some(l), None) => {
             let s = start.unwrap_or(0);
-            return Ok((s, s + l));
+            Ok((s, s + l))
         }
     }
 }
