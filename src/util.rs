@@ -138,7 +138,6 @@ pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
             return Err("--index cannot be used with \
                         --start, --end or --len".to_string());
         }
-        (_, _, _, Some(i)) => return Ok((i, i+1)),
         (_, Some(_), Some(_), None) => {
             return Err("--end and --len cannot be used
                         at the same time.".to_string());
