@@ -101,7 +101,7 @@ Which cuts it down to about 8 seconds on my machine. (And creating the index
 takes less than 2 seconds.)
 
 Notably, the same type of "statistics" command in another
-[CSV command line toolkit](https://csvkit.readthedocs.org/en/0.9.0/)
+[CSV command line toolkit](https://csvkit.readthedocs.org/en/0.9.6/)
 takes about 2 minutes to produce similar statistics on the same data set.
 
 Creating an index gives us more than just faster statistics gathering. It also
@@ -305,11 +305,11 @@ With that said, you can grab the
 (Linux x86_64 binary) from GitHub:
 
 ```bash
-$ curl -sOL https://github.com/BurntSushi/xsv/releases/download/0.0.0/xsv-0.9.0-x86_64-unknown-linux-gnu.tar.gz
-$ tar xf xsv-0.9.0-x86_64-unknown-linux-gnu.tar.gz
-$ cd xsv-0.9.0-x86_64-unknown-linux-gnu/
+$ curl -sOL https://github.com/BurntSushi/xsv/releases/download/0.0.0/xsv-0.9.6-x86_64-unknown-linux-gnu.tar.gz
+$ tar xf xsv-0.9.6-x86_64-unknown-linux-gnu.tar.gz
+$ cd xsv-0.9.6-x86_64-unknown-linux-gnu/
 $ ./xsv --version
-0.9.0
+0.9.6
 ```
 
 Alternatively, you can compile from source by
