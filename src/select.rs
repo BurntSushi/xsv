@@ -247,8 +247,13 @@ impl Selector {
                     Ordering::Equal => vec!(i1),
                     Ordering::Less => (i1..(i2 + 1)).collect(),
                     Ordering::Greater => {
-                        (i1 as isize..(i2 as isize - 1))
-                        .step_by(-1).map(|i| i as usize).collect()
+                        let mut inds = vec![];
+                        let mut i = i1 + 1;
+                        while i > i2 {
+                            i -= 1;
+                            inds.push(i);
+                        }
+                        inds
                     }
                 })
             }

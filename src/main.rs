@@ -2,8 +2,6 @@
 These are some docs.
 */
 
-#![feature(step_by)]
-
 extern crate byteorder;
 extern crate csv;
 extern crate docopt;
