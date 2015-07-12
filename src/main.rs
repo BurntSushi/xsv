@@ -3,6 +3,7 @@ These are some docs.
 */
 
 extern crate byteorder;
+extern crate chan;
 extern crate csv;
 extern crate docopt;
 extern crate filetime;

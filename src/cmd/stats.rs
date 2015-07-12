@@ -6,9 +6,11 @@ use std::io;
 use std::iter::repeat;
 use std::str::{self, FromStr};
 
+use chan;
 use csv::{self, ByteString};
 use csv::index::Indexed;
 use stats::{Commute, OnlineStats, MinMax, Unsorted, merge_all};
+use threadpool::ThreadPool;
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -122,9 +124,6 @@ impl Args {
 
     fn parallel_stats(&self, idx: Indexed<fs::File, fs::File>)
                      -> CliResult<(Vec<ByteString>, Vec<Stats>)> {
-        use threadpool::ThreadPool;
-        use std::sync::mpsc::channel;
-
         // N.B. This method doesn't handle the case when the number of records
         // is zero correctly. (So we use `sequential_stats` instead.
         if idx.count() == 0 {
@@ -138,14 +137,14 @@ impl Args {
         let nchunks = util::num_of_chunks(idx.count() as usize, chunk_size);
 
         let pool = ThreadPool::new(self.njobs());
-        let (send, recv) = channel();
+        let (send, recv) = chan::sync(0);
         for i in 0..nchunks {
             let (send, args, sel) = (send.clone(), self.clone(), sel.clone());
             pool.execute(move || {
                 let mut idx = args.rconfig().indexed().unwrap().unwrap();
                 idx.seek((i * chunk_size) as u64).unwrap();
                 let it = idx.byte_records().take(chunk_size);
-                send.send(args.compute(&sel, it).unwrap()).unwrap();
+                send.send(args.compute(&sel, it).unwrap());
             });
         }
         drop(send);
@@ -153,20 +152,16 @@ impl Args {
     }
 
     fn stats_to_records(&self, stats: Vec<Stats>) -> Vec<Vec<String>> {
-        use threadpool::ThreadPool;
-        use std::sync::mpsc::channel;
-
         let mut records: Vec<_> = repeat(vec![]).take(stats.len()).collect();
         let pool = ThreadPool::new(self.njobs());
         let mut results = vec![];
         for mut stat in stats.into_iter() {
-            let (tx, rx) = channel();
-            results.push(rx);
-            pool.execute(move || { tx.send(stat.to_record()).unwrap(); });
+            let (send, recv) = chan::sync(0);
+            results.push(recv);
+            pool.execute(move || { send.send(stat.to_record()); });
         }
-        for (i, rx) in results.into_iter().enumerate() {
-            // This unwrap seems suspicious. What could go wrong? ---AG
-            records[i] = rx.recv().unwrap();
+        for (i, recv) in results.into_iter().enumerate() {
+            records[i] = recv.recv().unwrap();
         }
         records
     }

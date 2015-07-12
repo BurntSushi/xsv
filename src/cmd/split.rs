@@ -2,8 +2,10 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
+use chan;
 use csv;
 use csv::index::Indexed;
+use threadpool::ThreadPool;
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -85,16 +87,14 @@ impl Args {
 
     fn parallel_split(&self, idx: Indexed<fs::File, fs::File>)
                      -> CliResult<()> {
-        use threadpool::ThreadPool;
-        use std::sync::mpsc::channel;
-
         let nchunks = util::num_of_chunks(idx.count() as usize,
                                           self.flag_size);
         let pool = ThreadPool::new(self.njobs());
-        let (tx, rx) = channel();
+        let wg = chan::WaitGroup::new();
         for i in 0..nchunks {
+            wg.add(1);
             let args = self.clone();
-            let tx = tx.clone();
+            let wg = wg.clone();
             pool.execute(move || {
                 let conf = args.rconfig();
                 let mut idx = conf.indexed().unwrap().unwrap();
@@ -108,11 +108,10 @@ impl Args {
                     wtr.write(row.into_iter()).unwrap();
                 }
                 wtr.flush().unwrap();
-                tx.send(()).unwrap();
+                wg.done();
             });
         }
-        drop(tx);
-        for _ in rx.iter() {}
+        wg.wait();
         Ok(())
     }
 

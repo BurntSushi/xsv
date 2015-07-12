@@ -1,9 +1,11 @@
 use std::fs;
 use std::io;
 
+use chan;
 use csv::{self, ByteString};
 use csv::index::Indexed;
 use stats::{Frequencies, merge_all};
+use threadpool::ThreadPool;
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -135,9 +137,6 @@ impl Args {
 
     fn parallel_ftables(&self, idx: &mut Indexed<fs::File, fs::File>)
                        -> CliResult<(Headers, FTables)> {
-        use threadpool::ThreadPool;
-        use std::sync::mpsc::channel;
-
         let mut rdr = try!(self.rconfig().reader());
         let (headers, sel) = try!(self.sel_headers(&mut rdr));
 
@@ -149,14 +148,14 @@ impl Args {
         let nchunks = util::num_of_chunks(idx.count() as usize, chunk_size);
 
         let pool = ThreadPool::new(self.njobs());
-        let (send, recv) = channel();
+        let (send, recv) = chan::sync(0);
         for i in 0..nchunks {
             let (send, args, sel) = (send.clone(), self.clone(), sel.clone());
             pool.execute(move || {
                 let mut idx = args.rconfig().indexed().unwrap().unwrap();
                 idx.seek((i * chunk_size) as u64).unwrap();
                 let it = idx.byte_records().take(chunk_size);
-                send.send(args.ftables(&sel, it).unwrap()).unwrap();
+                send.send(args.ftables(&sel, it).unwrap());
             });
         }
         drop(send);

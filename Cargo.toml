@@ -21,13 +21,13 @@ name = "tests"
 
 [profile.release]
 opt-level = 3
-lto = true
 
 [profile.test]
 opt-level = 2
 
 [dependencies]
 byteorder = "*"
+chan = "0.1"
 csv = "*"
 docopt = "*"
 filetime = "*"
