@@ -2,6 +2,8 @@
 These are some docs.
 */
 
+#![allow(deprecated)] // for connect -> join rename
+
 extern crate byteorder;
 extern crate chan;
 extern crate csv;

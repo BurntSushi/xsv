@@ -26,22 +26,22 @@ opt-level = 3
 opt-level = 2
 
 [dependencies]
-byteorder = "*"
+byteorder = "0.3"
 chan = "0.1"
-csv = "*"
-docopt = "*"
-filetime = "*"
-libc = "*"
-rand = "*"
-regex = "*"
-rustc-serialize = "*"
-streaming-stats = "*"
-tabwriter = "*"
-threadpool = "*"
+csv = "0.14"
+docopt = "0.6"
+filetime = "0.1"
+libc = "0.1"
+rand = "0.3"
+regex = "0.1"
+rustc-serialize = "0.3"
+streaming-stats = "0.1"
+tabwriter = "0.1"
+threadpool = "0.1"
 
 [dev-dependencies]
-quickcheck = "*"
-log = "*"
+quickcheck = "0.2"
+log = "0.3"
 
 # [dependencies.csv]
 # path = "/home/andrew/rust/csv"
