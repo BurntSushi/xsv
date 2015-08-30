@@ -1,11 +1,11 @@
 [root]
 name = "xsv"
-version = "0.9.7"
+version = "0.9.8"
 dependencies = [
  "byteorder 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "chan 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "csv 0.14.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "docopt 0.6.71 (registry+https://github.com/rust-lang/crates.io-index)",
+ "docopt 0.6.72 (registry+https://github.com/rust-lang/crates.io-index)",
  "filetime 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -59,7 +59,7 @@ dependencies = [
 
 [[package]]
 name = "docopt"
-version = "0.6.71"
+version = "0.6.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "regex 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)",
