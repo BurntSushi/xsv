@@ -73,3 +73,35 @@ fn search_select_no_headers() {
     ];
     assert_eq!(got, expected);
 }
+
+#[test]
+fn search_invert_match() {
+    let wrk = Workdir::new("search_invert_match");
+    wrk.create("data.csv", data(false));
+    let mut cmd = wrk.command("search");
+    cmd.arg("^foo").arg("data.csv");
+    cmd.arg("--invert-match");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["foobar", "barfoo"],
+        svec!["a", "b"],
+    ];
+    assert_eq!(got, expected);
+}
+
+#[test]
+fn search_invert_match_no_headers() {
+    let wrk = Workdir::new("search_invert_match");
+    wrk.create("data.csv", data(false));
+    let mut cmd = wrk.command("search");
+    cmd.arg("^foo").arg("data.csv");
+    cmd.arg("--invert-match");
+    cmd.arg("--no-headers");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["a", "b"],
+    ];
+    assert_eq!(got, expected);
+}

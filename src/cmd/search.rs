@@ -20,6 +20,7 @@ Usage:
 search options:
     -s, --select <arg>     Select the columns to search. See 'xsv select -h'
                            for the full syntax.
+    -v, --invert-match     Select only rows that did not match
 
 Common options:
     -h, --help             Display this message
@@ -39,6 +40,7 @@ struct Args {
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
+    flag_invert_match: bool,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -59,7 +61,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     if rconfig.no_headers { wrote_headers = true; }
     for row in rdr.records() {
         let row = try!(row);
-        if nsel.select(row.iter()).any(|f| pattern.is_match(&**f)) {
+        let mut is_match = nsel.select(row.iter()).any(|f| pattern.is_match(&**f));
+        if args.flag_invert_match {
+            is_match = !is_match;
+        }
+        if is_match {
             if !wrote_headers {
                 try!(wtr.write(headers.iter()));
                 wrote_headers = true;
