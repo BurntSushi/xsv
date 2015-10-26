@@ -10,6 +10,16 @@ use rustc_serialize::Decodable;
 use CliResult;
 use config::{Config, Delimiter};
 
+#[cfg(windows)]
+pub fn num_cpus() -> usize {
+    unsafe {
+        let mut sysinfo = ::std::mem::zeroed();
+        ::libc::GetSystemInfo(&mut sysinfo);
+        sysinfo.dwNumberOfProcessors as usize
+    }
+}
+
+#[cfg(unix)]
 pub fn num_cpus() -> usize {
     unsafe {
         return rust_get_num_cpus() as usize;
