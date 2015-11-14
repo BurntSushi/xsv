@@ -9,7 +9,7 @@ extern crate chan;
 extern crate csv;
 extern crate docopt;
 extern crate filetime;
-extern crate libc;
+extern crate num_cpus;
 extern crate rand;
 extern crate regex;
 extern crate rustc_serialize;
