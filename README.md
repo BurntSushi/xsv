@@ -9,7 +9,8 @@ This README contains information on how to
 [install `xsv`](https://github.com/BurntSushi/xsv#installation), in addition to
 a quick tour of several commands.
 
-[![Build status](https://api.travis-ci.org/BurntSushi/xsv.png)](https://travis-ci.org/BurntSushi/xsv)
+[![Linux build status](https://api.travis-ci.org/BurntSushi/xsv.png)](https://travis-ci.org/BurntSushi/xsv)
+[![Windows build status](https://ci.appveyor.com/api/projects/status/github/BurntSushi/xsv?svg=true)](https://ci.appveyor.com/project/BurntSushi/xsv)
 [![](http://meritbadge.herokuapp.com/xsv)](https://crates.io/crates/xsv)
 
 Dual-licensed under MIT or the [UNLICENSE](http://unlicense.org).
