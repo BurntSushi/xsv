@@ -95,7 +95,7 @@ impl Args {
         // Find the lengths of each record. If a length varies, then an error
         // will occur so we can rely on the first length being the correct one.
         let mut lengths = vec!();
-        for rdr in rdrs.iter_mut() {
+        for rdr in &mut rdrs {
             lengths.push(try!(rdr.byte_headers()).len());
         }
 

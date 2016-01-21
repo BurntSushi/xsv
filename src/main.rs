@@ -161,7 +161,7 @@ enum Command {
 
 impl Command {
     fn run(self) -> CliResult<()> {
-        let argv: Vec<_> = env::args().map(|v| v.to_string()).collect();
+        let argv: Vec<_> = env::args().map(|v| v.to_owned()).collect();
         let argv: Vec<_> = argv.iter().map(|s| &**s).collect();
         let argv = &*argv;
         match self {
