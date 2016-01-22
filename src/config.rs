@@ -70,7 +70,7 @@ impl Config {
             Some(ref s) => {
                 let path = PathBuf::from(s);
                 let delim =
-                    if path.extension().map(|v| v == "tsv").unwrap_or(false) {
+                    if path.extension().map_or(false, |v| v == "tsv") {
                         b'\t'
                     } else {
                         b','
@@ -127,7 +127,7 @@ impl Config {
                     -> Result<Selection, String> {
         match self.select_columns {
             None => Err("Config has no 'SelectColums'. Did you call \
-                         Config::select?".to_string()),
+                         Config::select?".to_owned()),
             Some(ref sel) => sel.selection(first_record, !self.no_headers),
         }
     }

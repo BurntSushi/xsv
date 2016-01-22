@@ -43,7 +43,7 @@ impl SelectColumns {
         }
 
         let mut map = vec![];
-        for sel in self.selectors.iter() {
+        for sel in &self.selectors {
             let idxs = sel.indices(first_record, use_names);
             map.extend(try!(idxs).into_iter());
         }
@@ -165,7 +165,7 @@ impl SelectorParser {
             match self.cur() {
                 None => {
                     return Err("Unclosed quote, missing closing \"."
-                               .to_string());
+                               .to_owned());
                 }
                 Some('"') => {
                     self.bump();
@@ -191,7 +191,7 @@ impl SelectorParser {
             match self.cur() {
                 None => {
                     return Err("Unclosed index bracket, missing closing ]."
-                               .to_string());
+                               .to_owned());
                 }
                 Some(']') => { self.bump(); break; }
                 Some(c) => { idx.push(c); self.bump(); }
@@ -203,15 +203,15 @@ impl SelectorParser {
     }
 
     fn cur(&self) -> Option<char> {
-        self.chars.get(self.pos).map(|c| *c)
+        self.chars.get(self.pos).cloned()
     }
 
     fn is_end_of_field(&self) -> bool {
-        self.cur().map(|c| c == ',' || c == '-').unwrap_or(true)
+        self.cur().map_or(true, |c| c == ',' || c == '-')
     }
 
     fn is_end_of_selector(&self) -> bool {
-        self.cur().map(|c| c == ',').unwrap_or(true)
+        self.cur().map_or(true, |c| c == ',')
     }
 
     fn bump(&mut self) {
@@ -236,11 +236,11 @@ enum OneSelector {
 impl Selector {
     fn indices(&self, first_record: &[csv::ByteString], use_names: bool)
               -> Result<Vec<usize>, String> {
-        match self {
-            &Selector::One(ref sel) => {
+        match *self {
+            Selector::One(ref sel) => {
                 sel.index(first_record, use_names).map(|i| vec![i])
             }
-            &Selector::Range(ref sel1, ref sel2) => {
+            Selector::Range(ref sel1, ref sel2) => {
                 let i1 = try!(sel1.index(first_record, use_names));
                 let i2 = try!(sel2.index(first_record, use_names));
                 Ok(match i1.cmp(&i2) {
@@ -336,7 +336,7 @@ impl fmt::Debug for OneSelector {
 #[derive(Clone, Debug)]
 pub struct Selection(Vec<usize>);
 
-type _GetField = for <'c> fn(&mut &'c [csv::ByteString], &usize)
+pub type _GetField = for <'c> fn(&mut &'c [csv::ByteString], &usize)
                             -> Option<&'c [u8]>;
 
 impl Selection {
@@ -351,8 +351,8 @@ impl Selection {
                         -> Option<&'c [u8]> {
             Some(&row[*idx])
         }
-        let _get_field: _GetField = get_field;
-        self.iter().scan(row, _get_field)
+        let get_field: _GetField = get_field;
+        self.iter().scan(row, get_field)
     }
 
     pub fn normal(&self) -> NormalSelection {
@@ -380,7 +380,7 @@ impl Selection {
 impl ops::Deref for Selection {
     type Target = [usize];
 
-    fn deref<'a>(&'a self) -> &'a [usize] {
+    fn deref(&self) -> &[usize] {
         &self.0
     }
 }
@@ -388,18 +388,18 @@ impl ops::Deref for Selection {
 #[derive(Clone, Debug)]
 pub struct NormalSelection(Vec<bool>);
 
-type _NormalScan<'a, T, I> = iter::Scan<
+pub type _NormalScan<'a, T, I> = iter::Scan<
     iter::Enumerate<I>,
     &'a [bool],
     _NormalGetField<T>,
 >;
 
-type _NormalFilterMap<'a, T, I> = iter::FilterMap<
+pub type _NormalFilterMap<'a, T, I> = iter::FilterMap<
     _NormalScan<'a, T, I>,
     fn(Option<T>) -> Option<T>
 >;
 
-type _NormalGetField<T> = fn(&mut &[bool], (usize, T)) -> Option<Option<T>>;
+pub type _NormalGetField<T> = fn(&mut &[bool], (usize, T)) -> Option<Option<T>>;
 
 impl NormalSelection {
     pub fn select<'a, T, I>(&'a self, row: I) -> _NormalFilterMap<'a, T, I>
@@ -410,9 +410,9 @@ impl NormalSelection {
             let (i, v) = t;
             if i < set.len() && set[i] { Some(Some(v)) } else { Some(None) }
         }
-        let _get_field: _NormalGetField<T> = get_field;
-        let _filmap: fn(Option<T>) -> Option<T> = filmap;
-        row.enumerate().scan(&**self, _get_field).filter_map(_filmap)
+        let get_field: _NormalGetField<T> = get_field;
+        let filmap: fn(Option<T>) -> Option<T> = filmap;
+        row.enumerate().scan(&**self, get_field).filter_map(filmap)
     }
 
     pub fn len(&self) -> usize {
@@ -423,7 +423,7 @@ impl NormalSelection {
 impl ops::Deref for NormalSelection {
     type Target = [bool];
 
-    fn deref<'a>(&'a self) -> &'a [bool] {
+    fn deref(&self) -> &[bool] {
         &self.0
     }
 }

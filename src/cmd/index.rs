@@ -53,6 +53,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                          .delimiter(args.flag_delimiter);
     let rdr = try!(rconfig.reader_file());
     let idx = io::BufWriter::new(try!(fs::File::create(&pidx)));
-    let _ = try!(csv::index::create_index(rdr, idx));
+    try!(csv::index::create_index(rdr, idx));
     Ok(())
 }

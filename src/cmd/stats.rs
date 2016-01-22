@@ -148,7 +148,7 @@ impl Args {
             });
         }
         drop(send);
-        Ok((headers, merge_all(recv.iter()).unwrap_or(vec![])))
+        Ok((headers, merge_all(recv.iter()).unwrap_or_else(Vec::new)))
     }
 
     fn stats_to_records(&self, stats: Vec<Stats>) -> Vec<Vec<String>> {
@@ -216,7 +216,7 @@ impl Args {
         if self.flag_median || all { fields.push("median"); }
         if self.flag_mode || all { fields.push("mode"); }
         if self.flag_cardinality || all { fields.push("cardinality"); }
-        fields.into_iter().map(|s| s.to_string()).collect()
+        fields.into_iter().map(|s| s.to_owned()).collect()
     }
 }
 
@@ -296,7 +296,7 @@ impl Stats {
     fn to_record(&mut self) -> Vec<String> {
         let typ = self.typ;
         let mut pieces = vec![];
-        let empty = || "".to_string();
+        let empty = || "".to_owned();
 
         pieces.push(self.typ.to_string());
         match self.minmax.as_ref().and_then(|mm| mm.show(typ)) {
@@ -342,7 +342,7 @@ impl Stats {
                         String::from_utf8_lossy(&*s).into_owned()
                     };
                     pieces.push(
-                        v.mode().map(lossy).unwrap_or("N/A".to_owned()));
+                        v.mode().map_or("N/A".to_owned(), lossy));
                 }
                 if self.which.cardinality {
                     pieces.push(v.cardinality().to_string());

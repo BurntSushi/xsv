@@ -24,7 +24,7 @@ pub fn version() -> String {
     match (maj, min, pat) {
         (Some(maj), Some(min), Some(pat)) =>
             format!("{}.{}.{}", maj, min, pat),
-        _ => "".to_string(),
+        _ => "".to_owned(),
     }
 }
 
@@ -41,7 +41,7 @@ pub fn many_configs(inps: &[String], delim: Option<Delimiter>,
                     no_headers: bool) -> Result<Vec<Config>, String> {
     let mut inps = inps.to_vec();
     if inps.is_empty() {
-        inps.push("-".to_string()); // stdin
+        inps.push("-".to_owned()); // stdin
     }
     let confs = inps.into_iter()
                     .map(|p| Config::new(&Some(p))
@@ -55,7 +55,7 @@ pub fn many_configs(inps: &[String], delim: Option<Delimiter>,
 pub fn errif_greater_one_stdin(inps: &[Config]) -> Result<(), String> {
     let nstd = inps.iter().filter(|inp| inp.is_std()).count();
     if nstd > 1 {
-        return Err("At most one <stdin> input is allowed.".to_string());
+        return Err("At most one <stdin> input is allowed.".to_owned());
     }
     Ok(())
 }
@@ -130,10 +130,10 @@ pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
     match (start, end, len, index) {
         (None, None, None, Some(i)) => Ok((i, i+1)),
         (_, _, _, Some(_)) =>
-            Err("--index cannot be used with --start, --end or --len".to_string()),
+            Err("--index cannot be used with --start, --end or --len".to_owned()),
         (_, Some(_), Some(_), None) =>
-            Err("--end and --len cannot be used at the same time.".to_string()),
-        (_, None, None, None) => return Ok((start.unwrap_or(0), ::std::usize::MAX)),
+            Err("--end and --len cannot be used at the same time.".to_owned()),
+        (_, None, None, None) => Ok((start.unwrap_or(0), ::std::usize::MAX)),
         (_, Some(e), None, None) => {
             let s = start.unwrap_or(0);
             if s > e {
