@@ -1,6 +1,6 @@
 [root]
 name = "xsv"
-version = "0.9.11"
+version = "0.9.12"
 dependencies = [
  "byteorder 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "chan 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
