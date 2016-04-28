@@ -336,8 +336,8 @@ impl fmt::Debug for OneSelector {
 #[derive(Clone, Debug)]
 pub struct Selection(Vec<usize>);
 
-pub type _GetField = for <'c> fn(&mut &'c [csv::ByteString], &usize)
-                            -> Option<&'c [u8]>;
+pub type _GetField =
+    for <'c> fn(&mut &'c [csv::ByteString], &usize) -> Option<&'c [u8]>;
 
 impl Selection {
     pub fn select<'a, 'b>(&'a self, row: &'b [csv::ByteString])
@@ -399,7 +399,8 @@ pub type _NormalFilterMap<'a, T, I> = iter::FilterMap<
     fn(Option<T>) -> Option<T>
 >;
 
-pub type _NormalGetField<T> = fn(&mut &[bool], (usize, T)) -> Option<Option<T>>;
+pub type _NormalGetField<T> =
+    fn(&mut &[bool], (usize, T)) -> Option<Option<T>>;
 
 impl NormalSelection {
     pub fn select<'a, T, I>(&'a self, row: I) -> _NormalFilterMap<'a, T, I>
