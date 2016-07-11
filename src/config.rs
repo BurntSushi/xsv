@@ -1,6 +1,7 @@
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::env;
+use std::fmt;
 use std::fs;
 use std::io::{self, Read, Write};
 use std::ops::Deref;
@@ -13,6 +14,7 @@ use rustc_serialize::{Decodable, Decoder};
 use CliResult;
 use select::{SelectColumns, Selection, NormalSelection};
 use util;
+
 
 #[derive(Clone, Copy, Debug)]
 pub struct Delimiter(pub u8);
@@ -225,7 +227,13 @@ impl Config {
                 Some(ref p) => {
                     match fs::File::open(p){
                         Ok(x) => Box::new(x),
-                        Err(err) => panic!("File at {:?} not found!",p)
+                        Err(err) => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::NotFound,
+                                fmt::format(format_args!("File {} not found!", p.display()))
+                            
+                            ))
+                        }
                     }
                 },
             })
