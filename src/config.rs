@@ -230,9 +230,9 @@ impl Config {
                         Err(err) => {
                             return Err(io::Error::new(
                                 io::ErrorKind::NotFound,
-                                fmt::format(format_args!("File {} not found!", p.display()))
+                                format!("File {} not found!", p.display()))
                             
-                            ))
+                            )
                         }
                     }
                 },
