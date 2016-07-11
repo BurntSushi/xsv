@@ -221,9 +221,14 @@ impl Config {
 
     pub fn io_reader(&self) -> io::Result<Box<io::Read+'static>> {
         Ok(match self.path {
-            None => Box::new(io::stdin()),
-            Some(ref p) => Box::new(try!(fs::File::open(p))),
-        })
+                None => Box::new(io::stdin()),
+                Some(ref p) => {
+                    match fs::File::open(p){
+                        Ok(x) => Box::new(x),
+                        Err(err) => panic!("File at {:?} not found!",p)
+                    }
+                },
+            })
     }
 
     pub fn from_reader<R: Read>(&self, rdr: R) -> csv::Reader<R> {
