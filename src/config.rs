@@ -1,6 +1,7 @@
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::env;
+use std::fmt;
 use std::fs;
 use std::io::{self, Read, Write};
 use std::ops::Deref;
@@ -13,6 +14,7 @@ use rustc_serialize::{Decodable, Decoder};
 use CliResult;
 use select::{SelectColumns, Selection, NormalSelection};
 use util;
+
 
 #[derive(Clone, Copy, Debug)]
 pub struct Delimiter(pub u8);
@@ -221,9 +223,20 @@ impl Config {
 
     pub fn io_reader(&self) -> io::Result<Box<io::Read+'static>> {
         Ok(match self.path {
-            None => Box::new(io::stdin()),
-            Some(ref p) => Box::new(try!(fs::File::open(p))),
-        })
+                None => Box::new(io::stdin()),
+                Some(ref p) => {
+                    match fs::File::open(p){
+                        Ok(x) => Box::new(x),
+                        Err(err) => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::NotFound,
+                                format!("File {} not found!", p.display()))
+                            
+                            )
+                        }
+                    }
+                },
+            })
     }
 
     pub fn from_reader<R: Read>(&self, rdr: R) -> csv::Reader<R> {
