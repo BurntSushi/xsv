@@ -1,7 +1,6 @@
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::env;
-use std::fmt;
 use std::fs;
 use std::io::{self, Read};
 use std::ops::Deref;
@@ -228,11 +227,12 @@ impl Config {
                     match fs::File::open(p){
                         Ok(x) => Box::new(x),
                         Err(err) => {
+                            let msg = format!(
+                                "failed to open {}: {}", p.display(), err);
                             return Err(io::Error::new(
                                 io::ErrorKind::NotFound,
-                                format!("File {} not found!", p.display()))
-                            
-                            )
+                                msg,
+                            ));
                         }
                     }
                 },
