@@ -1,13 +1,75 @@
+#language: rust
+#rust:
+#  - 1.9.0
+#  - stable
+#  - beta
+#  - nightly
+#script:
+#  - cargo build --verbose
+#  - cargo doc
+#  - cargo test --verbose
+#  - if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
+#      cargo bench --verbose;
+#    fi
+
 language: rust
-rust:
-  - 1.9.0
-  - stable
-  - beta
-  - nightly
+cache: cargo
+
+env:
+  global:
+    - PROJECT_NAME=xsv
+matrix:
+  include:
+    # Stable channel
+    - os: osx
+      rust: stable
+      env: TARGET=i686-apple-darwin
+    - os: linux
+      rust: stable
+      env: TARGET=i686-unknown-linux-musl
+    - os: osx
+      rust: stable
+      env: TARGET=x86_64-apple-darwin
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-musl
+
+before_install:
+  - export PATH="$PATH:$HOME/.cargo/bin"
+
+install:
+  - bash ci/install.sh
+
 script:
-  - cargo build --verbose
-  - cargo doc
-  - cargo test --verbose
-  - if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
-      cargo bench --verbose;
-    fi
+  - bash ci/script.sh
+
+before_deploy:
+  - bash ci/before_deploy.sh
+
+deploy:
+  provider: releases
+  api_key:
+    secure: aDT53aTIcl6RLcd4/StnKT55LgJyjiCtsmu1Byy0TIEtP4ZfNhsHwCbqyZT6TLownLJPi5wLM1WRncGKNYQelFDk/mUA8YugcFDfiSN//ZZ8KLAQiI+PX6JCrFYr/ZmP4dJzFWS1hPsr/X0gdbrlb3kuQG7BI9gH3GY4yTsLNiY=
+  file_glob: true
+  file: ${PROJECT_NAME}-${TRAVIS_TAG}-${TARGET}.*
+  # don't delete the artifacts from previous phases
+  skip_cleanup: true
+  # deploy when a new tag is pushed
+  on:
+    # channel to use to produce the release artifacts
+    # NOTE make sure you only release *once* per target
+    # TODO you may want to pick a different channel
+    condition: $TRAVIS_RUST_VERSION = stable
+    tags: true
+
+branches:
+  only:
+    # Pushes and PR to the master branch
+    - master
+    # IMPORTANT Ruby regex to match tags. Required, or travis won't trigger deploys when a new tag
+    # is pushed. This regex matches semantic versions like v1.2.3-rc4+2016.02.22
+    - /^\d+\.\d+\.\d+.*$/
+
+notifications:
+  email:
+    on_success: never
