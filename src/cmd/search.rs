@@ -57,19 +57,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let headers = try!(rdr.byte_headers());
     let nsel = try!(rconfig.normal_selection(&*headers));
 
-    let mut wrote_headers = false;
-    if rconfig.no_headers { wrote_headers = true; }
+    if !rconfig.no_headers {
+        try!(wtr.write(headers.iter()));
+    }
     for row in rdr.records() {
         let row = try!(row);
-        let mut is_match = nsel.select(row.iter()).any(|f| pattern.is_match(&**f));
+        let mut m = nsel.select(row.iter()).any(|f| pattern.is_match(&**f));
         if args.flag_invert_match {
-            is_match = !is_match;
+            m = !m;
         }
-        if is_match {
-            if !wrote_headers {
-                try!(wtr.write(headers.iter()));
-                wrote_headers = true;
-            }
+        if m {
             try!(wtr.write(row.iter().map(|f| &**f)));
         }
     }
