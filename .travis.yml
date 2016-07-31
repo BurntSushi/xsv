@@ -1,7 +1,7 @@
 language: rust
 rust:
-  - 1.2.0
-  - 1.1.0
+  - 1.9.0
+  - stable
   - beta
   - nightly
 script:
