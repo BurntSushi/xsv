@@ -23,7 +23,7 @@ name = "tests"
 opt-level = 3
 
 [profile.test]
-opt-level = 2
+opt-level = 3
 
 [dependencies]
 byteorder = "0.5"
