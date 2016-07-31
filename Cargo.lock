@@ -4,7 +4,7 @@ version = "0.9.14"
 dependencies = [
  "byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "chan 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "csv 0.14.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "csv 0.14.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "docopt 0.6.82 (registry+https://github.com/rust-lang/crates.io-index)",
  "filetime 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -41,7 +41,7 @@ dependencies = [
 
 [[package]]
 name = "csv"
-version = "0.14.5"
+version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
