@@ -56,3 +56,16 @@ abcdef,ghijkl\r
 mnopqr,stuvwx";
     assert_eq!(got, expected.to_string());
 }
+
+#[test]
+fn fmt_quote_always() {
+    let (wrk, mut cmd) = setup("fmt_quote_always");
+    cmd.arg("--quote-always");
+
+    let got: String = wrk.stdout(&mut cmd);
+    let expected = "\
+\"h1\",\"h2\"
+\"abcdef\",\"ghijkl\"
+\"mnopqr\",\"stuvwx\"";
+    assert_eq!(got, expected.to_string());
+}
