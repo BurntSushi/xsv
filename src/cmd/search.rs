@@ -1,4 +1,4 @@
-use regex::Regex;
+use regex::RegexBuilder;
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -18,6 +18,8 @@ Usage:
     xsv search --help
 
 search options:
+    -i, --ignore-case      Case insensitive search. This is equivalent to
+                           prefixing the regex with '(?i)'.
     -s, --select <arg>     Select the columns to search. See 'xsv select -h'
                            for the full syntax.
     -v, --invert-match     Select only rows that did not match
@@ -41,11 +43,16 @@ struct Args {
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
     flag_invert_match: bool,
+    flag_ignore_case: bool,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
-    let pattern = try!(Regex::new(&*args.arg_regex));
+    let pattern = try!(
+        RegexBuilder::new(&*args.arg_regex)
+                     .case_insensitive(args.flag_ignore_case)
+                     .compile()
+    );
     let rconfig = Config::new(&args.arg_input)
                          .delimiter(args.flag_delimiter)
                          .no_headers(args.flag_no_headers)

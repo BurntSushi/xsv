@@ -54,6 +54,23 @@ fn search_empty_no_headers() {
 }
 
 #[test]
+fn search_ignore_case() {
+    let wrk = Workdir::new("search");
+    wrk.create("data.csv", data(true));
+    let mut cmd = wrk.command("search");
+    cmd.arg("^FoO").arg("data.csv");
+    cmd.arg("--ignore-case");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["h1", "h2"],
+        svec!["foobar", "barfoo"],
+        svec!["barfoo", "foobar"],
+    ];
+    assert_eq!(got, expected);
+}
+
+#[test]
 fn search_no_headers() {
     let wrk = Workdir::new("search_no_headers");
     wrk.create("data.csv", data(false));
