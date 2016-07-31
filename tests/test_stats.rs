@@ -142,6 +142,14 @@ stats_tests!(stats_includenulls_null_mode, "mode", &[""], "N/A", true);
 stats_tests!(stats_includenulls_mean,
              "mean", &["5", "", "15", "10"], "7.5", true);
 
+stats_tests!(stats_sum_integers, "sum", &["1", "2"], "3");
+stats_tests!(stats_sum_floats, "sum", &["1.5", "2.8"], "4.3");
+stats_tests!(stats_sum_mixed1, "sum", &["1.5", "2"], "3.5");
+stats_tests!(stats_sum_mixed2, "sum", &["2", "1.5"], "3.5");
+stats_tests!(stats_sum_mixed3, "sum", &["1.5", "hi", "2.8"], "4.3");
+stats_tests!(stats_sum_nulls1, "sum", &["1", "", "2"], "3");
+stats_tests!(stats_sum_nulls2, "sum", &["", "1", "2"], "3");
+
 stats_tests!(stats_min, "min", &["2", "1.1"], "1.1");
 stats_tests!(stats_max, "max", &["2", "1.1"], "2");
 stats_tests!(stats_min_mix, "min", &["2", "a", "1.1"], "1.1");

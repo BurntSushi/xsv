@@ -22,7 +22,7 @@ use self::FieldType::{TUnknown, TNull, TUnicode, TFloat, TInteger};
 static USAGE: &'static str = "
 Computes basic statistics on CSV data.
 
-Basic statistics includes mean, median, mode, standard deviation, max and
+Basic statistics includes mean, median, mode, standard deviation, sum, max and
 min values. Note that some statistics are expensive to compute, so they must
 be enabled explicitly. By default, the following statistics are reported for
 *every* column in the CSV data: mean, max, min and standard deviation. The
@@ -199,6 +199,7 @@ impl Args {
     fn new_stats(&self, record_len: usize) -> Vec<Stats> {
         repeat(Stats::new(WhichStats {
             include_nulls: self.flag_nulls,
+            sum: true,
             range: true,
             dist: true,
             cardinality: self.flag_cardinality || self.flag_everything,
@@ -209,7 +210,7 @@ impl Args {
 
     fn stat_headers(&self) -> Vec<String> {
         let mut fields = vec![
-            "field", "type", "min", "max", "min_length", "max_length",
+            "field", "type", "sum", "min", "max", "min_length", "max_length",
             "mean", "stddev",
         ];
         let all = self.flag_everything;
@@ -223,6 +224,7 @@ impl Args {
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct WhichStats {
     include_nulls: bool,
+    sum: bool,
     range: bool,
     dist: bool,
     cardinality: bool,
@@ -239,6 +241,7 @@ impl Commute for WhichStats {
 #[derive(Clone)]
 struct Stats {
     typ: FieldType,
+    sum: Option<TypedSum>,
     minmax: Option<TypedMinMax>,
     online: Option<OnlineStats>,
     mode: Option<Unsorted<ByteString>>,
@@ -248,14 +251,16 @@ struct Stats {
 
 impl Stats {
     fn new(which: WhichStats) -> Stats {
-        let (mut minmax, mut online) = (None, None);
-        let (mut mode, mut median) = (None, None);
+        let (mut sum, mut minmax, mut online, mut mode, mut median) =
+            (None, None, None, None, None);
+        if which.sum { sum = Some(Default::default()); }
         if which.range { minmax = Some(Default::default()); }
         if which.dist { online = Some(Default::default()); }
         if which.mode || which.cardinality { mode = Some(Default::default()); }
         if which.median { median = Some(Default::default()); }
         Stats {
             typ: Default::default(),
+            sum: sum,
             minmax: minmax,
             online: online,
             mode: mode,
@@ -269,6 +274,7 @@ impl Stats {
         self.typ.merge(sample_type);
 
         let t = self.typ;
+        self.sum.as_mut().map(|v| v.add(t, sample));
         self.minmax.as_mut().map(|v| v.add(t, sample));
         self.mode.as_mut().map(|v| v.add(sample.to_vec()));
         match self.typ {
@@ -299,6 +305,10 @@ impl Stats {
         let empty = || "".to_owned();
 
         pieces.push(self.typ.to_string());
+        match self.sum.as_ref().and_then(|sum| sum.show(typ)) {
+            Some(sum) => { pieces.push(sum); }
+            None => { pieces.push(empty()); }
+        }
         match self.minmax.as_ref().and_then(|mm| mm.show(typ)) {
             Some(mm) => { pieces.push(mm.0); pieces.push(mm.1); }
             None => { pieces.push(empty()); pieces.push(empty()); }
@@ -430,6 +440,52 @@ impl fmt::Display for FieldType {
             TUnicode => write!(f, "Unicode"),
             TFloat => write!(f, "Float"),
             TInteger => write!(f, "Integer"),
+        }
+    }
+}
+
+/// TypedSum keeps a rolling sum of the data seen.
+///
+/// It sums integers until it sees a float, at which point it sums floats.
+#[derive(Clone, Default)]
+struct TypedSum {
+    integer: i64,
+    float: Option<f64>,
+}
+
+impl TypedSum {
+    fn add(&mut self, typ: FieldType, sample: &[u8]) {
+        if sample.is_empty() {
+            return;
+        }
+        match typ {
+            TFloat => {
+                let float: f64 = from_bytes(sample).unwrap();
+                match self.float {
+                    None => {
+                        self.float = Some((self.integer as f64) + float);
+                    }
+                    Some(ref mut float) => {
+                        *float += from_bytes(sample).unwrap();
+                    }
+                }
+            }
+            TInteger => {
+                if let Some(ref mut float) = self.float {
+                    *float += from_bytes(sample).unwrap();
+                } else {
+                    self.integer += from_bytes(sample).unwrap();
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn show(&self, typ: FieldType) -> Option<String> {
+        match typ {
+            TNull | TUnicode | TUnknown  => None,
+            TInteger => Some(self.integer.to_string()),
+            TFloat => Some(self.float.unwrap_or(0.0).to_string()),
         }
     }
 }
