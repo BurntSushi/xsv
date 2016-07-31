@@ -366,6 +366,7 @@ impl Stats {
 impl Commute for Stats {
     fn merge(&mut self, other: Stats) {
         self.typ.merge(other.typ);
+        self.sum.merge(other.sum);
         self.minmax.merge(other.minmax);
         self.online.merge(other.online);
         self.mode.merge(other.mode);
@@ -486,6 +487,17 @@ impl TypedSum {
             TNull | TUnicode | TUnknown  => None,
             TInteger => Some(self.integer.to_string()),
             TFloat => Some(self.float.unwrap_or(0.0).to_string()),
+        }
+    }
+}
+
+impl Commute for TypedSum {
+    fn merge(&mut self, other: TypedSum) {
+        match (self.float, other.float) {
+            (Some(f1), Some(f2)) => self.float = Some(f1 + f2),
+            (Some(f1), None) => self.float = Some(f1 + (other.integer as f64)),
+            (None, Some(f2)) => self.float = Some((self.integer as f64) + f2),
+            (None, None) => self.integer += other.integer,
         }
     }
 }
