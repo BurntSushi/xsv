@@ -1,4 +1,5 @@
 use std::borrow::ToOwned;
+use std::cmp;
 use std::process;
 
 use workdir::Workdir;
@@ -60,7 +61,10 @@ fn test_stats<S>(name: S, field: &str, rows: &[&str], expected: &str,
         where S: ::std::ops::Deref<Target=str> {
     let (wrk, mut cmd) = setup(name, rows, headers, use_index, nulls);
     let field_val = get_field_value(&wrk, &mut cmd, field);
-    assert_eq!(field_val, expected.to_owned());
+    // Only compare the first few bytes since floating point arithmetic
+    // can mess with exact comparisons.
+    let len = cmp::min(10, cmp::min(field_val.len(), expected.len()));
+    assert_eq!(&field_val[0..len], &expected[0..len]);
 }
 
 fn setup<S>(name: S, rows: &[&str], headers: bool,
