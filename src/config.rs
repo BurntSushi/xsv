@@ -3,7 +3,7 @@ use std::borrow::ToOwned;
 use std::env;
 use std::fmt;
 use std::fs;
-use std::io::{self, Read, Write};
+use std::io::{self, Read};
 use std::ops::Deref;
 use std::path::PathBuf;
 

@@ -26,40 +26,19 @@ opt-level = 3
 opt-level = 2
 
 [dependencies]
-byteorder = "0.3"
+byteorder = "0.5"
 chan = "0.1"
 csv = "0.14"
 docopt = "0.6"
 filetime = "0.1"
-num_cpus = "0.2"
+num_cpus = "1.0"
 rand = "0.3"
 regex = "0.1"
 rustc-serialize = "0.3"
 streaming-stats = "0.1"
 tabwriter = "0.1"
-threadpool = "0.1"
+threadpool = "1.3"
 
 [dev-dependencies]
-quickcheck = "0.2"
+quickcheck = "0.3"
 log = "0.3"
-
-# [dependencies.csv]
-# path = "/home/andrew/rust/csv"
-# git = "git://github.com/BurntSushi/rust-csv"
-
-# [dependencies.streaming-stats]
-# path = "/home/andrew/data/projects/rust/streaming-stats"
-# git = "git://github.com/BurntSushi/rust-stats"
-#
-# [dependencies.tabwriter]
-# path = "/home/andrew/data/projects/rust/tabwriter"
-# git = "git://github.com/BurntSushi/tabwriter"
-#
-# [dependencies.docopt]
-# path = "/home/andrew/data/projects/rust/docopt"
-# git = "git://github.com/docopt/docopt.rs"
-#
-
-# [dev-dependencies.quickcheck]
-# version = "*"
-# path = "/home/andrew/rust/quickcheck"

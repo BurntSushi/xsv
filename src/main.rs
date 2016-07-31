@@ -20,7 +20,7 @@ extern crate threadpool;
 use std::borrow::ToOwned;
 use std::env;
 use std::fmt;
-use std::io::{self, Write};
+use std::io;
 use std::process;
 
 use docopt::Docopt;
@@ -205,18 +205,6 @@ impl fmt::Display for CliError {
             CliError::Csv(ref e) => { e.fmt(f) }
             CliError::Io(ref e) => { e.fmt(f) }
             CliError::Other(ref s) => { f.write_str(&**s) }
-        }
-    }
-}
-
-impl From<byteorder::Error> for CliError {
-    fn from(err: byteorder::Error) -> CliError {
-        match err {
-            byteorder::Error::UnexpectedEOF => {
-                CliError::Other(
-                    "Got unexpected EOF when reading index.".to_owned())
-            }
-            byteorder::Error::Io(err) => From::from(err),
         }
     }
 }

@@ -12,7 +12,7 @@ use std::mem::transmute;
 use std::ops;
 
 use quickcheck::{Arbitrary, Gen, QuickCheck, StdGen, Testable};
-use rand::{Rng, thread_rng};
+use rand::thread_rng;
 
 macro_rules! svec[
     ($($x:expr),*) => (
@@ -54,9 +54,9 @@ fn qcheck_sized<T: Testable>(p: T, size: usize) {
     QuickCheck::new().gen(StdGen::new(thread_rng(), size)).quickcheck(p);
 }
 
-type CsvVecs = Vec<Vec<String>>;
+pub type CsvVecs = Vec<Vec<String>>;
 
-trait Csv {
+pub trait Csv {
     fn to_vecs(self) -> CsvVecs;
     fn from_vecs(CsvVecs) -> Self;
 }
