@@ -14,8 +14,8 @@ debug:
 	rustc -L ./target/deps/ -g -Z lto --opt-level 3 src/main.rs
 
 push:
+	git push home master
 	git push origin master
-	git push github master
 
 dev:
 	cargo build
