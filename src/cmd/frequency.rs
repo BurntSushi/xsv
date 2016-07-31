@@ -170,9 +170,10 @@ impl Args {
             (0..nsel.len()).map(|_| Frequencies::new()).collect();
         for row in it {
             let row = try!(row);
-            for (i, field) in nsel.select(row.into_iter()).enumerate() {
+            for (i, mut field) in nsel.select(row.into_iter()).enumerate() {
+                field = trim(field);
                 if !field.is_empty() {
-                    tabs[i].add(trim(field));
+                    tabs[i].add(field);
                 } else {
                     if !self.flag_no_nulls {
                         tabs[i].add(null.clone());

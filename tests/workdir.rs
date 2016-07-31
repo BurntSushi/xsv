@@ -61,8 +61,8 @@ impl Workdir {
     }
 
     pub fn read_stdout<T: Csv>(&self, cmd: &mut process::Command) -> T {
-        let mut rdr = csv::Reader::from_string(self.stdout::<String>(cmd))
-                                  .has_headers(false);
+        let stdout: String = self.stdout(cmd);
+        let mut rdr = csv::Reader::from_string(stdout).has_headers(false);
         Csv::from_vecs(rdr.records().collect::<Result<_, _>>().unwrap())
     }
 
@@ -96,7 +96,7 @@ impl Workdir {
     pub fn stdout<T: FromStr>(&self, cmd: &mut process::Command) -> T {
         let o = self.output(cmd);
         let stdout = String::from_utf8_lossy(&o.stdout);
-        stdout.trim().parse().ok().expect(
+        stdout.trim_matches(&['\r', '\n'][..]).parse().ok().expect(
             &format!("Could not convert from string: '{}'", stdout))
     }
 

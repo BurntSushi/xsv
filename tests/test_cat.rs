@@ -42,6 +42,22 @@ fn prop_cat_rows() {
 }
 
 #[test]
+fn cat_rows_space() {
+    let rows = vec![svec!["\u{0085}"]];
+    let expected = rows.clone();
+    let (rows1, rows2) =
+        if rows.is_empty() {
+            (vec![], vec![])
+        } else {
+            let (rows1, rows2) = rows.split_at(rows.len() / 2);
+            (rows1.to_vec(), rows2.to_vec())
+        };
+    let got: Vec<Vec<String>> =
+        run_cat("cat_rows_space", "rows", rows1, rows2, no_headers);
+    assert_eq!(got, expected);
+}
+
+#[test]
 fn cat_rows_headers() {
     let rows1 = vec![svec!["h1", "h2"], svec!["a", "b"]];
     let rows2 = vec![svec!["h1", "h2"], svec!["y", "z"]];

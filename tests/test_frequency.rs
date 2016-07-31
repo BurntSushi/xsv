@@ -186,6 +186,7 @@ fn ftables_from_rows<T: Csv>(rows: T) -> FTables {
     }
     for row in rows.into_iter() {
         for (i, mut field) in row.into_iter().enumerate() {
+            field = field.trim().to_owned();
             if field.is_empty() {
                 field = "(NULL)".to_owned();
             }

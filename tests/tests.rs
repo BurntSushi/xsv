@@ -114,7 +114,6 @@ impl Csv for Vec<CsvRecord> {
 #[derive(Clone, Debug, Eq, Ord, PartialOrd)]
 struct CsvData {
     data: Vec<CsvRecord>,
-    record_len: usize,
 }
 
 impl CsvData {
@@ -140,18 +139,17 @@ impl Arbitrary for CsvData {
                           .map(|_| Arbitrary::arbitrary(g))
                           .collect())
             }).collect(),
-            record_len: record_len,
         }
     }
 
     fn shrink(&self) -> Box<Iterator<Item=CsvData>+'static> {
-        let len = self.record_len;
+        let len = if self.is_empty() { 0 } else { self[0].len() };
         let mut rows: Vec<CsvData> =
             self.clone()
                 .unwrap()
                 .shrink()
                 .filter(|rows| rows.iter().all(|r| r.len() == len))
-                .map(|rows| CsvData { data: rows, record_len: len })
+                .map(|rows| CsvData { data: rows })
                 .collect();
         // We should also introduce CSV data with fewer columns...
         if len > 1 {
@@ -161,7 +159,7 @@ impl Arbitrary for CsvData {
                     .shrink()
                     .filter(|rows|
                         rows.iter().all(|r| r.len() == len - 1))
-                    .map(|rows| CsvData { data: rows, record_len: len }));
+                    .map(|rows| CsvData { data: rows }));
         }
         Box::new(rows.into_iter())
     }
@@ -170,10 +168,8 @@ impl Arbitrary for CsvData {
 impl Csv for CsvData {
     fn to_vecs(self) -> CsvVecs { unsafe { transmute(self.data) } }
     fn from_vecs(vecs: CsvVecs) -> CsvData {
-        let record_len = if vecs.is_empty() { 0 } else { vecs[0].len() };
         CsvData {
             data: unsafe { transmute(vecs) },
-            record_len: record_len,
         }
     }
 }
@@ -181,6 +177,6 @@ impl Csv for CsvData {
 impl PartialEq for CsvData {
     fn eq(&self, other: &CsvData) -> bool {
         (self.data.is_empty() && other.data.is_empty())
-        || (self.record_len == other.record_len && self.data == other.data)
+        || self.data == other.data
     }
 }
