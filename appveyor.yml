@@ -63,4 +63,7 @@ deploy:
 
 branches:
   only:
+    - appveyor
+    - /\d+\.\d+\.\d+/
+  except:
     - master
