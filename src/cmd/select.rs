@@ -28,6 +28,9 @@ more indexing). Finally, column ranges can be specified.
   Re-order and duplicate columns arbitrarily:
   $ xsv select 3-1,Header3-Header1,Header1,Foo[2],Header1
 
+  Quote column names that conflict with selector syntax:
+  $ xsv select '\"Date - Opening\",\"Date - Actual Closing\"'
+
 Usage:
     xsv select [options] [--] <selection> [<input>]
     xsv select --help
