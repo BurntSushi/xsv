@@ -250,3 +250,19 @@ i,j
 k,l
 ");
 }
+
+#[test]
+fn split_custom_filename() {
+    let wrk = Workdir::new("split");
+    wrk.create("in.csv", data(true));
+
+    let mut cmd = wrk.command("split");
+    cmd.args(&["--size", "2"])
+       .args(&["--filename", "prefix-{}.csv"])
+       .arg(&wrk.path(".")).arg("in.csv");
+    wrk.run(&mut cmd);
+
+    assert!(wrk.path("prefix-0.csv").exists());
+    assert!(wrk.path("prefix-2.csv").exists());
+    assert!(wrk.path("prefix-4.csv").exists());
+}

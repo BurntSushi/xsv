@@ -38,6 +38,7 @@ mod test_frequency;
 mod test_headers;
 mod test_index;
 mod test_join;
+mod test_partition;
 mod test_search;
 mod test_select;
 mod test_slice;
