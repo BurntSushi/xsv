@@ -9,7 +9,7 @@ use threadpool::ThreadPool;
 
 use CliResult;
 use config::{Config, Delimiter};
-use util;
+use util::{self, FilenameTemplate};
 
 static USAGE: &'static str = "
 Splits the given CSV data into chunks.
@@ -31,10 +31,14 @@ split options:
                            When set to '0', the number of jobs is set to the
                            number of CPUs detected.
                            [default: 0]
+    --filename <filename>  A filename template to use when constructing
+                           the names of the output files.  The string '{}'
+                           will be replaced by a value based on the value
+                           of the field, but sanitized for shell safety.
+                           [default: {}.csv]
 
 Common options:
     -h, --help             Display this message
-    -o, --output <file>    Write output to <file> instead of stdout.
     -n, --no-headers       When set, the first row will NOT be interpreted
                            as column names. Otherwise, the first row will
                            appear in all chunks as the header row.
@@ -48,7 +52,7 @@ struct Args {
     arg_outdir: String,
     flag_size: usize,
     flag_jobs: usize,
-    flag_output: Option<String>,
+    flag_filename: FilenameTemplate,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
 }
@@ -118,7 +122,7 @@ impl Args {
     fn new_writer(&self, headers: &[csv::ByteString], start: usize)
                  -> CliResult<csv::Writer<Box<io::Write+'static>>> {
         let dir = Path::new(&self.arg_outdir);
-        let path = dir.join(&format!("{}.csv", start));
+        let path = dir.join(self.flag_filename.filename(&format!("{}", start)));
         let spath = Some(path.display().to_string());
         let mut wtr = try!(Config::new(&spath).writer());
         if !self.rconfig().no_headers {
