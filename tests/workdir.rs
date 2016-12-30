@@ -25,10 +25,13 @@ pub struct Workdir {
 impl Workdir {
     pub fn new(name: &str) -> Workdir {
         let id = NEXT_ID.fetch_add(1, atomic::Ordering::SeqCst);
-        let root = env::current_exe().unwrap()
-                       .parent()
-                       .expect("executable's directory")
-                       .to_path_buf();
+        let mut root = env::current_exe().unwrap()
+                           .parent()
+                           .expect("executable's directory")
+                           .to_path_buf();
+        if root.ends_with("deps") {
+            root.pop();
+        }
         let dir = root.join(XSV_INTEGRATION_TEST_DIR)
                       .join(name)
                       .join(&format!("test-{}", id));
