@@ -297,21 +297,7 @@ right and full outer join support too.
 
 ### Installation
 
-Installing `xsv` is a bit hokey right now. Ideally, I could release binaries
-for Linux, Mac and Windows. Currently, I'm only able to release binaries for
-Linux because I don't know how to cross compile Rust programs.
-
-With that said, you can grab the
-[latest release](https://github.com/BurntSushi/xsv/releases/latest)
-(Linux x86_64 binary) from GitHub:
-
-```bash
-$ curl -sOL https://github.com/BurntSushi/xsv/releases/download/0.0.0/xsv-0.9.8-x86_64-unknown-linux-gnu.tar.gz
-$ tar xf xsv-0.9.8-x86_64-unknown-linux-gnu.tar.gz
-$ cd xsv-0.9.8-x86_64-unknown-linux-gnu/
-$ ./xsv --version
-0.9.8
-```
+Binaries for Windows, Linux and Mac are available [from Github](https://github.com/BurntSushi/xsv/releases/latest).
 
 Alternatively, you can compile from source by
 [installing Cargo](https://crates.io/install)
