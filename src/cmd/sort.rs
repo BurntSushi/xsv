@@ -18,6 +18,7 @@ sort options:
     -s, --select <arg>     Select a subset of columns to sort.
                            See 'xsv select --help' for the format details.
     -N, --numeric          Compare according to string numerical value
+    -R, --reverse          Reverse order
 
 Common options:
     -h, --help             Display this message
@@ -35,6 +36,7 @@ struct Args {
     arg_input: Option<String>,
     flag_select: SelectColumns,
     flag_numeric: bool,
+    flag_reverse: bool,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
@@ -44,6 +46,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
 
     let numeric = args.flag_numeric;
+    let reverse = args.flag_reverse;
     let rconfig = Config::new(&args.arg_input)
                          .delimiter(args.flag_delimiter)
                          .no_headers(args.flag_no_headers)
@@ -56,15 +59,32 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let sel = try!(rconfig.selection(&*headers));
 
     let mut all = try!(rdr.byte_records().collect::<Result<Vec<_>, _>>());
-    all.sort_by(|r1, r2| {
-        let a = sel.select(r1.as_slice());
-        let b = sel.select(r2.as_slice());
-        if !numeric {
-            iter_cmp(a, b)
-        } else {
-            iter_cmp_num(a, b)
-        }
-    });
+    match (numeric, reverse) {
+        (false, false) =>
+            all.sort_by(|r1, r2| {
+                let a = sel.select(r1.as_slice());
+                let b = sel.select(r2.as_slice());
+                iter_cmp(a, b)
+            }),
+        (true, false) =>
+            all.sort_by(|r1, r2| {
+                let a = sel.select(r1.as_slice());
+                let b = sel.select(r2.as_slice());
+                iter_cmp_num(a, b)
+            }),
+        (false, true) =>
+            all.sort_by(|r1, r2| {
+                let a = sel.select(r1.as_slice());
+                let b = sel.select(r2.as_slice());
+                iter_cmp(b, a)
+            }),
+        (true, true) =>
+            all.sort_by(|r1, r2| {
+                let a = sel.select(r1.as_slice());
+                let b = sel.select(r2.as_slice());
+                iter_cmp_num(b, a)
+            }),
+    }
 
     try!(rconfig.write_headers(&mut rdr, &mut wtr));
     for r in all.into_iter() {
