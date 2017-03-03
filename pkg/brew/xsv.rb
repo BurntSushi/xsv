@@ -15,6 +15,5 @@ class Xsv < Formula
 
   def install
     bin.install "xsv"
-    man1.install "xsv.1"
   end
 end
