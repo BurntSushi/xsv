@@ -82,6 +82,7 @@ Usage:
 Options:
     --list        List all commands available.
     -h, --help    Display this message
+    <command> -h  Display the command help message
     --version     Print version info and exit
 
 Commands:", command_list!());
