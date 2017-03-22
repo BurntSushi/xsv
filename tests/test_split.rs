@@ -55,6 +55,7 @@ h1,h2
 i,j
 k,l
 ");
+    assert!(!wrk.path("6.csv").exists());
 }
 
 #[test]
@@ -81,6 +82,7 @@ h1,h2
 i,j
 k,l
 ");
+    assert!(!wrk.path("6.csv").exists());
 }
 
 #[test]
