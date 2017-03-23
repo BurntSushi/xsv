@@ -299,6 +299,13 @@ right and full outer join support too.
 
 Binaries for Windows, Linux and Mac are available [from Github](https://github.com/BurntSushi/xsv/releases/latest).
 
+If you're a **Mac OS X Homebrew** user, then you can install xsv
+from homebrew-core, (compiled with rust stable, no SIMD):
+
+```
+$ brew install xsv
+```
+
 Alternatively, you can compile from source by
 [installing Cargo](https://crates.io/install)
 ([Rust's](http://www.rust-lang.org/) package manager)
