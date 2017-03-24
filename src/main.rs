@@ -10,6 +10,7 @@ extern crate csv;
 extern crate docopt;
 extern crate filetime;
 extern crate num_cpus;
+extern crate os_type;
 extern crate rand;
 extern crate regex;
 extern crate rustc_serialize;
@@ -46,6 +47,7 @@ macro_rules! fail {
 macro_rules! command_list {
     () => (
 "
+    apply       Run external programs to filter columns
     cat         Concatenate by row or column
     count       Count records
     fixlengths  Makes all records have same length
@@ -138,6 +140,7 @@ Please choose one of the following commands:",
 
 #[derive(Debug, RustcDecodable)]
 enum Command {
+    Apply,
     Cat,
     Count,
     FixLengths,
@@ -165,6 +168,7 @@ impl Command {
         let argv: Vec<_> = argv.iter().map(|s| &**s).collect();
         let argv = &*argv;
         match self {
+            Command::Apply => cmd::apply::run(argv),
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),
             Command::FixLengths => cmd::fixlengths::run(argv),

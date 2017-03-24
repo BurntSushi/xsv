@@ -18,6 +18,7 @@ Dual-licensed under MIT or the [UNLICENSE](http://unlicense.org).
 
 ### Available commands
 
+* **apply** - Use an external program to process columns of a file.
 * **cat** - Concatenate CSV files by row or by column.
 * **count** - Count the rows in a CSV file. (Instantaneous with an index.)
 * **fixlengths** - Force a CSV file to have same-length records by either

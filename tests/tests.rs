@@ -3,6 +3,7 @@ extern crate rustc_serialize;
 
 extern crate csv;
 extern crate filetime;
+extern crate os_type;
 extern crate quickcheck;
 extern crate rand;
 extern crate stats;
@@ -29,6 +30,7 @@ macro_rules! rassert_eq {
 
 mod workdir;
 
+mod test_apply;
 mod test_cat;
 mod test_count;
 mod test_fixlengths;

@@ -9,6 +9,7 @@ dependencies = [
  "filetime 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "os_type 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickcheck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.1.77 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -183,6 +184,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "os_type"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "regex 0.1.77 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "quickcheck"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -306,6 +315,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum num-rational 0.1.35 (registry+https://github.com/rust-lang/crates.io-index)" = "54ff603b8334a72fbb27fe66948aac0abaaa40231b3cecd189e76162f6f38aaf"
 "checksum num-traits 0.1.36 (registry+https://github.com/rust-lang/crates.io-index)" = "a16a42856a256b39c6d3484f097f6713e14feacd9bfb02290917904fae46c81c"
 "checksum num_cpus 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8890e6084723d57d0df8d2720b0d60c6ee67d6c93e7169630e4371e88765dcad"
+"checksum os_type 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "29a516da97a703e47d64b16eed2d3ebf9e732694a73ec08c005173e85a2c1940"
 "checksum quickcheck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ee4649d5e823e7a9e5a128a6bfa884e132f93668c64274d865d9f94a0f2574ca"
 "checksum rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)" = "2791d88c6defac799c3f20d74f094ca33b9332612d9aef9078519c82e4fe04a5"
 "checksum regex 0.1.77 (registry+https://github.com/rust-lang/crates.io-index)" = "64b03446c466d35b42f2a8b203c8e03ed8b91c0f17b56e1f84f7210a257aa665"
