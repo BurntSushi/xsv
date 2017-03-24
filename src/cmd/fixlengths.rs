@@ -6,8 +6,8 @@ use util;
 
 static USAGE: &'static str = "
 Transforms CSV data so that all records have the same length. The length is
-the length of the longest record in the data. Records with smaller lengths are
-padded with empty fields.
+the length of the longest record in the data (not counting trailing empty fields,
+but at least 1). Records with smaller lengths are padded with empty fields.
 
 This requires two complete scans of the CSV data: one for determining the
 record size and one for the actual transform. Because of this, the input
@@ -60,15 +60,20 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             let mut maxlen = 0usize;
             let mut rdr = try!(config.reader());
             while !rdr.done() {
-                let mut count = 0usize;
+                let mut index = 0usize;
+                let mut nonempty_count = 0usize;
                 loop {
                     match rdr.next_bytes().into_iter_result() {
                         None => break,
-                        Some(r) => { try!(r); }
+                        Some(r) => {
+                            index += 1;
+                            if index == 1 || try!(r).len() > 0 {
+                                nonempty_count = index;
+                            }
+                        }
                     }
-                    count += 1;
                 }
-                maxlen = cmp::max(maxlen, count);
+                maxlen = cmp::max(maxlen, nonempty_count);
             }
             maxlen
         }
