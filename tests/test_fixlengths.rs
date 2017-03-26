@@ -35,7 +35,7 @@ fn prop_fixlengths_all_maxlen() {
 }
 
 #[test]
-fn prop_fixlengths_all_maxlen_trims() {
+fn fixlengths_all_maxlen_trims() {
     let rows = vec![
         svec!["h1", "h2"],
         svec!["abcdef", "ghijkl", "", ""],
@@ -53,7 +53,7 @@ fn prop_fixlengths_all_maxlen_trims() {
 }
 
 #[test]
-fn prop_fixlengths_all_maxlen_trims_at_least_1() {
+fn fixlengths_all_maxlen_trims_at_least_1() {
     let rows = vec![
         svec![""],
         svec!["", ""],
