@@ -461,21 +461,21 @@ impl TypedSum {
         }
         match typ {
             TFloat => {
-                let float: f64 = from_bytes(sample).unwrap();
+                let float: f64 = from_bytes::<f64>(sample).unwrap();
                 match self.float {
                     None => {
                         self.float = Some((self.integer as f64) + float);
                     }
-                    Some(ref mut float) => {
-                        *float += from_bytes(sample).unwrap();
+                    Some(ref mut f) => {
+                        *f += float;
                     }
                 }
             }
             TInteger => {
                 if let Some(ref mut float) = self.float {
-                    *float += from_bytes(sample).unwrap();
+                    *float += from_bytes::<f64>(sample).unwrap();
                 } else {
-                    self.integer += from_bytes(sample).unwrap();
+                    self.integer += from_bytes::<i64>(sample).unwrap();
                 }
             }
             _ => {}
