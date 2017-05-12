@@ -1,12 +1,7 @@
-/*!
-These are some docs.
-*/
-
-#![allow(deprecated)] // for connect -> join rename
-
 extern crate byteorder;
 extern crate chan;
 extern crate csv;
+extern crate csv_index;
 extern crate docopt;
 extern crate filetime;
 extern crate num_cpus;
@@ -71,6 +66,7 @@ macro_rules! command_list {
 
 mod cmd;
 mod config;
+mod index;
 mod select;
 mod util;
 

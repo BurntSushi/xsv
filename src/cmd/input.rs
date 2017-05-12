@@ -35,22 +35,22 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
-
-    let rconfig = Config::new(&args.arg_input)
-                         .delimiter(args.flag_delimiter)
-                         .no_headers(true);
+    let args: Args = util::get_args(USAGE, argv)?;
+    let mut rconfig = Config::new(&args.arg_input)
+        .delimiter(args.flag_delimiter)
+        .no_headers(true)
+        .quote(args.flag_quote.as_byte());
     let wconfig = Config::new(&args.flag_output);
-    let mut rdr = try!(rconfig.reader());
-    let mut wtr = try!(wconfig.writer());
 
-    rdr = rdr.quote(args.flag_quote.as_byte());
     if let Some(escape) = args.flag_escape {
-        rdr = rdr.escape(Some(escape.as_byte())).double_quote(false);
+        rconfig = rconfig.escape(escape.as_byte()).double_quote(false);
     }
+
+    let mut rdr = rconfig.reader()?;
+    let mut wtr = wconfig.writer()?;
     for r in rdr.byte_records() {
-        try!(wtr.write(try!(r).into_iter()));
+        wtr.write_record(&r?)?;
     }
-    try!(wtr.flush());
+    wtr.flush()?;
     Ok(())
 }

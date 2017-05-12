@@ -7,7 +7,7 @@ use std::ops::Deref;
 use std::path::PathBuf;
 
 use csv;
-use csv::index::Indexed;
+use index::Indexed;
 use rustc_serialize::{Decodable, Decoder};
 
 use CliResult;
@@ -31,7 +31,7 @@ impl Delimiter {
 
 impl Decodable for Delimiter {
     fn decode<D: Decoder>(d: &mut D) -> Result<Delimiter, D::Error> {
-        let c = try!(d.read_str());
+        let c = d.read_str()?;
         match &*c {
             r"\t" => Ok(Delimiter(b'\t')),
             s => {
@@ -60,7 +60,11 @@ pub struct Config {
     delimiter: u8,
     pub no_headers: bool,
     flexible: bool,
-    crlf: bool,
+    terminator: csv::Terminator,
+    quote: u8,
+    quote_style: csv::QuoteStyle,
+    double_quote: bool,
+    escape: u8,
 }
 
 impl Config {
@@ -86,7 +90,11 @@ impl Config {
             delimiter: delim,
             no_headers: false,
             flexible: false,
-            crlf: false,
+            terminator: csv::Terminator::Any(b'\n'),
+            quote: b'"',
+            quote_style: csv::QuoteStyle::Necessary,
+            double_quote: true,
+            escape: b'\\',
         }
     }
 
@@ -111,7 +119,36 @@ impl Config {
     }
 
     pub fn crlf(mut self, yes: bool) -> Config {
-        self.crlf = yes;
+        if yes {
+            self.terminator = csv::Terminator::CRLF;
+        } else {
+            self.terminator = csv::Terminator::Any(b'\n');
+        }
+        self
+    }
+
+    pub fn terminator(mut self, term: csv::Terminator) -> Config {
+        self.terminator = term;
+        self
+    }
+
+    pub fn quote(mut self, quote: u8) -> Config {
+        self.quote = quote;
+        self
+    }
+
+    pub fn quote_style(mut self, style: csv::QuoteStyle) -> Config {
+        self.quote_style = style;
+        self
+    }
+
+    pub fn double_quote(mut self, yes: bool) -> Config {
+        self.double_quote = yes;
+        self
+    }
+
+    pub fn escape(mut self, escape: u8) -> Config {
+        self.escape = escape;
         self
     }
 
@@ -124,8 +161,10 @@ impl Config {
         self.path.is_none()
     }
 
-    pub fn selection(&self, first_record: &[csv::ByteString])
-                    -> Result<Selection, String> {
+    pub fn selection(
+        &self,
+        first_record: &csv::ByteRecord,
+    ) -> Result<Selection, String> {
         match self.select_columns {
             None => Err("Config has no 'SelectColums'. Did you call \
                          Config::select?".to_owned()),
@@ -133,8 +172,10 @@ impl Config {
         }
     }
 
-    pub fn normal_selection(&self, first_record: &[csv::ByteString])
-                    -> Result<NormalSelection, String> {
+    pub fn normal_selection(
+        &self,
+        first_record: &csv::ByteRecord,
+    ) -> Result<NormalSelection, String> {
         self.selection(first_record).map(|sel| sel.normal())
     }
 
@@ -142,9 +183,9 @@ impl Config {
                         (&self, r: &mut csv::Reader<R>, w: &mut csv::Writer<W>)
                         -> csv::Result<()> {
         if !self.no_headers {
-            let r = try!(r.byte_headers());
+            let r = r.byte_headers()?;
             if !r.is_empty() {
-                try!(w.write(r.into_iter()));
+                w.write_record(r)?;
             }
         }
         Ok(())
@@ -152,12 +193,12 @@ impl Config {
 
     pub fn writer(&self)
                  -> io::Result<csv::Writer<Box<io::Write+'static>>> {
-        Ok(self.from_writer(try!(self.io_writer())))
+        Ok(self.from_writer(self.io_writer()?))
     }
 
     pub fn reader(&self)
                  -> io::Result<csv::Reader<Box<io::Read+'static>>> {
-        Ok(self.from_reader(try!(self.io_reader())))
+        Ok(self.from_reader(self.io_reader()?))
     }
 
     pub fn reader_file(&self) -> io::Result<csv::Reader<fs::File>> {
@@ -187,25 +228,22 @@ impl Config {
                     Err(_) => return Ok(None),
                     Ok(f) => f,
                 };
-                (try!(fs::File::open(p)), idx_file)
+                (fs::File::open(p)?, idx_file)
             }
             (&Some(ref p), &Some(ref ip)) => {
-                (try!(fs::File::open(p)), try!(fs::File::open(ip)))
+                (fs::File::open(p)?, fs::File::open(ip)?)
             }
         };
         // If the CSV data was last modified after the index file was last
         // modified, then return an error and demand the user regenerate the
         // index.
-        let data_modified = util::last_modified(&try!(csv_file.metadata()));
-        let idx_modified = util::last_modified(&try!(idx_file.metadata()));
+        let data_modified = util::last_modified(&csv_file.metadata()?);
+        let idx_modified = util::last_modified(&idx_file.metadata()?);
         if data_modified > idx_modified {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
                 "The CSV file was modified after the index file. \
                  Please re-create the index.",
-                // Some(format!("CSV file: {}, index file: {}",
-                             // csv_file.path().unwrap().to_string_lossy(),
-                             // idx_file.path().unwrap().to_string_lossy())),
             ));
         }
         let csv_rdr = self.from_reader(csv_file);
@@ -214,9 +252,9 @@ impl Config {
 
     pub fn indexed(&self)
                   -> CliResult<Option<Indexed<fs::File, fs::File>>> {
-        match try!(self.index_files()) {
+        match self.index_files()? {
             None => Ok(None),
-            Some((r, i)) => Ok(Some(try!(Indexed::open(r, i)))),
+            Some((r, i)) => Ok(Some(Indexed::open(r, i)?)),
         }
     }
 
@@ -240,25 +278,29 @@ impl Config {
     }
 
     pub fn from_reader<R: Read>(&self, rdr: R) -> csv::Reader<R> {
-        csv::Reader::from_reader(rdr)
-                    .flexible(self.flexible)
-                    .delimiter(self.delimiter)
-                    .has_headers(!self.no_headers)
+        csv::ReaderBuilder::new()
+            .flexible(self.flexible)
+            .delimiter(self.delimiter)
+            .has_headers(!self.no_headers)
+            .from_reader(rdr)
     }
 
     pub fn io_writer(&self) -> io::Result<Box<io::Write+'static>> {
         Ok(match self.path {
             None => Box::new(io::stdout()),
-            Some(ref p) => Box::new(try!(fs::File::create(p))),
+            Some(ref p) => Box::new(fs::File::create(p)?),
         })
     }
 
     pub fn from_writer<W: io::Write>(&self, wtr: W) -> csv::Writer<W> {
-        let term = if self.crlf { csv::RecordTerminator::CRLF }
-                   else { csv::RecordTerminator::Any(b'\n') };
-        csv::Writer::from_writer(wtr)
-                    .flexible(self.flexible)
-                    .delimiter(self.delimiter)
-                    .record_terminator(term)
+        csv::WriterBuilder::new()
+            .flexible(self.flexible)
+            .delimiter(self.delimiter)
+            .terminator(self.terminator)
+            .quote(self.quote)
+            .quote_style(self.quote_style)
+            .double_quote(self.double_quote)
+            .escape(self.escape)
+            .from_writer(wtr)
     }
 }

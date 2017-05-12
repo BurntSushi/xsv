@@ -1,4 +1,4 @@
-use regex::RegexBuilder;
+use regex::bytes::RegexBuilder;
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -47,35 +47,33 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
-    let pattern = try!(
-        RegexBuilder::new(&*args.arg_regex)
-                     .case_insensitive(args.flag_ignore_case)
-                     .compile()
-    );
+    let args: Args = util::get_args(USAGE, argv)?;
+    let pattern = RegexBuilder::new(&*args.arg_regex)
+        .case_insensitive(args.flag_ignore_case)
+        .build()?;
     let rconfig = Config::new(&args.arg_input)
-                         .delimiter(args.flag_delimiter)
-                         .no_headers(args.flag_no_headers)
-                         .select(args.flag_select);
+        .delimiter(args.flag_delimiter)
+        .no_headers(args.flag_no_headers)
+        .select(args.flag_select);
 
-    let mut rdr = try!(rconfig.reader());
-    let mut wtr = try!(Config::new(&args.flag_output).writer());
+    let mut rdr = rconfig.reader()?;
+    let mut wtr = Config::new(&args.flag_output).writer()?;
 
-    let headers = try!(rdr.byte_headers());
-    let nsel = try!(rconfig.normal_selection(&*headers));
+    let headers = rdr.byte_headers()?.clone();
+    let nsel = rconfig.normal_selection(&headers)?;
 
     if !rconfig.no_headers {
-        try!(wtr.write(headers.iter()));
+        wtr.write_record(&headers)?;
     }
-    for row in rdr.records() {
-        let row = try!(row);
-        let mut m = nsel.select(row.iter()).any(|f| pattern.is_match(&**f));
+    for row in rdr.byte_records() {
+        let row = row?;
+        let mut m = nsel.select(row.iter()).any(|f| pattern.is_match(f));
         if args.flag_invert_match {
             m = !m;
         }
         if m {
-            try!(wtr.write(row.iter().map(|f| &**f)));
+            wtr.write_record(&row)?;
         }
     }
-    Ok(try!(wtr.flush()))
+    Ok(wtr.flush()?)
 }

@@ -1,5 +1,3 @@
-use std::iter::repeat;
-
 use csv;
 
 use CliResult;
@@ -52,8 +50,7 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
-
+    let args: Args = util::get_args(USAGE, argv)?;
     if args.cmd_rows {
         args.cat_rows()
     } else if args.cmd_columns {
@@ -72,57 +69,53 @@ impl Args {
     }
 
     fn cat_rows(&self) -> CliResult<()> {
-        let mut wtr = try!(Config::new(&self.flag_output).writer());
-        for (i, conf) in try!(self.configs()).into_iter().enumerate() {
-            let mut rdr = try!(conf.reader());
+        let mut wtr = Config::new(&self.flag_output).writer()?;
+        for (i, conf) in self.configs()?.into_iter().enumerate() {
+            let mut rdr = conf.reader()?;
             if i == 0 {
-                try!(conf.write_headers(&mut rdr, &mut wtr));
+                conf.write_headers(&mut rdr, &mut wtr)?;
             }
             for r in rdr.byte_records() {
-                try!(wtr.write(try!(r).into_iter()));
+                wtr.write_record(&r?)?;
             }
         }
         wtr.flush().map_err(From::from)
     }
 
     fn cat_columns(&self) -> CliResult<()> {
-        let mut wtr = try!(Config::new(&self.flag_output).writer());
-        let mut rdrs = try!(try!(self.configs())
-                                .into_iter()
-                                .map(|conf| conf.no_headers(true).reader())
-                                .collect::<Result<Vec<_>, _>>());
+        let mut wtr = Config::new(&self.flag_output).writer()?;
+        let mut rdrs = self.configs()?
+            .into_iter()
+            .map(|conf| conf.no_headers(true).reader())
+            .collect::<Result<Vec<_>, _>>()?;
 
         // Find the lengths of each record. If a length varies, then an error
         // will occur so we can rely on the first length being the correct one.
-        let mut lengths = vec!();
+        let mut lengths = vec![];
         for rdr in &mut rdrs {
-            lengths.push(try!(rdr.byte_headers()).len());
+            lengths.push(rdr.byte_headers()?.len());
         }
 
         let mut iters = rdrs.iter_mut()
                             .map(|rdr| rdr.byte_records())
                             .collect::<Vec<_>>();
         'OUTER: loop {
-            let mut records: Vec<Vec<csv::ByteString>> = vec!();
+            let mut record = csv::ByteRecord::new();
             let mut num_done = 0;
             for (iter, &len) in iters.iter_mut().zip(lengths.iter()) {
                 match iter.next() {
                     None => {
                         num_done += 1;
                         if self.flag_pad {
-                            // This can probably be optimized by
-                            // pre-allocating. It would avoid the intermediate
-                            // `Vec`.
-                            records.push(
-                                repeat(util::empty_field())
-                                .take(len)
-                                .collect());
+                            for _ in 0..len {
+                                record.push_field(b"");
+                            }
                         } else {
                             break 'OUTER;
                         }
                     }
                     Some(Err(err)) => return fail!(err),
-                    Some(Ok(next)) => records.push(next),
+                    Some(Ok(next)) => record.extend(&next),
                 }
             }
             // Only needed when `--pad` is set.
@@ -131,7 +124,7 @@ impl Args {
             if num_done >= iters.len() {
                 break 'OUTER;
             }
-            try!(wtr.write(records.concat().into_iter()));
+            wtr.write_record(&record)?;
         }
         wtr.flush().map_err(From::from)
     }

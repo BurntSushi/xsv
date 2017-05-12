@@ -47,31 +47,34 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
+    let args: Args = util::get_args(USAGE, argv)?;
 
     let rconfig = Config::new(&args.arg_input)
-                         .delimiter(args.flag_delimiter)
-                         .no_headers(true);
-    let wconfig = Config::new(&args.flag_output)
-                         .delimiter(args.flag_out_delimiter)
-                         .crlf(args.flag_crlf);
-    let mut rdr = try!(rconfig.reader());
-    let mut wtr = try!(wconfig.writer());
+        .delimiter(args.flag_delimiter)
+        .no_headers(true);
+    let mut wconfig = Config::new(&args.flag_output)
+        .delimiter(args.flag_out_delimiter)
+        .crlf(args.flag_crlf);
 
     if args.flag_ascii {
-        wtr = wtr.delimiter(b'\x1f')
-                 .record_terminator(csv::RecordTerminator::Any(b'\x1e'));
+        wconfig = wconfig
+            .delimiter(Some(Delimiter(b'\x1f')))
+            .terminator(csv::Terminator::Any(b'\x1e'));
     }
     if args.flag_quote_always {
-        wtr = wtr.quote_style(csv::QuoteStyle::Always);
+        wconfig = wconfig.quote_style(csv::QuoteStyle::Always);
     }
     if let Some(escape) = args.flag_escape {
-        wtr = wtr.escape(escape.as_byte()).double_quote(false);
+        wconfig = wconfig.escape(escape.as_byte()).double_quote(false);
     }
-    wtr = wtr.quote(args.flag_quote.as_byte());
+    wconfig = wconfig.quote(args.flag_quote.as_byte());
+
+
+    let mut rdr = rconfig.reader()?;
+    let mut wtr = wconfig.writer()?;
     for r in rdr.byte_records() {
-        try!(wtr.write(try!(r).into_iter()));
+        wtr.write_record(&r?)?;
     }
-    try!(wtr.flush());
+    wtr.flush()?;
     Ok(())
 }

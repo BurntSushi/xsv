@@ -166,7 +166,7 @@ fn param_prop_frequency(name: &str, rows: CsvData, idx: bool) -> bool {
 
 type FTables = HashMap<String, Frequencies<String>>;
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize, RustcDecodable)]
 struct FRow {
     field: String,
     value: String,
@@ -197,9 +197,9 @@ fn ftables_from_rows<T: Csv>(rows: T) -> FTables {
 }
 
 fn ftables_from_csv_string(data: String) -> FTables {
-    let mut rdr = csv::Reader::from_string(data);
+    let mut rdr = csv::Reader::from_reader(data.as_bytes());
     let mut ftables = HashMap::new();
-    for frow in rdr.decode() {
+    for frow in rdr.deserialize() {
         let frow: FRow = frow.unwrap();
         match ftables.entry(frow.field) {
             Entry::Vacant(v) => {

@@ -48,33 +48,33 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
+    let args: Args = util::get_args(USAGE, argv)?;
     let rconfig = Config::new(&args.arg_input)
-                         .delimiter(args.flag_delimiter)
-                         .no_headers(args.flag_no_headers);
-    let mut rdr = try!(rconfig.reader());
-    let headers = try!(rdr.byte_headers());
+        .delimiter(args.flag_delimiter)
+        .no_headers(args.flag_no_headers);
+    let mut rdr = rconfig.reader()?;
+    let headers = rdr.byte_headers()?.clone();
 
     let mut wtr = TabWriter::new(io::stdout());
     let mut first = true;
     for r in rdr.byte_records() {
         if !first && !args.flag_separator.is_empty() {
-            try!(writeln!(&mut wtr, "{}", args.flag_separator));
+            writeln!(&mut wtr, "{}", args.flag_separator)?;
         }
         first = false;
-        let r = try!(r).into_iter();
-        for (i, (header, field)) in headers.iter().zip(r).enumerate() {
+        let r = r?;
+        for (i, (header, field)) in headers.iter().zip(&r).enumerate() {
             if rconfig.no_headers {
-                try!(write!(&mut wtr, "{}", i));
+                write!(&mut wtr, "{}", i)?;
             } else {
-                try!(wtr.write_all(&header));
+                wtr.write_all(&header)?;
             }
-            try!(wtr.write_all(b"\t"));
-            try!(wtr.write_all(&*util::condense(Cow::Borrowed(&*field),
-                                                args.flag_condense)));
-            try!(wtr.write_all(b"\n"));
+            wtr.write_all(b"\t")?;
+            wtr.write_all(&*util::condense(
+                Cow::Borrowed(&*field), args.flag_condense))?;
+            wtr.write_all(b"\n")?;
         }
     }
-    try!(wtr.flush());
+    wtr.flush()?;
     Ok(())
 }

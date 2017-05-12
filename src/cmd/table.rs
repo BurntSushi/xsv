@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use csv;
 use tabwriter::TabWriter;
 
 use CliResult;
@@ -46,26 +47,25 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
-
+    let args: Args = util::get_args(USAGE, argv)?;
     let rconfig = Config::new(&args.arg_input)
-                         .delimiter(args.flag_delimiter)
-                         .no_headers(true);
+        .delimiter(args.flag_delimiter)
+        .no_headers(true);
     let wconfig = Config::new(&args.flag_output)
-                         .delimiter(Some(Delimiter(b'\t')));
+        .delimiter(Some(Delimiter(b'\t')));
 
-    let tw = TabWriter::new(try!(wconfig.io_writer()))
-                       .minwidth(args.flag_width)
-                       .padding(args.flag_pad);
+    let tw = TabWriter::new(wconfig.io_writer()?)
+        .minwidth(args.flag_width)
+        .padding(args.flag_pad);
     let mut wtr = wconfig.from_writer(tw);
-    let mut rdr = try!(rconfig.reader());
+    let mut rdr = rconfig.reader()?;
 
-    for r in rdr.byte_records() {
-        let r = try!(r);
-        let row = r.iter().map(|f| util::condense(Cow::Borrowed(&**f),
-                                                  args.flag_condense));
-        try!(wtr.write(row));
+    let mut record = csv::ByteRecord::new();
+    while rdr.read_byte_record(&mut record)? {
+        wtr.write_record(record.iter().map(|f| {
+            util::condense(Cow::Borrowed(f), args.flag_condense)
+        }))?;
     }
-    try!(wtr.flush());
+    wtr.flush()?;
     Ok(())
 }

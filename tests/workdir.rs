@@ -35,6 +35,7 @@ impl Workdir {
         let dir = root.join(XSV_INTEGRATION_TEST_DIR)
                       .join(name)
                       .join(&format!("test-{}", id));
+        // println!("{:?}", dir);
         if let Err(err) = create_dir_all(&dir) {
             panic!("Could not create '{:?}': {}", dir, err);
         }
@@ -47,10 +48,12 @@ impl Workdir {
     }
 
     pub fn create<T: Csv>(&self, name: &str, rows: T) {
-        let mut wtr = csv::Writer::from_file(&self.path(name))
-                                  .unwrap().flexible(self.flexible);
+        let mut wtr = csv::WriterBuilder::new()
+            .flexible(self.flexible)
+            .from_path(&self.path(name))
+            .unwrap();
         for row in rows.to_vecs().into_iter() {
-            wtr.write(row.iter()).unwrap();
+            wtr.write_record(row).unwrap();
         }
         wtr.flush().unwrap();
     }
@@ -65,8 +68,18 @@ impl Workdir {
 
     pub fn read_stdout<T: Csv>(&self, cmd: &mut process::Command) -> T {
         let stdout: String = self.stdout(cmd);
-        let mut rdr = csv::Reader::from_string(stdout).has_headers(false);
-        Csv::from_vecs(rdr.records().collect::<Result<_, _>>().unwrap())
+        let mut rdr = csv::ReaderBuilder::new()
+            .has_headers(false)
+            .from_reader(io::Cursor::new(stdout));
+
+        let records: Vec<Vec<String>> = rdr
+            .records()
+            .collect::<Result<Vec<csv::StringRecord>, _>>()
+            .unwrap()
+            .into_iter()
+            .map(|r| r.iter().map(|f| f.to_string()).collect())
+            .collect();
+        Csv::from_vecs(records)
     }
 
     pub fn command(&self, sub_command: &str) -> process::Command {
@@ -77,6 +90,7 @@ impl Workdir {
 
     pub fn output(&self, cmd: &mut process::Command) -> process::Output {
         debug!("[{}]: {:?}", self.dir.display(), cmd);
+        println!("[{}]: {:?}", self.dir.display(), cmd);
         let o = cmd.output().unwrap();
         if !o.status.success() {
             panic!("\n\n===== {:?} =====\n\

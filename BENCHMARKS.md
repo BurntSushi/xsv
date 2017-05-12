@@ -6,27 +6,27 @@ These benchmarks were run with
 which is a random 1,000,000 row subset of the world city population dataset
 from the [Data Science Toolkit](https://github.com/petewarden/dstkdata).
 
-These benchmarks were run on an Intel i3930K (6 CPUs, 12 threads) with 32GB of
-memory.
+These benchmarks were run on an Intel i7-6900K (8 CPUs, 16 threads) with 64GB
+of memory.
 
 ```
-count                   0.28 seconds    162.54 MB/sec
-flatten                 5.31 seconds    8.57 MB/sec
-flatten_condensed       5.39 seconds    8.44 MB/sec
-frequency               2.54 seconds    17.91 MB/sec
-index                   0.27 seconds    168.56 MB/sec
-sample_10               0.47 seconds    96.83 MB/sec
-sample_1000             0.49 seconds    92.88 MB/sec
-sample_100000           0.62 seconds    73.40 MB/sec
-search                  0.71 seconds    64.10 MB/sec
-select                  0.47 seconds    96.83 MB/sec
-sort                    3.36 seconds    13.54 MB/sec
-slice_one_middle        0.22 seconds    206.88 MB/sec
-slice_one_middle_index  0.01 seconds    4551.36 MB/sec
-stats                   1.37 seconds    33.22 MB/sec
-stats_index             0.23 seconds    197.88 MB/sec
-stats_everything        3.90 seconds    11.67 MB/sec
-stats_everything_index  2.58 seconds    17.64 MB/sec
+count                   0.11  seconds  413.76   MB/sec
+flatten                 4.54  seconds  10.02    MB/sec
+flatten_condensed       4.45  seconds  10.22    MB/sec
+frequency               1.82  seconds  25.00    MB/sec
+index                   0.12  seconds  379.28   MB/sec
+sample_10               0.18  seconds  252.85   MB/sec
+sample_1000             0.18  seconds  252.85   MB/sec
+sample_100000           0.29  seconds  156.94   MB/sec
+search                  0.27  seconds  168.56   MB/sec
+select                  0.14  seconds  325.09   MB/sec
+sort                    2.18  seconds  20.87    MB/sec
+slice_one_middle        0.08  seconds  568.92   MB/sec
+slice_one_middle_index  0.01  seconds  4551.36  MB/sec
+stats                   1.09  seconds  41.75    MB/sec
+stats_index             0.15  seconds  303.42   MB/sec
+stats_everything        1.94  seconds  23.46    MB/sec
+stats_everything_index  0.93  seconds  48.93    MB/sec
 ```
 
 ### Details
@@ -39,4 +39,3 @@ The `count` command can be viewed as a sort of baseline of the fastest possible
 command that parses every record in CSV data.
 
 The benchmarks that end with `_index` are run with indexing enabled.
-

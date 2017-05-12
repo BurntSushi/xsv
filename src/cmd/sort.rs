@@ -43,54 +43,53 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
-
+    let args: Args = util::get_args(USAGE, argv)?;
     let numeric = args.flag_numeric;
     let reverse = args.flag_reverse;
     let rconfig = Config::new(&args.arg_input)
-                         .delimiter(args.flag_delimiter)
-                         .no_headers(args.flag_no_headers)
-                         .select(args.flag_select);
+        .delimiter(args.flag_delimiter)
+        .no_headers(args.flag_no_headers)
+        .select(args.flag_select);
 
-    let mut rdr = try!(rconfig.reader());
-    let mut wtr = try!(Config::new(&args.flag_output).writer());
+    let mut rdr = rconfig.reader()?;
+    let mut wtr = Config::new(&args.flag_output).writer()?;
 
-    let headers = try!(rdr.byte_headers());
-    let sel = try!(rconfig.selection(&*headers));
+    let headers = rdr.byte_headers()?.clone();
+    let sel = rconfig.selection(&headers)?;
 
-    let mut all = try!(rdr.byte_records().collect::<Result<Vec<_>, _>>());
+    let mut all = rdr.byte_records().collect::<Result<Vec<_>, _>>()?;
     match (numeric, reverse) {
         (false, false) =>
             all.sort_by(|r1, r2| {
-                let a = sel.select(r1.as_slice());
-                let b = sel.select(r2.as_slice());
+                let a = sel.select(r1);
+                let b = sel.select(r2);
                 iter_cmp(a, b)
             }),
         (true, false) =>
             all.sort_by(|r1, r2| {
-                let a = sel.select(r1.as_slice());
-                let b = sel.select(r2.as_slice());
+                let a = sel.select(r1);
+                let b = sel.select(r2);
                 iter_cmp_num(a, b)
             }),
         (false, true) =>
             all.sort_by(|r1, r2| {
-                let a = sel.select(r1.as_slice());
-                let b = sel.select(r2.as_slice());
+                let a = sel.select(r1);
+                let b = sel.select(r2);
                 iter_cmp(b, a)
             }),
         (true, true) =>
             all.sort_by(|r1, r2| {
-                let a = sel.select(r1.as_slice());
-                let b = sel.select(r2.as_slice());
+                let a = sel.select(r1);
+                let b = sel.select(r2);
                 iter_cmp_num(b, a)
             }),
     }
 
-    try!(rconfig.write_headers(&mut rdr, &mut wtr));
+    rconfig.write_headers(&mut rdr, &mut wtr)?;
     for r in all.into_iter() {
-        try!(wtr.write(r.into_iter()));
+        wtr.write_record(&r)?;
     }
-    Ok(try!(wtr.flush()))
+    Ok(wtr.flush()?)
 }
 
 /// Order `a` and `b` lexicographically using `Ord`

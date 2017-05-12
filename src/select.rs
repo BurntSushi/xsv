@@ -6,9 +6,8 @@ use std::ops;
 use std::slice;
 use std::str::FromStr;
 
-use rustc_serialize::{Decodable, Decoder};
-
 use csv;
+use rustc_serialize::{Decodable, Decoder};
 
 #[derive(Clone)]
 pub struct SelectColumns {
@@ -26,13 +25,16 @@ impl SelectColumns {
                 false
             };
         Ok(SelectColumns {
-            selectors: try!(SelectorParser::new(s).parse()),
+            selectors: SelectorParser::new(s).parse()?,
             invert: invert,
         })
     }
 
-    pub fn selection(&self, first_record: &[csv::ByteString], use_names: bool)
-                    -> Result<Selection, String> {
+    pub fn selection(
+        &self,
+        first_record: &csv::ByteRecord,
+        use_names: bool,
+    ) -> Result<Selection, String> {
         if self.selectors.is_empty() {
             return Ok(Selection(if self.invert {
                 // Inverting everything means we get nothing.
@@ -45,7 +47,7 @@ impl SelectColumns {
         let mut map = vec![];
         for sel in &self.selectors {
             let idxs = sel.indices(first_record, use_names);
-            map.extend(try!(idxs).into_iter());
+            map.extend(idxs?.into_iter());
         }
         if self.invert {
             let set: HashSet<_> = map.into_iter().collect();
@@ -69,14 +71,14 @@ impl fmt::Debug for SelectColumns {
             let strs: Vec<_> =
                 self.selectors
                     .iter().map(|sel| format!("{:?}", sel)).collect();
-            write!(f, "{}", strs.connect(", "))
+            write!(f, "{}", strs.join(", "))
         }
     }
 }
 
 impl Decodable for SelectColumns {
     fn decode<D: Decoder>(d: &mut D) -> Result<SelectColumns, D::Error> {
-        SelectColumns::parse(&*try!(d.read_str()))
+        SelectColumns::parse(&*d.read_str()?)
                       .map_err(|e| d.error(&e))
     }
 }
@@ -101,7 +103,7 @@ impl SelectorParser {
                 if self.cur() == Some('-') {
                     OneSelector::Start
                 } else {
-                    try!(self.parse_one())
+                    self.parse_one()?
                 };
             let f2: Option<OneSelector> =
                 if self.cur() == Some('-') {
@@ -109,7 +111,7 @@ impl SelectorParser {
                     Some(if self.is_end_of_selector() {
                         OneSelector::End
                     } else {
-                        try!(self.parse_one())
+                        self.parse_one()?
                     })
                 } else {
                     None
@@ -132,12 +134,12 @@ impl SelectorParser {
         let name =
             if self.cur() == Some('"') {
                 self.bump();
-                try!(self.parse_quoted_name())
+                self.parse_quoted_name()?
             } else {
-                try!(self.parse_name())
+                self.parse_name()?
             };
         Ok(if self.cur() == Some('[') {
-            let idx = try!(self.parse_index());
+            let idx = self.parse_index()?;
             OneSelector::IndexedName(name, idx)
         } else {
             match FromStr::from_str(&name) {
@@ -234,15 +236,18 @@ enum OneSelector {
 }
 
 impl Selector {
-    fn indices(&self, first_record: &[csv::ByteString], use_names: bool)
-              -> Result<Vec<usize>, String> {
+    fn indices(
+        &self,
+        first_record: &csv::ByteRecord,
+        use_names: bool,
+    ) -> Result<Vec<usize>, String> {
         match *self {
             Selector::One(ref sel) => {
                 sel.index(first_record, use_names).map(|i| vec![i])
             }
             Selector::Range(ref sel1, ref sel2) => {
-                let i1 = try!(sel1.index(first_record, use_names));
-                let i2 = try!(sel2.index(first_record, use_names));
+                let i1 = sel1.index(first_record, use_names)?;
+                let i2 = sel2.index(first_record, use_names)?;
                 Ok(match i1.cmp(&i2) {
                     Ordering::Equal => vec!(i1),
                     Ordering::Less => (i1..(i2 + 1)).collect(),
@@ -262,8 +267,11 @@ impl Selector {
 }
 
 impl OneSelector {
-    fn index(&self, first_record: &[csv::ByteString], use_names: bool)
-            -> Result<usize, String> {
+    fn index(
+        &self,
+        first_record: &csv::ByteRecord,
+        use_names: bool,
+    ) -> Result<usize, String> {
         match *self {
             OneSelector::Start => Ok(0),
             OneSelector::End => Ok(
@@ -290,7 +298,7 @@ impl OneSelector {
                 }
                 let mut num_found = 0;
                 for (i, field) in first_record.iter().enumerate() {
-                    if *field == s.as_bytes() {
+                    if field == s.as_bytes() {
                         if num_found == sidx {
                             return Ok(i);
                         }
@@ -337,17 +345,17 @@ impl fmt::Debug for OneSelector {
 pub struct Selection(Vec<usize>);
 
 pub type _GetField =
-    for <'c> fn(&mut &'c [csv::ByteString], &usize) -> Option<&'c [u8]>;
+    for <'c> fn(&mut &'c csv::ByteRecord, &usize) -> Option<&'c [u8]>;
 
 impl Selection {
-    pub fn select<'a, 'b>(&'a self, row: &'b [csv::ByteString])
+    pub fn select<'a, 'b>(&'a self, row: &'b csv::ByteRecord)
                  -> iter::Scan<
                         slice::Iter<'a, usize>,
-                        &'b [csv::ByteString],
+                        &'b csv::ByteRecord,
                         _GetField,
                     > {
         // This is horrifying.
-        fn get_field<'c>(row: &mut &'c [csv::ByteString], idx: &usize)
+        fn get_field<'c>(row: &mut &'c csv::ByteRecord, idx: &usize)
                         -> Option<&'c [u8]> {
             Some(&row[*idx])
         }

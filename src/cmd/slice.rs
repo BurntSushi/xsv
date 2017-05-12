@@ -1,9 +1,9 @@
 use std::fs;
 
-use csv::index::Indexed;
 
 use CliResult;
 use config::{Config, Delimiter};
+use index::Indexed;
 use util;
 
 static USAGE: &'static str = "
@@ -54,8 +54,8 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
-    match try!(args.rconfig().indexed()) {
+    let args: Args = util::get_args(USAGE, argv)?;
+    match args.rconfig().indexed()? {
         None => args.no_index(),
         Some(idxed) => args.with_index(idxed),
     }
@@ -63,42 +63,45 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
 impl Args {
     fn no_index(&self) -> CliResult<()> {
-        let mut rdr = try!(self.rconfig().reader());
-        let mut wtr = try!(self.wconfig().writer());
-        try!(self.rconfig().write_headers(&mut rdr, &mut wtr));
+        let mut rdr = self.rconfig().reader()?;
+        let mut wtr = self.wconfig().writer()?;
+        self.rconfig().write_headers(&mut rdr, &mut wtr)?;
 
-        let (start, end) = try!(self.range());
+        let (start, end) = self.range()?;
         for r in rdr.byte_records().skip(start).take(end - start) {
-            try!(wtr.write(try!(r).into_iter()));
+            wtr.write_record(&r?)?;
         }
-        Ok(try!(wtr.flush()))
+        Ok(wtr.flush()?)
     }
 
-    fn with_index(&self, mut idx: Indexed<fs::File, fs::File>)
-                 -> CliResult<()> {
-        let mut wtr = try!(self.wconfig().writer());
-        try!(self.rconfig().write_headers(&mut *idx, &mut wtr));
+    fn with_index(
+        &self,
+        mut idx: Indexed<fs::File, fs::File>,
+    ) -> CliResult<()> {
+        let mut wtr = self.wconfig().writer()?;
+        self.rconfig().write_headers(&mut *idx, &mut wtr)?;
 
-        let (start, end) = try!(self.range());
+        let (start, end) = self.range()?;
         if end - start == 0 {
             return Ok(());
         }
-        try!(idx.seek(start as u64));
+        idx.seek(start as u64)?;
         for r in idx.byte_records().take(end - start) {
-            try!(wtr.write(try!(r).into_iter()));
+            wtr.write_record(&r?)?;
         }
-        Ok(try!(wtr.flush()))
+        wtr.flush()?;
+        Ok(())
     }
 
     fn range(&self) -> Result<(usize, usize), String> {
-        util::range(self.flag_start, self.flag_end,
-                    self.flag_len, self.flag_index)
+        util::range(
+            self.flag_start, self.flag_end, self.flag_len, self.flag_index)
     }
 
     fn rconfig(&self) -> Config {
         Config::new(&self.arg_input)
-               .delimiter(self.flag_delimiter)
-               .no_headers(self.flag_no_headers)
+            .delimiter(self.flag_delimiter)
+            .no_headers(self.flag_no_headers)
     }
 
     fn wconfig(&self) -> Config {

@@ -4,11 +4,11 @@ use std::path::Path;
 
 use chan;
 use csv;
-use csv::index::Indexed;
 use threadpool::ThreadPool;
 
 use CliResult;
 use config::{Config, Delimiter};
+use index::Indexed;
 use util::{self, FilenameTemplate};
 
 static USAGE: &'static str = "
@@ -58,13 +58,13 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
+    let args: Args = util::get_args(USAGE, argv)?;
     if args.flag_size == 0 {
         return fail!("--size must be greater than 0.");
     }
-    try!(fs::create_dir_all(&args.arg_outdir));
+    fs::create_dir_all(&args.arg_outdir)?;
 
-    match try!(args.rconfig().indexed()) {
+    match args.rconfig().indexed()? {
         Some(idx) => args.parallel_split(idx),
         None => args.sequential_split(),
     }
@@ -73,26 +73,27 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 impl Args {
     fn sequential_split(&self) -> CliResult<()> {
         let rconfig = self.rconfig();
-        let mut rdr = try!(rconfig.reader());
-        let headers = try!(rdr.byte_headers());
+        let mut rdr = rconfig.reader()?;
+        let headers = rdr.byte_headers()?.clone();
 
-        let mut wtr = try!(self.new_writer(&*headers, 0));
+        let mut wtr = self.new_writer(&headers, 0)?;
         for (i, row) in rdr.byte_records().enumerate() {
             if i > 0 && i % self.flag_size == 0 {
-                try!(wtr.flush());
-                wtr = try!(self.new_writer(&*headers, i));
+                wtr.flush()?;
+                wtr = self.new_writer(&headers, i)?;
             }
-            let row = try!(row);
-            try!(wtr.write(row.into_iter()));
+            wtr.write_record(&row?)?;
         }
-        try!(wtr.flush());
+        wtr.flush()?;
         Ok(())
     }
 
-    fn parallel_split(&self, idx: Indexed<fs::File, fs::File>)
-                     -> CliResult<()> {
-        let nchunks = util::num_of_chunks(idx.count() as usize,
-                                          self.flag_size);
+    fn parallel_split(
+        &self,
+        idx: Indexed<fs::File, fs::File>,
+    ) -> CliResult<()> {
+        let nchunks = util::num_of_chunks(
+            idx.count() as usize, self.flag_size);
         let pool = ThreadPool::new(self.njobs());
         let wg = chan::WaitGroup::new();
         for i in 0..nchunks {
@@ -102,14 +103,15 @@ impl Args {
             pool.execute(move || {
                 let conf = args.rconfig();
                 let mut idx = conf.indexed().unwrap().unwrap();
-                let headers = idx.byte_headers().unwrap();
-                let mut wtr = args.new_writer(&*headers, i * args.flag_size)
-                                  .unwrap();
+                let headers = idx.byte_headers().unwrap().clone();
+                let mut wtr = args
+                    .new_writer(&headers, i * args.flag_size)
+                    .unwrap();
 
                 idx.seek((i * args.flag_size) as u64).unwrap();
                 for row in idx.byte_records().take(args.flag_size) {
                     let row = row.unwrap();
-                    wtr.write(row.into_iter()).unwrap();
+                    wtr.write_record(row.into_iter()).unwrap();
                 }
                 wtr.flush().unwrap();
                 wg.done();
@@ -119,25 +121,32 @@ impl Args {
         Ok(())
     }
 
-    fn new_writer(&self, headers: &[csv::ByteString], start: usize)
-                 -> CliResult<csv::Writer<Box<io::Write+'static>>> {
+    fn new_writer(
+        &self,
+        headers: &csv::ByteRecord,
+        start: usize,
+    ) -> CliResult<csv::Writer<Box<io::Write+'static>>> {
         let dir = Path::new(&self.arg_outdir);
         let path = dir.join(self.flag_filename.filename(&format!("{}", start)));
         let spath = Some(path.display().to_string());
-        let mut wtr = try!(Config::new(&spath).writer());
+        let mut wtr = Config::new(&spath).writer()?;
         if !self.rconfig().no_headers {
-            try!(wtr.write(headers.iter().map(|f| &**f)));
+            wtr.write_record(headers)?;
         }
         Ok(wtr)
     }
 
     fn rconfig(&self) -> Config {
         Config::new(&self.arg_input)
-               .delimiter(self.flag_delimiter)
-               .no_headers(self.flag_no_headers)
+            .delimiter(self.flag_delimiter)
+            .no_headers(self.flag_no_headers)
     }
 
     fn njobs(&self) -> usize {
-        if self.flag_jobs == 0 { util::num_cpus() } else { self.flag_jobs }
+        if self.flag_jobs == 0 {
+            util::num_cpus()
+        } else {
+            self.flag_jobs
+        }
     }
 }
