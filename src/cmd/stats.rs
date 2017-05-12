@@ -3,17 +3,17 @@ use std::default::Default;
 use std::fmt;
 use std::fs;
 use std::io;
-use std::iter::repeat;
+use std::iter::{FromIterator, repeat};
 use std::str::{self, FromStr};
 
 use chan;
-use csv::{self, ByteString};
-use csv::index::Indexed;
+use csv;
 use stats::{Commute, OnlineStats, MinMax, Unsorted, merge_all};
 use threadpool::ThreadPool;
 
 use CliResult;
 use config::{Config, Delimiter};
+use index::Indexed;
 use select::{SelectColumns, Selection};
 use util;
 
@@ -83,10 +83,10 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
+    let args: Args = util::get_args(USAGE, argv)?;
 
-    let mut wtr = try!(Config::new(&args.flag_output).writer());
-    let (headers, stats) = try!(match try!(args.rconfig().indexed()) {
+    let mut wtr = Config::new(&args.flag_output).writer()?;
+    let (headers, stats) = match args.rconfig().indexed()? {
         None => args.sequential_stats(),
         Some(idx) => {
             if args.flag_jobs == 1 {
@@ -95,43 +95,45 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 args.parallel_stats(idx)
             }
         }
-    });
+    }?;
     let stats = args.stats_to_records(stats);
 
-    try!(wtr.write(args.stat_headers().iter()));
+    wtr.write_record(&args.stat_headers())?;
     let fields = headers.iter().zip(stats.into_iter());
     for (i, (header, stat)) in fields.enumerate() {
-        let header = if args.flag_no_headers {
-            i.to_string().into_bytes()
-        } else {
-            header.clone()
-        };
-        let row = vec![&*header].into_iter()
-                              .chain(stat.iter().map(|f| f.as_bytes()));
-        try!(wtr.write(row));
+        let header =
+            if args.flag_no_headers {
+                i.to_string().into_bytes()
+            } else {
+                header.to_vec()
+            };
+        let stat = stat.iter().map(|f| f.as_bytes());
+        wtr.write_record(vec![&*header].into_iter().chain(stat))?;
     }
+    wtr.flush()?;
     Ok(())
 }
 
 impl Args {
-    fn sequential_stats(&self)
-                       -> CliResult<(Vec<ByteString>, Vec<Stats>)> {
-        let mut rdr = try!(self.rconfig().reader());
-        let (headers, sel) = try!(self.sel_headers(&mut rdr));
-        let stats = try!(self.compute(&sel, rdr.byte_records()));
+    fn sequential_stats(&self) -> CliResult<(csv::ByteRecord, Vec<Stats>)> {
+        let mut rdr = self.rconfig().reader()?;
+        let (headers, sel) = self.sel_headers(&mut rdr)?;
+        let stats = self.compute(&sel, rdr.byte_records())?;
         Ok((headers, stats))
     }
 
-    fn parallel_stats(&self, idx: Indexed<fs::File, fs::File>)
-                     -> CliResult<(Vec<ByteString>, Vec<Stats>)> {
+    fn parallel_stats(
+        &self,
+        idx: Indexed<fs::File, fs::File>,
+    ) -> CliResult<(csv::ByteRecord, Vec<Stats>)> {
         // N.B. This method doesn't handle the case when the number of records
-        // is zero correctly. (So we use `sequential_stats` instead.
+        // is zero correctly. So we use `sequential_stats` instead.
         if idx.count() == 0 {
             return self.sequential_stats();
         }
 
-        let mut rdr = try!(self.rconfig().reader());
-        let (headers, sel) = try!(self.sel_headers(&mut rdr));
+        let mut rdr = self.rconfig().reader()?;
+        let (headers, sel) = self.sel_headers(&mut rdr)?;
 
         let chunk_size = util::chunk_size(idx.count() as usize, self.njobs());
         let nchunks = util::num_of_chunks(idx.count() as usize, chunk_size);
@@ -151,8 +153,10 @@ impl Args {
         Ok((headers, merge_all(recv.iter()).unwrap_or_else(Vec::new)))
     }
 
-    fn stats_to_records(&self, stats: Vec<Stats>) -> Vec<Vec<String>> {
-        let mut records: Vec<_> = repeat(vec![]).take(stats.len()).collect();
+    fn stats_to_records(&self, stats: Vec<Stats>) -> Vec<csv::StringRecord> {
+        let mut records: Vec<_> = repeat(csv::StringRecord::new())
+            .take(stats.len())
+            .collect();
         let pool = ThreadPool::new(self.njobs());
         let mut results = vec![];
         for mut stat in stats.into_iter() {
@@ -167,29 +171,31 @@ impl Args {
     }
 
     fn compute<I>(&self, sel: &Selection, it: I) -> CliResult<Vec<Stats>>
-            where I: Iterator<Item=csv::Result<Vec<ByteString>>> {
+            where I: Iterator<Item=csv::Result<csv::ByteRecord>> {
         let mut stats = self.new_stats(sel.len());
         for row in it {
-            let row = try!(row);
-            for (i, field) in sel.select(&*row).enumerate() {
+            let row = row?;
+            for (i, field) in sel.select(&row).enumerate() {
                 stats[i].add(field);
             }
         }
         Ok(stats)
     }
 
-    fn sel_headers<R: io::Read>(&self, rdr: &mut csv::Reader<R>)
-                  -> CliResult<(Vec<ByteString>, Selection)> {
-        let headers = try!(rdr.byte_headers());
-        let sel = try!(self.rconfig().selection(&*headers));
-        Ok((sel.select(&*headers).map(|h| h.to_vec()).collect(), sel))
+    fn sel_headers<R: io::Read>(
+        &self,
+        rdr: &mut csv::Reader<R>,
+    ) -> CliResult<(csv::ByteRecord, Selection)> {
+        let headers = rdr.byte_headers()?.clone();
+        let sel = self.rconfig().selection(&headers)?;
+        Ok((csv::ByteRecord::from_iter(sel.select(&headers)), sel))
     }
 
     fn rconfig(&self) -> Config {
         Config::new(&self.arg_input)
-               .delimiter(self.flag_delimiter)
-               .no_headers(self.flag_no_headers)
-               .select(self.flag_select.clone())
+            .delimiter(self.flag_delimiter)
+            .no_headers(self.flag_no_headers)
+            .select(self.flag_select.clone())
     }
 
     fn njobs(&self) -> usize {
@@ -208,7 +214,7 @@ impl Args {
         })).take(record_len).collect()
     }
 
-    fn stat_headers(&self) -> Vec<String> {
+    fn stat_headers(&self) -> csv::StringRecord {
         let mut fields = vec![
             "field", "type", "sum", "min", "max", "min_length", "max_length",
             "mean", "stddev",
@@ -217,7 +223,7 @@ impl Args {
         if self.flag_median || all { fields.push("median"); }
         if self.flag_mode || all { fields.push("mode"); }
         if self.flag_cardinality || all { fields.push("cardinality"); }
-        fields.into_iter().map(|s| s.to_owned()).collect()
+        csv::StringRecord::from(fields)
     }
 }
 
@@ -244,7 +250,7 @@ struct Stats {
     sum: Option<TypedSum>,
     minmax: Option<TypedMinMax>,
     online: Option<OnlineStats>,
-    mode: Option<Unsorted<ByteString>>,
+    mode: Option<Unsorted<Vec<u8>>>,
     median: Option<Unsorted<f64>>,
     which: WhichStats,
 }
@@ -299,7 +305,7 @@ impl Stats {
         }
     }
 
-    fn to_record(&mut self) -> Vec<String> {
+    fn to_record(&mut self) -> csv::StringRecord {
         let typ = self.typ;
         let mut pieces = vec![];
         let empty = || "".to_owned();
@@ -348,7 +354,7 @@ impl Stats {
             }
             Some(ref mut v) => {
                 if self.which.mode {
-                    let lossy = |s: ByteString| -> String {
+                    let lossy = |s: Vec<u8>| -> String {
                         String::from_utf8_lossy(&*s).into_owned()
                     };
                     pieces.push(
@@ -359,7 +365,7 @@ impl Stats {
                 }
             }
         }
-        pieces
+        csv::StringRecord::from(pieces)
     }
 }
 
@@ -506,7 +512,7 @@ impl Commute for TypedSum {
 /// where min/max makes sense.
 #[derive(Clone)]
 struct TypedMinMax {
-    strings: MinMax<ByteString>,
+    strings: MinMax<Vec<u8>>,
     str_len: MinMax<usize>,
     integers: MinMax<i64>,
     floats: MinMax<f64>,

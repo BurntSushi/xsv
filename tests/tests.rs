@@ -1,5 +1,10 @@
-#[macro_use] extern crate log;
+#![allow(dead_code)]
+
+#[macro_use]
+extern crate log;
 extern crate rustc_serialize;
+#[macro_use]
+extern crate serde_derive;
 
 extern crate csv;
 extern crate filetime;

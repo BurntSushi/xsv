@@ -1,11 +1,11 @@
 use std::io;
 
-use csv::{self, ByteString};
-use csv::index::Indexed;
+use csv;
 use rand::Rng;
 
 use CliResult;
 use config::{Config, Delimiter};
+use index::Indexed;
 use util;
 
 static USAGE: &'static str = "
@@ -48,60 +48,64 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
+    let args: Args = util::get_args(USAGE, argv)?;
     let rconfig = Config::new(&args.arg_input)
-                         .delimiter(args.flag_delimiter)
-                         .no_headers(args.flag_no_headers);
+        .delimiter(args.flag_delimiter)
+        .no_headers(args.flag_no_headers);
     let sample_size = args.arg_sample_size;
 
-    let mut wtr = try!(Config::new(&args.flag_output).writer());
-    let sampled = match try!(rconfig.indexed()) {
+    let mut wtr = Config::new(&args.flag_output).writer()?;
+    let sampled = match rconfig.indexed()? {
         Some(mut idx) => {
             if do_random_access(sample_size, idx.count()) {
-                try!(rconfig.write_headers(&mut *idx, &mut wtr));
-                try!(sample_random_access(&mut idx, sample_size))
+                rconfig.write_headers(&mut *idx, &mut wtr)?;
+                sample_random_access(&mut idx, sample_size)?
             } else {
-                let mut rdr = try!(rconfig.reader());
-                try!(rconfig.write_headers(&mut rdr, &mut wtr));
-                try!(sample_reservoir(&mut rdr, sample_size))
+                let mut rdr = rconfig.reader()?;
+                rconfig.write_headers(&mut rdr, &mut wtr)?;
+                sample_reservoir(&mut rdr, sample_size)?
             }
         }
         _ => {
-            let mut rdr = try!(rconfig.reader());
-            try!(rconfig.write_headers(&mut rdr, &mut wtr));
-            try!(sample_reservoir(&mut rdr, sample_size))
+            let mut rdr = rconfig.reader()?;
+            rconfig.write_headers(&mut rdr, &mut wtr)?;
+            sample_reservoir(&mut rdr, sample_size)?
         }
     };
     for row in sampled.into_iter() {
-        try!(wtr.write(row.into_iter()));
+        wtr.write_record(&row)?;
     }
-    Ok(try!(wtr.flush()))
+    Ok(wtr.flush()?)
 }
 
-fn sample_random_access<R: io::Read + io::Seek, I: io::Read + io::Seek>
-                       (idx: &mut Indexed<R, I>, sample_size: u64)
-                       -> CliResult<Vec<Vec<ByteString>>> {
+fn sample_random_access<R, I>(
+    idx: &mut Indexed<R, I>,
+    sample_size: u64,
+) -> CliResult<Vec<csv::ByteRecord>>
+where R: io::Read + io::Seek, I: io::Read + io::Seek
+{
     let mut all_indices = (0..idx.count()).collect::<Vec<_>>();
     let mut rng = ::rand::thread_rng();
     rng.shuffle(&mut *all_indices);
 
     let mut sampled = Vec::with_capacity(sample_size as usize);
     for i in all_indices.into_iter().take(sample_size as usize) {
-        try!(idx.seek(i));
-        sampled.push(try!(idx.byte_records().next().unwrap()));
+        idx.seek(i)?;
+        sampled.push(idx.byte_records().next().unwrap()?);
     }
     Ok(sampled)
 }
 
-fn sample_reservoir<R: io::Read>
-                   (rdr: &mut csv::Reader<R>, sample_size: u64)
-                   -> CliResult<Vec<Vec<ByteString>>> {
+fn sample_reservoir<R: io::Read>(
+    rdr: &mut csv::Reader<R>,
+    sample_size: u64,
+) -> CliResult<Vec<csv::ByteRecord>> {
     // The following algorithm has been adapted from:
     // http://en.wikipedia.org/wiki/Reservoir_sampling
     let mut reservoir = Vec::with_capacity(sample_size as usize);
     let mut records = rdr.byte_records().enumerate();
     for (_, row) in records.by_ref().take(reservoir.capacity()) {
-        reservoir.push(try!(row));
+        reservoir.push(row?);
     }
 
     // Now do the sampling.
@@ -109,7 +113,7 @@ fn sample_reservoir<R: io::Read>
     for (i, row) in records {
         let random = rng.gen_range(0, i+1);
         if random < sample_size as usize {
-            reservoir[random] = try!(row);
+            reservoir[random] = row?;
         }
     }
     Ok(reservoir)

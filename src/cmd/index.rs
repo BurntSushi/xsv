@@ -2,7 +2,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use csv;
+use csv_index::RandomAccessSimple;
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -42,7 +42,7 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
+    let args: Args = util::get_args(USAGE, argv)?;
 
     let pidx = match args.flag_output {
         None => util::idx_path(&Path::new(&args.arg_input)),
@@ -51,8 +51,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let rconfig = Config::new(&Some(args.arg_input))
                          .delimiter(args.flag_delimiter);
-    let rdr = try!(rconfig.reader_file());
-    let idx = io::BufWriter::new(try!(fs::File::create(&pidx)));
-    try!(csv::index::create_index(rdr, idx));
+    let mut rdr = rconfig.reader_file()?;
+    let mut wtr = io::BufWriter::new(fs::File::create(&pidx)?);
+    RandomAccessSimple::create(&mut rdr, &mut wtr)?;
     Ok(())
 }

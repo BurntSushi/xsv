@@ -1,17 +1,3 @@
-#language: rust
-#rust:
-#  - 1.9.0
-#  - stable
-#  - beta
-#  - nightly
-#script:
-#  - cargo build --verbose
-#  - cargo doc
-#  - cargo test --verbose
-#  - if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
-#      cargo bench --verbose;
-#    fi
-
 language: rust
 cache: cargo
 
@@ -32,6 +18,13 @@ matrix:
       env: TARGET=x86_64-apple-darwin
     - os: linux
       rust: stable
+      env: TARGET=x86_64-unknown-linux-musl
+    # Minimum Rust supported channel.
+    - os: linux
+      rust: 1.15.0
+      env: TARGET=x86_64-unknown-linux-gnu
+    - os: linux
+      rust: 1.15.0
       env: TARGET=x86_64-unknown-linux-musl
 
 before_install:

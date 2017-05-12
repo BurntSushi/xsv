@@ -53,8 +53,8 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
-    try!(fs::create_dir_all(&args.arg_outdir));
+    let args: Args = util::get_args(USAGE, argv)?;
+    fs::create_dir_all(&args.arg_outdir)?;
 
     // It would be nice to support efficient parallel partitions, but doing
     // do would involve more complicated inter-thread communication, with
@@ -73,9 +73,12 @@ impl Args {
     }
 
     /// Get the column to use as a key.
-    fn key_column(&self, rconfig: &Config, headers: &[csv::ByteString])
-                  -> CliResult<usize> {
-        let select_cols = try!(rconfig.selection(&*headers));
+    fn key_column(
+        &self,
+        rconfig: &Config,
+        headers: &csv::ByteRecord,
+    ) -> CliResult<usize> {
+        let select_cols = rconfig.selection(headers)?;
         if select_cols.len() == 1 {
             Ok(select_cols[0])
         } else {
@@ -86,36 +89,36 @@ impl Args {
     /// A basic sequential partition.
     fn sequential_partition(&self) -> CliResult<()> {
         let rconfig = self.rconfig();
-        let mut rdr = try!(rconfig.reader());
-        let headers = try!(rdr.byte_headers());
-        let key_col = try!(self.key_column(&rconfig, &*headers));
+        let mut rdr = rconfig.reader()?;
+        let headers = rdr.byte_headers()?.clone();
+        let key_col = self.key_column(&rconfig, &headers)?;
         let mut gen = WriterGenerator::new(self.flag_filename.clone());
 
-        let mut writers: HashMap<csv::ByteString, BoxedWriter> =
+        let mut writers: HashMap<Vec<u8>, BoxedWriter> =
             HashMap::new();
         for row in rdr.byte_records() {
-            let row = try!(row);
+            let row = row?;
 
             // Decide what file to put this in.
-            let column = row[key_col].clone();
+            let column = &row[key_col];
             let key = match self.flag_prefix_length {
                 // We exceed --prefix-length, so ignore the extra bytes.
                 Some(len) if len < column.len() => &column[0..len],
                 _ => &column[..],
             };
-            let mut entry = writers.entry(key.to_owned());
+            let mut entry = writers.entry(key.to_vec());
             let wtr = match entry {
                 Entry::Occupied(ref mut occupied) => occupied.get_mut(),
                 Entry::Vacant(vacant) => {
                     // We have a new key, so make a new writer.
-                    let mut wtr = try!(gen.writer(&*self.arg_outdir, key));
+                    let mut wtr = gen.writer(&*self.arg_outdir, key)?;
                     if !rconfig.no_headers {
-                        try!(wtr.write(headers.iter()));
+                        wtr.write_record(&headers)?;
                     }
                     vacant.insert(wtr)
                 }
             };
-            try!(wtr.write(row.into_iter()));
+            wtr.write_record(&row)?;
         }
         Ok(())
     }
@@ -137,13 +140,12 @@ impl WriterGenerator {
             template: template,
             counter: 1,
             used: HashSet::new(),
-            non_word_char: Regex::new(r#"\W"#).unwrap(),
+            non_word_char: Regex::new(r"\W").unwrap(),
         }
     }
 
     /// Create a CSV writer for `key`.  Does not add headers.
-    fn writer<P>(&mut self, path: P, key: &[u8])
-                 -> io::Result<BoxedWriter>
+    fn writer<P>(&mut self, path: P, key: &[u8]) -> io::Result<BoxedWriter>
         where P: AsRef<Path>
     {
         let unique_value = self.unique_value(key);
@@ -156,12 +158,13 @@ impl WriterGenerator {
     fn unique_value(&mut self, key: &[u8]) -> String {
         // Sanitize our key.
         let utf8 = String::from_utf8_lossy(key);
-        let safe = self.non_word_char.replace_all(&*utf8, "");
-        let base = if safe.is_empty() {
-            "empty".to_owned()
-        } else {
-            safe
-        };
+        let safe = self.non_word_char.replace_all(&*utf8, "").into_owned();
+        let base =
+            if safe.is_empty() {
+                "empty".to_owned()
+            } else {
+                safe
+            };
 
         // Now check for collisions.
         if !self.used.contains(&base) {

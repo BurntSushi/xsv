@@ -1,3 +1,5 @@
+use csv;
+
 use CliResult;
 use config::{Config, Delimiter};
 use select::SelectColumns;
@@ -55,29 +57,26 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
+    let args: Args = util::get_args(USAGE, argv)?;
 
     let rconfig = Config::new(&args.arg_input)
-                         .delimiter(args.flag_delimiter)
-                         .no_headers(args.flag_no_headers)
-                         .select(args.arg_selection);
+        .delimiter(args.flag_delimiter)
+        .no_headers(args.flag_no_headers)
+        .select(args.arg_selection);
 
-    let mut rdr = try!(rconfig.reader());
-    let mut wtr = try!(Config::new(&args.flag_output).writer());
+    let mut rdr = rconfig.reader()?;
+    let mut wtr = Config::new(&args.flag_output).writer()?;
 
-    let headers = try!(rdr.byte_headers());
-    let sel = try!(rconfig.selection(&*headers));
+    let headers = rdr.byte_headers()?.clone();
+    let sel = rconfig.selection(&headers)?;
 
     if !rconfig.no_headers {
-        try!(wtr.write(sel.iter().map(|&i| &*headers[i])));
+        wtr.write_record(sel.iter().map(|&i| &headers[i]))?;
     }
-    for r in rdr.byte_records() {
-        // TODO: I don't think we can do any better here. Since selection
-        // operates on indices, some kind of allocation is probably required.
-        // try!(wtr.write(sel.select(try!(r)[])))
-        let r = try!(r);
-        try!(wtr.write(sel.iter().map(|&i| &*r[i])));
+    let mut record = csv::ByteRecord::new();
+    while rdr.read_byte_record(&mut record)? {
+        wtr.write_record(sel.iter().map(|&i| &record[i]))?;
     }
-    try!(wtr.flush());
+    wtr.flush()?;
     Ok(())
 }

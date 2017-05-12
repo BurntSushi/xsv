@@ -1,4 +1,4 @@
-use csv::NextField;
+use csv;
 
 use CliResult;
 use config::{Delimiter, Config};
@@ -29,30 +29,22 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
+    let args: Args = util::get_args(USAGE, argv)?;
     let conf = Config::new(&args.arg_input)
-                      .delimiter(args.flag_delimiter)
-                      .no_headers(args.flag_no_headers);
+        .delimiter(args.flag_delimiter)
+        .no_headers(args.flag_no_headers);
 
     let count =
-        match try!(conf.indexed()) {
+        match conf.indexed()? {
             Some(idx) => idx.count(),
             None => {
-                let mut rdr = try!(conf.reader());
+                let mut rdr = conf.reader()?;
                 let mut count = 0u64;
-                loop {
-                    match rdr.next_bytes() {
-                        NextField::EndOfCsv => break,
-                        NextField::EndOfRecord => { count += 1; }
-                        NextField::Error(err) => return fail!(err),
-                        NextField::Data(_) => {}
-                    }
+                let mut record = csv::ByteRecord::new();
+                while rdr.read_byte_record(&mut record)? {
+                    count += 1;
                 }
-                if !conf.no_headers && count > 0 {
-                    count - 1
-                } else {
-                    count
-                }
+                count
             }
         };
     Ok(println!("{}", count))

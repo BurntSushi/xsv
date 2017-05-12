@@ -40,17 +40,19 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
-    let configs = try!(util::many_configs(&*args.arg_input,
-                                          args.flag_delimiter, true));
+    let args: Args = util::get_args(USAGE, argv)?;
+    let configs = util::many_configs(
+        &*args.arg_input, args.flag_delimiter, true)?;
 
     let num_inputs = configs.len();
-    let mut headers = vec!();
+    let mut headers: Vec<Vec<u8>> = vec![];
     for conf in configs.into_iter() {
-        let mut rdr = try!(conf.reader());
-        for header in try!(rdr.byte_headers()).into_iter() {
-            if !args.flag_intersect || !headers.contains(&header) {
-                headers.push(header);
+        let mut rdr = conf.reader()?;
+        for header in rdr.byte_headers()?.iter() {
+            if !args.flag_intersect
+                || !headers.iter().any(|h| &**h == header)
+            {
+                headers.push(header.to_vec());
             }
         }
     }
@@ -63,11 +65,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         };
     for (i, header) in headers.into_iter().enumerate() {
         if num_inputs == 1 && !args.flag_just_names {
-            try!(write!(&mut wtr, "{}\t", i+1));
+            write!(&mut wtr, "{}\t", i+1)?;
         }
-        try!(wtr.write_all(&header));
-        try!(wtr.write_all(b"\n"));
+        wtr.write_all(&header)?;
+        wtr.write_all(b"\n")?;
     }
-    try!(wtr.flush());
+    wtr.flush()?;
     Ok(())
 }

@@ -300,7 +300,7 @@ right and full outer join support too.
 Binaries for Windows, Linux and Mac are available [from Github](https://github.com/BurntSushi/xsv/releases/latest).
 
 If you're a **Mac OS X Homebrew** user, then you can install xsv
-from homebrew-core, (compiled with rust stable, no SIMD):
+from homebrew-core:
 
 ```
 $ brew install xsv
@@ -309,7 +309,13 @@ $ brew install xsv
 Alternatively, you can compile from source by
 [installing Cargo](https://crates.io/install)
 ([Rust's](http://www.rust-lang.org/) package manager)
-and building `xsv`:
+and installing `xsv` using Cargo:
+
+```bash
+cargo install xsv
+```
+
+Compiling from this repository also works similarly:
 
 ```bash
 git clone git://github.com/BurntSushi/xsv
@@ -317,7 +323,7 @@ cd xsv
 cargo build --release
 ```
 
-Compilation will probably take 1-2 minutes depending on your machine. The
+Compilation will probably take a few minutes depending on your machine. The
 binary will end up in `./target/release/xsv`.
 
 

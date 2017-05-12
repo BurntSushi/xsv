@@ -1,5 +1,7 @@
 use std::cmp;
 
+use csv;
+
 use CliResult;
 use config::{Config, Delimiter};
 use util;
@@ -40,11 +42,11 @@ struct Args {
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = try!(util::get_args(USAGE, argv));
+    let args: Args = util::get_args(USAGE, argv)?;
     let config = Config::new(&args.arg_input)
-                        .delimiter(args.flag_delimiter)
-                        .no_headers(true)
-                        .flexible(true);
+        .delimiter(args.flag_delimiter)
+        .no_headers(true)
+        .flexible(true);
     let length = match args.flag_length {
         Some(length) => {
             if length == 0 {
@@ -58,19 +60,15 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                               Please specify a file path.");
             }
             let mut maxlen = 0usize;
-            let mut rdr = try!(config.reader());
-            while !rdr.done() {
-                let mut index = 0usize;
-                let mut nonempty_count = 0usize;
-                loop {
-                    match rdr.next_bytes().into_iter_result() {
-                        None => break,
-                        Some(r) => {
-                            index += 1;
-                            if index == 1 || try!(r).len() > 0 {
-                                nonempty_count = index;
-                            }
-                        }
+            let mut rdr = config.reader()?;
+            let mut record = csv::ByteRecord::new();
+            while rdr.read_byte_record(&mut record)? {
+                let mut index = 0;
+                let mut nonempty_count = 0;
+                for field in &record {
+                    index += 1;
+                    if index == 1 || !field.is_empty() {
+                        nonempty_count = index;
                     }
                 }
                 maxlen = cmp::max(maxlen, nonempty_count);
@@ -79,19 +77,19 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
     };
 
-    let mut rdr = try!(config.reader());
-    let mut wtr = try!(Config::new(&args.flag_output).writer());
+    let mut rdr = config.reader()?;
+    let mut wtr = Config::new(&args.flag_output).writer()?;
     for r in rdr.byte_records() {
-        let mut r = try!(r);
+        let mut r = r?;
         if length >= r.len() {
             for _ in r.len()..length {
-                r.push(util::empty_field());
+                r.push_field(b"");
             }
         } else {
             r.truncate(length);
         }
-        try!(wtr.write(r.into_iter()));
+        wtr.write_record(&r)?;
     }
-    try!(wtr.flush());
+    wtr.flush()?;
     Ok(())
 }

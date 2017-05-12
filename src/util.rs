@@ -51,7 +51,7 @@ pub fn many_configs(inps: &[String], delim: Option<Delimiter>,
                                     .delimiter(delim)
                                     .no_headers(no_headers))
                     .collect::<Vec<_>>();
-    try!(errif_greater_one_stdin(&*confs));
+    errif_greater_one_stdin(&*confs)?;
     Ok(confs)
 }
 
@@ -62,8 +62,6 @@ pub fn errif_greater_one_stdin(inps: &[Config]) -> Result<(), String> {
     }
     Ok(())
 }
-
-pub fn empty_field() -> csv::ByteString { vec![] }
 
 pub fn chunk_size(nitems: usize, njobs: usize) -> usize {
     if nitems < njobs {
@@ -93,11 +91,6 @@ pub fn condense<'a>(val: Cow<'a, [u8]>, n: Option<usize>) -> Cow<'a, [u8]> {
     match n {
         None => val,
         Some(n) => {
-            // It would be much nicer to just use a `match` here, but the
-            // borrow checker won't allow it. ---AG
-            //
-            // (We could circumvent it by allocating a new Unicode string,
-            // but that seems excessive.)
             let mut is_short_utf8 = false;
             if let Ok(s) = str::from_utf8(&*val) {
                 if n >= s.chars().count() {
@@ -212,7 +205,7 @@ impl FilenameTemplate {
 
 impl Decodable for FilenameTemplate {
     fn decode<D: Decoder>(d: &mut D) -> Result<FilenameTemplate, D::Error> {
-        let raw = try!(d.read_str());
+        let raw = d.read_str()?;
         let chunks = raw.split("{}").collect::<Vec<_>>();
         if chunks.len() == 2 {
             Ok(FilenameTemplate {
