@@ -4,6 +4,7 @@ use CliResult;
 use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
+use std::str::from_utf8;
 
 static USAGE: &'static str = "
 Sorts CSV data lexicographically.
@@ -16,6 +17,8 @@ Usage:
 sort options:
     -s, --select <arg>     Select a subset of columns to sort.
                            See 'xsv select --help' for the format details.
+    -N, --numeric          Compare according to string numerical value
+    -R, --reverse          Reverse order
 
 Common options:
     -h, --help             Display this message
@@ -32,6 +35,8 @@ Common options:
 struct Args {
     arg_input: Option<String>,
     flag_select: SelectColumns,
+    flag_numeric: bool,
+    flag_reverse: bool,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
@@ -40,6 +45,8 @@ struct Args {
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = try!(util::get_args(USAGE, argv));
 
+    let numeric = args.flag_numeric;
+    let reverse = args.flag_reverse;
     let rconfig = Config::new(&args.arg_input)
                          .delimiter(args.flag_delimiter)
                          .no_headers(args.flag_no_headers)
@@ -52,12 +59,32 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let sel = try!(rconfig.selection(&*headers));
 
     let mut all = try!(rdr.byte_records().collect::<Result<Vec<_>, _>>());
-    all.sort_by(|r1, r2| {
-        // TODO: Numeric sorting. The tricky part, IMO, is figuring out
-        // how to expose it in the CLI interface. Not sure of the right
-        // answer at the moment.
-        iter_cmp(sel.select(&**r1), sel.select(&**r2))
-    });
+    match (numeric, reverse) {
+        (false, false) =>
+            all.sort_by(|r1, r2| {
+                let a = sel.select(r1.as_slice());
+                let b = sel.select(r2.as_slice());
+                iter_cmp(a, b)
+            }),
+        (true, false) =>
+            all.sort_by(|r1, r2| {
+                let a = sel.select(r1.as_slice());
+                let b = sel.select(r2.as_slice());
+                iter_cmp_num(a, b)
+            }),
+        (false, true) =>
+            all.sort_by(|r1, r2| {
+                let a = sel.select(r1.as_slice());
+                let b = sel.select(r2.as_slice());
+                iter_cmp(b, a)
+            }),
+        (true, true) =>
+            all.sort_by(|r1, r2| {
+                let a = sel.select(r1.as_slice());
+                let b = sel.select(r2.as_slice());
+                iter_cmp_num(b, a)
+            }),
+    }
 
     try!(rconfig.write_headers(&mut rdr, &mut wtr));
     for r in all.into_iter() {
@@ -80,4 +107,27 @@ pub fn iter_cmp<A, L, R>(mut a: L, mut b: R) -> cmp::Ordering
             },
         }
     }
+}
+
+/// Try parsing `a` and `b` as numbers when ordering
+pub fn iter_cmp_num<'a, L, R>(mut a: L, mut b: R) -> cmp::Ordering
+        where L: Iterator<Item=&'a [u8]>, R: Iterator<Item=&'a [u8]> {
+    loop {
+        match (next_num(&mut a), next_num(&mut b)) {
+            (None, None) => return cmp::Ordering::Equal,
+            (None, _   ) => return cmp::Ordering::Less,
+            (_   , None) => return cmp::Ordering::Greater,
+            (Some(x), Some(y)) => match x.cmp(&y) {
+                cmp::Ordering::Equal => (),
+                non_eq => return non_eq,
+            },
+        }
+    }
+}
+
+fn next_num<'a, X>(xs: &mut X) -> Option<i64>
+        where X: Iterator<Item=&'a [u8]> {
+    xs.next()
+        .and_then(|bytes| from_utf8(bytes).ok())
+        .and_then(|s| s.parse::<i64>().ok())
 }
