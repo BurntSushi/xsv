@@ -198,7 +198,7 @@ Longitude,23.1,459
 CSV data. This one only took 5 seconds.)
 
 So it seems that most cities do not have a population count associated with
-them at all. No matter---we can adjust our previous command so that it only
+them at all. No matter—we can adjust our previous command so that it only
 shows rows with a population count:
 
 ```bash
@@ -263,7 +263,7 @@ Bulgaria                                                                        
 Great Britain | UK | England | Scotland | Wales | Northern Ireland | United Kingdom  Leatherhead      43544
 ```
 
-Perhaps we can do this with the original CSV data? Indeed we can---because
+Perhaps we can do this with the original CSV data? Indeed we can—because
 joins in `xsv` are fast.
 
 ```bash
@@ -346,7 +346,7 @@ woefully inadequate. They were just too slow or didn't provide enough
 flexibility. (Another project I had comprised of a few dozen CSV files. They
 were smaller than 40GB, but they were each supposed to represent the same kind
 of data. But they all had different column and unintuitive column names. Useful
-CSV inspection tools were critical here---and they had to be reasonably fast.)
+CSV inspection tools were critical here—and they had to be reasonably fast.)
 
 The key ingredients for helping me with my task were indexing, random sampling,
 searching, slicing and selecting columns. All of these things made dealing with
