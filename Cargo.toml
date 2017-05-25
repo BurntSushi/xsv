@@ -21,6 +21,7 @@ name = "tests"
 
 [profile.release]
 opt-level = 3
+debug = true
 
 [profile.test]
 opt-level = 3
@@ -28,8 +29,8 @@ opt-level = 3
 [dependencies]
 byteorder = "1"
 chan = "0.1"
-csv = "1.0.0-beta.1"
-csv-index = "0.1"
+csv = "1.0.0-beta.3"
+csv-index = "0.1.2"
 docopt = "0.7"
 filetime = "0.1"
 num_cpus = "1.4"

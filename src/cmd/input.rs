@@ -1,3 +1,5 @@
+use csv;
+
 use CliResult;
 use config::{Config, Delimiter};
 use util;
@@ -48,8 +50,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut rdr = rconfig.reader()?;
     let mut wtr = wconfig.writer()?;
-    for r in rdr.byte_records() {
-        wtr.write_record(&r?)?;
+    let mut row = csv::ByteRecord::new();
+    while rdr.read_byte_record(&mut row)? {
+        wtr.write_record(&row)?;
     }
     wtr.flush()?;
     Ok(())

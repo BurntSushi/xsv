@@ -87,7 +87,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     rconfig.write_headers(&mut rdr, &mut wtr)?;
     for r in all.into_iter() {
-        wtr.write_record(&r)?;
+        wtr.write_byte_record(&r)?;
     }
     Ok(wtr.flush()?)
 }

@@ -88,7 +88,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         } else {
             r.truncate(length);
         }
-        wtr.write_record(&r)?;
+        wtr.write_byte_record(&r)?;
     }
     wtr.flush()?;
     Ok(())

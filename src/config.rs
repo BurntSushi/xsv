@@ -11,7 +11,7 @@ use index::Indexed;
 use rustc_serialize::{Decodable, Decoder};
 
 use CliResult;
-use select::{SelectColumns, Selection, NormalSelection};
+use select::{SelectColumns, Selection};
 use util;
 
 
@@ -172,13 +172,6 @@ impl Config {
         }
     }
 
-    pub fn normal_selection(
-        &self,
-        first_record: &csv::ByteRecord,
-    ) -> Result<NormalSelection, String> {
-        self.selection(first_record).map(|sel| sel.normal())
-    }
-
     pub fn write_headers<R: io::Read, W: io::Write>
                         (&self, r: &mut csv::Reader<R>, w: &mut csv::Writer<W>)
                         -> csv::Result<()> {
@@ -301,6 +294,7 @@ impl Config {
             .quote_style(self.quote_style)
             .double_quote(self.double_quote)
             .escape(self.escape)
+            .buffer_capacity(32 * (1<<10))
             .from_writer(wtr)
     }
 }

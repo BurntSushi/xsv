@@ -77,12 +77,15 @@ impl Args {
         let headers = rdr.byte_headers()?.clone();
 
         let mut wtr = self.new_writer(&headers, 0)?;
-        for (i, row) in rdr.byte_records().enumerate() {
+        let mut i = 0;
+        let mut row = csv::ByteRecord::new();
+        while rdr.read_byte_record(&mut row)? {
             if i > 0 && i % self.flag_size == 0 {
                 wtr.flush()?;
                 wtr = self.new_writer(&headers, i)?;
             }
-            wtr.write_record(&row?)?;
+            wtr.write_byte_record(&row)?;
+            i += 1;
         }
         wtr.flush()?;
         Ok(())
@@ -111,7 +114,7 @@ impl Args {
                 idx.seek((i * args.flag_size) as u64).unwrap();
                 for row in idx.byte_records().take(args.flag_size) {
                     let row = row.unwrap();
-                    wtr.write_record(row.into_iter()).unwrap();
+                    wtr.write_byte_record(&row).unwrap();
                 }
                 wtr.flush().unwrap();
                 wg.done();

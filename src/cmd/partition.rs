@@ -96,9 +96,8 @@ impl Args {
 
         let mut writers: HashMap<Vec<u8>, BoxedWriter> =
             HashMap::new();
-        for row in rdr.byte_records() {
-            let row = row?;
-
+        let mut row = csv::ByteRecord::new();
+        while rdr.read_byte_record(&mut row)? {
             // Decide what file to put this in.
             let column = &row[key_col];
             let key = match self.flag_prefix_length {
@@ -118,7 +117,7 @@ impl Args {
                     vacant.insert(wtr)
                 }
             };
-            wtr.write_record(&row)?;
+            wtr.write_byte_record(&row)?;
         }
         Ok(())
     }

@@ -69,14 +69,15 @@ impl Args {
     }
 
     fn cat_rows(&self) -> CliResult<()> {
+        let mut row = csv::ByteRecord::new();
         let mut wtr = Config::new(&self.flag_output).writer()?;
         for (i, conf) in self.configs()?.into_iter().enumerate() {
             let mut rdr = conf.reader()?;
             if i == 0 {
                 conf.write_headers(&mut rdr, &mut wtr)?;
             }
-            for r in rdr.byte_records() {
-                wtr.write_record(&r?)?;
+            while rdr.read_byte_record(&mut row)? {
+                wtr.write_byte_record(&row)?;
             }
         }
         wtr.flush().map_err(From::from)
@@ -124,7 +125,7 @@ impl Args {
             if num_done >= iters.len() {
                 break 'OUTER;
             }
-            wtr.write_record(&record)?;
+            wtr.write_byte_record(&record)?;
         }
         wtr.flush().map_err(From::from)
     }

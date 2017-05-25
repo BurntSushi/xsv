@@ -72,8 +72,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut rdr = rconfig.reader()?;
     let mut wtr = wconfig.writer()?;
-    for r in rdr.byte_records() {
-        wtr.write_record(&r?)?;
+    let mut r = csv::ByteRecord::new();
+    while rdr.read_byte_record(&mut r)? {
+        wtr.write_byte_record(&r)?;
     }
     wtr.flush()?;
     Ok(())

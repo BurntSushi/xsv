@@ -216,9 +216,12 @@ impl From<docopt::Error> for CliError {
 
 impl From<csv::Error> for CliError {
     fn from(err: csv::Error) -> CliError {
-        match err {
-            csv::Error::Io(v) => From::from(v),
-            v => CliError::Csv(v),
+        if !err.is_io_error() {
+            return CliError::Csv(err);
+        }
+        match err.into_kind() {
+            csv::ErrorKind::Io(v) => From::from(v),
+            _ => unreachable!(),
         }
     }
 }

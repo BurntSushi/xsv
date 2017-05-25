@@ -1,3 +1,4 @@
+use csv;
 use regex::bytes::RegexBuilder;
 
 use CliResult;
@@ -60,19 +61,19 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
     let headers = rdr.byte_headers()?.clone();
-    let nsel = rconfig.normal_selection(&headers)?;
+    let sel = rconfig.selection(&headers)?;
 
     if !rconfig.no_headers {
         wtr.write_record(&headers)?;
     }
-    for row in rdr.byte_records() {
-        let row = row?;
-        let mut m = nsel.select(row.iter()).any(|f| pattern.is_match(f));
+    let mut record = csv::ByteRecord::new();
+    while rdr.read_byte_record(&mut record)? {
+        let mut m = sel.select(&record).any(|f| pattern.is_match(f));
         if args.flag_invert_match {
             m = !m;
         }
         if m {
-            wtr.write_record(&row)?;
+            wtr.write_byte_record(&record)?;
         }
     }
     Ok(wtr.flush()?)

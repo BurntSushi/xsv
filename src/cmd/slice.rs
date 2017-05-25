@@ -69,7 +69,7 @@ impl Args {
 
         let (start, end) = self.range()?;
         for r in rdr.byte_records().skip(start).take(end - start) {
-            wtr.write_record(&r?)?;
+            wtr.write_byte_record(&r?)?;
         }
         Ok(wtr.flush()?)
     }
@@ -87,7 +87,7 @@ impl Args {
         }
         idx.seek(start as u64)?;
         for r in idx.byte_records().take(end - start) {
-            wtr.write_record(&r?)?;
+            wtr.write_byte_record(&r?)?;
         }
         wtr.flush()?;
         Ok(())
