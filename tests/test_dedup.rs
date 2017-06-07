@@ -1,8 +1,4 @@
-use std::cmp;
-
 use workdir::Workdir;
-
-use {Csv, CsvData, qcheck};
 
 #[test]
 fn dedup_normal() {
