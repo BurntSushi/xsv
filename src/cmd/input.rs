@@ -19,12 +19,13 @@ input options:
     --quote <arg>          The quote character to use. [default: \"]
     --escape <arg>         The escape character to use. When not specified,
                            quotes are escaped by doubling them.
+    --no-quoting           Disable quoting completely.
 
 Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. [default: ,]
+                           Must be a single character. (default: ,)
 ";
 
 #[derive(RustcDecodable)]
@@ -34,6 +35,7 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
     flag_quote: Delimiter,
     flag_escape: Option<Delimiter>,
+    flag_no_quoting: bool,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -46,6 +48,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     if let Some(escape) = args.flag_escape {
         rconfig = rconfig.escape(escape.as_byte()).double_quote(false);
+    }
+    if args.flag_no_quoting {
+        rconfig = rconfig.quoting(false);
     }
 
     let mut rdr = rconfig.reader()?;

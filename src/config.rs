@@ -66,6 +66,7 @@ pub struct Config {
     quote_style: csv::QuoteStyle,
     double_quote: bool,
     escape: u8,
+    quoting: bool,
 }
 
 impl Config {
@@ -96,6 +97,7 @@ impl Config {
             quote_style: csv::QuoteStyle::Necessary,
             double_quote: true,
             escape: b'\\',
+            quoting: true,
         }
     }
 
@@ -150,6 +152,11 @@ impl Config {
 
     pub fn escape(mut self, escape: u8) -> Config {
         self.escape = escape;
+        self
+    }
+
+    pub fn quoting(mut self, yes: bool) -> Config {
+        self.quoting = yes;
         self
     }
 
@@ -277,6 +284,7 @@ impl Config {
             .delimiter(self.delimiter)
             .has_headers(!self.no_headers)
             .quote(self.quote)
+            .quoting(self.quoting)
             .from_reader(rdr)
     }
 
