@@ -53,6 +53,7 @@ impl Decodable for Delimiter {
     }
 }
 
+#[derive(Debug)]
 pub struct Config {
     path: Option<PathBuf>, // None implies <stdin>
     idx_path: Option<PathBuf>,
@@ -275,6 +276,7 @@ impl Config {
             .flexible(self.flexible)
             .delimiter(self.delimiter)
             .has_headers(!self.no_headers)
+            .quote(self.quote)
             .from_reader(rdr)
     }
 
