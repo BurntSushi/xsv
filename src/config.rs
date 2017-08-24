@@ -71,16 +71,19 @@ pub struct Config {
 
 impl Config {
     pub fn new(path: &Option<String>) -> Config {
+        let default_delim = b',';
         let (path, delim) = match *path {
-            None => (None, b','),
-            Some(ref s) if s.deref() == "-" => (None, b','),
+            None => (None, default_delim),
+            Some(ref s) if s.deref() == "-" => (None, default_delim),
             Some(ref s) => {
                 let path = PathBuf::from(s);
                 let delim =
                     if path.extension().map_or(false, |v| v == "tsv") {
                         b'\t'
-                    } else {
+                    } else if path.extension().map_or(false, |v| v == "csv") {
                         b','
+                    } else {
+                        default_delim
                     };
                 (Some(path), delim)
             }
