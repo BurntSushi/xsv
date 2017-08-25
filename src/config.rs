@@ -27,28 +27,34 @@ impl Delimiter {
     pub fn as_byte(self) -> u8 {
         self.0
     }
+
+    fn decode_string(s: String) -> Result<Delimiter, String> {
+        // allow specifying tab in bash incorrectly using '\t' instead of $'\t'
+        if s == r"\t" {
+            return Ok(Delimiter(b'\t'))
+        }
+
+        if s.len() != 1 {
+            let msg = format!("Could not convert '{}' to a single ASCII character.", s);
+            return Err(msg);
+        }
+
+        let c = s.chars().next().unwrap();
+        if c.is_ascii() {
+            Ok(Delimiter(c as u8))
+        } else {
+            let msg = format!("Could not convert '{}' to ASCII delimiter.", c);
+            Err(msg)
+        }
+    }
 }
 
 impl Decodable for Delimiter {
     fn decode<D: Decoder>(d: &mut D) -> Result<Delimiter, D::Error> {
-        let c = d.read_str()?;
-        match &*c {
-            r"\t" => Ok(Delimiter(b'\t')),
-            s => {
-                if s.len() != 1 {
-                    let msg = format!("Could not convert '{}' to a single \
-                                       ASCII character.", s);
-                    return Err(d.error(&*msg));
-                }
-                let c = s.chars().next().unwrap();
-                if c.is_ascii() {
-                    Ok(Delimiter(c as u8))
-                } else {
-                    let msg = format!("Could not convert '{}' \
-                                       to ASCII delimiter.", c);
-                    Err(d.error(&*msg))
-                }
-            }
+        let s = d.read_str()?;
+        match Delimiter::decode_string(s) {
+            Ok(delim) => Ok(delim),
+            Err(msg) => Err(d.error(&*msg))
         }
     }
 }
@@ -71,7 +77,10 @@ pub struct Config {
 
 impl Config {
     pub fn new(path: &Option<String>) -> Config {
-        let default_delim = b',';
+        let default_delim = match env::var("XSV_DEFAULT_DELIMITER") {
+            Ok(delim) => Delimiter::decode_string(delim).unwrap().as_byte(),
+            _ => b',',
+        };
         let (path, delim) = match *path {
             None => (None, default_delim),
             Some(ref s) if s.deref() == "-" => (None, default_delim),
