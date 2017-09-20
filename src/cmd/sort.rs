@@ -6,6 +6,8 @@ use select::SelectColumns;
 use util;
 use std::str::from_utf8;
 
+use self::Number::{Float, Int};
+
 static USAGE: &'static str = "
 Sorts CSV data lexicographically.
 
@@ -116,7 +118,7 @@ pub fn iter_cmp_num<'a, L, R>(mut a: L, mut b: R) -> cmp::Ordering
             (None, None) => return cmp::Ordering::Equal,
             (None, _   ) => return cmp::Ordering::Less,
             (_   , None) => return cmp::Ordering::Greater,
-            (Some(x), Some(y)) => match x.cmp(&y) {
+            (Some(x), Some(y)) => match compare_num(x, y) {
                 cmp::Ordering::Equal => (),
                 non_eq => return non_eq,
             },
@@ -124,9 +126,34 @@ pub fn iter_cmp_num<'a, L, R>(mut a: L, mut b: R) -> cmp::Ordering
     }
 }
 
-fn next_num<'a, X>(xs: &mut X) -> Option<i64>
+#[derive(Clone, Copy, PartialEq)]
+enum Number {
+    Int(i64),
+    Float(f64),
+}
+
+fn compare_num(n1: Number, n2: Number) -> cmp::Ordering{
+    match (n1, n2) {
+        (Int(i1), Int(i2)) => i1.cmp(&i2),
+        (Int(i1), Float(f2)) => compare_float(i1 as f64, f2),
+        (Float(f1), Int(i2)) => compare_float(f1, i2 as f64),
+        (Float(f1), Float(f2)) => compare_float(f1, f2),
+    }
+}
+
+fn compare_float(f1: f64, f2: f64) -> cmp::Ordering {
+    f1.partial_cmp(&f2).unwrap_or(cmp::Ordering::Equal)
+}
+
+
+
+fn next_num<'a, X>(xs: &mut X) -> Option<Number>
         where X: Iterator<Item=&'a [u8]> {
     xs.next()
         .and_then(|bytes| from_utf8(bytes).ok())
-        .and_then(|s| s.parse::<i64>().ok())
+        .and_then(|s| {
+            if let Ok(i) = s.parse::<i64>() { Some(Number::Int(i)) }
+            else if let Ok(f) = s.parse::<f64>() { Some(Number::Float(f)) }
+            else { None }
+        })
 }
