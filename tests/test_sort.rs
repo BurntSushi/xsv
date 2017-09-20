@@ -59,8 +59,9 @@ fn sort_numeric() {
     wrk.create("in.csv", vec![
         svec!["N", "S"],
         svec!["10", "a"],
+        svec!["LETTER", "b"],
         svec!["2", "c"],
-        svec!["1", "b"],
+        svec!["1", "d"],
     ]);
 
     let mut cmd = wrk.command("sort");
@@ -69,9 +70,39 @@ fn sort_numeric() {
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
         svec!["N", "S"],
-        svec!["1", "b"],
+        //Non-numerics should be put first
+        svec!["LETTER", "b"],
+        svec!["1", "d"],
         svec!["2", "c"],
         svec!["10", "a"],
+    ];
+    assert_eq!(got, expected);
+}
+
+#[test]
+fn sort_numeric_non_natural() {
+    let wrk = Workdir::new("sort_numeric_non_natural");
+    wrk.create("in.csv", vec![
+        svec!["N", "S"],
+        svec!["8.33", "a"],
+        svec!["5", "b"],
+        svec!["LETTER", "c"],
+        svec!["7.4", "d"],
+        svec!["3.33", "e"],
+    ]);
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("-N").arg("in.csv");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["N", "S"],
+        //Non-numerics should be put first
+        svec!["LETTER", "c"],
+        svec!["3.33", "e"],
+        svec!["5", "b"],
+        svec!["7.4", "d"],
+        svec!["8.33", "a"],
     ];
     assert_eq!(got, expected);
 }
