@@ -136,6 +136,27 @@ fn prop_frequency() {
     qcheck_sized(p as fn(CsvData) -> bool, 2);
 }
 
+
+// This tests that running the frequency command on a CSV file with these two
+// rows does not burst in flames:
+//
+//     \u{FEFF}
+//     ""
+//
+// In this case, the `param_prop_frequency` just ignores this particular test.
+// Namely, \u{FEFF} is the UTF-8 BOM, which is ignored by the underlying CSV
+// reader.
+#[test]
+fn frequency_bom() {
+    let rows = CsvData {
+        data: vec![
+            ::CsvRecord(vec!["\u{FEFF}".to_string()]),
+            ::CsvRecord(vec!["".to_string()]),
+        ],
+    };
+    assert!(param_prop_frequency("prop_frequency", rows, false))
+}
+
 // This tests that a frequency table computed by `xsv` (with an index) is
 // always the same as the frequency table computed in memory.
 #[test]
@@ -149,6 +170,9 @@ fn prop_frequency_indexed() {
 }
 
 fn param_prop_frequency(name: &str, rows: CsvData, idx: bool) -> bool {
+    if !rows.is_empty() && rows[0][0].len() == 3 && rows[0][0] == "\u{FEFF}" {
+        return true;
+    }
     let wrk = Workdir::new(name);
     if idx {
         wrk.create_indexed("in.csv", rows.clone());
@@ -159,7 +183,8 @@ fn param_prop_frequency(name: &str, rows: CsvData, idx: bool) -> bool {
     let mut cmd = wrk.command("frequency");
     cmd.arg("in.csv").args(&["-j", "4"]).args(&["--limit", "0"]);
 
-    let got_ftables = ftables_from_csv_string(wrk.stdout::<String>(&mut cmd));
+    let stdout = wrk.stdout::<String>(&mut cmd);
+    let got_ftables = ftables_from_csv_string(stdout);
     let expected_ftables = ftables_from_rows(rows);
     assert_eq_ftables(&got_ftables, &expected_ftables)
 }
