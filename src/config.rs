@@ -285,6 +285,7 @@ impl Config {
             .has_headers(!self.no_headers)
             .quote(self.quote)
             .quoting(self.quoting)
+            .escape(Some(self.escape))
             .from_reader(rdr)
     }
 
