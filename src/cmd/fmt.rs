@@ -65,7 +65,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         wconfig = wconfig.quote_style(csv::QuoteStyle::Always);
     }
     if let Some(escape) = args.flag_escape {
-        wconfig = wconfig.escape(escape.as_byte()).double_quote(false);
+        wconfig = wconfig.escape(Some(escape.as_byte())).double_quote(false);
     }
     wconfig = wconfig.quote(args.flag_quote.as_byte());
 

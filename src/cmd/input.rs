@@ -47,7 +47,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let wconfig = Config::new(&args.flag_output);
 
     if let Some(escape) = args.flag_escape {
-        rconfig = rconfig.escape(escape.as_byte()).double_quote(false);
+        rconfig = rconfig.escape(Some(escape.as_byte())).double_quote(false);
     }
     if args.flag_no_quoting {
         rconfig = rconfig.quoting(false);

@@ -65,7 +65,7 @@ pub struct Config {
     quote: u8,
     quote_style: csv::QuoteStyle,
     double_quote: bool,
-    escape: u8,
+    escape: Option<u8>,
     quoting: bool,
 }
 
@@ -96,7 +96,7 @@ impl Config {
             quote: b'"',
             quote_style: csv::QuoteStyle::Necessary,
             double_quote: true,
-            escape: b'\\',
+            escape: None,
             quoting: true,
         }
     }
@@ -150,7 +150,7 @@ impl Config {
         self
     }
 
-    pub fn escape(mut self, escape: u8) -> Config {
+    pub fn escape(mut self, escape: Option<u8>) -> Config {
         self.escape = escape;
         self
     }
@@ -285,7 +285,7 @@ impl Config {
             .has_headers(!self.no_headers)
             .quote(self.quote)
             .quoting(self.quoting)
-            .escape(Some(self.escape))
+            .escape(self.escape)
             .from_reader(rdr)
     }
 
@@ -304,7 +304,7 @@ impl Config {
             .quote(self.quote)
             .quote_style(self.quote_style)
             .double_quote(self.double_quote)
-            .escape(self.escape)
+            .escape(self.escape.unwrap_or(b'\\'))
             .buffer_capacity(32 * (1<<10))
             .from_writer(wtr)
     }
