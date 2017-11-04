@@ -54,7 +54,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .select(args.flag_select);
 
     let mut rdr = rconfig.reader()?;
-    let mut wtr = Config::new(&args.flag_output).writer()?;
 
     let headers = rdr.byte_headers()?.clone();
     let sel = rconfig.selection(&headers)?;
@@ -87,6 +86,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             }),
     }
 
+    let mut wtr = Config::new(&args.flag_output).writer()?;
     rconfig.write_headers(&mut rdr, &mut wtr)?;
     for r in all.into_iter() {
         wtr.write_byte_record(&r)?;
