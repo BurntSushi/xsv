@@ -309,7 +309,7 @@ $ brew install xsv
 If you're a **Nix/NixOS** user, you can install ripgrep from nixpkgs:
 
 ```
-$ nix-env -i ripgrep
+$ nix-env -i xsv
 ```
 
 Alternatively, you can compile from source by
