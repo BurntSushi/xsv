@@ -306,6 +306,12 @@ from homebrew-core:
 $ brew install xsv
 ```
 
+If you're a **Nix/NixOS** user, you can install ripgrep from nixpkgs:
+
+```
+$ nix-env -i xsv
+```
+
 Alternatively, you can compile from source by
 [installing Cargo](https://crates.io/install)
 ([Rust's](http://www.rust-lang.org/) package manager)
