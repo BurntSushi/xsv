@@ -306,7 +306,7 @@ from homebrew-core:
 $ brew install xsv
 ```
 
-If you're a **Nix/NixOS** user, you can install ripgrep from nixpkgs:
+If you're a **Nix/NixOS** user, you can install xsv from nixpkgs:
 
 ```
 $ nix-env -i xsv
