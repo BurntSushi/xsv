@@ -9,7 +9,7 @@ use std::time;
 use csv;
 use docopt::Docopt;
 use num_cpus;
-use rustc_serialize::{Decodable, Decoder};
+use serde::de::{Deserializer, Deserialize, DeserializeOwned, Error};
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -32,11 +32,11 @@ pub fn version() -> String {
 }
 
 pub fn get_args<T>(usage: &str, argv: &[&str]) -> CliResult<T>
-        where T: Decodable {
+        where T: DeserializeOwned {
     Docopt::new(usage)
            .and_then(|d| d.argv(argv.iter().map(|&x| x))
                           .version(Some(version()))
-                          .decode())
+                          .deserialize())
            .map_err(From::from)
 }
 
@@ -203,9 +203,11 @@ impl FilenameTemplate {
     }
 }
 
-impl Decodable for FilenameTemplate {
-    fn decode<D: Decoder>(d: &mut D) -> Result<FilenameTemplate, D::Error> {
-        let raw = d.read_str()?;
+impl<'de> Deserialize<'de> for FilenameTemplate {
+    fn deserialize<D: Deserializer<'de>>(
+        d: D,
+    ) -> Result<FilenameTemplate, D::Error> {
+        let raw = String::deserialize(d)?;
         let chunks = raw.split("{}").collect::<Vec<_>>();
         if chunks.len() == 2 {
             Ok(FilenameTemplate {
@@ -213,7 +215,8 @@ impl Decodable for FilenameTemplate {
                 suffix: chunks[1].to_owned(),
             })
         } else {
-            Err(d.error("The --filename argument must contain one '{}'."))
+            Err(D::Error::custom(
+                "The --filename argument must contain one '{}'."))
         }
     }
 }

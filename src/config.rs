@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 use csv;
 use index::Indexed;
-use rustc_serialize::{Decodable, Decoder};
+use serde::de::{Deserializer, Deserialize, Error};
 
 use CliResult;
 use select::{SelectColumns, Selection};
@@ -29,16 +29,16 @@ impl Delimiter {
     }
 }
 
-impl Decodable for Delimiter {
-    fn decode<D: Decoder>(d: &mut D) -> Result<Delimiter, D::Error> {
-        let c = d.read_str()?;
+impl<'de> Deserialize<'de> for Delimiter {
+    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Delimiter, D::Error> {
+        let c = String::deserialize(d)?;
         match &*c {
             r"\t" => Ok(Delimiter(b'\t')),
             s => {
                 if s.len() != 1 {
                     let msg = format!("Could not convert '{}' to a single \
                                        ASCII character.", s);
-                    return Err(d.error(&*msg));
+                    return Err(D::Error::custom(msg));
                 }
                 let c = s.chars().next().unwrap();
                 if c.is_ascii() {
@@ -46,7 +46,7 @@ impl Decodable for Delimiter {
                 } else {
                     let msg = format!("Could not convert '{}' \
                                        to ASCII delimiter.", c);
-                    Err(d.error(&*msg))
+                    Err(D::Error::custom(msg))
                 }
             }
         }

@@ -38,7 +38,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize)]
 struct Args {
     cmd_rows: bool,
     cmd_columns: bool,

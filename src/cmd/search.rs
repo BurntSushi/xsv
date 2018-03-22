@@ -35,7 +35,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize)]
 struct Args {
     arg_input: Option<String>,
     arg_regex: String,

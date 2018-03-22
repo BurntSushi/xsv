@@ -7,7 +7,9 @@ extern crate filetime;
 extern crate num_cpus;
 extern crate rand;
 extern crate regex;
-extern crate rustc_serialize;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 extern crate stats;
 extern crate tabwriter;
 extern crate threadpool;
@@ -83,7 +85,7 @@ Options:
 
 Commands:", command_list!());
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize)]
 struct Args {
     arg_command: Option<Command>,
     flag_list: bool,
@@ -93,7 +95,7 @@ fn main() {
     let args: Args = Docopt::new(USAGE)
                             .and_then(|d| d.options_first(true)
                                            .version(Some(util::version()))
-                                           .decode())
+                                           .deserialize())
                             .unwrap_or_else(|e| e.exit());
     if args.flag_list {
         wout!(concat!("Installed commands:", command_list!()));
@@ -133,7 +135,7 @@ Please choose one of the following commands:",
     }
 }
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Debug, Deserialize)]
 enum Command {
     Cat,
     Count,

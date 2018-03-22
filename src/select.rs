@@ -7,7 +7,7 @@ use std::slice;
 use std::str::FromStr;
 
 use csv;
-use rustc_serialize::{Decodable, Decoder};
+use serde::de::{Deserializer, Deserialize, Error};
 
 #[derive(Clone)]
 pub struct SelectColumns {
@@ -76,10 +76,12 @@ impl fmt::Debug for SelectColumns {
     }
 }
 
-impl Decodable for SelectColumns {
-    fn decode<D: Decoder>(d: &mut D) -> Result<SelectColumns, D::Error> {
-        SelectColumns::parse(&*d.read_str()?)
-                      .map_err(|e| d.error(&e))
+impl<'de> Deserialize<'de> for SelectColumns {
+    fn deserialize<D: Deserializer<'de>>(
+        d: D,
+    ) -> Result<SelectColumns, D::Error> {
+        let raw = String::deserialize(d)?;
+        SelectColumns::parse(&raw).map_err(|e| D::Error::custom(&e))
     }
 }
 

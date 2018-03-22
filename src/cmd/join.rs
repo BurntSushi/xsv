@@ -73,7 +73,7 @@ Common options:
 
 type ByteString = Vec<u8>;
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize)]
 struct Args {
     arg_columns1: SelectColumns,
     arg_input1: String,

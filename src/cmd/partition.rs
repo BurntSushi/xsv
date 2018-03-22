@@ -41,7 +41,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[derive(Clone, RustcDecodable)]
+#[derive(Clone, Deserialize)]
 struct Args {
     arg_column: SelectColumns,
     arg_input: Option<String>,
