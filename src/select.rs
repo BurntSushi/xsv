@@ -61,6 +61,13 @@ impl SelectColumns {
         }
         Ok(Selection(map))
     }
+
+    pub fn invert(&self) -> SelectColumns {
+        SelectColumns {
+            selectors: self.selectors.to_vec(),
+            invert: !self.invert,
+        }
+    }
 }
 
 impl fmt::Debug for SelectColumns {
