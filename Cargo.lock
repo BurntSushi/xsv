@@ -316,7 +316,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "xsv"
-version = "0.12.2"
+version = "0.13.0"
 dependencies = [
  "byteorder 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "chan 0.1.21 (registry+https://github.com/rust-lang/crates.io-index)",
