@@ -1,6 +1,22 @@
+
+# Inspired from https://github.com/habitat-sh/habitat/blob/master/appveyor.yml
+cache:
+  - c:\cargo\registry
+  - c:\cargo\git
+  - c:\projects\ripgrep\target
+
+init:
+  - mkdir c:\cargo
+  - mkdir c:\rustup
+  - SET PATH=c:\cargo\bin;%PATH%
+
 environment:
+  CARGO_HOME: "c:\\cargo"
+  RUSTUP_HOME: "c:\\rustup"
+  CARGO_TARGET_DIR: "c:\\projects\\xsv\\target"
   global:
     PROJECT_NAME: xsv
+    RUST_BACKTRACE: full
   matrix:
     # Stable channel
     - TARGET: i686-pc-windows-gnu
@@ -11,6 +27,9 @@ environment:
       CHANNEL: stable
     - TARGET: x86_64-pc-windows-msvc
       CHANNEL: stable
+
+matrix:
+  fast_finish: true
 
 # Install Rust and Cargo
 # (Based on from https://github.com/rust-lang/libc/blob/master/appveyor.yml)
@@ -27,8 +46,7 @@ build: false
 # Equivalent to Travis' `script` phase
 # TODO modify this phase as you see fit
 test_script:
-  - cargo build --verbose
-  - cargo test
+  - cargo test --verbose
 
 before_deploy:
   # Generate artifacts for release
