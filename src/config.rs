@@ -1,3 +1,4 @@
+#[allow(deprecated, unused_imports)]
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::env;
