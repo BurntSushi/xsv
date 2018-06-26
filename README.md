@@ -13,7 +13,7 @@ a quick tour of several commands.
 [![Windows build status](https://ci.appveyor.com/api/projects/status/github/BurntSushi/xsv?svg=true)](https://ci.appveyor.com/project/BurntSushi/xsv)
 [![](http://meritbadge.herokuapp.com/xsv)](https://crates.io/crates/xsv)
 
-Dual-licensed under MIT or the [UNLICENSE](http://unlicense.org).
+Dual-licensed under [MIT](https://choosealicense.com/licenses/mit/) or the [UNLICENSE](http://unlicense.org).
 
 
 ### Available commands
