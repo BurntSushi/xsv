@@ -1,7 +1,7 @@
 use std::io;
 
 use csv;
-use rand::Rng;
+use rand::{Rng, SeedableRng, StdRng};
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -27,6 +27,9 @@ Usage:
     xsv sample [options] <sample-size> [<input>]
     xsv sample --help
 
+sample options:
+    --seed <number>        RNG seed.
+
 Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
@@ -45,6 +48,7 @@ struct Args {
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
+    flag_seed: Option<usize>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -63,13 +67,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             } else {
                 let mut rdr = rconfig.reader()?;
                 rconfig.write_headers(&mut rdr, &mut wtr)?;
-                sample_reservoir(&mut rdr, sample_size)?
+                sample_reservoir(&mut rdr, sample_size, args.flag_seed)?
             }
         }
         _ => {
             let mut rdr = rconfig.reader()?;
             rconfig.write_headers(&mut rdr, &mut wtr)?;
-            sample_reservoir(&mut rdr, sample_size)?
+            sample_reservoir(&mut rdr, sample_size, args.flag_seed)?
         }
     };
     for row in sampled.into_iter() {
@@ -99,6 +103,7 @@ where R: io::Read + io::Seek, I: io::Read + io::Seek
 fn sample_reservoir<R: io::Read>(
     rdr: &mut csv::Reader<R>,
     sample_size: u64,
+    seed: Option<usize>
 ) -> CliResult<Vec<csv::ByteRecord>> {
     // The following algorithm has been adapted from:
     // http://en.wikipedia.org/wiki/Reservoir_sampling
@@ -108,8 +113,21 @@ fn sample_reservoir<R: io::Read>(
         reservoir.push(row?);
     }
 
+    // Seeding rng
+    let mut rng: StdRng = match seed {
+        Some(s) => {
+            SeedableRng::from_seed(&[s][..])
+        }
+        None => {
+            let s = ::rand::thread_rng()
+                .gen_iter()
+                .take(256)
+                .collect::<Vec<usize>>();
+            SeedableRng::from_seed(&s[..])
+        }
+    };
+
     // Now do the sampling.
-    let mut rng = ::rand::thread_rng();
     for (i, row) in records {
         let random = rng.gen_range(0, i+1);
         if random < sample_size as usize {
