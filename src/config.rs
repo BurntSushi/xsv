@@ -78,7 +78,7 @@ impl Config {
             Some(ref s) => {
                 let path = PathBuf::from(s);
                 let delim =
-                    if path.extension().map_or(false, |v| v == "tsv") {
+                    if path.extension().map_or(false, |v| v == "tsv" || v == "tab") {
                         b'\t'
                     } else {
                         b','
