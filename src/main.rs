@@ -54,6 +54,7 @@ macro_rules! command_list {
     index       Create CSV index for faster access
     input       Read CSV data with special quoting rules
     join        Join CSV files
+    partition   Partition CSV data based on a column value
     sample      Randomly sample CSV data
     search      Search CSV data with regexes
     select      Select columns from CSV
