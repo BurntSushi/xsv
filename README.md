@@ -35,6 +35,7 @@ Dual-licensed under MIT or the [UNLICENSE](http://unlicense.org).
 * **input** - Read CSV data with exotic quoting/escaping rules.
 * **join** - Inner, outer and cross joins. Uses a simple hash index to make it
   fast.
+* **partition** - Partition CSV data based on a column value.
 * **sample** - Randomly draw rows from CSV data using reservoir sampling (i.e.,
   use memory proportional to the size of the sample).
 * **search** - Run a regex over CSV data. Applies the regex to each field
