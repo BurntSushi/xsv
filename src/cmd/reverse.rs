@@ -4,7 +4,9 @@ use util;
 
 static USAGE: &'static str = "
 Reverses rows of CSV data.
-Unlike sort command, it preserves order of rows with the same key.
+
+Useful for cases when there is no column that can be used for sorting in reverse order,
+or when keys are not unique and order of rows with the same key needs to be preserved.
 
 Note that this requires reading all of the CSV data into memory.
 
