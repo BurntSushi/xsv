@@ -47,6 +47,31 @@ TX,Fort Worth
 }
 
 #[test]
+fn partition_drop() {
+    let wrk = Workdir::new("partition");
+    wrk.create("in.csv", data(true));
+
+    let mut cmd = wrk.command("partition");
+    cmd.arg("--drop").arg("state").arg(&wrk.path(".")).arg("in.csv");
+    wrk.run(&mut cmd);
+
+    part_eq!(wrk, "CA.csv", "\
+city
+San Francisco
+");
+    part_eq!(wrk, "NY.csv", "\
+city
+Manhatten
+Buffalo
+");
+    part_eq!(wrk, "TX.csv", "\
+city
+Dallas
+Fort Worth
+");
+}
+
+#[test]
 fn partition_without_headers() {
     let wrk = Workdir::new("partition_without_headers");
     wrk.create("in.csv", data(false));
@@ -65,6 +90,28 @@ NY,Buffalo
     part_eq!(wrk, "TX.csv", "\
 TX,Dallas
 TX,Fort Worth
+");
+}
+
+#[test]
+fn partition_drop_without_headers() {
+    let wrk = Workdir::new("partition_without_headers");
+    wrk.create("in.csv", data(false));
+
+    let mut cmd = wrk.command("partition");
+    cmd.arg("--drop").arg("--no-headers").arg("1").arg(&wrk.path(".")).arg("in.csv");
+    wrk.run(&mut cmd);
+
+    part_eq!(wrk, "CA.csv", "\
+San Francisco
+");
+    part_eq!(wrk, "NY.csv", "\
+Manhatten
+Buffalo
+");
+    part_eq!(wrk, "TX.csv", "\
+Dallas
+Fort Worth
 ");
 }
 
