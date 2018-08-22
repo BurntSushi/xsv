@@ -9,6 +9,7 @@ pub mod index;
 pub mod input;
 pub mod join;
 pub mod partition;
+pub mod reverse;
 pub mod sample;
 pub mod search;
 pub mod select;

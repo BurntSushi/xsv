@@ -56,6 +56,7 @@ macro_rules! command_list {
     join        Join CSV files
     partition   Partition CSV data based on a column value
     sample      Randomly sample CSV data
+    reverse     Reverse rows of CSV data
     search      Search CSV data with regexes
     select      Select columns from CSV
     slice       Slice records from CSV
@@ -150,6 +151,7 @@ enum Command {
     Input,
     Join,
     Partition,
+    Reverse,
     Sample,
     Search,
     Select,
@@ -178,6 +180,7 @@ impl Command {
             Command::Input => cmd::input::run(argv),
             Command::Join => cmd::join::run(argv),
             Command::Partition => cmd::partition::run(argv),
+            Command::Reverse => cmd::reverse::run(argv),
             Command::Sample => cmd::sample::run(argv),
             Command::Search => cmd::search::run(argv),
             Command::Select => cmd::select::run(argv),
