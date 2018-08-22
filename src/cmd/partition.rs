@@ -31,6 +31,7 @@ partition options:
     -p, --prefix-length <n>  Truncate the partition column after the
                            specified number of bytes when creating the
                            output file.
+    --drop                 Drop the partition column from results.
 
 Common options:
     -h, --help             Display this message
@@ -48,6 +49,7 @@ struct Args {
     arg_outdir: String,
     flag_filename: FilenameTemplate,
     flag_prefix_length: Option<usize>,
+    flag_drop: bool,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
 }
@@ -112,12 +114,22 @@ impl Args {
                     // We have a new key, so make a new writer.
                     let mut wtr = gen.writer(&*self.arg_outdir, key)?;
                     if !rconfig.no_headers {
-                        wtr.write_record(&headers)?;
+                        if self.flag_drop {
+                            wtr.write_record(headers.iter().enumerate()
+                                .filter_map(|(i, e)| if i != key_col { Some(e) } else { None }))?;
+                        } else {
+                            wtr.write_record(&headers)?;
+                        }
                     }
                     vacant.insert(wtr)
                 }
             };
-            wtr.write_byte_record(&row)?;
+            if self.flag_drop {
+                wtr.write_record(row.iter().enumerate()
+                    .filter_map(|(i, e)| if i != key_col { Some(e) } else { None }))?;
+            } else {
+                wtr.write_byte_record(&row)?;
+            }
         }
         Ok(())
     }
