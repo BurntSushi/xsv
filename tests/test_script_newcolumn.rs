@@ -42,21 +42,21 @@ a,b,c
 }
 
 #[test]
-fn add_exec() {
+fn running_total_exec() {
     let expected = "\
 a,b,c
 -1,2,9
 3,4,12";
 
-    let (wrk, mut cmd) = setup("add_exec", r#"tot = (tot or 10) + tonumber(a); return tot"#);
+    let (wrk, mut cmd) = setup("running_total_exec", r#"tot = (tot or 10) + tonumber(a); return tot"#);
     cmd.arg("--exec");
     let got: String = wrk.stdout(&mut cmd);
     assert_eq!(got, expected.to_string());
 }
 
 #[test]
-fn add_no_headers() {
-    let (wrk, mut cmd) = setup("add_no_headers", r#"col[1] .. col[2]"#);
+fn concat_no_headers() {
+    let (wrk, mut cmd) = setup("concat_no_headers", r#"col[1] .. col[2]"#);
     cmd.arg("--no-headers");
 
     let got: String = wrk.stdout(&mut cmd);
