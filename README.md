@@ -39,6 +39,7 @@ Dual-licensed under MIT or the [UNLICENSE](http://unlicense.org).
 * **sample** - Randomly draw rows from CSV data using reservoir sampling (i.e.,
   use memory proportional to the size of the sample).
 * **reverse** - Reverse order of rows in CSV data.
+* **script** - Execute Lua script on CSV data.
 * **search** - Run a regex over CSV data. Applies the regex to each field
   individually and shows only matching rows.
 * **select** - Select or re-order columns from CSV data.
