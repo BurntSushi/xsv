@@ -1,7 +1,9 @@
 use std::io;
 
+use byteorder::{ByteOrder, LittleEndian};
 use csv;
-use rand::{Rng, SeedableRng, StdRng};
+use rand::{self, Rng, SeedableRng};
+use rand::rngs::StdRng;
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -115,15 +117,13 @@ fn sample_reservoir<R: io::Read>(
 
     // Seeding rng
     let mut rng: StdRng = match seed {
-        Some(s) => {
-            SeedableRng::from_seed(&[s][..])
-        }
         None => {
-            let s = ::rand::thread_rng()
-                .gen_iter()
-                .take(256)
-                .collect::<Vec<usize>>();
-            SeedableRng::from_seed(&s[..])
+            StdRng::from_rng(rand::thread_rng()).unwrap()
+        }
+        Some(seed) => {
+            let mut buf = [0u8; 32];
+            LittleEndian::write_u64(&mut buf, seed as u64);
+            SeedableRng::from_seed(buf)
         }
     };
 

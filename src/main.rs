@@ -1,5 +1,5 @@
 extern crate byteorder;
-extern crate chan;
+extern crate crossbeam_channel as channel;
 extern crate csv;
 extern crate csv_index;
 extern crate docopt;

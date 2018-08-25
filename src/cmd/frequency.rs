@@ -1,7 +1,7 @@
 use std::fs;
 use std::io;
 
-use chan;
+use channel;
 use csv;
 use stats::{Frequencies, merge_all};
 use threadpool::ThreadPool;
@@ -149,7 +149,7 @@ impl Args {
         let nchunks = util::num_of_chunks(idx.count() as usize, chunk_size);
 
         let pool = ThreadPool::new(self.njobs());
-        let (send, recv) = chan::sync(0);
+        let (send, recv) = channel::bounded(0);
         for i in 0..nchunks {
             let (send, args, sel) = (send.clone(), self.clone(), sel.clone());
             pool.execute(move || {
@@ -160,7 +160,7 @@ impl Args {
             });
         }
         drop(send);
-        Ok((headers, merge_all(recv.iter()).unwrap()))
+        Ok((headers, merge_all(recv).unwrap()))
     }
 
     fn ftables<I>(&self, sel: &Selection, it: I) -> CliResult<FTables>

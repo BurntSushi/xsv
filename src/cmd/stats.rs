@@ -6,7 +6,7 @@ use std::io;
 use std::iter::{FromIterator, repeat};
 use std::str::{self, FromStr};
 
-use chan;
+use channel;
 use csv;
 use stats::{Commute, OnlineStats, MinMax, Unsorted, merge_all};
 use threadpool::ThreadPool;
@@ -139,7 +139,7 @@ impl Args {
         let nchunks = util::num_of_chunks(idx.count() as usize, chunk_size);
 
         let pool = ThreadPool::new(self.njobs());
-        let (send, recv) = chan::sync(0);
+        let (send, recv) = channel::bounded(0);
         for i in 0..nchunks {
             let (send, args, sel) = (send.clone(), self.clone(), sel.clone());
             pool.execute(move || {
@@ -150,7 +150,7 @@ impl Args {
             });
         }
         drop(send);
-        Ok((headers, merge_all(recv.iter()).unwrap_or_else(Vec::new)))
+        Ok((headers, merge_all(recv).unwrap_or_else(Vec::new)))
     }
 
     fn stats_to_records(&self, stats: Vec<Stats>) -> Vec<csv::StringRecord> {
@@ -160,7 +160,7 @@ impl Args {
         let pool = ThreadPool::new(self.njobs());
         let mut results = vec![];
         for mut stat in stats.into_iter() {
-            let (send, recv) = chan::sync(0);
+            let (send, recv) = channel::bounded(0);
             results.push(recv);
             pool.execute(move || { send.send(stat.to_record()); });
         }
