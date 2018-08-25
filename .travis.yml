@@ -15,6 +15,7 @@ matrix:
         apt:
           packages:
             - musl-tools
+    - os: osx
       rust: stable
       env: TARGET=x86_64-apple-darwin
     - os: linux
