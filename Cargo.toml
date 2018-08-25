@@ -29,7 +29,7 @@ opt-level = 3
 
 [dependencies]
 byteorder = "1"
-chan = "0.1"
+crossbeam-channel = "0.2.4"
 csv = "1"
 csv-index = "0.1.5"
 docopt = "1"

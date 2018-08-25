@@ -2,7 +2,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use chan;
+use channel;
 use csv;
 use threadpool::ThreadPool;
 
@@ -98,11 +98,10 @@ impl Args {
         let nchunks = util::num_of_chunks(
             idx.count() as usize, self.flag_size);
         let pool = ThreadPool::new(self.njobs());
-        let wg = chan::WaitGroup::new();
+        let (tx, rx) = channel::bounded::<()>(0);
         for i in 0..nchunks {
-            wg.add(1);
             let args = self.clone();
-            let wg = wg.clone();
+            let tx = tx.clone();
             pool.execute(move || {
                 let conf = args.rconfig();
                 let mut idx = conf.indexed().unwrap().unwrap();
@@ -117,10 +116,11 @@ impl Args {
                     wtr.write_byte_record(&row).unwrap();
                 }
                 wtr.flush().unwrap();
-                wg.done();
+                drop(tx);
             });
         }
-        wg.wait();
+        drop(tx);
+        rx.recv();
         Ok(())
     }
 
