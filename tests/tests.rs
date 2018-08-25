@@ -46,6 +46,7 @@ mod test_partition;
 mod test_reverse;
 mod test_search;
 mod test_select;
+mod test_script_newcolumn;
 mod test_slice;
 mod test_sort;
 mod test_split;
