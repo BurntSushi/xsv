@@ -4,6 +4,8 @@ cache: cargo
 env:
   global:
     - PROJECT_NAME=xsv
+    - PACKAGE=musl-tools
+
 matrix:
   include:
     # Stable channel
