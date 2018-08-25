@@ -16,7 +16,7 @@ use std::mem::transmute;
 use std::ops;
 
 use quickcheck::{Arbitrary, Gen, QuickCheck, StdGen, Testable};
-use rand::thread_rng;
+use rand::{Rng, thread_rng};
 
 macro_rules! svec[
     ($($x:expr),*) => (
