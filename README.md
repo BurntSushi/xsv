@@ -371,3 +371,8 @@ From conversations I've had with others, CSV data files this large don't seem
 to be a rare event. Therefore, I believe there is room for a tool that has a
 hope of dealing with data that large.
 
+
+### Naming collision
+
+This project is unrelated to another similar project with the same name:
+http://mj.ucw.cz/sw/xsv/
