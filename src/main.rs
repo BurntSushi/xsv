@@ -160,6 +160,7 @@ enum Command {
     Split,
     Stats,
     Table,
+    Transpose,
 }
 
 impl Command {
@@ -189,6 +190,7 @@ impl Command {
             Command::Split => cmd::split::run(argv),
             Command::Stats => cmd::stats::run(argv),
             Command::Table => cmd::table::run(argv),
+            Command::Transpose => cmd::transpose::run(argv),
         }
     }
 }
