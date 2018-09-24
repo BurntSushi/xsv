@@ -170,7 +170,9 @@ impl Command {
         let argv = &*argv;
 
         if !argv[1].chars().all(char::is_lowercase) {
-            return Err(CliError::Other("xsv expects commands in lowercase.".to_string()));
+            return Err(CliError::Other(format!(
+                "xsv expects commands in lowercase. Did you mean '{}'?", 
+                argv[1].to_lowercase()).to_string()));
         }
         match self {
             Command::Cat => cmd::cat::run(argv),
