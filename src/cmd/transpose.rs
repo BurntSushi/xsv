@@ -15,7 +15,7 @@ Usage:
 
 transpose options:
     -m, --multipass        Process the transpose by making multiple
-                           passes over the dataset. Useful for really 
+                           passes over the dataset. Useful for really
                            big datasets. Consumes memory relative to
                            the number of rows.
                            Note that in general it is faster to

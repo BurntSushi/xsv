@@ -17,7 +17,7 @@ fn prop_transpose(name: &str, rows: CsvData, streaming: bool) -> bool {
     let nrows = rows.len();
     let ncols = if !rows.is_empty() {rows[0].len() } else {0};
 
-    for i in 0..ncols {  
+    for i in 0..ncols {
         let mut expected_row = vec![];
         for j in 0..nrows {
             expected_row.push(rows[j][i].to_owned());

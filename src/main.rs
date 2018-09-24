@@ -64,6 +64,7 @@ macro_rules! command_list {
     split       Split CSV data into many files
     stats       Compute basic statistics
     table       Align CSV data into columns
+    transpose   Transpose rows/columns of CSV data
 "
     )
 }
