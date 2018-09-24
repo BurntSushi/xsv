@@ -168,6 +168,10 @@ impl Command {
         let argv: Vec<_> = env::args().map(|v| v.to_owned()).collect();
         let argv: Vec<_> = argv.iter().map(|s| &**s).collect();
         let argv = &*argv;
+
+        if !argv[1].chars().all(char::is_lowercase) {
+            return Err(CliError::Other("xsv expects commands in lowercase.".to_string()));
+        }
         match self {
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),
