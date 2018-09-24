@@ -138,6 +138,7 @@ Please choose one of the following commands:",
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
 enum Command {
     Cat,
     Count,
