@@ -138,6 +138,7 @@ Please choose one of the following commands:",
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
 enum Command {
     Cat,
     Count,
@@ -167,6 +168,12 @@ impl Command {
         let argv: Vec<_> = env::args().map(|v| v.to_owned()).collect();
         let argv: Vec<_> = argv.iter().map(|s| &**s).collect();
         let argv = &*argv;
+
+        if !argv[1].chars().all(char::is_lowercase) {
+            return Err(CliError::Other(format!(
+                "xsv expects commands in lowercase. Did you mean '{}'?", 
+                argv[1].to_lowercase()).to_string()));
+        }
         match self {
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),
