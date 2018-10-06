@@ -308,6 +308,13 @@ from homebrew-core:
 $ brew install xsv
 ```
 
+If you're a **macOS MacPorts** user, then you can install xsv
+from the [official ports](https://www.macports.org/ports.php?by=name&substr=xsv):
+
+```
+$ sudo port install xsv
+```
+
 If you're a **Nix/NixOS** user, you can install xsv from nixpkgs:
 
 ```
