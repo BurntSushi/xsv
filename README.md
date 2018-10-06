@@ -299,9 +299,9 @@ right and full outer join support too.
 
 ### Installation
 
-Binaries for Windows, Linux and Mac are available [from Github](https://github.com/BurntSushi/xsv/releases/latest).
+Binaries for Windows, Linux and macOS are available [from Github](https://github.com/BurntSushi/xsv/releases/latest).
 
-If you're a **Mac OS X Homebrew** user, then you can install xsv
+If you're a **macOS Homebrew** user, then you can install xsv
 from homebrew-core:
 
 ```
