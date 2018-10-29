@@ -7,6 +7,7 @@ use std::slice;
 use std::str::FromStr;
 
 use csv;
+use regex::bytes::Regex;
 use serde::de::{Deserializer, Deserialize, Error};
 
 #[derive(Clone)]
@@ -17,15 +18,33 @@ pub struct SelectColumns {
 
 impl SelectColumns {
     fn parse(mut s: &str) -> Result<SelectColumns, String> {
+        let is_empty = s.is_empty();
+        let bytes = s.as_bytes();
         let invert =
-            if !s.is_empty() && s.as_bytes()[0] == b'!' {
+            if !is_empty && bytes[0] == b'!' {
                 s = &s[1..];
                 true
             } else {
                 false
             };
+        let is_regex =
+            if !is_empty && bytes[0] == b'r' {
+                // Unwrap is OK because we've checked for emptiness
+                let last = *bytes.last().unwrap();
+                if bytes[1] == b'\'' && last == b'\'' {
+                    s = &s[2..(s.len() - 1)];
+                    true
+                } else if bytes[1] == b'"' && last == b'"' {
+                    s = &s[2..(s.len() - 1)];
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
+            };
         Ok(SelectColumns {
-            selectors: SelectorParser::new(s).parse()?,
+            selectors: SelectorParser::new(s, is_regex).parse()?,
             invert: invert,
         })
     }
@@ -88,14 +107,24 @@ impl<'de> Deserialize<'de> for SelectColumns {
 struct SelectorParser {
     chars: Vec<char>,
     pos: usize,
+    is_regex: bool,
 }
 
 impl SelectorParser {
-    fn new(s: &str) -> SelectorParser {
-        SelectorParser { chars: s.chars().collect(), pos: 0 }
+    fn new(s: &str, is_regex: bool) -> SelectorParser {
+        SelectorParser { chars: s.chars().collect(), pos: 0, is_regex }
     }
 
     fn parse(&mut self) -> Result<Vec<Selector>, String> {
+        if self.is_regex {
+            let re: String = self.chars.iter().collect();
+            let regex = match Regex::new(&re) {
+                Ok(r) => r,
+                Err(_) => return Err(format!("Invalid regex: {}", re))
+            };
+            return Ok(vec![Selector::Regex(regex)])
+        }
+
         let mut sels = vec![];
         loop {
             if self.cur().is_none() {
@@ -227,6 +256,7 @@ impl SelectorParser {
 enum Selector {
     One(OneSelector),
     Range(OneSelector, OneSelector),
+    Regex(Regex),
 }
 
 #[derive(Clone)]
@@ -263,6 +293,19 @@ impl Selector {
                         inds
                     }
                 })
+            }
+            Selector::Regex(ref re) => {
+                let inds: Vec<usize> = first_record
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, h)| re.is_match(h))
+                    .map(|(i, _)| i)
+                    .collect();
+                if inds.is_empty() {
+                    return Err(format!("Selector regex '{}' does not match \
+                                        any columns in the CSV header.", re))
+                }
+                Ok(inds)
             }
         }
     }
@@ -327,6 +370,7 @@ impl fmt::Debug for Selector {
             Selector::One(ref sel) => sel.fmt(f),
             Selector::Range(ref s, ref e) =>
                 write!(f, "Range({:?}, {:?})", s, e),
+            Selector::Regex(ref re) => re.fmt(f)
         }
     }
 }
