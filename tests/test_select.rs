@@ -104,9 +104,9 @@ select_test!(select_range_no_end_cat, "h4-,h1", "4-,1",
 select_test!(select_range_no_start_cat, "-h2,h1[1]", "-2,5",
              ["h1", "h2", "h1"], ["a", "b", "e"]);
 
-select_test!(select_regex_double, r#"r"h[1-3]""#, "1,2,5",
+select_test!(select_regex_double, r#"/h[1-3]/"#, "1,2,5",
              ["h1", "h2", "h1"], ["a", "b", "e"]);
-select_test!(select_regex_single, r#"r'h[1-3]'"#, "1,2,5",
+select_test!(select_regex_single, r#"/h[1-3]/"#, "1,2,5",
              ["h1", "h2", "h1"], ["a", "b", "e"]);
 
 select_test_err!(select_err_unknown_header, "dne");

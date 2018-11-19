@@ -28,14 +28,11 @@ impl SelectColumns {
                 false
             };
         let is_regex =
-            if !is_empty && bytes[0] == b'r' {
+            if !is_empty && bytes[0] == b'/' {
                 // Unwrap is OK because we've checked for emptiness
                 let last = *bytes.last().unwrap();
-                if bytes[1] == b'\'' && last == b'\'' {
-                    s = &s[2..(s.len() - 1)];
-                    true
-                } else if bytes[1] == b'"' && last == b'"' {
-                    s = &s[2..(s.len() - 1)];
+                if last == b'/' {
+                    s = &s[1..(s.len() - 1)];
                     true
                 } else {
                     false
