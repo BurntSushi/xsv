@@ -27,21 +27,8 @@ impl SelectColumns {
             } else {
                 false
             };
-        let is_regex =
-            if !is_empty && bytes[0] == b'/' {
-                // Unwrap is OK because we've checked for emptiness
-                let last = *bytes.last().unwrap();
-                if last == b'/' {
-                    s = &s[1..(s.len() - 1)];
-                    true
-                } else {
-                    false
-                }
-            } else {
-                false
-            };
         Ok(SelectColumns {
-            selectors: SelectorParser::new(s, is_regex).parse()?,
+            selectors: SelectorParser::new(s).parse()?,
             invert: invert,
         })
     }
@@ -104,17 +91,19 @@ impl<'de> Deserialize<'de> for SelectColumns {
 struct SelectorParser {
     chars: Vec<char>,
     pos: usize,
-    is_regex: bool,
 }
 
 impl SelectorParser {
-    fn new(s: &str, is_regex: bool) -> SelectorParser {
-        SelectorParser { chars: s.chars().collect(), pos: 0, is_regex }
+    fn new(s: &str) -> SelectorParser {
+        SelectorParser { chars: s.chars().collect(), pos: 0 }
     }
 
     fn parse(&mut self) -> Result<Vec<Selector>, String> {
-        if self.is_regex {
-            let re: String = self.chars.iter().collect();
+        if let (Some('/'), Some('/')) = (self.chars.first(), self.chars.last()) {
+            if self.chars.len() == 2 {
+                return Err(format!("Empty regex: {}", self.chars.iter().collect::<String>()))
+            }
+            let re: String = self.chars[1..(self.chars.len() - 1)].iter().collect();
             let regex = match Regex::new(&re) {
                 Ok(r) => r,
                 Err(_) => return Err(format!("Invalid regex: {}", re))
