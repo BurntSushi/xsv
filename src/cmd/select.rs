@@ -5,13 +5,14 @@ use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
 
-static USAGE: &'static str = "
+static USAGE: &'static str = r#"
 Select columns from CSV data efficiently.
 
 This command lets you manipulate the columns in CSV data. You can re-order
 them, duplicate them or drop them. Columns can be referenced by index or by
 name if there is a header row (duplicate column names can be disambiguated with
-more indexing). Finally, column ranges can be specified.
+more indexing). Column ranges can also be specified. Finally, columns can be
+selected using regular expressions.
 
   Select the first and fourth columns:
   $ xsv select 1,4
@@ -26,6 +27,10 @@ more indexing). Finally, column ranges can be specified.
 
   Select the third column named 'Foo':
   $ xsv select 'Foo[2]'
+
+  Select columns using a regex using '/<regex>/':
+  $ xsv select /^a/
+  $ xsv select '/^.*\d.*$/'
 
   Re-order and duplicate columns arbitrarily:
   $ xsv select 3-1,Header3-Header1,Header1,Foo[2],Header1
@@ -45,7 +50,7 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. (default: ,)
-";
+"#;
 
 #[derive(Deserialize)]
 struct Args {
