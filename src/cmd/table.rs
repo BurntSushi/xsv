@@ -1,13 +1,13 @@
 use std::borrow::Cow;
 
-use csv;
+
 use tabwriter::TabWriter;
 
-use CliResult;
-use config::{Config, Delimiter};
-use util;
+use crate::CliResult;
+use crate::config::{Config, Delimiter};
+use crate::util;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Outputs CSV data as a table with columns in alignment.
 
 This will not work well if the CSV data contains large fields.

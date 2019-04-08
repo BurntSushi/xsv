@@ -1,4 +1,4 @@
-use workdir::Workdir;
+use crate::workdir::Workdir;
 
 fn data() -> Vec<Vec<String>> {
     vec![

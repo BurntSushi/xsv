@@ -1,10 +1,10 @@
-use csv;
 
-use CliResult;
-use config::{Config, Delimiter};
-use util;
 
-static USAGE: &'static str = "
+use crate::CliResult;
+use crate::config::{Config, Delimiter};
+use crate::util;
+
+static USAGE: &str = "
 Read CSV data with special quoting rules.
 
 Generally, all xsv commands support basic options like specifying the delimiter

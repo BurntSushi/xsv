@@ -1,4 +1,4 @@
-use workdir::Workdir;
+use crate::workdir::Workdir;
 
 fn data(headers: bool) -> Vec<Vec<String>> {
     let mut rows = vec![

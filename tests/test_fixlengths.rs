@@ -1,7 +1,7 @@
 use quickcheck::TestResult;
 
-use {CsvRecord, qcheck};
-use workdir::Workdir;
+use crate::{CsvRecord, qcheck};
+use crate::workdir::Workdir;
 
 fn trim_trailing_empty(it : &CsvRecord) -> Vec<String> {
     let mut cloned = it.clone().unwrap();

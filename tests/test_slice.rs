@@ -1,7 +1,7 @@
 use std::borrow::ToOwned;
 use std::process;
 
-use workdir::Workdir;
+use crate::workdir::Workdir;
 
 macro_rules! slice_tests {
     ($name:ident, $start:expr, $end:expr, $expected:expr) => (

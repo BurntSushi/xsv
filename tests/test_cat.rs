@@ -1,7 +1,7 @@
 use std::process;
 
-use {Csv, CsvData, qcheck};
-use workdir::Workdir;
+use crate::{Csv, CsvData, qcheck};
+use crate::workdir::Workdir;
 
 fn no_headers(cmd: &mut process::Command) {
     cmd.arg("--no-headers");

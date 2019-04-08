@@ -1,6 +1,6 @@
 use std::borrow::ToOwned;
 
-use workdir::Workdir;
+use crate::workdir::Workdir;
 
 macro_rules! part_eq {
     ($wrk:expr, $path:expr, $expected:expr) => (

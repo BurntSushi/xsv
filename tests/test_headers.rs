@@ -1,6 +1,6 @@
 use std::process;
 
-use workdir::Workdir;
+use crate::workdir::Workdir;
 
 fn setup(name: &str) -> (Workdir, process::Command) {
     let rows1 = vec![svec!["h1", "h2"], svec!["a", "b"]];
