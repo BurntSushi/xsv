@@ -55,8 +55,9 @@ macro_rules! command_list {
     input       Read CSV data with special quoting rules
     join        Join CSV files
     partition   Partition CSV data based on a column value
-    sample      Randomly sample CSV data
+    rename      Select and rename columns from CSV
     reverse     Reverse rows of CSV data
+    sample      Randomly sample CSV data
     search      Search CSV data with regexes
     select      Select columns from CSV
     slice       Slice records from CSV
