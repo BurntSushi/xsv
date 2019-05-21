@@ -15,7 +15,7 @@ Usage:
 
 Common options:
     -h, --help             Display this message
-    -n, --no-headers       When set, the first row will not be included in
+    -n, --no-headers       When set, the first row will be included in
                            the count.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. (default: ,)
