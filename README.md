@@ -36,6 +36,7 @@ Dual-licensed under MIT or the [UNLICENSE](http://unlicense.org).
 * **join** - Inner, outer and cross joins. Uses a simple hash index to make it
   fast.
 * **partition** - Partition CSV data based on a column value.
+* **rename** - Rename (and select) columns from CSV data.
 * **sample** - Randomly draw rows from CSV data using reservoir sampling (i.e.,
   use memory proportional to the size of the sample).
 * **reverse** - Reverse order of rows in CSV data.
