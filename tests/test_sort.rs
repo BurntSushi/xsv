@@ -128,6 +128,27 @@ fn sort_reverse() {
     assert_eq!(got, expected);
 }
 
+#[test]
+fn sort_random() {
+    let wrk = Workdir::new("sort_random");
+    wrk.create("in.csv", vec![
+        svec!["R", "S"],
+        svec!["1", "b"],
+        svec!["2", "a"],
+    ]);
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--random").args(&["--seed", "0"]).arg("in.csv");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["R", "S"],
+        svec!["2", "a"],
+        svec!["1", "b"],
+    ];
+    assert_eq!(got, expected);
+}
+
 /// Order `a` and `b` lexicographically using `Ord`
 pub fn iter_cmp<A, L, R>(mut a: L, mut b: R) -> cmp::Ordering
         where A: Ord, L: Iterator<Item=A>, R: Iterator<Item=A> {
