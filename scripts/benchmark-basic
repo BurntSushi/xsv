@@ -15,7 +15,7 @@ pat="$1"
 data=/tmp/worldcitiespop_mil.csv
 data_idx=/tmp/worldcitiespop_mil.csv.idx
 if [ ! -r "$data" ]; then
-  curl -sS http://burntsushi.net/stuff/worldcitiespop_mil.csv > "$data"
+  curl -sS https://burntsushi.net/stuff/worldcitiespop_mil.csv > "$data"
 fi
 data_size=$(stat --format '%s' "$data")
 

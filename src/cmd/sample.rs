@@ -108,7 +108,7 @@ fn sample_reservoir<R: io::Read>(
     seed: Option<usize>
 ) -> CliResult<Vec<csv::ByteRecord>> {
     // The following algorithm has been adapted from:
-    // http://en.wikipedia.org/wiki/Reservoir_sampling
+    // https://en.wikipedia.org/wiki/Reservoir_sampling
     let mut reservoir = Vec::with_capacity(sample_size as usize);
     let mut records = rdr.byte_records().enumerate();
     for (_, row) in records.by_ref().take(reservoir.capacity()) {
