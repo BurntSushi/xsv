@@ -2,7 +2,7 @@ These are some very basic and unscientific benchmarks of various commands
 provided by `xsv`. Please see below for more information.
 
 These benchmarks were run with
-[worldcitiespop_mil.csv](http://burntsushi.net/stuff/worldcitiespop_mil.csv),
+[worldcitiespop_mil.csv](https://burntsushi.net/stuff/worldcitiespop_mil.csv),
 which is a random 1,000,000 row subset of the world city population dataset
 from the [Data Science Toolkit](https://github.com/petewarden/dstkdata).
 

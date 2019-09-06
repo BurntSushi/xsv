@@ -11,9 +11,9 @@ a quick tour of several commands.
 
 [![Linux build status](https://api.travis-ci.org/BurntSushi/xsv.svg)](https://travis-ci.org/BurntSushi/xsv)
 [![Windows build status](https://ci.appveyor.com/api/projects/status/github/BurntSushi/xsv?svg=true)](https://ci.appveyor.com/project/BurntSushi/xsv)
-[![](http://meritbadge.herokuapp.com/xsv)](https://crates.io/crates/xsv)
+[![](https://meritbadge.herokuapp.com/xsv)](https://crates.io/crates/xsv)
 
-Dual-licensed under MIT or the [UNLICENSE](http://unlicense.org).
+Dual-licensed under MIT or the [UNLICENSE](https://unlicense.org).
 
 
 ### Available commands
@@ -61,7 +61,7 @@ several CSV files. Maybe you're interested in the population counts of each
 city in the world. So grab the data and start examining it:
 
 ```bash
-$ curl -LO http://burntsushi.net/stuff/worldcitiespop.csv
+$ curl -LO https://burntsushi.net/stuff/worldcitiespop.csv
 $ xsv headers worldcitiespop.csv
 1   Country
 2   City
@@ -323,7 +323,7 @@ $ nix-env -i xsv
 
 Alternatively, you can compile from source by
 [installing Cargo](https://crates.io/install)
-([Rust's](http://www.rust-lang.org/) package manager)
+([Rust's](https://www.rust-lang.org/) package manager)
 and installing `xsv` using Cargo:
 
 ```bash
@@ -382,4 +382,4 @@ hope of dealing with data that large.
 ### Naming collision
 
 This project is unrelated to another similar project with the same name:
-http://mj.ucw.cz/sw/xsv/
+https://mj.ucw.cz/sw/xsv/
