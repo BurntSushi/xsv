@@ -51,6 +51,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         for header in rdr.byte_headers()?.iter() {
             if !args.flag_intersect
                 || !headers.iter().any(|h| &**h == header)
+            {
                 headers.push(header.to_vec());
             }
         }
