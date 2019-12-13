@@ -47,9 +47,9 @@ stats options:
                            This requires storing all CSV data in memory.
     --median               Show the median.
                            This requires storing all CSV data in memory.
+    --nullcount            Show the number of NULLs.
     --nulls                Include NULLs in the population size for computing
                            mean and standard deviation.
-    --nullcount            Include a count of the number of NULLs.
     -j, --jobs <arg>       The number of jobs to run in parallel.
                            This works better when the given CSV data has
                            an index already created. Note that a file handle
