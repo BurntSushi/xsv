@@ -49,6 +49,7 @@ stats options:
                            This requires storing all CSV data in memory.
     --nulls                Include NULLs in the population size for computing
                            mean and standard deviation.
+    --nullcount            Include a count of the number of NULLs.
     -j, --jobs <arg>       The number of jobs to run in parallel.
                            This works better when the given CSV data has
                            an index already created. Note that a file handle
@@ -76,6 +77,7 @@ struct Args {
     flag_cardinality: bool,
     flag_median: bool,
     flag_nulls: bool,
+    flag_nullcount: bool,
     flag_jobs: usize,
     flag_output: Option<String>,
     flag_no_headers: bool,
@@ -209,6 +211,7 @@ impl Args {
             range: true,
             dist: true,
             cardinality: self.flag_cardinality || self.flag_everything,
+            nullcount: self.flag_nullcount || self.flag_everything,
             median: self.flag_median || self.flag_everything,
             mode: self.flag_mode || self.flag_everything,
         })).take(record_len).collect()
@@ -223,6 +226,7 @@ impl Args {
         if self.flag_median || all { fields.push("median"); }
         if self.flag_mode || all { fields.push("mode"); }
         if self.flag_cardinality || all { fields.push("cardinality"); }
+        if self.flag_nullcount || all { fields.push("nullcount"); }
         csv::StringRecord::from(fields)
     }
 }
@@ -234,6 +238,7 @@ struct WhichStats {
     range: bool,
     dist: bool,
     cardinality: bool,
+    nullcount: bool,
     median: bool,
     mode: bool,
 }
@@ -252,6 +257,7 @@ struct Stats {
     online: Option<OnlineStats>,
     mode: Option<Unsorted<Vec<u8>>>,
     median: Option<Unsorted<f64>>,
+    nullcount: u64,
     which: WhichStats,
 }
 
@@ -271,6 +277,7 @@ impl Stats {
             online: online,
             mode: mode,
             median: median,
+            nullcount: 0,
             which: which,
         }
     }
@@ -283,9 +290,13 @@ impl Stats {
         self.sum.as_mut().map(|v| v.add(t, sample));
         self.minmax.as_mut().map(|v| v.add(t, sample));
         self.mode.as_mut().map(|v| v.add(sample.to_vec()));
+
+        if sample_type.is_null() { self.nullcount += 1; }
+
         match self.typ {
             TUnknown => {}
             TNull => {
+
                 if self.which.include_nulls {
                     self.online.as_mut().map(|v| { v.add_null(); });
                 }
@@ -365,6 +376,10 @@ impl Stats {
                 }
             }
         }
+        if self.which.nullcount {
+            pieces.push(self.nullcount.to_string());
+        }
+
         csv::StringRecord::from(pieces)
     }
 }
@@ -377,6 +392,7 @@ impl Commute for Stats {
         self.online.merge(other.online);
         self.mode.merge(other.mode);
         self.median.merge(other.median);
+        self.nullcount += other.nullcount;
         self.which.merge(other.which);
     }
 }
@@ -507,6 +523,7 @@ impl Commute for TypedSum {
         }
     }
 }
+
 
 /// TypedMinMax keeps track of minimum/maximum values for each possible type
 /// where min/max makes sense.
