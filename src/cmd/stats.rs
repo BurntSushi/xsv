@@ -290,13 +290,10 @@ impl Stats {
         self.sum.as_mut().map(|v| v.add(t, sample));
         self.minmax.as_mut().map(|v| v.add(t, sample));
         self.mode.as_mut().map(|v| v.add(sample.to_vec()));
-
         if sample_type.is_null() { self.nullcount += 1; }
-
         match self.typ {
             TUnknown => {}
             TNull => {
-
                 if self.which.include_nulls {
                     self.online.as_mut().map(|v| { v.add_null(); });
                 }
@@ -379,7 +376,6 @@ impl Stats {
         if self.which.nullcount {
             pieces.push(self.nullcount.to_string());
         }
-
         csv::StringRecord::from(pieces)
     }
 }
@@ -523,7 +519,6 @@ impl Commute for TypedSum {
         }
     }
 }
-
 
 /// TypedMinMax keeps track of minimum/maximum values for each possible type
 /// where min/max makes sense.

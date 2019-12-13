@@ -187,7 +187,6 @@ stats_tests!(stats_nullcount_none, "nullcount", &["a", "1", "2"], "0");
 stats_tests!(stats_nullcount_spacenotnull, "nullcount", &[" ", "1", "2"], "0");
 stats_tests!(stats_nullcount_all, "nullcount", &["", "", ""], "3");
 
-
 mod stats_infer_nothing {
     // Only test CSV data with headers.
     // Empty CSV data with no headers won't produce any statistical analysis.
