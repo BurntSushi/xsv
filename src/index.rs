@@ -14,19 +14,20 @@ pub struct Indexed<R, I> {
 
 impl<R, I> ops::Deref for Indexed<R, I> {
     type Target = csv::Reader<R>;
-    fn deref(&self) -> &csv::Reader<R> { &self.csv_rdr }
+    fn deref(&self) -> &csv::Reader<R> {
+        &self.csv_rdr
+    }
 }
 
 impl<R, I> ops::DerefMut for Indexed<R, I> {
-    fn deref_mut(&mut self) -> &mut csv::Reader<R> { &mut self.csv_rdr }
+    fn deref_mut(&mut self) -> &mut csv::Reader<R> {
+        &mut self.csv_rdr
+    }
 }
 
 impl<R: io::Read + io::Seek, I: io::Read + io::Seek> Indexed<R, I> {
     /// Opens an index.
-    pub fn open(
-        csv_rdr: csv::Reader<R>,
-        idx_rdr: I,
-    ) -> CliResult<Indexed<R, I>> {
+    pub fn open(csv_rdr: csv::Reader<R>, idx_rdr: I) -> CliResult<Indexed<R, I>> {
         Ok(Indexed {
             csv_rdr: csv_rdr,
             idx: RandomAccessSimple::open(idx_rdr)?,
@@ -48,7 +49,9 @@ impl<R: io::Read + io::Seek, I: io::Read + io::Seek> Indexed<R, I> {
         if i >= self.count() {
             let msg = format!(
                 "invalid record index {} (there are {} records)",
-                i, self.count());
+                i,
+                self.count()
+            );
             return fail!(io::Error::new(io::ErrorKind::Other, msg));
         }
         if self.csv_rdr.has_headers() {

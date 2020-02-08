@@ -1,10 +1,10 @@
 use std::cmp;
 
-use CliResult;
 use config::{Config, Delimiter};
 use select::SelectColumns;
-use util;
 use std::str::from_utf8;
+use util;
+use CliResult;
 
 use self::Number::{Float, Int};
 
@@ -60,30 +60,26 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut all = rdr.byte_records().collect::<Result<Vec<_>, _>>()?;
     match (numeric, reverse) {
-        (false, false) =>
-            all.sort_by(|r1, r2| {
-                let a = sel.select(r1);
-                let b = sel.select(r2);
-                iter_cmp(a, b)
-            }),
-        (true, false) =>
-            all.sort_by(|r1, r2| {
-                let a = sel.select(r1);
-                let b = sel.select(r2);
-                iter_cmp_num(a, b)
-            }),
-        (false, true) =>
-            all.sort_by(|r1, r2| {
-                let a = sel.select(r1);
-                let b = sel.select(r2);
-                iter_cmp(b, a)
-            }),
-        (true, true) =>
-            all.sort_by(|r1, r2| {
-                let a = sel.select(r1);
-                let b = sel.select(r2);
-                iter_cmp_num(b, a)
-            }),
+        (false, false) => all.sort_by(|r1, r2| {
+            let a = sel.select(r1);
+            let b = sel.select(r2);
+            iter_cmp(a, b)
+        }),
+        (true, false) => all.sort_by(|r1, r2| {
+            let a = sel.select(r1);
+            let b = sel.select(r2);
+            iter_cmp_num(a, b)
+        }),
+        (false, true) => all.sort_by(|r1, r2| {
+            let a = sel.select(r1);
+            let b = sel.select(r2);
+            iter_cmp(b, a)
+        }),
+        (true, true) => all.sort_by(|r1, r2| {
+            let a = sel.select(r1);
+            let b = sel.select(r2);
+            iter_cmp_num(b, a)
+        }),
     }
 
     let mut wtr = Config::new(&args.flag_output).writer()?;
@@ -96,12 +92,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
 /// Order `a` and `b` lexicographically using `Ord`
 pub fn iter_cmp<A, L, R>(mut a: L, mut b: R) -> cmp::Ordering
-        where A: Ord, L: Iterator<Item=A>, R: Iterator<Item=A> {
+where
+    A: Ord,
+    L: Iterator<Item = A>,
+    R: Iterator<Item = A>,
+{
     loop {
         match (a.next(), b.next()) {
             (None, None) => return cmp::Ordering::Equal,
-            (None, _   ) => return cmp::Ordering::Less,
-            (_   , None) => return cmp::Ordering::Greater,
+            (None, _) => return cmp::Ordering::Less,
+            (_, None) => return cmp::Ordering::Greater,
             (Some(x), Some(y)) => match x.cmp(&y) {
                 cmp::Ordering::Equal => (),
                 non_eq => return non_eq,
@@ -112,12 +112,15 @@ pub fn iter_cmp<A, L, R>(mut a: L, mut b: R) -> cmp::Ordering
 
 /// Try parsing `a` and `b` as numbers when ordering
 pub fn iter_cmp_num<'a, L, R>(mut a: L, mut b: R) -> cmp::Ordering
-        where L: Iterator<Item=&'a [u8]>, R: Iterator<Item=&'a [u8]> {
+where
+    L: Iterator<Item = &'a [u8]>,
+    R: Iterator<Item = &'a [u8]>,
+{
     loop {
         match (next_num(&mut a), next_num(&mut b)) {
             (None, None) => return cmp::Ordering::Equal,
-            (None, _   ) => return cmp::Ordering::Less,
-            (_   , None) => return cmp::Ordering::Greater,
+            (None, _) => return cmp::Ordering::Less,
+            (_, None) => return cmp::Ordering::Greater,
             (Some(x), Some(y)) => match compare_num(x, y) {
                 cmp::Ordering::Equal => (),
                 non_eq => return non_eq,
@@ -132,7 +135,7 @@ enum Number {
     Float(f64),
 }
 
-fn compare_num(n1: Number, n2: Number) -> cmp::Ordering{
+fn compare_num(n1: Number, n2: Number) -> cmp::Ordering {
     match (n1, n2) {
         (Int(i1), Int(i2)) => i1.cmp(&i2),
         (Int(i1), Float(f2)) => compare_float(i1 as f64, f2),
@@ -145,15 +148,19 @@ fn compare_float(f1: f64, f2: f64) -> cmp::Ordering {
     f1.partial_cmp(&f2).unwrap_or(cmp::Ordering::Equal)
 }
 
-
-
 fn next_num<'a, X>(xs: &mut X) -> Option<Number>
-        where X: Iterator<Item=&'a [u8]> {
+where
+    X: Iterator<Item = &'a [u8]>,
+{
     xs.next()
         .and_then(|bytes| from_utf8(bytes).ok())
         .and_then(|s| {
-            if let Ok(i) = s.parse::<i64>() { Some(Number::Int(i)) }
-            else if let Ok(f) = s.parse::<f64>() { Some(Number::Float(f)) }
-            else { None }
+            if let Ok(i) = s.parse::<i64>() {
+                Some(Number::Int(i))
+            } else if let Ok(f) = s.parse::<f64>() {
+                Some(Number::Float(f))
+            } else {
+                None
+            }
         })
 }

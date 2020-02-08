@@ -4,7 +4,7 @@ use std::process;
 use workdir::Workdir;
 
 macro_rules! slice_tests {
-    ($name:ident, $start:expr, $end:expr, $expected:expr) => (
+    ($name:ident, $start:expr, $end:expr, $expected:expr) => {
         mod $name {
             use super::test_slice;
 
@@ -40,8 +40,7 @@ macro_rules! slice_tests {
 
             #[test]
             fn no_headers_no_index_len() {
-                let name = concat!(stringify!($name),
-                                   "no_headers_no_index_len");
+                let name = concat!(stringify!($name), "no_headers_no_index_len");
                 test_slice(name, $start, $end, $expected, false, false, true);
             }
 
@@ -57,16 +56,15 @@ macro_rules! slice_tests {
                 test_slice(name, $start, $end, $expected, false, true, true);
             }
         }
-    );
+    };
 }
 
-fn setup(name: &str, headers: bool, use_index: bool)
-        -> (Workdir, process::Command) {
+fn setup(name: &str, headers: bool, use_index: bool) -> (Workdir, process::Command) {
     let wrk = Workdir::new(name);
-    let mut data = vec![
-        svec!["a"], svec!["b"], svec!["c"], svec!["d"], svec!["e"]
-    ];
-    if headers { data.insert(0, svec!["header"]); }
+    let mut data = vec![svec!["a"], svec!["b"], svec!["c"], svec!["d"], svec!["e"]];
+    if headers {
+        data.insert(0, svec!["header"]);
+    }
     if use_index {
         wrk.create_indexed("in.csv", data);
     } else {
@@ -79,9 +77,15 @@ fn setup(name: &str, headers: bool, use_index: bool)
     (wrk, cmd)
 }
 
-fn test_slice(name: &str, start: Option<usize>, end: Option<usize>,
-              expected: &[&str], headers: bool,
-              use_index: bool, as_len: bool) {
+fn test_slice(
+    name: &str,
+    start: Option<usize>,
+    end: Option<usize>,
+    expected: &[&str],
+    headers: bool,
+    use_index: bool,
+    as_len: bool,
+) {
     let (wrk, mut cmd) = setup(name, headers, use_index);
     if let Some(start) = start {
         cmd.arg("--start").arg(&start.to_string());
@@ -99,15 +103,17 @@ fn test_slice(name: &str, start: Option<usize>, end: Option<usize>,
     }
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
-    let mut expected = expected.iter()
-                               .map(|&s| vec![s.to_owned()])
-                               .collect::<Vec<Vec<String>>>();
-    if headers { expected.insert(0, svec!["header"]); }
+    let mut expected = expected
+        .iter()
+        .map(|&s| vec![s.to_owned()])
+        .collect::<Vec<Vec<String>>>();
+    if headers {
+        expected.insert(0, svec!["header"]);
+    }
     assert_eq!(got, expected);
 }
 
-fn test_index(name: &str, idx: usize, expected: &str,
-              headers: bool, use_index: bool) {
+fn test_index(name: &str, idx: usize, expected: &str, headers: bool, use_index: bool) {
     let (wrk, mut cmd) = setup(name, headers, use_index);
     cmd.arg("--index").arg(&idx.to_string());
     if !headers {
@@ -116,7 +122,9 @@ fn test_index(name: &str, idx: usize, expected: &str,
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let mut expected = vec![vec![expected.to_owned()]];
-    if headers { expected.insert(0, svec!["header"]); }
+    if headers {
+        expected.insert(0, svec!["header"]);
+    }
     assert_eq!(got, expected);
 }
 

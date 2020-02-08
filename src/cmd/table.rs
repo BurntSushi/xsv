@@ -3,9 +3,9 @@ use std::borrow::Cow;
 use csv;
 use tabwriter::TabWriter;
 
-use CliResult;
 use config::{Config, Delimiter};
 use util;
+use CliResult;
 
 static USAGE: &'static str = "
 Outputs CSV data as a table with columns in alignment.
@@ -51,8 +51,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let rconfig = Config::new(&args.arg_input)
         .delimiter(args.flag_delimiter)
         .no_headers(true);
-    let wconfig = Config::new(&args.flag_output)
-        .delimiter(Some(Delimiter(b'\t')));
+    let wconfig = Config::new(&args.flag_output).delimiter(Some(Delimiter(b'\t')));
 
     let tw = TabWriter::new(wconfig.io_writer()?)
         .minwidth(args.flag_width)
@@ -62,9 +61,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut record = csv::ByteRecord::new();
     while rdr.read_byte_record(&mut record)? {
-        wtr.write_record(record.iter().map(|f| {
-            util::condense(Cow::Borrowed(f), args.flag_condense)
-        }))?;
+        wtr.write_record(
+            record
+                .iter()
+                .map(|f| util::condense(Cow::Borrowed(f), args.flag_condense)),
+        )?;
     }
     wtr.flush()?;
     Ok(())
