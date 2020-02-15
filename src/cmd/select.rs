@@ -1,9 +1,9 @@
 use csv;
 
+use CliResult;
 use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
-use CliResult;
 
 static USAGE: &'static str = "
 Select columns from CSV data efficiently.

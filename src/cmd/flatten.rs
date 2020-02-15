@@ -3,9 +3,9 @@ use std::io::{self, Write};
 
 use tabwriter::TabWriter;
 
+use CliResult;
 use config::{Config, Delimiter};
 use util;
-use CliResult;
 
 static USAGE: &'static str = "
 Prints flattened records such that fields are labeled separated by a new line.
@@ -70,7 +70,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 wtr.write_all(&header)?;
             }
             wtr.write_all(b"\t")?;
-            wtr.write_all(&*util::condense(Cow::Borrowed(&*field), args.flag_condense))?;
+            wtr.write_all(&*util::condense(
+                Cow::Borrowed(&*field), args.flag_condense))?;
             wtr.write_all(b"\n")?;
         }
     }

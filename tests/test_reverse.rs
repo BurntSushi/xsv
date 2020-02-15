@@ -1,6 +1,6 @@
 use workdir::Workdir;
 
-use {qcheck, Csv, CsvData};
+use {Csv, CsvData, qcheck};
 
 fn prop_reverse(name: &str, rows: CsvData, headers: bool) -> bool {
     let wrk = Workdir::new(name);
@@ -8,9 +8,7 @@ fn prop_reverse(name: &str, rows: CsvData, headers: bool) -> bool {
 
     let mut cmd = wrk.command("reverse");
     cmd.arg("in.csv");
-    if !headers {
-        cmd.arg("--no-headers");
-    }
+    if !headers { cmd.arg("--no-headers"); }
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let mut expected = rows.to_vecs();
@@ -20,9 +18,7 @@ fn prop_reverse(name: &str, rows: CsvData, headers: bool) -> bool {
         vec![]
     };
     expected.reverse();
-    if !headers.is_empty() {
-        expected.insert(0, headers);
-    }
+    if !headers.is_empty() { expected.insert(0, headers); }
     rassert_eq!(got, expected)
 }
 

@@ -3,14 +3,14 @@ use std::io;
 
 use channel;
 use csv;
-use stats::{merge_all, Frequencies};
+use stats::{Frequencies, merge_all};
 use threadpool::ThreadPool;
 
+use CliResult;
 use config::{Config, Delimiter};
 use index::Indexed;
 use select::{SelectColumns, Selection};
 use util;
-use CliResult;
 
 static USAGE: &'static str = "
 Compute a frequency table on CSV data.
@@ -88,7 +88,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     for (i, (header, ftab)) in head_ftables.enumerate() {
         let mut header = header.to_vec();
         if rconfig.no_headers {
-            header = (i + 1).to_string().into_bytes();
+            header = (i+1).to_string().into_bytes();
         }
         for (value, count) in args.counts(&ftab).into_iter() {
             let count = count.to_string();
@@ -121,16 +121,13 @@ impl Args {
         if self.flag_limit > 0 {
             counts = counts.into_iter().take(self.flag_limit).collect();
         }
-        counts
-            .into_iter()
-            .map(|(bs, c)| {
-                if b"" == &**bs {
-                    (b"(NULL)"[..].to_vec(), c)
-                } else {
-                    (bs.clone(), c)
-                }
-            })
-            .collect()
+        counts.into_iter().map(|(bs, c)| {
+            if b"" == &**bs {
+                (b"(NULL)"[..].to_vec(), c)
+            } else {
+                (bs.clone(), c)
+            }
+        }).collect()
     }
 
     fn sequential_ftables(&self) -> CliResult<(Headers, FTables)> {
@@ -139,10 +136,8 @@ impl Args {
         Ok((headers, self.ftables(&sel, rdr.byte_records())?))
     }
 
-    fn parallel_ftables(
-        &self,
-        idx: &mut Indexed<fs::File, fs::File>,
-    ) -> CliResult<(Headers, FTables)> {
+    fn parallel_ftables(&self, idx: &mut Indexed<fs::File, fs::File>)
+                       -> CliResult<(Headers, FTables)> {
         let mut rdr = self.rconfig().reader()?;
         let (headers, sel) = self.sel_headers(&mut rdr)?;
 
@@ -169,12 +164,11 @@ impl Args {
     }
 
     fn ftables<I>(&self, sel: &Selection, it: I) -> CliResult<FTables>
-    where
-        I: Iterator<Item = csv::Result<csv::ByteRecord>>,
-    {
+            where I: Iterator<Item=csv::Result<csv::ByteRecord>> {
         let null = &b""[..].to_vec();
         let nsel = sel.normal();
-        let mut tabs: Vec<_> = (0..nsel.len()).map(|_| Frequencies::new()).collect();
+        let mut tabs: Vec<_> =
+            (0..nsel.len()).map(|_| Frequencies::new()).collect();
         for row in it {
             let row = row?;
             for (i, field) in nsel.select(row.into_iter()).enumerate() {
@@ -191,21 +185,15 @@ impl Args {
         Ok(tabs)
     }
 
-    fn sel_headers<R: io::Read>(
-        &self,
-        rdr: &mut csv::Reader<R>,
-    ) -> CliResult<(csv::ByteRecord, Selection)> {
+    fn sel_headers<R: io::Read>(&self, rdr: &mut csv::Reader<R>)
+                  -> CliResult<(csv::ByteRecord, Selection)> {
         let headers = rdr.byte_headers()?;
         let sel = self.rconfig().selection(headers)?;
         Ok((sel.select(headers).map(|h| h.to_vec()).collect(), sel))
     }
 
     fn njobs(&self) -> usize {
-        if self.flag_jobs == 0 {
-            util::num_cpus()
-        } else {
-            self.flag_jobs
-        }
+        if self.flag_jobs == 0 { util::num_cpus() } else { self.flag_jobs }
     }
 }
 

@@ -1,8 +1,8 @@
 use csv;
 
-use config::{Config, Delimiter};
-use util;
 use CliResult;
+use config::{Delimiter, Config};
+use util;
 
 static USAGE: &'static str = "
 Prints a count of the number of records in the CSV data.
@@ -34,17 +34,18 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .delimiter(args.flag_delimiter)
         .no_headers(args.flag_no_headers);
 
-    let count = match conf.indexed()? {
-        Some(idx) => idx.count(),
-        None => {
-            let mut rdr = conf.reader()?;
-            let mut count = 0u64;
-            let mut record = csv::ByteRecord::new();
-            while rdr.read_byte_record(&mut record)? {
-                count += 1;
+    let count =
+        match conf.indexed()? {
+            Some(idx) => idx.count(),
+            None => {
+                let mut rdr = conf.reader()?;
+                let mut count = 0u64;
+                let mut record = csv::ByteRecord::new();
+                while rdr.read_byte_record(&mut record)? {
+                    count += 1;
+                }
+                count
             }
-            count
-        }
-    };
+        };
     Ok(println!("{}", count))
 }

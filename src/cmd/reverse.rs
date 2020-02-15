@@ -1,6 +1,6 @@
+use CliResult;
 use config::{Config, Delimiter};
 use util;
-use CliResult;
 
 static USAGE: &'static str = "
 Reverses rows of CSV data.

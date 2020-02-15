@@ -6,9 +6,7 @@ fn data(headers: bool) -> Vec<Vec<String>> {
         svec!["a", "b"],
         svec!["barfoo", "foobar"],
     ];
-    if headers {
-        rows.insert(0, svec!["h1", "h2"]);
-    }
+    if headers { rows.insert(0, svec!["h1", "h2"]); }
     rows
 }
 
@@ -36,7 +34,9 @@ fn search_empty() {
     cmd.arg("xxx").arg("data.csv");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
-    let expected = vec![svec!["h1", "h2"]];
+    let expected = vec![
+        svec!["h1", "h2"],
+    ];
     assert_eq!(got, expected);
 }
 
@@ -79,7 +79,10 @@ fn search_no_headers() {
     cmd.arg("--no-headers");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
-    let expected = vec![svec!["foobar", "barfoo"], svec!["barfoo", "foobar"]];
+    let expected = vec![
+        svec!["foobar", "barfoo"],
+        svec!["barfoo", "foobar"],
+    ];
     assert_eq!(got, expected);
 }
 
@@ -92,7 +95,10 @@ fn search_select() {
     cmd.arg("--select").arg("h2");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
-    let expected = vec![svec!["h1", "h2"], svec!["barfoo", "foobar"]];
+    let expected = vec![
+        svec!["h1", "h2"],
+        svec!["barfoo", "foobar"],
+    ];
     assert_eq!(got, expected);
 }
 
@@ -106,7 +112,9 @@ fn search_select_no_headers() {
     cmd.arg("--no-headers");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
-    let expected = vec![svec!["barfoo", "foobar"]];
+    let expected = vec![
+        svec!["barfoo", "foobar"],
+    ];
     assert_eq!(got, expected);
 }
 
@@ -119,7 +127,10 @@ fn search_invert_match() {
     cmd.arg("--invert-match");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
-    let expected = vec![svec!["foobar", "barfoo"], svec!["a", "b"]];
+    let expected = vec![
+        svec!["foobar", "barfoo"],
+        svec!["a", "b"],
+    ];
     assert_eq!(got, expected);
 }
 
@@ -133,6 +144,8 @@ fn search_invert_match_no_headers() {
     cmd.arg("--no-headers");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
-    let expected = vec![svec!["a", "b"]];
+    let expected = vec![
+        svec!["a", "b"],
+    ];
     assert_eq!(got, expected);
 }

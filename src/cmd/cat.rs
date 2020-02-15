@@ -1,8 +1,8 @@
 use csv;
 
+use CliResult;
 use config::{Config, Delimiter};
 use util;
-use CliResult;
 
 static USAGE: &'static str = "
 Concatenates CSV data by column or by row.
@@ -62,8 +62,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
 impl Args {
     fn configs(&self) -> CliResult<Vec<Config>> {
-        util::many_configs(&*self.arg_input, self.flag_delimiter, self.flag_no_headers)
-            .map_err(From::from)
+        util::many_configs(&*self.arg_input,
+                           self.flag_delimiter,
+                           self.flag_no_headers)
+             .map_err(From::from)
     }
 
     fn cat_rows(&self) -> CliResult<()> {
@@ -83,8 +85,7 @@ impl Args {
 
     fn cat_columns(&self) -> CliResult<()> {
         let mut wtr = Config::new(&self.flag_output).writer()?;
-        let mut rdrs = self
-            .configs()?
+        let mut rdrs = self.configs()?
             .into_iter()
             .map(|conf| conf.no_headers(true).reader())
             .collect::<Result<Vec<_>, _>>()?;
@@ -96,10 +97,9 @@ impl Args {
             lengths.push(rdr.byte_headers()?.len());
         }
 
-        let mut iters = rdrs
-            .iter_mut()
-            .map(|rdr| rdr.byte_records())
-            .collect::<Vec<_>>();
+        let mut iters = rdrs.iter_mut()
+                            .map(|rdr| rdr.byte_records())
+                            .collect::<Vec<_>>();
         'OUTER: loop {
             let mut record = csv::ByteRecord::new();
             let mut num_done = 0;

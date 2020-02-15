@@ -1,5 +1,5 @@
-use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
+use std::collections::hash_map::Entry;
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -7,10 +7,10 @@ use std::path::Path;
 use csv;
 use regex::Regex;
 
+use CliResult;
 use config::{Config, Delimiter};
 use select::SelectColumns;
 use util::{self, FilenameTemplate};
-use CliResult;
 
 static USAGE: &'static str = "
 Partitions the given CSV data into chunks based on the value of a column
@@ -75,7 +75,11 @@ impl Args {
     }
 
     /// Get the column to use as a key.
-    fn key_column(&self, rconfig: &Config, headers: &csv::ByteRecord) -> CliResult<usize> {
+    fn key_column(
+        &self,
+        rconfig: &Config,
+        headers: &csv::ByteRecord,
+    ) -> CliResult<usize> {
         let select_cols = rconfig.selection(headers)?;
         if select_cols.len() == 1 {
             Ok(select_cols[0])
@@ -92,7 +96,8 @@ impl Args {
         let key_col = self.key_column(&rconfig, &headers)?;
         let mut gen = WriterGenerator::new(self.flag_filename.clone());
 
-        let mut writers: HashMap<Vec<u8>, BoxedWriter> = HashMap::new();
+        let mut writers: HashMap<Vec<u8>, BoxedWriter> =
+            HashMap::new();
         let mut row = csv::ByteRecord::new();
         while rdr.read_byte_record(&mut row)? {
             // Decide what file to put this in.
@@ -103,32 +108,25 @@ impl Args {
                 _ => &column[..],
             };
             let mut entry = writers.entry(key.to_vec());
-            let wtr =
-                match entry {
-                    Entry::Occupied(ref mut occupied) => occupied.get_mut(),
-                    Entry::Vacant(vacant) => {
-                        // We have a new key, so make a new writer.
-                        let mut wtr = gen.writer(&*self.arg_outdir, key)?;
-                        if !rconfig.no_headers {
-                            if self.flag_drop {
-                                wtr.write_record(headers.iter().enumerate().filter_map(
-                                    |(i, e)| if i != key_col { Some(e) } else { None },
-                                ))?;
-                            } else {
-                                wtr.write_record(&headers)?;
-                            }
+            let wtr = match entry {
+                Entry::Occupied(ref mut occupied) => occupied.get_mut(),
+                Entry::Vacant(vacant) => {
+                    // We have a new key, so make a new writer.
+                    let mut wtr = gen.writer(&*self.arg_outdir, key)?;
+                    if !rconfig.no_headers {
+                        if self.flag_drop {
+                            wtr.write_record(headers.iter().enumerate()
+                                .filter_map(|(i, e)| if i != key_col { Some(e) } else { None }))?;
+                        } else {
+                            wtr.write_record(&headers)?;
                         }
-                        vacant.insert(wtr)
                     }
-                };
+                    vacant.insert(wtr)
+                }
+            };
             if self.flag_drop {
-                wtr.write_record(row.iter().enumerate().filter_map(|(i, e)| {
-                    if i != key_col {
-                        Some(e)
-                    } else {
-                        None
-                    }
-                }))?;
+                wtr.write_record(row.iter().enumerate()
+                    .filter_map(|(i, e)| if i != key_col { Some(e) } else { None }))?;
             } else {
                 wtr.write_byte_record(&row)?;
             }
@@ -137,7 +135,7 @@ impl Args {
     }
 }
 
-type BoxedWriter = csv::Writer<Box<io::Write + 'static>>;
+type BoxedWriter = csv::Writer<Box<io::Write+'static>>;
 
 /// Generates unique filenames based on CSV values.
 struct WriterGenerator {
@@ -159,8 +157,7 @@ impl WriterGenerator {
 
     /// Create a CSV writer for `key`.  Does not add headers.
     fn writer<P>(&mut self, path: P, key: &[u8]) -> io::Result<BoxedWriter>
-    where
-        P: AsRef<Path>,
+        where P: AsRef<Path>
     {
         let unique_value = self.unique_value(key);
         self.template.writer(path.as_ref(), &unique_value)
@@ -173,11 +170,12 @@ impl WriterGenerator {
         // Sanitize our key.
         let utf8 = String::from_utf8_lossy(key);
         let safe = self.non_word_char.replace_all(&*utf8, "").into_owned();
-        let base = if safe.is_empty() {
-            "empty".to_owned()
-        } else {
-            safe
-        };
+        let base =
+            if safe.is_empty() {
+                "empty".to_owned()
+            } else {
+                safe
+            };
 
         // Now check for collisions.
         if !self.used.contains(&base) {
@@ -194,7 +192,7 @@ impl WriterGenerator {
                 });
                 if !self.used.contains(&candidate) {
                     self.used.insert(candidate.clone());
-                    return candidate;
+                    return candidate
                 }
             }
         }

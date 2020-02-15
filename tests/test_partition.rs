@@ -3,12 +3,10 @@ use std::borrow::ToOwned;
 use workdir::Workdir;
 
 macro_rules! part_eq {
-    ($wrk:expr, $path:expr, $expected:expr) => {
-        assert_eq!(
-            $wrk.from_str::<String>(&$wrk.path($path)),
-            $expected.to_owned()
-        );
-    };
+    ($wrk:expr, $path:expr, $expected:expr) => (
+        assert_eq!($wrk.from_str::<String>(&$wrk.path($path)),
+                   $expected.to_owned());
+    );
 }
 
 fn data(headers: bool) -> Vec<Vec<String>> {
@@ -19,9 +17,7 @@ fn data(headers: bool) -> Vec<Vec<String>> {
         svec!["NY", "Buffalo"],
         svec!["TX", "Fort Worth"],
     ];
-    if headers {
-        rows.insert(0, svec!["state", "city"]);
-    }
+    if headers { rows.insert(0, svec!["state", "city"]); }
     rows
 }
 
@@ -34,32 +30,20 @@ fn partition() {
     cmd.arg("state").arg(&wrk.path(".")).arg("in.csv");
     wrk.run(&mut cmd);
 
-    part_eq!(
-        wrk,
-        "CA.csv",
-        "\
+    part_eq!(wrk, "CA.csv", "\
 state,city
 CA,San Francisco
-"
-    );
-    part_eq!(
-        wrk,
-        "NY.csv",
-        "\
+");
+    part_eq!(wrk, "NY.csv", "\
 state,city
 NY,Manhatten
 NY,Buffalo
-"
-    );
-    part_eq!(
-        wrk,
-        "TX.csv",
-        "\
+");
+    part_eq!(wrk, "TX.csv", "\
 state,city
 TX,Dallas
 TX,Fort Worth
-"
-    );
+");
 }
 
 #[test]
@@ -68,38 +52,23 @@ fn partition_drop() {
     wrk.create("in.csv", data(true));
 
     let mut cmd = wrk.command("partition");
-    cmd.arg("--drop")
-        .arg("state")
-        .arg(&wrk.path("."))
-        .arg("in.csv");
+    cmd.arg("--drop").arg("state").arg(&wrk.path(".")).arg("in.csv");
     wrk.run(&mut cmd);
 
-    part_eq!(
-        wrk,
-        "CA.csv",
-        "\
+    part_eq!(wrk, "CA.csv", "\
 city
 San Francisco
-"
-    );
-    part_eq!(
-        wrk,
-        "NY.csv",
-        "\
+");
+    part_eq!(wrk, "NY.csv", "\
 city
 Manhatten
 Buffalo
-"
-    );
-    part_eq!(
-        wrk,
-        "TX.csv",
-        "\
+");
+    part_eq!(wrk, "TX.csv", "\
 city
 Dallas
 Fort Worth
-"
-    );
+");
 }
 
 #[test]
@@ -108,35 +77,20 @@ fn partition_without_headers() {
     wrk.create("in.csv", data(false));
 
     let mut cmd = wrk.command("partition");
-    cmd.arg("--no-headers")
-        .arg("1")
-        .arg(&wrk.path("."))
-        .arg("in.csv");
+    cmd.arg("--no-headers").arg("1").arg(&wrk.path(".")).arg("in.csv");
     wrk.run(&mut cmd);
 
-    part_eq!(
-        wrk,
-        "CA.csv",
-        "\
+    part_eq!(wrk, "CA.csv", "\
 CA,San Francisco
-"
-    );
-    part_eq!(
-        wrk,
-        "NY.csv",
-        "\
+");
+    part_eq!(wrk, "NY.csv", "\
 NY,Manhatten
 NY,Buffalo
-"
-    );
-    part_eq!(
-        wrk,
-        "TX.csv",
-        "\
+");
+    part_eq!(wrk, "TX.csv", "\
 TX,Dallas
 TX,Fort Worth
-"
-    );
+");
 }
 
 #[test]
@@ -145,36 +99,20 @@ fn partition_drop_without_headers() {
     wrk.create("in.csv", data(false));
 
     let mut cmd = wrk.command("partition");
-    cmd.arg("--drop")
-        .arg("--no-headers")
-        .arg("1")
-        .arg(&wrk.path("."))
-        .arg("in.csv");
+    cmd.arg("--drop").arg("--no-headers").arg("1").arg(&wrk.path(".")).arg("in.csv");
     wrk.run(&mut cmd);
 
-    part_eq!(
-        wrk,
-        "CA.csv",
-        "\
+    part_eq!(wrk, "CA.csv", "\
 San Francisco
-"
-    );
-    part_eq!(
-        wrk,
-        "NY.csv",
-        "\
+");
+    part_eq!(wrk, "NY.csv", "\
 Manhatten
 Buffalo
-"
-    );
-    part_eq!(
-        wrk,
-        "TX.csv",
-        "\
+");
+    part_eq!(wrk, "TX.csv", "\
 Dallas
 Fort Worth
-"
-    );
+");
 }
 
 #[test]
@@ -263,64 +201,36 @@ fn partition_with_tricky_key_values() {
     cmd.arg("key").arg(&wrk.path(".")).arg("in.csv");
     wrk.run(&mut cmd);
 
-    part_eq!(
-        wrk,
-        "empty.csv",
-        "\
+    part_eq!(wrk, "empty.csv", "\
 key,explanation
 ,empty key
-"
-    );
-    part_eq!(
-        wrk,
-        "empty_1.csv",
-        "\
+");
+     part_eq!(wrk, "empty_1.csv", "\
 key,explanation
 empty,the string empty
-"
-    );
-    part_eq!(
-        wrk,
-        "unsafe_1.csv",
-        r#"key,explanation
+");
+     part_eq!(wrk, "unsafe_1.csv", r#"key,explanation
 "unsafe _1$!,""",unsafe in shell
-"#
-    );
-    part_eq!(
-        wrk,
-        "collision.csv",
-        "\
+"#);
+     part_eq!(wrk, "collision.csv", "\
 key,explanation
 collision,ordinary value
 collision,in same file
-"
-    );
-    part_eq!(
-        wrk,
-        "collision_2.csv",
-        "\
+");
+    part_eq!(wrk, "collision_2.csv", "\
 key,explanation
 coll ision,collides
-"
-    );
-    part_eq!(
-        wrk,
-        "collision_3.csv",
-        "\
+");
+    part_eq!(wrk, "collision_3.csv", "\
 key,explanation
 collision!,collides again
-"
-    );
+");
     // Tricky! We didn't see this an input, but we did generate it as an
     // output already.
-    part_eq!(
-        wrk,
-        "collision_2_4.csv",
-        "\
+    part_eq!(wrk, "collision_2_4.csv", "\
 key,explanation
 collision_2,collides with disambiguated
-"
-    );
+");
 }
 
 fn prefix_data() -> Vec<Vec<String>> {
@@ -340,29 +250,22 @@ fn partition_with_prefix_length() {
     wrk.create("in.csv", prefix_data());
 
     let mut cmd = wrk.command("partition");
-    cmd.args(&["--prefix-length", "1"])
+    cmd
+        .args(&["--prefix-length", "1"])
         .arg("state")
         .arg(&wrk.path("."))
         .arg("in.csv");
     wrk.run(&mut cmd);
 
-    part_eq!(
-        wrk,
-        "M.csv",
-        "\
+    part_eq!(wrk, "M.csv", "\
 state,city
 MA,Boston
 ME,Portland
 M,Too short
-"
-    );
-    part_eq!(
-        wrk,
-        "C.csv",
-        "\
+");
+    part_eq!(wrk, "C.csv", "\
 state,city
 CA,San Francisco
 CO,Denver
-"
-    );
+");
 }

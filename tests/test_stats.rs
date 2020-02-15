@@ -5,24 +5,24 @@ use std::process;
 use workdir::Workdir;
 
 macro_rules! stats_tests {
-    ($name:ident, $field:expr, $rows:expr, $expect:expr) => {
+    ($name:ident, $field:expr, $rows:expr, $expect:expr) => (
         stats_tests!($name, $field, $rows, $expect, false);
-    };
-    ($name:ident, $field:expr, $rows:expr, $expect:expr, $nulls:expr) => {
+    );
+    ($name:ident, $field:expr, $rows:expr, $expect:expr, $nulls:expr) => (
         mod $name {
             use super::test_stats;
 
             stats_test_headers!($name, $field, $rows, $expect, $nulls);
             stats_test_no_headers!($name, $field, $rows, $expect, $nulls);
         }
-    };
+    );
 }
 
 macro_rules! stats_test_headers {
-    ($name:ident, $field:expr, $rows:expr, $expect:expr) => {
+    ($name:ident, $field:expr, $rows:expr, $expect:expr) => (
         stats_test_headers!($name, $field, $rows, $expect, false);
-    };
-    ($name:ident, $field:expr, $rows:expr, $expect:expr, $nulls:expr) => {
+    );
+    ($name:ident, $field:expr, $rows:expr, $expect:expr, $nulls:expr) => (
         #[test]
         fn headers_no_index() {
             let name = concat!(stringify!($name), "_headers_no_index");
@@ -34,14 +34,14 @@ macro_rules! stats_test_headers {
             let name = concat!(stringify!($name), "_headers_index");
             test_stats(name, $field, $rows, $expect, true, true, $nulls);
         }
-    };
+    );
 }
 
 macro_rules! stats_test_no_headers {
-    ($name:ident, $field:expr, $rows:expr, $expect:expr) => {
+    ($name:ident, $field:expr, $rows:expr, $expect:expr) => (
         stats_test_no_headers!($name, $field, $rows, $expect, false);
-    };
-    ($name:ident, $field:expr, $rows:expr, $expect:expr, $nulls:expr) => {
+    );
+    ($name:ident, $field:expr, $rows:expr, $expect:expr, $nulls:expr) => (
         #[test]
         fn no_headers_no_index() {
             let name = concat!(stringify!($name), "_no_headers_no_index");
@@ -53,20 +53,12 @@ macro_rules! stats_test_no_headers {
             let name = concat!(stringify!($name), "_no_headers_index");
             test_stats(name, $field, $rows, $expect, false, true, $nulls);
         }
-    };
+    );
 }
 
-fn test_stats<S>(
-    name: S,
-    field: &str,
-    rows: &[&str],
-    expected: &str,
-    headers: bool,
-    use_index: bool,
-    nulls: bool,
-) where
-    S: ::std::ops::Deref<Target = str>,
-{
+fn test_stats<S>(name: S, field: &str, rows: &[&str], expected: &str,
+                 headers: bool, use_index: bool, nulls: bool)
+        where S: ::std::ops::Deref<Target=str> {
     let (wrk, mut cmd) = setup(name, rows, headers, use_index, nulls);
     let field_val = get_field_value(&wrk, &mut cmd, field);
     // Only compare the first few bytes since floating point arithmetic
@@ -75,21 +67,13 @@ fn test_stats<S>(
     assert_eq!(&field_val[0..len], &expected[0..len]);
 }
 
-fn setup<S>(
-    name: S,
-    rows: &[&str],
-    headers: bool,
-    use_index: bool,
-    nulls: bool,
-) -> (Workdir, process::Command)
-where
-    S: ::std::ops::Deref<Target = str>,
-{
+fn setup<S>(name: S, rows: &[&str], headers: bool,
+            use_index: bool, nulls: bool) -> (Workdir, process::Command)
+        where S: ::std::ops::Deref<Target=str> {
     let wrk = Workdir::new(&name);
-    let mut data: Vec<Vec<String>> = rows.iter().map(|&s| vec![s.to_owned()]).collect();
-    if headers {
-        data.insert(0, svec!["header"]);
-    }
+    let mut data: Vec<Vec<String>> =
+        rows.iter().map(|&s| vec![s.to_owned()]).collect();
+    if headers { data.insert(0, svec!["header"]); }
     if use_index {
         wrk.create_indexed("in.csv", data);
     } else {
@@ -98,26 +82,17 @@ where
 
     let mut cmd = wrk.command("stats");
     cmd.arg("in.csv");
-    if !headers {
-        cmd.arg("--no-headers");
-    }
-    if nulls {
-        cmd.arg("--nulls");
-    }
+    if !headers { cmd.arg("--no-headers"); }
+    if nulls { cmd.arg("--nulls"); }
 
     (wrk, cmd)
 }
 
-fn get_field_value(wrk: &Workdir, cmd: &mut process::Command, field: &str) -> String {
-    if field == "median" {
-        cmd.arg("--median");
-    }
-    if field == "cardinality" {
-        cmd.arg("--cardinality");
-    }
-    if field == "mode" {
-        cmd.arg("--mode");
-    }
+fn get_field_value(wrk: &Workdir, cmd: &mut process::Command, field: &str)
+                  -> String {
+    if field == "median" { cmd.arg("--median"); }
+    if field == "cardinality" { cmd.arg("--cardinality"); }
+    if field == "mode" { cmd.arg("--mode"); }
 
     let mut rows: Vec<Vec<String>> = wrk.read_stdout(cmd);
     let headers = rows.remove(0);
@@ -128,11 +103,8 @@ fn get_field_value(wrk: &Workdir, cmd: &mut process::Command, field: &str) -> St
             }
         }
     }
-    panic!(
-        "BUG: Could not find field '{}' in headers '{:?}' \
-         for command '{:?}'.",
-        field, headers, cmd
-    );
+    panic!("BUG: Could not find field '{}' in headers '{:?}' \
+            for command '{:?}'.", field, headers, cmd);
 }
 
 stats_tests!(stats_infer_unicode, "type", &["a"], "Unicode");
@@ -149,12 +121,8 @@ stats_tests!(stats_infer_int_unicode, "type", &["1", "a"], "Unicode");
 stats_tests!(stats_infer_unicode_int, "type", &["a", "1"], "Unicode");
 stats_tests!(stats_infer_int_float, "type", &["1", "1.2"], "Float");
 stats_tests!(stats_infer_float_int, "type", &["1.2", "1"], "Float");
-stats_tests!(
-    stats_infer_null_int_float_unicode,
-    "type",
-    &["", "1", "1.2", "a"],
-    "Unicode"
-);
+stats_tests!(stats_infer_null_int_float_unicode, "type",
+             &["", "1", "1.2", "a"], "Unicode");
 
 stats_tests!(stats_no_mean, "mean", &["a"], "");
 stats_tests!(stats_no_stddev, "stddev", &["a"], "");
@@ -171,13 +139,8 @@ stats_tests!(stats_includenulls_null_stddev, "stddev", &[""], "", true);
 stats_tests!(stats_includenulls_null_median, "median", &[""], "", true);
 stats_tests!(stats_includenulls_null_mode, "mode", &[""], "N/A", true);
 
-stats_tests!(
-    stats_includenulls_mean,
-    "mean",
-    &["5", "", "15", "10"],
-    "7.5",
-    true
-);
+stats_tests!(stats_includenulls_mean,
+             "mean", &["5", "", "15", "10"], "7.5", true);
 
 stats_tests!(stats_sum_integers, "sum", &["1", "2"], "3");
 stats_tests!(stats_sum_floats, "sum", &["1.5", "2.8"], "4.3");
@@ -200,26 +163,13 @@ stats_tests!(stats_len_min_null, "min_length", &["", "aa", "a"], "0");
 stats_tests!(stats_len_max_null, "max_length", &["a", "aa", ""], "2");
 
 stats_tests!(stats_mean, "mean", &["5", "15", "10"], "10");
-stats_tests!(
-    stats_stddev,
-    "stddev",
-    &["1", "2", "3"],
-    "0.816496580927726"
-);
+stats_tests!(stats_stddev, "stddev", &["1", "2", "3"], "0.816496580927726");
 stats_tests!(stats_mean_null, "mean", &["", "5", "15", "10"], "10");
-stats_tests!(
-    stats_stddev_null,
-    "stddev",
-    &["1", "2", "3", ""],
-    "0.816496580927726"
-);
+stats_tests!(stats_stddev_null, "stddev", &["1", "2", "3", ""],
+             "0.816496580927726");
 stats_tests!(stats_mean_mix, "mean", &["5", "15.1", "9.9"], "10");
-stats_tests!(
-    stats_stddev_mix,
-    "stddev",
-    &["1", "2.1", "2.9"],
-    "0.7788880963698614"
-);
+stats_tests!(stats_stddev_mix, "stddev", &["1", "2.1", "2.9"],
+             "0.7788880963698614");
 
 stats_tests!(stats_cardinality, "cardinality", &["a", "b", "a"], "2");
 stats_tests!(stats_mode, "mode", &["a", "b", "a"], "a");
@@ -227,12 +177,8 @@ stats_tests!(stats_mode_null, "mode", &["", "a", "b", "a"], "a");
 stats_tests!(stats_median, "median", &["1", "2", "3"], "2");
 stats_tests!(stats_median_null, "median", &["", "1", "2", "3"], "2");
 stats_tests!(stats_median_even, "median", &["1", "2", "3", "4"], "2.5");
-stats_tests!(
-    stats_median_even_null,
-    "median",
-    &["", "1", "2", "3", "4"],
-    "2.5"
-);
+stats_tests!(stats_median_even_null, "median",
+             &["", "1", "2", "3", "4"], "2.5");
 stats_tests!(stats_median_mix, "median", &["1", "2.5", "3"], "2.5");
 
 mod stats_infer_nothing {

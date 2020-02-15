@@ -2,9 +2,9 @@ use std::io;
 
 use tabwriter::TabWriter;
 
+use CliResult;
 use config::Delimiter;
 use util;
-use CliResult;
 
 static USAGE: &'static str = "
 Prints the fields of the first row in the CSV data.
@@ -41,27 +41,31 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
-    let configs = util::many_configs(&*args.arg_input, args.flag_delimiter, true)?;
+    let configs = util::many_configs(
+        &*args.arg_input, args.flag_delimiter, true)?;
 
     let num_inputs = configs.len();
     let mut headers: Vec<Vec<u8>> = vec![];
     for conf in configs.into_iter() {
         let mut rdr = conf.reader()?;
         for header in rdr.byte_headers()?.iter() {
-            if !args.flag_intersect || !headers.iter().any(|h| &**h == header) {
+            if !args.flag_intersect
+                || !headers.iter().any(|h| &**h == header)
+            {
                 headers.push(header.to_vec());
             }
         }
     }
 
-    let mut wtr: Box<io::Write> = if args.flag_just_names {
-        Box::new(io::stdout())
-    } else {
-        Box::new(TabWriter::new(io::stdout()))
-    };
+    let mut wtr: Box<io::Write> =
+        if args.flag_just_names {
+            Box::new(io::stdout())
+        } else {
+            Box::new(TabWriter::new(io::stdout()))
+        };
     for (i, header) in headers.into_iter().enumerate() {
         if num_inputs == 1 && !args.flag_just_names {
-            write!(&mut wtr, "{}\t", i + 1)?;
+            write!(&mut wtr, "{}\t", i+1)?;
         }
         wtr.write_all(&header)?;
         wtr.write_all(b"\n")?;

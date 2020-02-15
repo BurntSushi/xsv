@@ -17,12 +17,9 @@ fn table() {
     cmd.arg("in.csv");
 
     let got: String = wrk.stdout(&mut cmd);
-    assert_eq!(
-        &*got,
-        "\
+    assert_eq!(&*got, "\
 h1       h2   h3
 abcdefg  a    a
 a        abc  z\
-"
-    )
+")
 }
