@@ -353,7 +353,7 @@ dependencies = [
 
 [[package]]
 name = "tabwriter"
-version = "1.1.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "unicode-width 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -450,7 +450,7 @@ dependencies = [
  "serde 1.0.75 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.75 (registry+https://github.com/rust-lang/crates.io-index)",
  "streaming-stats 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tabwriter 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tabwriter 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "threadpool 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -500,7 +500,7 @@ dependencies = [
 "checksum streaming-stats 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4f233aa550ceeb22c47cff12e167f7bc89c03e265e7fcff64b8359bb6799e0f4"
 "checksum strsim 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bb4f380125926a99e52bc279241539c018323fab05ad6368b56f93d9369ff550"
 "checksum syn 0.14.9 (registry+https://github.com/rust-lang/crates.io-index)" = "261ae9ecaa397c42b960649561949d69311f08eeaea86a65696e6e46517cf741"
-"checksum tabwriter 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9128e3a9149e51494cad59712a286e149fcb74e443d2298d69bd6eaa42cc4ebb"
+"checksum tabwriter 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "36205cfc997faadcc4b0b87aaef3fbedafe20d38d4959a7ca6ff803564051111"
 "checksum thread_local 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)" = "c6b53e329000edc2b34dbe8545fd20e55a333362d0a321909685a19bd28c3f1b"
 "checksum threadpool 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "e2f0c90a5f3459330ac8bc0d2f879c693bb7a2f59689c1083fc4ef83834da865"
 "checksum ucd-util 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "fd2be2d6639d0f8fe6cdda291ad456e23629558d466e2789d2c3e9892bda285d"
