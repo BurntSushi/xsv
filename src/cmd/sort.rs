@@ -104,7 +104,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                         },
                     }
                 },
-                None => (),
+                None => {
+                    wtr.write_byte_record(&r)?;
+                },
             }
 
             prev = Some(r);
