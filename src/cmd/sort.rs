@@ -2,6 +2,7 @@ use std::cmp;
 
 use CliResult;
 use config::{Config, Delimiter};
+use csv;
 use select::SelectColumns;
 use util;
 use std::str::from_utf8;
@@ -31,6 +32,8 @@ Common options:
                            appear as the header row in the output.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. (default: ,)
+    -u, --uniq             When set, identical consecutive lines will be dropped
+                           to keep only one line per sorted value.
 ";
 
 #[derive(Deserialize)]
@@ -42,6 +45,7 @@ struct Args {
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
+    flag_uniq: bool,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -87,9 +91,27 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 
     let mut wtr = Config::new(&args.flag_output).writer()?;
+    let mut prev: Option<csv::ByteRecord> = None;
     rconfig.write_headers(&mut rdr, &mut wtr)?;
     for r in all.into_iter() {
-        wtr.write_byte_record(&r)?;
+        if args.flag_uniq {
+            match prev {
+                Some(other_r) => {
+                    match iter_cmp(sel.select(&r), sel.select(&other_r)) {
+                        cmp::Ordering::Equal => (),
+                        _ => {
+                            wtr.write_byte_record(&r)?;
+                        },
+                    }
+                },
+                None => (),
+            }
+
+            prev = Some(r);
+        }
+        else {
+            wtr.write_byte_record(&r)?;
+        }
     }
     Ok(wtr.flush()?)
 }
