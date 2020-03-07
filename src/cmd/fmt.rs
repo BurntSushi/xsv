@@ -23,6 +23,7 @@ fmt options:
     --ascii                    Use ASCII field and record separators.
     --quote <arg>              The quote character to use. [default: \"]
     --quote-always             Put quotes around every value.
+    --quote-never              Never put quotes around any value.
     --escape <arg>             The escape character to use. When not specified,
                                quotes are escaped by doubling them.
 
@@ -43,6 +44,7 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
     flag_quote: Delimiter,
     flag_quote_always: bool,
+    flag_quote_never: bool,
     flag_escape: Option<Delimiter>,
 }
 
@@ -63,6 +65,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
     if args.flag_quote_always {
         wconfig = wconfig.quote_style(csv::QuoteStyle::Always);
+    } else if args.flag_quote_never {
+        wconfig = wconfig.quote_style(csv::QuoteStyle::Never);
     }
     if let Some(escape) = args.flag_escape {
         wconfig = wconfig.escape(Some(escape.as_byte())).double_quote(false);
