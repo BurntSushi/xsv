@@ -278,7 +278,7 @@ impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
 
 impl Args {
     fn new_io_state(&self)
-        -> CliResult<IoState<fs::File, Box<io::Write+'static>>> {
+        -> CliResult<IoState<fs::File, Box<dyn io::Write+'static>>> {
         let rconf1 = Config::new(&Some(self.arg_input1.clone()))
             .delimiter(self.flag_delimiter)
             .no_headers(self.flag_no_headers)
