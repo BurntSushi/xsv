@@ -18,6 +18,7 @@ Dual-licensed under MIT or the [UNLICENSE](https://unlicense.org).
 
 ### Available commands
 
+* **behead** - Drop headers from CSV file.
 * **cat** - Concatenate CSV files by row or by column.
 * **count** - Count the rows in a CSV file. (Instantaneous with an index.)
 * **fixlengths** - Force a CSV file to have same-length records by either
