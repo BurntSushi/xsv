@@ -33,6 +33,9 @@ Common options:
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. (default: ,)
+    -f, --flag <column>    If given, the command will not filter rows
+                           but will instead flag the found rows in a new
+                           column named <column>.
 ";
 
 #[derive(Deserialize)]
@@ -45,6 +48,7 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
     flag_invert_match: bool,
     flag_ignore_case: bool,
+    flag_flag: Option<String>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -60,8 +64,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = rconfig.reader()?;
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
-    let headers = rdr.byte_headers()?.clone();
+    let mut headers = rdr.byte_headers()?.clone();
     let sel = rconfig.selection(&headers)?;
+
+    if let Some(column_name) = args.flag_flag.clone() {
+        headers.push_field(column_name.as_bytes());
+    }
 
     if !rconfig.no_headers {
         wtr.write_record(&headers)?;
@@ -72,7 +80,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         if args.flag_invert_match {
             m = !m;
         }
-        if m {
+
+        if let Some(_) = args.flag_flag {
+            record.push_field(if m { b"1" } else { b"0" });
+            wtr.write_byte_record(&record)?;
+        }
+        else if m {
             wtr.write_byte_record(&record)?;
         }
     }
