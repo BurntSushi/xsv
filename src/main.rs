@@ -152,6 +152,7 @@ enum Command {
     Input,
     Join,
     Partition,
+    Rename,
     Reverse,
     Sample,
     Search,
@@ -171,7 +172,7 @@ impl Command {
 
         if !argv[1].chars().all(char::is_lowercase) {
             return Err(CliError::Other(format!(
-                "xsv expects commands in lowercase. Did you mean '{}'?", 
+                "xsv expects commands in lowercase. Did you mean '{}'?",
                 argv[1].to_lowercase()).to_string()));
         }
         match self {
@@ -187,6 +188,7 @@ impl Command {
             Command::Input => cmd::input::run(argv),
             Command::Join => cmd::join::run(argv),
             Command::Partition => cmd::partition::run(argv),
+            Command::Rename => cmd::rename::run(argv),
             Command::Reverse => cmd::reverse::run(argv),
             Command::Sample => cmd::sample::run(argv),
             Command::Search => cmd::search::run(argv),
