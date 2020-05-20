@@ -321,6 +321,12 @@ If you're a **Nix/NixOS** user, you can install xsv from nixpkgs:
 $ nix-env -i xsv
 ```
 
+If you're a **Windows** user, you can install xsv from [scoop](https://scoop.sh/):
+
+```powershell
+scoop install xsv
+```
+
 Alternatively, you can compile from source by
 [installing Cargo](https://crates.io/install)
 ([Rust's](https://www.rust-lang.org/) package manager)
