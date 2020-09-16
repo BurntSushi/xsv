@@ -1,6 +1,6 @@
 [package]
 name = "xsv"
-version = "0.13.0"  #:version
+version = "0.13.0-yomguithereal1"  #:version
 authors = ["Andrew Gallant <jamslam@gmail.com>"]
 description = "A high performance CSV command line toolkit."
 documentation = "https://burntsushi.net/rustdoc/xsv/"
