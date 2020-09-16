@@ -23,6 +23,13 @@ This forked version of xsv can be installed using cargo:
 cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
 ```
 
+**New Features**
+
+* `xsv behead`
+* `xsv explode`
+* `xsv sort -u`
+* `xsv search --flag col`
+
 
 ### Available commands
 
