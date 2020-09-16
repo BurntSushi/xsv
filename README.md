@@ -15,6 +15,14 @@ a quick tour of several commands.
 
 Dual-licensed under MIT or the [UNLICENSE](https://unlicense.org).
 
+### How to install
+
+This forked version of xsv can be installed using cargo:
+
+```
+cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
+```
+
 
 ### Available commands
 
