@@ -128,6 +128,32 @@ fn sort_reverse() {
     assert_eq!(got, expected);
 }
 
+#[test]
+fn sort_uniq() {
+    let wrk = Workdir::new("sort_unique");
+    wrk.create("in.csv", vec![
+        svec!["number", "letter"],
+        svec!["2", "c"],
+        svec!["1", "a"],
+        svec!["3", "f"],
+        svec!["2", "b"],
+        svec!["1", "d"],
+        svec!["2", "e"],
+    ]);
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("-u").args(&["-s", "number"]).arg("-N").arg("in.csv");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["number", "letter"],
+        svec!["1", "a"],
+        svec!["2", "c"],
+        svec!["3", "f"],
+    ];
+    assert_eq!(got, expected);
+}
+
 /// Order `a` and `b` lexicographically using `Ord`
 pub fn iter_cmp<A, L, R>(mut a: L, mut b: R) -> cmp::Ordering
         where A: Ord, L: Iterator<Item=A>, R: Iterator<Item=A> {
