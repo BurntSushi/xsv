@@ -149,3 +149,36 @@ fn search_invert_match_no_headers() {
     ];
     assert_eq!(got, expected);
 }
+
+#[test]
+fn search_flag() {
+    let wrk = Workdir::new("search_flag");
+    wrk.create("data.csv", data(false));
+    let mut cmd = wrk.command("search");
+    cmd.arg("^foo").arg("data.csv").args(&["--flag", "flagged"]);
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["foobar", "barfoo", "flagged"],
+        svec!["a", "b", "0"],
+        svec!["barfoo", "foobar", "1"]
+    ];
+    assert_eq!(got, expected);
+}
+
+#[test]
+fn search_flag_invert_match() {
+    let wrk = Workdir::new("search_flag");
+    wrk.create("data.csv", data(false));
+    let mut cmd = wrk.command("search");
+    cmd.arg("^foo").arg("data.csv").args(&["--flag", "flagged"]);
+    cmd.arg("--invert-match");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["foobar", "barfoo", "flagged"],
+        svec!["a", "b", "1"],
+        svec!["barfoo", "foobar", "0"]
+    ];
+    assert_eq!(got, expected);
+}
