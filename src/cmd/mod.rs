@@ -1,5 +1,6 @@
 pub mod cat;
 pub mod count;
+pub mod explode;
 pub mod fixlengths;
 pub mod flatten;
 pub mod fmt;
