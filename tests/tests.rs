@@ -45,6 +45,7 @@ mod test_headers;
 mod test_index;
 mod test_join;
 mod test_partition;
+mod test_pseudo;
 mod test_reverse;
 mod test_search;
 mod test_select;
