@@ -13,6 +13,7 @@ extern crate serde_derive;
 extern crate stats;
 extern crate tabwriter;
 extern crate threadpool;
+extern crate uuid;
 
 use std::borrow::ToOwned;
 use std::env;
@@ -45,6 +46,7 @@ macro_rules! command_list {
 "
     cat         Concatenate by row or column
     count       Count records
+    enumerate   Add a column enumerating CSV lines
     fixlengths  Makes all records have same length
     flatten     Show one field per line
     fmt         Format CSV output (change field delimiter)
@@ -142,6 +144,7 @@ Please choose one of the following commands:",
 enum Command {
     Cat,
     Count,
+    Enumerate,
     FixLengths,
     Flatten,
     Fmt,
@@ -171,12 +174,13 @@ impl Command {
 
         if !argv[1].chars().all(char::is_lowercase) {
             return Err(CliError::Other(format!(
-                "xsv expects commands in lowercase. Did you mean '{}'?", 
+                "xsv expects commands in lowercase. Did you mean '{}'?",
                 argv[1].to_lowercase()).to_string()));
         }
         match self {
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),
+            Command::Enumerate => cmd::enumerate::run(argv),
             Command::FixLengths => cmd::fixlengths::run(argv),
             Command::Flatten => cmd::flatten::run(argv),
             Command::Fmt => cmd::fmt::run(argv),
