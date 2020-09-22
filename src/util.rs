@@ -19,14 +19,21 @@ pub fn num_cpus() -> usize {
 }
 
 pub fn version() -> String {
-    let (maj, min, pat) = (
+    let (maj, min, pat, pre) = (
         option_env!("CARGO_PKG_VERSION_MAJOR"),
         option_env!("CARGO_PKG_VERSION_MINOR"),
         option_env!("CARGO_PKG_VERSION_PATCH"),
+        option_env!("CARGO_PKG_VERSION_PRE"),
     );
-    match (maj, min, pat) {
-        (Some(maj), Some(min), Some(pat)) =>
-            format!("{}.{}.{}", maj, min, pat),
+    match (maj, min, pat, pre) {
+        (Some(maj), Some(min), Some(pat), Some(pre)) => {
+            if pre.is_empty() {
+                return format!("{}.{}.{}", maj, min, pat);
+            }
+            else {
+                return format!("{}.{}.{}-{}", maj, min, pat, pre);
+            }
+        },
         _ => "".to_owned(),
     }
 }
