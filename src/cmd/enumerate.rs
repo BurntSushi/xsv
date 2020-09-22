@@ -9,6 +9,11 @@ static USAGE: &'static str = "
 Add a new column enumerating the lines of a CSV file. This is useful to keep
 track of a specific line order or give a unique identifier to each line.
 
+You should also be able to shuffle the lines of a CSV file by sorting on
+the generated uuids:
+
+  $ xsv enumerate uuid file.csv | xsv sort -s uuid > shuffled.csv
+
 Usage:
     xsv enumerate [options] [<input>]
     xsv enumerate --help
