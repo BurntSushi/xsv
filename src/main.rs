@@ -47,11 +47,8 @@ macro_rules! command_list {
     behead      Drop header from CSV file
     cat         Concatenate by row or column
     count       Count records
-<<<<<<< HEAD
     explode     Explode rows based on some column separator
-=======
     enumerate   Add a column enumerating CSV lines
->>>>>>> enumerate-cmd
     fixlengths  Makes all records have same length
     flatten     Show one field per line
     fmt         Format CSV output (change field delimiter)
@@ -64,6 +61,7 @@ macro_rules! command_list {
     partition   Partition CSV data based on a column value
     pseudo      Pseudonymise the values of a column
     sample      Randomly sample CSV data
+    replace     Replace patterns in CSV data
     reverse     Reverse rows of CSV data
     search      Search CSV data with regexes
     select      Select columns from CSV
@@ -151,11 +149,8 @@ enum Command {
     Behead,
     Cat,
     Count,
-<<<<<<< HEAD
     Explode,
-=======
     Enumerate,
->>>>>>> enumerate-cmd
     FixLengths,
     Flatten,
     Fmt,
@@ -167,6 +162,7 @@ enum Command {
     Join,
     Partition,
     Pseudo,
+    Replace,
     Reverse,
     Sample,
     Search,
@@ -193,11 +189,8 @@ impl Command {
             Command::Behead => cmd::behead::run(argv),
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),
-<<<<<<< HEAD
             Command::Explode => cmd::explode::run(argv),
-=======
             Command::Enumerate => cmd::enumerate::run(argv),
->>>>>>> enumerate-cmd
             Command::FixLengths => cmd::fixlengths::run(argv),
             Command::Flatten => cmd::flatten::run(argv),
             Command::Fmt => cmd::fmt::run(argv),
@@ -209,6 +202,7 @@ impl Command {
             Command::Join => cmd::join::run(argv),
             Command::Partition => cmd::partition::run(argv),
             Command::Pseudo => cmd::pseudo::run(argv),
+            Command::Replace => cmd::replace::run(argv),
             Command::Reverse => cmd::reverse::run(argv),
             Command::Sample => cmd::sample::run(argv),
             Command::Search => cmd::search::run(argv),

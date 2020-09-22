@@ -36,11 +36,8 @@ mod workdir;
 mod test_behead;
 mod test_cat;
 mod test_count;
-<<<<<<< HEAD
 mod test_explode;
-=======
 mod test_enumerate;
->>>>>>> enumerate-cmd
 mod test_fixlengths;
 mod test_flatten;
 mod test_fmt;
@@ -50,6 +47,7 @@ mod test_index;
 mod test_join;
 mod test_partition;
 mod test_pseudo;
+mod test_replace;
 mod test_reverse;
 mod test_search;
 mod test_select;

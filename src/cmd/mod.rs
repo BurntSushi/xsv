@@ -1,11 +1,8 @@
 pub mod behead;
 pub mod cat;
 pub mod count;
-<<<<<<< HEAD
 pub mod explode;
-=======
 pub mod enumerate;
->>>>>>> enumerate-cmd
 pub mod fixlengths;
 pub mod flatten;
 pub mod fmt;
@@ -16,6 +13,7 @@ pub mod input;
 pub mod join;
 pub mod partition;
 pub mod pseudo;
+pub mod replace;
 pub mod reverse;
 pub mod sample;
 pub mod search;
