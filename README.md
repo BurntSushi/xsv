@@ -26,8 +26,10 @@ cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
 **New Features**
 
 * `xsv behead`
+* `xsv enumerate`
 * `xsv explode`
 * `xsv pseudo`
+* `xsv replace`
 * `xsv sort -u`
 * `xsv search --flag col`
 
@@ -37,7 +39,8 @@ cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
 * **behead** - Drop headers from CSV file.
 * **cat** - Concatenate CSV files by row or by column.
 * **count** - Count the rows in a CSV file. (Instantaneous with an index.)
-* **explode** - Explodes rows into multiple ones by splitting a column value based on the
+* **enumerate** - Enumerate rows by adding a column of incremental or uuid identifiers.
+* **explode** - Explode rows into multiple ones by splitting a column value based on the
 given separator.
 * **fixlengths** - Force a CSV file to have same-length records by either
   padding or truncating them.
@@ -58,6 +61,7 @@ given separator.
 * **pseudo** - Pseudonymise the value of the given column by replacing them by an incremental identifier.
 * **sample** - Randomly draw rows from CSV data using reservoir sampling (i.e.,
   use memory proportional to the size of the sample).
+* **replace** - Replace CSV data using a regex.
 * **reverse** - Reverse order of rows in CSV data.
 * **search** - Run a regex over CSV data. Applies the regex to each field
   individually and shows only matching rows.
