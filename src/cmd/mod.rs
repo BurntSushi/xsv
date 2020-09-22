@@ -1,7 +1,11 @@
 pub mod behead;
 pub mod cat;
 pub mod count;
+<<<<<<< HEAD
 pub mod explode;
+=======
+pub mod enumerate;
+>>>>>>> enumerate-cmd
 pub mod fixlengths;
 pub mod flatten;
 pub mod fmt;

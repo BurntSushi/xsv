@@ -36,7 +36,11 @@ mod workdir;
 mod test_behead;
 mod test_cat;
 mod test_count;
+<<<<<<< HEAD
 mod test_explode;
+=======
+mod test_enumerate;
+>>>>>>> enumerate-cmd
 mod test_fixlengths;
 mod test_flatten;
 mod test_fmt;

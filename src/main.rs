@@ -13,6 +13,7 @@ extern crate serde_derive;
 extern crate stats;
 extern crate tabwriter;
 extern crate threadpool;
+extern crate uuid;
 
 use std::borrow::ToOwned;
 use std::env;
@@ -46,7 +47,11 @@ macro_rules! command_list {
     behead      Drop header from CSV file
     cat         Concatenate by row or column
     count       Count records
+<<<<<<< HEAD
     explode     Explode rows based on some column separator
+=======
+    enumerate   Add a column enumerating CSV lines
+>>>>>>> enumerate-cmd
     fixlengths  Makes all records have same length
     flatten     Show one field per line
     fmt         Format CSV output (change field delimiter)
@@ -146,7 +151,11 @@ enum Command {
     Behead,
     Cat,
     Count,
+<<<<<<< HEAD
     Explode,
+=======
+    Enumerate,
+>>>>>>> enumerate-cmd
     FixLengths,
     Flatten,
     Fmt,
@@ -184,7 +193,11 @@ impl Command {
             Command::Behead => cmd::behead::run(argv),
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),
+<<<<<<< HEAD
             Command::Explode => cmd::explode::run(argv),
+=======
+            Command::Enumerate => cmd::enumerate::run(argv),
+>>>>>>> enumerate-cmd
             Command::FixLengths => cmd::fixlengths::run(argv),
             Command::Flatten => cmd::flatten::run(argv),
             Command::Fmt => cmd::fmt::run(argv),
