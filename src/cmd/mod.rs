@@ -1,3 +1,4 @@
+pub mod apply;
 pub mod cat;
 pub mod count;
 pub mod fixlengths;

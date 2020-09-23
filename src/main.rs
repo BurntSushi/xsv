@@ -43,6 +43,7 @@ macro_rules! fail {
 macro_rules! command_list {
     () => (
 "
+    apply       Apply series of transformations to a column
     cat         Concatenate by row or column
     count       Count records
     fixlengths  Makes all records have same length
@@ -140,6 +141,7 @@ Please choose one of the following commands:",
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
 enum Command {
+    Apply,
     Cat,
     Count,
     FixLengths,
@@ -171,10 +173,11 @@ impl Command {
 
         if !argv[1].chars().all(char::is_lowercase) {
             return Err(CliError::Other(format!(
-                "xsv expects commands in lowercase. Did you mean '{}'?", 
+                "xsv expects commands in lowercase. Did you mean '{}'?",
                 argv[1].to_lowercase()).to_string()));
         }
         match self {
+            Command::Apply => cmd::apply::run(argv),
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),
             Command::FixLengths => cmd::fixlengths::run(argv),
