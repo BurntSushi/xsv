@@ -1,3 +1,4 @@
+pub mod apply;
 pub mod behead;
 pub mod cat;
 pub mod count;
