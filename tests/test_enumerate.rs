@@ -35,7 +35,7 @@ fn enumerate_column_name() {
         svec!["d", "7"],
     ]);
     let mut cmd = wrk.command("enumerate");
-    cmd.arg("--column-name").arg("row").arg("data.csv");
+    cmd.arg("-c").arg("row").arg("data.csv");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
