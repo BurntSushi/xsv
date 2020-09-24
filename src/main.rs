@@ -48,8 +48,8 @@ macro_rules! command_list {
     behead      Drop header from CSV file
     cat         Concatenate by row or column
     count       Count records
+    enum        Add a new column enumerating CSV lines
     explode     Explode rows based on some column separator
-    enumerate   Add a column enumerating CSV lines
     fixlengths  Makes all records have same length
     flatten     Show one field per line
     fmt         Format CSV output (change field delimiter)
@@ -151,8 +151,8 @@ enum Command {
     Behead,
     Cat,
     Count,
+    Enum,
     Explode,
-    Enumerate,
     FixLengths,
     Flatten,
     Fmt,
@@ -192,8 +192,8 @@ impl Command {
             Command::Behead => cmd::behead::run(argv),
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),
+            Command::Enum => cmd::enumerate::run(argv),
             Command::Explode => cmd::explode::run(argv),
-            Command::Enumerate => cmd::enumerate::run(argv),
             Command::FixLengths => cmd::fixlengths::run(argv),
             Command::Flatten => cmd::flatten::run(argv),
             Command::Fmt => cmd::fmt::run(argv),
