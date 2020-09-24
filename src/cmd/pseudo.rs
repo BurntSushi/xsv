@@ -33,12 +33,12 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
-pub fn replace_column_value(record: &csv::ByteRecord, column_index: usize, new_value: String)
-                           -> csv::ByteRecord {
+pub fn replace_column_value(record: &csv::StringRecord, column_index: usize, new_value: &String)
+                           -> csv::StringRecord {
     record
         .into_iter()
         .enumerate()
-        .map(|(i, v)| if i == column_index { new_value.as_bytes() } else { v })
+        .map(|(i, v)| if i == column_index { new_value } else { v })
         .collect()
 }
 
@@ -62,26 +62,25 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         wtr.write_record(&headers)?;
     }
 
-    let mut record = csv::ByteRecord::new();
+    let mut record = csv::StringRecord::new();
     let mut values = Values::new();
     let mut counter: u64 = 0;
 
-    while rdr.read_byte_record(&mut record)? {
-        let value = String::from_utf8(record[column_index].to_vec())
-            .expect("Could not parse cell as utf-8!");
+    while rdr.read_record(&mut record)? {
+        let value = record[column_index].to_owned();
 
         match values.get(&value) {
           Some(id) => {
-            record = replace_column_value(&record, column_index, id.to_string());
+            record = replace_column_value(&record, column_index, &id.to_string());
           },
           None => {
             values.insert(value, counter);
-            record = replace_column_value(&record, column_index, counter.to_string());
+            record = replace_column_value(&record, column_index, &counter.to_string());
             counter += 1;
           }
         }
 
-        wtr.write_byte_record(&record)?;
+        wtr.write_record(&record)?;
     }
 
     Ok(wtr.flush()?)
