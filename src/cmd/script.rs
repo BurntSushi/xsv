@@ -6,7 +6,7 @@ use std::fs::File;
 use CliResult;
 use CliError;
 use config::{Config, Delimiter};
-use rlua::{Lua, Table, Function, Error as LuaError};
+use rlua::{Lua, Error as LuaError, Table};
 use util;
 
 static USAGE: &'static str = r#"
@@ -90,6 +90,12 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
+impl From<LuaError> for CliError {
+    fn from(err: LuaError) -> CliError {
+        CliError::Other(err.to_string())
+    }
+}
+
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
     let rconfig = Config::new(&args.arg_input)
@@ -108,63 +114,57 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 
     let lua = Lua::new();
-    let (script_func, col) = load_script(&args, &lua)?;
 
-    let mut record = csv::StringRecord::new();
-    while rdr.read_record(&mut record)? {
-        for (i, v) in record.iter().enumerate() {
-            col.set(i+1, v)?;
-        }
-        if !rconfig.no_headers {
-            for (h, v) in headers.iter().zip(record.iter()) {
-                col.set(h, v)?;
+    lua.context(|lua_ctx| -> Result<(), CliError> {
+        let globals = lua_ctx.globals();
+        let col = lua_ctx.create_table()?;
+
+        globals.set("col", col)?;
+
+        let mut script_text =
+            if args.flag_no_globals {
+                String::new()
             }
+            else {
+                lua_ctx.load("setmetatable(col, {__index=_G})").exec()?;
+                String::from("_ENV = col\n")
+            };
+
+        if !args.flag_exec {
+            script_text.push_str("return ");
         }
 
-        let new_column: String = script_func.call(())?;
-
-        record.push_field(&new_column);
-        wtr.write_record(&record)?;
-    }
-    wtr.flush()?;
-    Ok(())
-}
-
-fn load_script<'t>(args: &Args, lua: &'t Lua) -> CliResult<(Function<'t>, Table<'t>)> {
-    let globals = lua.globals();
-    let col = lua.create_table()?;
-    globals.set("col", col)?;
-
-    let mut script_text =
-        if args.flag_no_globals {
-            String::new()
-        } else {
-            lua.exec::<()>("setmetatable(col, {__index=_G})", Some("setmetatable"))?;
-            String::from("_ENV = col\n")
-        };
-
-    if !args.flag_exec {
-        script_text.push_str("return ");
-    }
-
-    let script_source =
         if args.flag_script_file {
             let mut file = File::open(&args.arg_script)?;
             file.read_to_string(&mut script_text)?;
-            &args.arg_script
-        } else {
+            &args.arg_script;
+        }
+        else {
             script_text.push_str(&args.arg_script);
-            "Inline Script"
-        };
+        }
 
-    let script_func = lua.load(&script_text, Some(script_source))?;
-    let col: Table = globals.get("col")?;
+        let col: Table = globals.get("col")?;
 
-    Ok((script_func, col))
-}
+        let mut record = csv::StringRecord::new();
+        while rdr.read_record(&mut record)? {
+            for (i, v) in record.iter().enumerate() {
+                col.set(i + 1, v)?;
+            }
+            if !rconfig.no_headers {
+                for (h, v) in headers.iter().zip(record.iter()) {
+                    col.set(h, v)?;
+                }
+            }
 
-impl From<LuaError> for CliError {
-    fn from(err: LuaError) -> CliError {
-        CliError::Other(err.to_string())
-    }
+            // TODO: would be nice not to need loading the script each time
+            let computed_value = lua_ctx.load(&script_text).eval::<String>()?;
+
+            record.push_field(&computed_value);
+            wtr.write_record(&record)?;
+        }
+
+        Ok(())
+    })?;
+
+    Ok(wtr.flush()?)
 }
