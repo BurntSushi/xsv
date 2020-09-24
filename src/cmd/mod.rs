@@ -11,6 +11,7 @@ pub mod join;
 pub mod partition;
 pub mod reverse;
 pub mod sample;
+pub mod script;
 pub mod search;
 pub mod select;
 pub mod slice;
