@@ -6,7 +6,7 @@ use std::fs::File;
 use CliResult;
 use CliError;
 use config::{Config, Delimiter};
-use hlua::{Lua, LuaTable, LuaError};
+use hlua::{Lua, LuaTable, LuaError, AnyLuaValue};
 use util;
 
 static USAGE: &'static str = r#"
@@ -169,9 +169,27 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             }
         }
 
-        let computed_value: String = lua.execute(&lua_program)?;
+        let computed_value: AnyLuaValue = lua.execute(&lua_program)?;
 
-        record.push_field(&computed_value);
+        match computed_value {
+            AnyLuaValue::LuaString(string) => {
+                record.push_field(&string);
+            },
+            AnyLuaValue::LuaNumber(number) => {
+                record.push_field(&number.to_string());
+            },
+            AnyLuaValue::LuaBoolean(boolean) => {
+                record.push_field(if boolean { "true" } else { "false" });
+            },
+            AnyLuaValue::LuaNil => {
+                record.push_field("");
+            }
+            _ => {
+                return fail!("Unexpected value type returned by provided Lua expression.");
+            }
+        }
+
+        // record.push_field(&computed_value);
         wtr.write_record(&record)?;
     }
 
