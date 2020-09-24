@@ -73,15 +73,6 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
-pub fn replace_column_bytes(record: &csv::ByteRecord, column_index: usize, new_value: &[u8])
-                           -> csv::ByteRecord {
-    record
-        .into_iter()
-        .enumerate()
-        .map(|(i, v)| if i == column_index { new_value } else { v })
-        .collect()
-}
-
 pub fn replace_column_value(record: &csv::StringRecord, column_index: usize, new_value: &String)
                            -> csv::StringRecord {
     record
@@ -101,9 +92,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = rconfig.reader()?;
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
-    let mut headers = rdr.byte_headers()?.clone();
+    let headers = rdr.byte_headers()?.clone();
     let sel = rconfig.selection(&headers)?;
     let column_index = *sel.iter().next().unwrap();
+
+    let mut headers = rdr.headers()?.clone();
 
     let operations: Vec<&str> = args.arg_operations.split(",").collect();
 
@@ -114,13 +107,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 
     if let Some(new_name) = args.flag_rename {
-        headers = replace_column_bytes(&headers, column_index, new_name.as_bytes());
+        headers = replace_column_value(&headers, column_index, &new_name);
     }
 
     if !rconfig.no_headers {
 
         if let Some(new_column) = &args.flag_new_column {
-            headers.push_field(new_column.as_bytes());
+            headers.push_field(new_column);
         }
 
         wtr.write_record(&headers)?;
