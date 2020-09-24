@@ -19,25 +19,25 @@ Usage:
     xsv enumerate --help
 
 enumerate options:
-    --column-name <arg>    Name of the column to create.
-                           Will default to \"index\".
-    --uuid                 When set, the column will be populated with
-                           uuids (v4) instead of the incremental identifer.
-                           Also change the default column name to \"uuid\".
+    -c, --new-column <name>  Name of the column to create.
+                             Will default to \"index\".
+    --uuid                   When set, the column will be populated with
+                             uuids (v4) instead of the incremental identifer.
+                             Also changes the default column name to \"uuid\".
 
 Common options:
-    -h, --help             Display this message
-    -o, --output <file>    Write output to <file> instead of stdout.
-    -n, --no-headers       When set, the first row will not be interpreted
-                           as headers.
-    -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. (default: ,)
+    -h, --help               Display this message
+    -o, --output <file>      Write output to <file> instead of stdout.
+    -n, --no-headers         When set, the first row will not be interpreted
+                             as headers.
+    -d, --delimiter <arg>    The field delimiter for reading CSV data.
+                             Must be a single character. (default: ,)
 ";
 
 #[derive(Deserialize)]
 struct Args {
     arg_input: Option<String>,
-    flag_column_name: Option<String>,
+    flag_new_column: Option<String>,
     flag_uuid: bool,
     flag_output: Option<String>,
     flag_no_headers: bool,
@@ -55,7 +55,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut headers = rdr.byte_headers()?.clone();
 
-    let new_column_name = match (&args.flag_column_name, args.flag_uuid) {
+    let new_column_name = match (&args.flag_new_column, args.flag_uuid) {
         (Some(column_name), _) => column_name.as_bytes(),
         (None, false) => b"index",
         (None, true) => b"uuid"
