@@ -1,12 +1,12 @@
 use csv;
 
-use std::io::prelude::*;
-use std::fs::File;
+// use std::io::prelude::*;
+// use std::fs::File;
 
 use CliResult;
 use CliError;
 use config::{Config, Delimiter};
-use hlua::{Lua, LuaTable, LuaError, StringInLua, AnyLuaValue};
+use hlua::{Lua, LuaTable, LuaError};
 use util;
 
 static USAGE: &'static str = r#"
@@ -83,8 +83,8 @@ struct Args {
     arg_script: String,
     arg_input: Option<String>,
     flag_exec: bool,
-    flag_script_file: bool,
-    flag_no_globals: bool,
+    // flag_script_file: bool,
+    // flag_no_globals: bool,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
@@ -117,7 +117,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     lua.openlibs();
     lua.execute("col = {}")?;
 
-    let mut lua_program = String::from("return ");
+    let mut lua_program =
+        if args.flag_exec {
+            String::new()
+        }
+        else {
+            String::from("return ")
+        };
+
     lua_program.push_str(&args.arg_script);
 
     let mut record = csv::StringRecord::new();
