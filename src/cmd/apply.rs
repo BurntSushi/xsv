@@ -73,8 +73,8 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
-pub fn replace_column_value(record: &csv::ByteRecord, column_index: usize, new_value: &[u8])
-                           -> csv::ByteRecord {
+pub fn replace_column_value(record: &csv::StringRecord, column_index: usize, new_value: &String)
+                           -> csv::StringRecord {
     record
         .into_iter()
         .enumerate()
@@ -92,9 +92,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = rconfig.reader()?;
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
-    let mut headers = rdr.byte_headers()?.clone();
+    let headers = rdr.byte_headers()?.clone();
     let sel = rconfig.selection(&headers)?;
     let column_index = *sel.iter().next().unwrap();
+
+    let mut headers = rdr.headers()?.clone();
 
     let operations: Vec<&str> = args.arg_operations.split(",").collect();
 
@@ -105,13 +107,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 
     if let Some(new_name) = args.flag_rename {
-        headers = replace_column_value(&headers, column_index, new_name.as_bytes());
+        headers = replace_column_value(&headers, column_index, &new_name);
     }
 
     if !rconfig.no_headers {
 
         if let Some(new_column) = &args.flag_new_column {
-            headers.push_field(new_column.as_bytes());
+            headers.push_field(new_column);
         }
 
         wtr.write_record(&headers)?;
@@ -119,11 +121,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let squeezer = Regex::new(r"\s+")?;
 
-    let mut record = csv::ByteRecord::new();
+    let mut record = csv::StringRecord::new();
 
-    while rdr.read_byte_record(&mut record)? {
-        let mut cell = String::from_utf8(record[column_index].to_vec())
-            .expect("Could not parse cell as utf-8!");
+    while rdr.read_record(&mut record)? {
+        let mut cell = record[column_index].to_owned();
 
         for op in &operations {
             match op.as_ref() {
@@ -154,14 +155,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
         match &args.flag_new_column {
             Some(_) => {
-                record.push_field(cell.as_bytes());
+                record.push_field(&cell);
             }
             None => {
-                record = replace_column_value(&record, column_index, cell.as_bytes());
+                record = replace_column_value(&record, column_index, &cell);
             }
         }
 
-        wtr.write_byte_record(&record)?;
+        wtr.write_record(&record)?;
     }
 
     Ok(wtr.flush()?)
