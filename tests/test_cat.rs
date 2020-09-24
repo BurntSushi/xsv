@@ -1,6 +1,7 @@
 use std::process;
 
 use {Csv, CsvData, qcheck};
+use quickcheck::TestResult;
 use workdir::Workdir;
 
 fn no_headers(cmd: &mut process::Command) {
@@ -72,7 +73,7 @@ fn cat_rows_headers() {
 
 #[test]
 fn prop_cat_cols() {
-    fn p(rows1: CsvData, rows2: CsvData) -> bool {
+    fn p(rows1: CsvData, rows2: CsvData) -> TestResult {
         let got: Vec<Vec<String>> = run_cat(
             "cat_cols", "columns", rows1.clone(), rows2.clone(), no_headers);
 
@@ -83,9 +84,10 @@ fn prop_cat_cols() {
             r1.extend(r2.into_iter());
             expected.push(r1);
         }
-        rassert_eq!(got, expected)
+        assert_eq!(got, expected);
+        TestResult::passed()
     }
-    qcheck(p as fn(CsvData, CsvData) -> bool);
+    qcheck(p as fn(CsvData, CsvData) -> TestResult);
 }
 
 #[test]

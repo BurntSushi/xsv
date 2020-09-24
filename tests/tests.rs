@@ -87,6 +87,10 @@ impl ops::Deref for CsvRecord {
     fn deref<'a>(&'a self) -> &'a [String] { &*self.0 }
 }
 
+impl ops::DerefMut for CsvRecord {
+    fn deref_mut<'a>(&'a mut self) -> &'a mut [String] { &mut *self.0 }
+}
+
 impl fmt::Debug for CsvRecord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let bytes: Vec<_> = self.iter()
@@ -139,13 +143,21 @@ impl Arbitrary for CsvData {
     fn arbitrary<G: Gen>(g: &mut G) -> CsvData {
         let record_len = { let s = g.size(); g.gen_range(1, s) };
         let num_records: usize = g.gen_range(0, 100);
-        CsvData{
+        let mut d = CsvData{
             data: (0..num_records).map(|_| {
                 CsvRecord((0..record_len)
                           .map(|_| Arbitrary::arbitrary(g))
                           .collect())
             }).collect(),
+        };
+        // If the CSV data starts with a BOM, strip it, because it wreaks havoc
+        // with tests that weren't designed to handle it.
+        if !d.data.is_empty() && !d.data[0].is_empty() {
+            if let Some(stripped) = d.data[0][0].strip_prefix("\u{FEFF}") {
+                d.data[0][0] = stripped.to_string();
+            }
         }
+        d
     }
 
     fn shrink(&self) -> Box<Iterator<Item=CsvData>+'static> {
