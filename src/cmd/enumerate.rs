@@ -83,7 +83,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             headers.push_field(b"constant");
         }
         else if copy_operation {
-            headers.push_field(format!("{}_copy", String::from_utf8(headers[copy_index].to_vec()).expect("Could not parse cell as utf-8!")).as_bytes());
+            let current_header = String::from_utf8(headers[copy_index].to_vec())
+                .expect("Could not parse cell as utf-8!");
+            headers.push_field(format!("{}_copy", current_header).as_bytes());
         }
         else {
             headers.push_field(b"index");
@@ -100,8 +102,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             record.push_field(constant_value.as_bytes());
         }
         else if copy_operation {
-            let cell = String::from_utf8(record[copy_index].to_vec()).expect("Could not parse cell as utf-8!");
-            record.push_field(cell.as_bytes());
+            record.push_field(&record[copy_index].to_vec());
         }
         else if args.flag_uuid {
             let id = Uuid::new_v4();
