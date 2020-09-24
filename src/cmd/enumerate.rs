@@ -7,13 +7,27 @@ use config::{Delimiter, Config};
 use util;
 
 static USAGE: &'static str = r#"
-Add a new column enumerating the lines of a CSV file. This is useful to keep
-track of a specific line order or give a unique identifier to each line.
+Add a new column enumerating the lines of a CSV file. This can be useful to keep
+track of a specific line order, give a unique identifier to each line or even
+make a copy of the contents of a column.
 
-You should also be able to shuffle the lines of a CSV file by sorting on
-the generated uuids:
+The enumerate function can currently be used to perform the following tasks:
 
-  $ xsv enumerate uuid file.csv | xsv sort -s uuid > shuffled.csv
+  Add an incremental identifier to each of the lines:
+    $ xsv enumerate file.csv
+
+  Add a uuid v4 to each of the lines:
+    $ xsv enumerate --uuid file.csv
+
+  Create a new column filled with a given value:
+    $ xsv enumerate --constant 0
+
+  Copy the contents of a column to a new one:
+    $ xsv enumerate --copy names
+
+  Finally, note that you should also be able to shuffle the lines of a CSV file
+  by sorting on the generated uuids:
+    $ xsv enumerate uuid file.csv | xsv sort -s uuid > shuffled.csv
 
 Usage:
     xsv enumerate [options] [<input>]
