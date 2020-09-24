@@ -27,7 +27,7 @@ cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
 
 * `xsv apply`
 * `xsv behead`
-* `xsv enumerate`
+* `xsv enum`
 * `xsv explode`
 * `xsv pseudo`
 * `xsv replace`
@@ -41,7 +41,7 @@ cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
 * **behead** - Drop headers from CSV file.
 * **cat** - Concatenate CSV files by row or by column.
 * **count** - Count the rows in a CSV file. (Instantaneous with an index.)
-* **enumerate** - Enumerate rows by adding a column of incremental or uuid identifiers.
+* **enum** - Add a new column enumerating rows by adding a column of incremental or uuid identifiers. Can also be used to copy a column or fill a new column with a constant value.
 * **explode** - Explode rows into multiple ones by splitting a column value based on the
 given separator.
 * **fixlengths** - Force a CSV file to have same-length records by either
