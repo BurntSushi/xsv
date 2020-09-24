@@ -21,9 +21,11 @@ Usage:
 enumerate options:
     -c, --new-column <name>  Name of the column to create.
                              Will default to \"index\".
+    --constant <value>       Fill a new column with the given value.
+                             Changes the default column name to \"constant\".
     --uuid                   When set, the column will be populated with
                              uuids (v4) instead of the incremental identifer.
-                             Also changes the default column name to \"uuid\".
+                             Changes the default column name to \"uuid\".
 
 Common options:
     -h, --help               Display this message
@@ -38,6 +40,7 @@ Common options:
 struct Args {
     arg_input: Option<String>,
     flag_new_column: Option<String>,
+    flag_constant: Option<String>,
     flag_uuid: bool,
     flag_output: Option<String>,
     flag_no_headers: bool,
@@ -70,7 +73,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut counter: u64 = 0;
 
     while rdr.read_byte_record(&mut record)? {
-        if args.flag_uuid {
+        if let Some(constant_value) = &args.flag_constant {
+            record.push_field(constant_value.as_bytes());
+        }
+        else if args.flag_uuid {
             let id = Uuid::new_v4();
             record.push_field(id.to_hyphenated().encode_lower(&mut Uuid::encode_buffer()).as_bytes());
         }

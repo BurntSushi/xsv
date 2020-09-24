@@ -48,3 +48,26 @@ fn enumerate_column_name() {
     assert_eq!(got, expected);
 }
 
+#[test]
+fn enumerate_constants() {
+    let wrk = Workdir::new("enumerate");
+    wrk.create("data.csv", vec![
+        svec!["letter", "number"],
+        svec!["a", "13"],
+        svec!["b", "24"],
+        svec!["c", "72"],
+        svec!["d", "7"],
+    ]);
+    let mut cmd = wrk.command("enumerate");
+    cmd.arg("-c").arg("val").arg("--constant").arg("test").arg("data.csv");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["letter", "number", "val"],
+        svec!["a", "13", "test"],
+        svec!["b", "24", "test"],
+        svec!["c", "72", "test"],
+        svec!["d", "7", "test"],
+    ];
+    assert_eq!(got, expected);
+}
