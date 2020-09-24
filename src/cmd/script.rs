@@ -1,7 +1,7 @@
 use csv;
 
-// use std::io::prelude::*;
-// use std::fs::File;
+use std::io::prelude::*;
+use std::fs::File;
 
 use CliResult;
 use CliError;
@@ -83,8 +83,8 @@ struct Args {
     arg_script: String,
     arg_input: Option<String>,
     flag_exec: bool,
-    // flag_script_file: bool,
-    // flag_no_globals: bool,
+    flag_script_file: bool,
+    flag_no_globals: bool,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
@@ -117,6 +117,17 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     lua.openlibs();
     lua.execute("col = {}")?;
 
+    let lua_script = if args.flag_script_file {
+        let mut file = File::open(&args.arg_script)?;
+
+        let mut script_text = String::new();
+        file.read_to_string(&mut script_text)?;
+        script_text
+    }
+    else {
+        args.arg_script
+    };
+
     let mut lua_program =
         if args.flag_exec {
             String::new()
@@ -125,7 +136,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             String::from("return ")
         };
 
-    lua_program.push_str(&args.arg_script);
+    lua_program.push_str(&lua_script);
 
     let mut record = csv::StringRecord::new();
 
@@ -148,8 +159,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
 
         // Updating global
-        // TODO: disable on -g
-        {
+        if !args.flag_no_globals {
             let mut globals = lua.globals_table();
 
             if !rconfig.no_headers {
