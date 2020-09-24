@@ -6,7 +6,7 @@ use std::fs::File;
 use CliResult;
 use CliError;
 use config::{Config, Delimiter};
-use rlua::{Lua, Error as LuaError, Table};
+use hlua::{Lua, LuaTable, LuaError, StringInLua, AnyLuaValue};
 use util;
 
 static USAGE: &'static str = r#"
@@ -113,58 +113,50 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         wtr.write_record(&headers)?;
     }
 
-    let lua = Lua::new();
+    let mut lua = Lua::new();
+    lua.openlibs();
+    lua.execute("col = {}")?;
 
-    lua.context(|lua_ctx| -> Result<(), CliError> {
-        let globals = lua_ctx.globals();
-        let col = lua_ctx.create_table()?;
+    let mut lua_program = String::from("return ");
+    lua_program.push_str(&args.arg_script);
 
-        globals.set("col", col)?;
+    let mut record = csv::StringRecord::new();
 
-        let mut script_text =
-            if args.flag_no_globals {
-                String::new()
-            }
-            else {
-                lua_ctx.load("setmetatable(col, {__index=_G})").exec()?;
-                String::from("_ENV = col\n")
-            };
+    while rdr.read_record(&mut record)? {
 
-        if !args.flag_exec {
-            script_text.push_str("return ");
-        }
+        // Updating col
+        {
+            let mut col: LuaTable<_> = lua.get("col").unwrap();
 
-        if args.flag_script_file {
-            let mut file = File::open(&args.arg_script)?;
-            file.read_to_string(&mut script_text)?;
-            &args.arg_script;
-        }
-        else {
-            script_text.push_str(&args.arg_script);
-        }
-
-        let col: Table = globals.get("col")?;
-
-        let mut record = csv::StringRecord::new();
-        while rdr.read_record(&mut record)? {
             for (i, v) in record.iter().enumerate() {
-                col.set(i + 1, v)?;
+
+                // TODO: drop this `as`
+                col.set((i as u16) + 1, v);
             }
             if !rconfig.no_headers {
                 for (h, v) in headers.iter().zip(record.iter()) {
-                    col.set(h, v)?;
+                    col.set(h, v);
                 }
             }
-
-            // TODO: would be nice not to need loading the script each time
-            let computed_value = lua_ctx.load(&script_text).eval::<String>()?;
-
-            record.push_field(&computed_value);
-            wtr.write_record(&record)?;
         }
 
-        Ok(())
-    })?;
+        // Updating global
+        // TODO: disable on -g
+        {
+            let mut globals = lua.globals_table();
+
+            if !rconfig.no_headers {
+                for (h, v) in headers.iter().zip(record.iter()) {
+                    globals.set(h, v);
+                }
+            }
+        }
+
+        let computed_value: String = lua.execute(&lua_program)?;
+
+        record.push_field(&computed_value);
+        wtr.write_record(&record)?;
+    }
 
     Ok(wtr.flush()?)
 }

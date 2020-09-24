@@ -3,11 +3,11 @@ extern crate crossbeam_channel as channel;
 extern crate csv;
 extern crate csv_index;
 extern crate docopt;
+extern crate hlua;
 extern crate filetime;
 extern crate num_cpus;
 extern crate rand;
 extern crate regex;
-extern crate rlua;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -174,7 +174,7 @@ impl Command {
 
         if !argv[1].chars().all(char::is_lowercase) {
             return Err(CliError::Other(format!(
-                "xsv expects commands in lowercase. Did you mean '{}'?", 
+                "xsv expects commands in lowercase. Did you mean '{}'?",
                 argv[1].to_lowercase()).to_string()));
         }
         match self {
