@@ -46,7 +46,7 @@ macro_rules! command_list {
 "
     cat         Concatenate by row or column
     count       Count records
-    enumerate   Add a column enumerating CSV lines
+    enum        Add a new column enumerating CSV lines
     fixlengths  Makes all records have same length
     flatten     Show one field per line
     fmt         Format CSV output (change field delimiter)
@@ -144,7 +144,7 @@ Please choose one of the following commands:",
 enum Command {
     Cat,
     Count,
-    Enumerate,
+    Enum,
     FixLengths,
     Flatten,
     Fmt,
@@ -180,7 +180,7 @@ impl Command {
         match self {
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),
-            Command::Enumerate => cmd::enumerate::run(argv),
+            Command::Enum => cmd::enumerate::run(argv),
             Command::FixLengths => cmd::fixlengths::run(argv),
             Command::Flatten => cmd::flatten::run(argv),
             Command::Fmt => cmd::fmt::run(argv),

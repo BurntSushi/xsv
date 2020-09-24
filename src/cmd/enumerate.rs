@@ -11,29 +11,29 @@ Add a new column enumerating the lines of a CSV file. This can be useful to keep
 track of a specific line order, give a unique identifier to each line or even
 make a copy of the contents of a column.
 
-The enumerate function can currently be used to perform the following tasks:
+The enum function can currently be used to perform the following tasks:
 
   Add an incremental identifier to each of the lines:
-    $ xsv enumerate file.csv
+    $ xsv enum file.csv
 
   Add a uuid v4 to each of the lines:
-    $ xsv enumerate --uuid file.csv
+    $ xsv enum --uuid file.csv
 
   Create a new column filled with a given value:
-    $ xsv enumerate --constant 0
+    $ xsv enum --constant 0
 
   Copy the contents of a column to a new one:
-    $ xsv enumerate --copy names
+    $ xsv enum --copy names
 
   Finally, note that you should also be able to shuffle the lines of a CSV file
   by sorting on the generated uuids:
-    $ xsv enumerate uuid file.csv | xsv sort -s uuid > shuffled.csv
+    $ xsv enum uuid file.csv | xsv sort -s uuid > shuffled.csv
 
 Usage:
-    xsv enumerate [options] [<input>]
-    xsv enumerate --help
+    xsv enum [options] [<input>]
+    xsv enum --help
 
-enumerate options:
+enum options:
     -c, --new-column <name>  Name of the column to create.
                              Will default to "index".
     --constant <value>       Fill a new column with the given value.
