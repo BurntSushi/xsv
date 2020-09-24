@@ -49,12 +49,12 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
-pub fn replace_column_value(record: &csv::ByteRecord, column_index: usize, new_value: String)
-                           -> csv::ByteRecord {
+pub fn replace_column_value(record: &csv::StringRecord, column_index: usize, new_value: &String)
+                           -> csv::StringRecord {
     record
         .into_iter()
         .enumerate()
-        .map(|(i, v)| if i == column_index { new_value.as_bytes() } else { v })
+        .map(|(i, v)| if i == column_index { new_value } else { v })
         .collect()
 }
 
@@ -68,27 +68,26 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = rconfig.reader()?;
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
-    let mut headers = rdr.byte_headers()?.clone();
+    let headers = rdr.byte_headers()?.clone();
     let sel = rconfig.selection(&headers)?;
     let column_index = *sel.iter().next().unwrap();
 
+    let mut headers = rdr.headers()?.clone();
+
     if let Some(new_name) = args.flag_rename {
-        headers = replace_column_value(&headers, column_index, new_name);
+        headers = replace_column_value(&headers, column_index, &new_name);
     }
 
     if !rconfig.no_headers {
         wtr.write_record(&headers)?;
     }
 
-    let mut record = csv::ByteRecord::new();
+    let mut record = csv::StringRecord::new();
 
-    while rdr.read_byte_record(&mut record)? {
-        let values = String::from_utf8(record[column_index].to_vec())
-            .expect("Could not parse cell as utf-8!");
-
-        for val in values.split(&args.arg_separator) {
-            record = replace_column_value(&record, column_index, String::from(val));
-            wtr.write_byte_record(&record)?;
+    while rdr.read_record(&mut record)? {
+        for val in record[column_index].split(&args.arg_separator) {
+            let new_record = replace_column_value(&record, column_index, &val.to_owned());
+            wtr.write_record(&new_record)?;
         }
     }
 
