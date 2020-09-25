@@ -55,10 +55,10 @@ macro_rules! command_list {
     index       Create CSV index for faster access
     input       Read CSV data with special quoting rules
     join        Join CSV files
+    lua         Execute Lua script on CSV data
     partition   Partition CSV data based on a column value
     sample      Randomly sample CSV data
     reverse     Reverse rows of CSV data
-    script      Execute Lua script on CSV data
     search      Search CSV data with regexes
     select      Select columns from CSV
     slice       Slice records from CSV
@@ -153,10 +153,10 @@ enum Command {
     Index,
     Input,
     Join,
+    Lua,
     Partition,
     Reverse,
     Sample,
-    Script,
     Search,
     Select,
     Slice,
@@ -189,10 +189,10 @@ impl Command {
             Command::Index => cmd::index::run(argv),
             Command::Input => cmd::input::run(argv),
             Command::Join => cmd::join::run(argv),
+            Command::Lua => cmd::lua::run(argv),
             Command::Partition => cmd::partition::run(argv),
             Command::Reverse => cmd::reverse::run(argv),
             Command::Sample => cmd::sample::run(argv),
-            Command::Script => cmd::script::run(argv),
             Command::Search => cmd::search::run(argv),
             Command::Select => cmd::select::run(argv),
             Command::Slice => cmd::slice::run(argv),

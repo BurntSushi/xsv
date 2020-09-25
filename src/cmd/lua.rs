@@ -9,53 +9,53 @@ use config::{Config, Delimiter};
 use hlua::{Lua, LuaTable, LuaError, AnyLuaValue};
 use util;
 
+// TODO: options for boolean return coercion
+
 static USAGE: &'static str = r#"
-Append a new column by executing a Lua script on every row.
+Create a new column, filter rows or compute aggregations by executing a Lua
+script of every line of a CSV file.
 
-This command lets you add a new column calculated by a Lua script.
-The Lua script gets called once per non-header row and must return a string
-with new column value for this row.
-
-Script has 3 ways* to reference row columns (as strings):
+The executed Lua has 3 ways to reference row columns (as strings):
   1. Directly by using column name (e.g. Amount), can be disabled with -g
   2. Indexing col variable by column name: col.Amount or col["Total Balance"]
   3. Indexing col variable by column 1-based index: col[1], col[2], etc.
 
-* Only 3rd way can be used if input has no headers.
+Of course, if your input has no headers, then 3. will be the only available
+option.
 
 Some usage examples:
 
   Sum numeric columns 'a' and 'b' and call new column 'c'
-  $ xsv script newcolumn c "a + b"
-  $ xsv script newcolumn c "col.a + col['b']"
-  $ xsv script newcolumn c "col[1] + col[2]"
+  $ xsv lua map c "a + b"
+  $ xsv lua map c "col.a + col['b']"
+  $ xsv lua map c "col[1] + col[2]"
 
   There is some magic in the previous example as 'a' and 'b' are passed in
   as strings (not numbers), but Lua still manages to add them up.
   A more explicit way of doing it, is by using tonumber
-  $ xsv script newcolumn c "tonumber(a) + tonumber(b)"
+  $ xsv lua map c "tonumber(a) + tonumber(b)"
 
   Add running total column for Amount
-  $ xsv script newcolumn Total -x "tot = (tot or 0) + Amount; return tot"
+  $ xsv lua map Total -x "tot = (tot or 0) + Amount; return tot"
 
   Add running total column for Amount when previous balance was 900
-  $ xsv script newcolumn Total -x "tot = (tot or 900) + Amount; return tot"
+  $ xsv lua map Total -x "tot = (tot or 900) + Amount; return tot"
 
   Convert Amount to always-positive AbsAmount and Type (debit/credit) columns
-  $ xsv script newcolumn Type -x \
+  $ xsv lua map Type -x \
         "if tonumber(Amount) < 0 then return 'debit' else return 'credit' end" | \
-    xsv script newcolumn AbsAmount "math.abs(tonumber(Amount))"
+    xsv lua map AbsAmount "math.abs(tonumber(Amount))"
 
   Typing long scripts at command line gets tiresome rather quickly,
   so -f should be used for non-trivial scripts to read them from a file
-  $ xsv script newcolumn Type -x -f debitcredit.lua
+  $ xsv lua map Type -x -f debitcredit.lua
 
 Usage:
-    xsv script newcolumn [options] -n <script> [<input>]
-    xsv script newcolumn [options] <new-column> <script> [<input>]
-    xsv script --help
+    xsv lua map [options] <new-column> <script> [<input>]
+    xsv lua map --help
+    xsv lua --help
 
-script newcolumn options:
+lua options:
     -x, --exec         exec[ute] Lua script, instead of the default eval[uate].
                        eval (default) expects just a single Lua expression,
                        while exec expects one or more statements, allowing
