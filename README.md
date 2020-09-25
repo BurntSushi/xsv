@@ -29,6 +29,7 @@ cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
 * `xsv behead`
 * `xsv enum`
 * `xsv explode`
+* `xsv lua`
 * `xsv pseudo`
 * `xsv replace`
 * `xsv sort -u`
