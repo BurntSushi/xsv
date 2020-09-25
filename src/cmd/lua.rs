@@ -53,7 +53,9 @@ Some usage examples:
 Usage:
     xsv lua map [options] -n <script> [<input>]
     xsv lua map [options] <new-column> <script> [<input>]
+    xsv lua filter [options] <script> [<input>]
     xsv lua map --help
+    xsv lua filter --help
     xsv lua --help
 
 lua options:
@@ -80,6 +82,8 @@ Common options:
 
 #[derive(Deserialize)]
 struct Args {
+    cmd_map: bool,
+    cmd_filter: bool,
     arg_new_column: Option<String>,
     arg_script: String,
     arg_input: Option<String>,
@@ -109,8 +113,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut headers = rdr.headers()?.clone();
 
     if !rconfig.no_headers {
-        let new_column = args.arg_new_column.as_ref().ok_or("Specify new column name")?;
-        headers.push_field(new_column);
+
+        if !args.cmd_filter {
+            let new_column = args.arg_new_column.as_ref().ok_or("Specify new column name")?;
+            headers.push_field(new_column);
+        }
+
         wtr.write_record(&headers)?;
     }
 
@@ -172,25 +180,41 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
         let computed_value: AnyLuaValue = lua.execute(&lua_program)?;
 
-        match computed_value {
-            AnyLuaValue::LuaString(string) => {
-                record.push_field(&string);
-            },
-            AnyLuaValue::LuaNumber(number) => {
-                record.push_field(&number.to_string());
-            },
-            AnyLuaValue::LuaBoolean(boolean) => {
-                record.push_field(if boolean { "true" } else { "false" });
-            },
-            AnyLuaValue::LuaNil => {
-                record.push_field("");
+        if args.cmd_map {
+            match computed_value {
+                AnyLuaValue::LuaString(string) => {
+                    record.push_field(&string);
+                },
+                AnyLuaValue::LuaNumber(number) => {
+                    record.push_field(&number.to_string());
+                },
+                AnyLuaValue::LuaBoolean(boolean) => {
+                    record.push_field(if boolean { "true" } else { "false" });
+                },
+                AnyLuaValue::LuaNil => {
+                    record.push_field("");
+                }
+                _ => {
+                    return fail!("Unexpected value type returned by provided Lua expression.");
+                }
             }
-            _ => {
-                return fail!("Unexpected value type returned by provided Lua expression.");
-            }
+
+            wtr.write_record(&record)?;
         }
 
-        wtr.write_record(&record)?;
+        else if args.cmd_filter {
+            let must_keep_line = match computed_value {
+                AnyLuaValue::LuaString(string) => !string.is_empty(),
+                AnyLuaValue::LuaNumber(_) => true,
+                AnyLuaValue::LuaBoolean(boolean) => boolean,
+                AnyLuaValue::LuaNil => false,
+                _ => true
+            };
+
+            if must_keep_line {
+                wtr.write_record(&record)?;
+            }
+        }
     }
 
     Ok(wtr.flush()?)
