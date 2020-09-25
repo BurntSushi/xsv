@@ -3,6 +3,7 @@ extern crate crossbeam_channel as channel;
 extern crate csv;
 extern crate csv_index;
 extern crate docopt;
+extern crate hlua;
 extern crate filetime;
 extern crate num_cpus;
 extern crate rand;
@@ -59,6 +60,7 @@ macro_rules! command_list {
     index       Create CSV index for faster access
     input       Read CSV data with special quoting rules
     join        Join CSV files
+    lua         Execute Lua script on CSV data
     partition   Partition CSV data based on a column value
     pseudo      Pseudonymise the values of a column
     sample      Randomly sample CSV data
@@ -162,6 +164,7 @@ enum Command {
     Index,
     Input,
     Join,
+    Lua,
     Partition,
     Pseudo,
     Replace,
@@ -203,6 +206,7 @@ impl Command {
             Command::Index => cmd::index::run(argv),
             Command::Input => cmd::input::run(argv),
             Command::Join => cmd::join::run(argv),
+            Command::Lua => cmd::lua::run(argv),
             Command::Partition => cmd::partition::run(argv),
             Command::Pseudo => cmd::pseudo::run(argv),
             Command::Replace => cmd::replace::run(argv),

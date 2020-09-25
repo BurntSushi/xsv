@@ -4,18 +4,27 @@ cache: cargo
 env:
   global:
     - PROJECT_NAME=xsv
+
 matrix:
   include:
     # Stable channel
     - os: linux
       rust: stable
       env: TARGET=i686-unknown-linux-musl
+      addons:
+        apt:
+          packages:
+            - musl-tools
     - os: osx
       rust: stable
       env: TARGET=x86_64-apple-darwin
     - os: linux
       rust: stable
       env: TARGET=x86_64-unknown-linux-musl
+      addons:
+        apt:
+          packages:
+            - musl-tools
     # Minimum Rust supported channel.
     - os: linux
       rust: 1.28.0
@@ -23,6 +32,10 @@ matrix:
     - os: linux
       rust: 1.28.0
       env: TARGET=x86_64-unknown-linux-musl
+      addons:
+        apt:
+          packages:
+            - musl-tools
 
 before_install:
   - export PATH="$PATH:$HOME/.cargo/bin"

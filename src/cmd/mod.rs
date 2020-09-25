@@ -12,6 +12,7 @@ pub mod headers;
 pub mod index;
 pub mod input;
 pub mod join;
+pub mod lua;
 pub mod partition;
 pub mod pseudo;
 pub mod replace;

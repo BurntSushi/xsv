@@ -59,6 +59,7 @@ given separator.
 * **input** - Read CSV data with exotic quoting/escaping rules.
 * **join** - Inner, outer and cross joins. Uses a simple hash index to make it
   fast.
+* **lua** - Execute a Lua script over CSV lines to transform, aggregate or filter them.
 * **partition** - Partition CSV data based on a column value.
 * **pseudo** - Pseudonymise the value of the given column by replacing them by an incremental identifier.
 * **sample** - Randomly draw rows from CSV data using reservoir sampling (i.e.,
