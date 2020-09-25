@@ -35,11 +35,11 @@ Dual-licensed under MIT or the [UNLICENSE](https://unlicense.org).
 * **input** - Read CSV data with exotic quoting/escaping rules.
 * **join** - Inner, outer and cross joins. Uses a simple hash index to make it
   fast.
+* **lua** - Execute a Lua script over CSV lines to transform, aggregate or filter them.
 * **partition** - Partition CSV data based on a column value.
 * **sample** - Randomly draw rows from CSV data using reservoir sampling (i.e.,
   use memory proportional to the size of the sample).
 * **reverse** - Reverse order of rows in CSV data.
-* **script** - Execute Lua script on CSV data.
 * **search** - Run a regex over CSV data. Applies the regex to each field
   individually and shows only matching rows.
 * **select** - Select or re-order columns from CSV data.
