@@ -190,7 +190,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             }
         }
 
-        // record.push_field(&computed_value);
         wtr.write_record(&record)?;
     }
 
