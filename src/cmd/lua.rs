@@ -51,6 +51,7 @@ Some usage examples:
   $ xsv lua map Type -x -f debitcredit.lua
 
 Usage:
+    xsv lua map [options] -n <script> [<input>]
     xsv lua map [options] <new-column> <script> [<input>]
     xsv lua map --help
     xsv lua --help
