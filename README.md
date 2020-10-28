@@ -230,6 +230,11 @@ curl -LO https://gist.githubusercontent.com/anonymous/063cb470e56e64e98cf1/raw/9
 $ xsv headers countrynames.csv
 1   Abbrev
 2   Country
+
+$ xsv search -s Population '[0-9]' worldcitiespop.csv \
+  | xsv select Country,AccentCity,Population \
+  | xsv sample 10 -o sample.csv
+
 $ xsv join --no-case  Country sample.csv Abbrev countrynames.csv | xsv table
 Country  AccentCity       Population  Abbrev  Country
 es       Barañáin         22264       ES      Spain
@@ -249,6 +254,7 @@ no longer need. This is easy to fix by re-ordering columns with the `xsv
 select` command:
 
 ```bash
+
 $ xsv join --no-case  Country sample.csv Abbrev countrynames.csv \
   | xsv select 'Country[1],AccentCity,Population' \
   | xsv table
