@@ -51,6 +51,7 @@ macro_rules! command_list {
     count       Count records
     enum        Add a new column enumerating CSV lines
     explode     Explode rows based on some column separator
+    foreach     Loop over a CSV file to execute bash commands
     fixlengths  Makes all records have same length
     flatten     Show one field per line
     fmt         Format CSV output (change field delimiter)
@@ -155,6 +156,7 @@ enum Command {
     Count,
     Enum,
     Explode,
+    ForEach,
     FixLengths,
     Flatten,
     Fmt,
@@ -197,6 +199,7 @@ impl Command {
             Command::Count => cmd::count::run(argv),
             Command::Enum => cmd::enumerate::run(argv),
             Command::Explode => cmd::explode::run(argv),
+            Command::ForEach => cmd::foreach::run(argv),
             Command::FixLengths => cmd::fixlengths::run(argv),
             Command::Flatten => cmd::flatten::run(argv),
             Command::Fmt => cmd::fmt::run(argv),

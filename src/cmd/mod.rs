@@ -4,6 +4,7 @@ pub mod cat;
 pub mod count;
 pub mod explode;
 pub mod enumerate;
+pub mod foreach;
 pub mod fixlengths;
 pub mod flatten;
 pub mod fmt;
