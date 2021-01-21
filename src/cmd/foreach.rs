@@ -1,5 +1,5 @@
 use csv;
-use regex::bytes::Regex;
+use regex::bytes::{Regex, NoExpand};
 use std::process::{Command, Stdio};
 use std::io::{BufReader, BufRead};
 use std::ffi::OsStr;
@@ -52,6 +52,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = rconfig.reader()?;
 
     let template_pattern = Regex::new(r"\{\}")?;
+    let splitter_pattern = Regex::new(r#"(?:\w+|"[^"]*"|'[^']*'|`[^`]*`)"#)?;
+    let cleaner_pattern = Regex::new(r#"(?:^["'`]|["'`]$)"#)?;
 
     let headers = rdr.byte_headers()?.clone();
     let sel = rconfig.selection(&headers)?;
@@ -59,26 +61,22 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut record = csv::ByteRecord::new();
 
-    let space: u8 = 32;
-
     while rdr.read_byte_record(&mut record)? {
         let templated_command = template_pattern
             .replace_all(&args.arg_command.as_bytes(), &record[column_index])
             .to_vec();
 
-        let mut command_pieces = templated_command.split(|char| *char == space);
+        let mut command_pieces = splitter_pattern.find_iter(&templated_command);
 
-        let prog = command_pieces.next().unwrap();
+        let prog = OsStr::from_bytes(command_pieces.next().unwrap().as_bytes());
 
-        let mut args = Vec::new();
+        let args: Vec<String> = command_pieces.map(|piece| {
+            let clean_piece = cleaner_pattern.replace_all(&piece.as_bytes(), NoExpand(b""));
 
-        for piece in command_pieces {
-            args.push(OsStr::from_bytes(piece));
-        }
+            return String::from_utf8(clean_piece.into_owned()).expect("encoding error");
+        }).collect();
 
-        println!("{:?}", args);
-
-        let mut cmd = Command::new(OsStr::from_bytes(prog))
+        let mut cmd = Command::new(prog)
             .args(args)
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
