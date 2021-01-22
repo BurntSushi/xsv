@@ -29,6 +29,7 @@ cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
 * `xsv behead`
 * `xsv enum`
 * `xsv explode`
+* `xsv foreach`
 * `xsv lua`
 * `xsv pseudo`
 * `xsv replace`
@@ -45,6 +46,7 @@ cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
 * **enum** - Add a new column enumerating rows by adding a column of incremental or uuid identifiers. Can also be used to copy a column or fill a new column with a constant value.
 * **explode** - Explode rows into multiple ones by splitting a column value based on the
 given separator.
+* **foreach** - Loop over a CSV file to execute bash commands.
 * **fixlengths** - Force a CSV file to have same-length records by either
   padding or truncating them.
 * **flatten** - A flattened view of CSV records. Useful for viewing one record
