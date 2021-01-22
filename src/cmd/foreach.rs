@@ -66,7 +66,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut wtr = Config::new(&None).writer()?;
 
     let template_pattern = Regex::new(r"\{\}")?;
-    let splitter_pattern = Regex::new(r#"(?:\w+|"[^"]*"|'[^']*'|`[^`]*`)"#)?;
+    let splitter_pattern = Regex::new(r#"(?:[\w-]+|"[^"]*"|'[^']*'|`[^`]*`)"#)?;
     let cleaner_pattern = Regex::new(r#"(?:^["'`]|["'`]$)"#)?;
 
     let headers = rdr.byte_headers()?.clone();
