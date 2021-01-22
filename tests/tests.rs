@@ -39,6 +39,7 @@ mod test_cat;
 mod test_count;
 mod test_explode;
 mod test_enumerate;
+mod test_foreach;
 mod test_fixlengths;
 mod test_flatten;
 mod test_fmt;
