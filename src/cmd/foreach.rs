@@ -63,6 +63,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .select(args.arg_column);
 
     let mut rdr = rconfig.reader()?;
+    let mut wtr = Config::new(&None).writer()?;
 
     let template_pattern = Regex::new(r"\{\}")?;
     let splitter_pattern = Regex::new(r#"(?:\w+|"[^"]*"|'[^']*'|`[^`]*`)"#)?;
@@ -73,6 +74,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let column_index = *sel.iter().next().unwrap();
 
     let mut record = csv::ByteRecord::new();
+    let mut output_headers_written = false;
 
     while rdr.read_byte_record(&mut record)? {
         let templated_command = template_pattern
@@ -83,30 +85,57 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
         let prog = OsStr::from_bytes(command_pieces.next().unwrap().as_bytes());
 
-        let args: Vec<String> = command_pieces.map(|piece| {
+        let cmd_args: Vec<String> = command_pieces.map(|piece| {
             let clean_piece = cleaner_pattern.replace_all(&piece.as_bytes(), NoExpand(b""));
 
             return String::from_utf8(clean_piece.into_owned()).expect("encoding error");
         }).collect();
 
-        let mut cmd = Command::new(prog)
-            .args(args)
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
-            .spawn()
-            .unwrap();
+        if !args.flag_unify {
+            let mut cmd = Command::new(prog)
+                .args(cmd_args)
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .spawn()
+                .unwrap();
 
-        // {
-        //     let stdout = cmd.stdout.as_mut().unwrap();
-        //     let stdout_reader = BufReader::new(stdout);
-        //     let stdout_lines = stdout_reader.lines();
+            cmd.wait().unwrap();
+        }
+        else {
+            let mut cmd = Command::new(prog)
+                .args(cmd_args)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::inherit())
+                .spawn()
+                .unwrap();
 
-        //     for line in stdout_lines {
-        //         println!("{}", line?);
-        //     }
-        // }
+            {
+                let stdout = cmd.stdout.as_mut().unwrap();
+                let stdout_reader = BufReader::new(stdout);
+                // let stdout_lines = stdout_reader.lines();
 
-        cmd.wait().unwrap();
+                let mut stdout_rdr = csv::ReaderBuilder::new()
+                    .delimiter(match &args.flag_delimiter {
+                        Some(delimiter) => delimiter.as_byte(),
+                        None => b','
+                    })
+                    .has_headers(true)
+                    .from_reader(stdout_reader);
+
+                let mut output_record = csv::ByteRecord::new();
+
+                if !output_headers_written {
+                    wtr.write_byte_record(stdout_rdr.byte_headers()?)?;
+                    output_headers_written = true;
+                }
+
+                while stdout_rdr.read_byte_record(&mut output_record)? {
+                    wtr.write_byte_record(&output_record)?;
+                }
+            }
+
+            cmd.wait().unwrap();
+        }
     }
 
     Ok(())
