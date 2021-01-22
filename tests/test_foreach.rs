@@ -38,3 +38,28 @@ fn foreach_unify() {
     ];
     assert_eq!(got, expected);
 }
+
+#[test]
+fn foreach_new_column() {
+    let wrk = Workdir::new("apply");
+    wrk.create("data.csv", vec![
+        svec!["name"],
+        svec!["John"],
+        svec!["Mary"],
+    ]);
+    let mut cmd = wrk.command("foreach");
+    cmd.arg("name")
+        .arg("echo 'name,value\n{},1'")
+        .arg("--unify")
+        .arg("--new-column")
+        .arg("current_value")
+        .arg("data.csv");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["name", "value", "current_value"],
+        svec!["John", "1", "John"],
+        svec!["Mary", "1", "Mary"],
+    ];
+    assert_eq!(got, expected);
+}

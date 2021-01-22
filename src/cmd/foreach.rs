@@ -1,7 +1,7 @@
 use csv;
 use regex::bytes::{Regex, NoExpand};
 use std::process::{Command, Stdio};
-use std::io::{BufReader, BufRead};
+use std::io::{BufReader};
 use std::ffi::OsStr;
 use std::os::unix::ffi::OsStrExt;
 
@@ -30,11 +30,11 @@ Usage:
     xsv foreach --help
 
 foreach options:
-    -u, --unify            If the output of execute command is CSV, will
-                           unify the result by skipping headers on each
-                           subsequent command.
-    -c, --new-column       If --unify is set, add a new column with given name
-                           and copying the value of the current input file line.
+    -u, --unify              If the output of execute command is CSV, will
+                             unify the result by skipping headers on each
+                             subsequent command.
+    -c, --new-column <name>  If unifying, add a new column with given name
+                             and copying the value of the current input file line.
 
 Common options:
     -h, --help             Display this message
@@ -77,8 +77,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut output_headers_written = false;
 
     while rdr.read_byte_record(&mut record)? {
+        let current_value = &record[column_index];
+
         let templated_command = template_pattern
-            .replace_all(&args.arg_command.as_bytes(), &record[column_index])
+            .replace_all(&args.arg_command.as_bytes(), current_value)
             .to_vec();
 
         let mut command_pieces = splitter_pattern.find_iter(&templated_command);
@@ -125,11 +127,21 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 let mut output_record = csv::ByteRecord::new();
 
                 if !output_headers_written {
-                    wtr.write_byte_record(stdout_rdr.byte_headers()?)?;
+                    let mut headers = stdout_rdr.byte_headers()?.clone();
+
+                    if let Some(name) = &args.flag_new_column {
+                        headers.push_field(name.as_bytes());
+                    }
+
+                    wtr.write_byte_record(&headers)?;
                     output_headers_written = true;
                 }
 
                 while stdout_rdr.read_byte_record(&mut output_record)? {
+                    if let Some(_) = &args.flag_new_column {
+                        output_record.push_field(&current_value);
+                    }
+
                     wtr.write_byte_record(&output_record)?;
                 }
             }
