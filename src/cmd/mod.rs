@@ -13,6 +13,7 @@ pub mod headers;
 pub mod index;
 pub mod input;
 pub mod join;
+pub mod jsonl;
 pub mod lua;
 pub mod partition;
 pub mod pseudo;
