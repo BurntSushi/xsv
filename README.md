@@ -30,6 +30,7 @@ cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
 * `xsv enum`
 * `xsv explode`
 * `xsv foreach`
+* `xsv jsonl`
 * `xsv lua`
 * `xsv pseudo`
 * `xsv replace`
@@ -60,6 +61,7 @@ given separator.
 * **index** - Create an index for a CSV file. This is very quick and provides
   constant time indexing into the CSV file.
 * **input** - Read CSV data with exotic quoting/escaping rules.
+* **jsonl** - Convert newline-delimited JSON to CSV.
 * **join** - Inner, outer and cross joins. Uses a simple hash index to make it
   fast.
 * **lua** - Execute a Lua script over CSV lines to transform, aggregate or filter them.
