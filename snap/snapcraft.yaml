@@ -1,0 +1,26 @@
+name: xsv
+version: git
+summary: "A fast CSV command line toolkit written in Rust"
+description: |
+  xsv is a command line program for indexing, slicing, analyzing, 
+  splitting and joining CSV files. Commands should be simple, 
+  fast and composable:
+    Simple tasks should be easy.
+    Performance trade offs should be exposed in the CLI interface.
+    Composition should not come at the expense of performance.
+
+
+grade: stable
+confinement: strict
+
+parts:
+  xsv:
+    plugin: rust
+    source: ./
+
+apps:
+  xsv:
+    command: bin/xsv
+    plugs:
+      - home
+      - removable-media
