@@ -91,15 +91,31 @@ fn setup<S>(name: S, rows: &[&str], headers: bool,
 fn get_field_value(wrk: &Workdir, cmd: &mut process::Command, field: &str)
                   -> String {
     if field == "median" { cmd.arg("--median"); }
+    if field == "quartiles" { cmd.arg("--quartiles"); }
     if field == "cardinality" { cmd.arg("--cardinality"); }
     if field == "mode" { cmd.arg("--mode"); }
 
     let mut rows: Vec<Vec<String>> = wrk.read_stdout(cmd);
     let headers = rows.remove(0);
+    let mut sequence: Vec<&str> = vec![];
     for row in rows.iter() {
         for (h, val) in headers.iter().zip(row.iter()) {
-            if &**h == field {
-                return val.clone();
+            match field {
+                "quartiles" => {
+                    match &**h {
+                        "q1" | "q2" => {
+                            sequence.push(val);
+                        },
+                        "q3" => {
+                            sequence.push(val);
+                            return sequence.join(",").clone();
+                        },
+                        _ => {},
+                    }
+                },
+                _ => {
+                    if &**h == field { return val.clone(); }
+                },
             }
         }
     }
@@ -127,16 +143,19 @@ stats_tests!(stats_infer_null_int_float_unicode, "type",
 stats_tests!(stats_no_mean, "mean", &["a"], "");
 stats_tests!(stats_no_stddev, "stddev", &["a"], "");
 stats_tests!(stats_no_median, "median", &["a"], "");
+stats_tests!(stats_no_quartiles, "quartiles", &["a"], ",,");
 stats_tests!(stats_no_mode, "mode", &["a", "b"], "N/A");
 
 stats_tests!(stats_null_mean, "mean", &[""], "");
 stats_tests!(stats_null_stddev, "stddev", &[""], "");
 stats_tests!(stats_null_median, "median", &[""], "");
+stats_tests!(stats_null_quartiles, "quartiles", &[""], ",,");
 stats_tests!(stats_null_mode, "mode", &[""], "N/A");
 
 stats_tests!(stats_includenulls_null_mean, "mean", &[""], "", true);
 stats_tests!(stats_includenulls_null_stddev, "stddev", &[""], "", true);
 stats_tests!(stats_includenulls_null_median, "median", &[""], "", true);
+stats_tests!(stats_includenulls_null_quartiles, "quartiles", &[""], ",,", true);
 stats_tests!(stats_includenulls_null_mode, "mode", &[""], "N/A", true);
 
 stats_tests!(stats_includenulls_mean,
@@ -180,6 +199,11 @@ stats_tests!(stats_median_even, "median", &["1", "2", "3", "4"], "2.5");
 stats_tests!(stats_median_even_null, "median",
              &["", "1", "2", "3", "4"], "2.5");
 stats_tests!(stats_median_mix, "median", &["1", "2.5", "3"], "2.5");
+stats_tests!(stats_quartiles, "quartiles", &["1", "2", "3"], "1,2,3");
+stats_tests!(stats_quartiles_null, "quartiles", &["", "1", "2", "3"], "1,2,3");
+stats_tests!(stats_quartiles_even, "quartiles", &["1", "2", "3", "4"], "1.5,2.5,3.5");
+stats_tests!(stats_quartiles_even_null, "quartiles", &["", "1", "2", "3", "4"], "1.5,2.5,3.5");
+stats_tests!(stats_quartiles_mix, "quartiles", &["1", "2.0", "3", "4"], "1.5,2.5,3.5");
 
 mod stats_infer_nothing {
     // Only test CSV data with headers.
@@ -206,6 +230,11 @@ mod stats_zero_mean {
 mod stats_zero_median {
     use super::test_stats;
     stats_test_headers!(stats_zero_median, "median", &[], "");
+}
+
+mod stats_zero_quartiles {
+    use super::test_stats;
+    stats_test_headers!(stats_zero_quartiles, "quartiles", &[], ",,");
 }
 
 mod stats_header_fields {
