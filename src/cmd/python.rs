@@ -113,6 +113,12 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
+impl From<PyErr> for CliError {
+    fn from(err: PyErr) -> CliError {
+        CliError::Other(err.to_string())
+    }
+}
+
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
     let rconfig = Config::new(&args.arg_input)
@@ -137,7 +143,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let gil = Python::acquire_gil();
     let py = gil.python();
 
-    let helpers = PyModule::from_code(py, HELPERS, "xsv_helpers.py", "xsv_helpers").unwrap();
+    let helpers = PyModule::from_code(py, HELPERS, "xsv_helpers.py", "xsv_helpers")?;
     let locals = PyDict::new(py);
 
     let mut record = csv::StringRecord::new();
@@ -146,16 +152,17 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
         // Initializing locals
         for (i, h) in headers.iter().enumerate() {
-            locals.set_item(h, record.get(i).unwrap()).unwrap();
+            locals.set_item(h, record.get(i).unwrap())?;
         }
 
         let result = py.eval(&args.arg_script, None, Some(&locals)).map_err(|e| {
             e.print_and_set_sys_last_vars(py);
-        }).unwrap();
+            "evaluation failed"
+        })?;
 
-        let result = helpers.call1("cast_as_string", (result,)).unwrap();
+        let result = helpers.call1("cast_as_string", (result,))?;
 
-        let value: String = result.extract().unwrap();
+        let value: String = result.extract()?;
         println!("{:?}", value);
     }
 
