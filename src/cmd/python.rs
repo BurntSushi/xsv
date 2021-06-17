@@ -129,6 +129,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
     let mut headers = rdr.headers()?.clone();
+    let headers_len = headers.len();
 
     if !rconfig.no_headers {
 
@@ -151,7 +152,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     while rdr.read_record(&mut record)? {
 
         // Initializing locals
-        for (i, h) in headers.iter().enumerate() {
+        for (i, h) in headers.iter().take(headers_len).enumerate() {
+            dbg!(i, h);
             locals.set_item(h, record.get(i).unwrap())?;
         }
 
@@ -162,8 +164,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
         let result = helpers.call1("cast_as_string", (result,))?;
 
-        let value: String = result.extract()?;
-        println!("{:?}", value);
+        if args.cmd_map {
+            let value: String = result.extract()?;
+            record.push_field(&value);
+            wtr.write_record(&record)?;
+        }
     }
 
     Ok(wtr.flush()?)

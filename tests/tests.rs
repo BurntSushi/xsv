@@ -50,6 +50,7 @@ mod test_join;
 mod test_lua;
 mod test_partition;
 mod test_pseudo;
+mod test_py;
 mod test_replace;
 mod test_reverse;
 mod test_search;
