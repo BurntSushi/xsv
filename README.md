@@ -33,6 +33,7 @@ cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
 * `xsv jsonl`
 * `xsv lua`
 * `xsv pseudo`
+* `xsv py`
 * `xsv replace`
 * `xsv sort -u`
 * `xsv search --flag col`
@@ -67,6 +68,7 @@ given separator.
 * **lua** - Execute a Lua script over CSV lines to transform, aggregate or filter them.
 * **partition** - Partition CSV data based on a column value.
 * **pseudo** - Pseudonymise the value of the given column by replacing them by an incremental identifier.
+* **py** - Evaluate a Python expression over CSV lines to transform, aggregate or filter them.
 * **sample** - Randomly draw rows from CSV data using reservoir sampling (i.e.,
   use memory proportional to the size of the sample).
 * **replace** - Replace CSV data using a regex.
