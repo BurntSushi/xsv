@@ -17,6 +17,7 @@ pub mod jsonl;
 pub mod lua;
 pub mod partition;
 pub mod pseudo;
+pub mod python;
 pub mod replace;
 pub mod reverse;
 pub mod sample;

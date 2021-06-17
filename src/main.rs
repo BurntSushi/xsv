@@ -6,6 +6,7 @@ extern crate docopt;
 extern crate hlua;
 extern crate filetime;
 extern crate num_cpus;
+extern crate pyo3;
 extern crate rand;
 extern crate regex;
 extern crate serde;
@@ -14,6 +15,7 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate stats;
 extern crate tabwriter;
+extern crate textwrap;
 extern crate threadpool;
 extern crate uuid;
 
@@ -66,6 +68,7 @@ macro_rules! command_list {
     lua         Execute Lua script on CSV data
     partition   Partition CSV data based on a column value
     pseudo      Pseudonymise the values of a column
+    py          Execute Python script on CSV data
     sample      Randomly sample CSV data
     replace     Replace patterns in CSV data
     reverse     Reverse rows of CSV data
@@ -172,6 +175,7 @@ enum Command {
     Lua,
     Partition,
     Pseudo,
+    Py,
     Replace,
     Reverse,
     Sample,
@@ -216,6 +220,7 @@ impl Command {
             Command::Lua => cmd::lua::run(argv),
             Command::Partition => cmd::partition::run(argv),
             Command::Pseudo => cmd::pseudo::run(argv),
+            Command::Py => cmd::python::run(argv),
             Command::Replace => cmd::replace::run(argv),
             Command::Reverse => cmd::reverse::run(argv),
             Command::Sample => cmd::sample::run(argv),
