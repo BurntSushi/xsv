@@ -19,13 +19,29 @@ def cast_as_string(value):
 
 def cast_as_bool(value):
     return bool(value)
+
+class XSVRow(object):
+    def __init__(self, headers):
+        self.__data = None
+        self.__headers = headers
+        self.__mapping = {h: i for i, h in enumerate(headers)}
+
+    def _update_underlying_data(self, row_data):
+        self.__data = row_data
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self.__data[key]
+
+        return self.__data[self.__mapping[key]]
+
+    def __getattr__(self, key):
+        return self.__data[self.__mapping[key]]
 "#;
 
 fn template_execution(statements: &str) -> String {
     format!("def __run__():\n{}\n__return_value__ = __run__()", textwrap::indent(statements, "  "))
 }
-
-// wrapped_expression = 'def __run__():\n%s\n__return_value__ = __run__()' % textwrap.indent(expression, '  ')
 
 // TODO: options for boolean return coercion
 
@@ -128,8 +144,25 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = rconfig.reader()?;
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
+    let gil = Python::acquire_gil();
+    let py = gil.python();
+
+    let helpers = PyModule::from_code(py, HELPERS, "xsv_helpers.py", "xsv_helpers")?;
+    let globals = PyDict::new(py);
+    let locals = PyDict::new(py);
+
+    // Global imports
+    let builtins = PyModule::import(py, "builtins")?;
+    let math_module = PyModule::import(py, "math")?;
+
+    globals.set_item("__builtins__", builtins)?;
+    globals.set_item("math", math_module)?;
+
     let mut headers = rdr.headers()?.clone();
     let headers_len = headers.len();
+
+    let py_row = helpers.call1("XSVRow", (headers.iter().collect::<Vec<&str>>(),))?;
+    locals.set_item("row", py_row)?;
 
     if !rconfig.no_headers {
 
@@ -141,31 +174,30 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         wtr.write_record(&headers)?;
     }
 
-    let gil = Python::acquire_gil();
-    let py = gil.python();
-
-    let helpers = PyModule::from_code(py, HELPERS, "xsv_helpers.py", "xsv_helpers")?;
-    let locals = PyDict::new(py);
-
     let mut record = csv::StringRecord::new();
 
     while rdr.read_record(&mut record)? {
 
         // Initializing locals
+        let mut row_data: Vec<&str> = Vec::with_capacity(headers_len);
+
         for (i, h) in headers.iter().take(headers_len).enumerate() {
-            dbg!(i, h);
-            locals.set_item(h, record.get(i).unwrap())?;
+            let cell_value = record.get(i).unwrap();
+            locals.set_item(h, cell_value)?;
+            row_data.push(cell_value);
         }
 
-        let result = py.eval(&args.arg_script, None, Some(&locals)).map_err(|e| {
+        py_row.call_method1("_update_underlying_data", (row_data,))?;
+
+        let result = py.eval(&args.arg_script, Some(&globals), Some(&locals)).map_err(|e| {
             e.print_and_set_sys_last_vars(py);
-            "evaluation failed"
+            "Evaluation of given expression failed with the above error!"
         })?;
 
-        let result = helpers.call1("cast_as_string", (result,))?;
-
         if args.cmd_map {
+            let result = helpers.call1("cast_as_string", (result,))?;
             let value: String = result.extract()?;
+
             record.push_field(&value);
             wtr.write_record(&record)?;
         }
