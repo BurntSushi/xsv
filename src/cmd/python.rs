@@ -4,6 +4,7 @@ use std::io::prelude::*;
 use std::fs::File;
 
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 
 use CliResult;
 use CliError;
@@ -12,8 +13,19 @@ use util;
 
 const HELPERS: &str = r#"
 def cast_as_string(value):
+    if isinstance(value, str):
+        return value
     return str(value)
+
+def cast_as_bool(value):
+    return bool(value)
 "#;
+
+fn template_execution(statements: &str) -> String {
+    format!("def __run__():\n{}\n__return_value__ = __run__()", textwrap::indent(statements, "  "))
+}
+
+// wrapped_expression = 'def __run__():\n%s\n__return_value__ = __run__()' % textwrap.indent(expression, '  ')
 
 // TODO: options for boolean return coercion
 
@@ -125,14 +137,19 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let gil = Python::acquire_gil();
     let py = gil.python();
 
-    let helpers = PyModule::from_code(py, &textwrap::dedent(HELPERS), "xsv_helpers.py", "xsv_helpers").unwrap();
+    let helpers = PyModule::from_code(py, HELPERS, "xsv_helpers.py", "xsv_helpers").unwrap();
+    let locals = PyDict::new(py);
 
     let mut record = csv::StringRecord::new();
 
     while rdr.read_record(&mut record)? {
-        println!("{:?}", record);
 
-        let result = py.eval(&args.arg_script, None, None).map_err(|e| {
+        // Initializing locals
+        for (i, h) in headers.iter().enumerate() {
+            locals.set_item(h, record.get(i).unwrap()).unwrap();
+        }
+
+        let result = py.eval(&args.arg_script, None, Some(&locals)).map_err(|e| {
             e.print_and_set_sys_last_vars(py);
         }).unwrap();
 
