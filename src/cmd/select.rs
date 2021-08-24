@@ -5,7 +5,7 @@ use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Select columns from CSV data efficiently.
 
 This command lets you manipulate the columns in CSV data. You can re-order

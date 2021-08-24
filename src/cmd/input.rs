@@ -4,7 +4,7 @@ use CliResult;
 use config::{Config, Delimiter};
 use util;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Read CSV data with special quoting rules.
 
 Generally, all xsv commands support basic options like specifying the delimiter

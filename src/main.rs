@@ -74,7 +74,7 @@ mod index;
 mod select;
 mod util;
 
-static USAGE: &'static str = concat!("
+static USAGE: &str = concat!("
 Usage:
     xsv <command> [<args>...]
     xsv [options]
@@ -165,14 +165,14 @@ enum Command {
 
 impl Command {
     fn run(self) -> CliResult<()> {
-        let argv: Vec<_> = env::args().map(|v| v.to_owned()).collect();
+        let argv: Vec<_> = env::args().map(|v| v).collect();
         let argv: Vec<_> = argv.iter().map(|s| &**s).collect();
         let argv = &*argv;
 
         if !argv[1].chars().all(char::is_lowercase) {
             return Err(CliError::Other(format!(
                 "xsv expects commands in lowercase. Did you mean '{}'?", 
-                argv[1].to_lowercase()).to_string()));
+                argv[1].to_lowercase())));
         }
         match self {
             Command::Cat => cmd::cat::run(argv),

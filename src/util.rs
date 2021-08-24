@@ -34,7 +34,7 @@ pub fn version() -> String {
 pub fn get_args<T>(usage: &str, argv: &[&str]) -> CliResult<T>
         where T: DeserializeOwned {
     Docopt::new(usage)
-           .and_then(|d| d.argv(argv.iter().map(|&x| x))
+           .and_then(|d| d.argv(argv.iter().copied())
                           .version(Some(version()))
                           .deserialize())
            .map_err(From::from)
@@ -187,7 +187,7 @@ impl FilenameTemplate {
     /// that we do not output headers; the caller must do that if
     /// desired.
     pub fn writer<P>(&self, path: P, unique_value: &str)
-                 -> io::Result<csv::Writer<Box<io::Write+'static>>>
+                 -> io::Result<csv::Writer<Box<dyn io::Write+'static>>>
         where P: AsRef<Path>
     {
         let filename = self.filename(unique_value);

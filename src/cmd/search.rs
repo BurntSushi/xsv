@@ -6,7 +6,7 @@ use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Filters CSV data by whether the given regex matches a row.
 
 The regex is applied to each field in each row, and if any field matches,

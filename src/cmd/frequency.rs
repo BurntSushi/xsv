@@ -12,7 +12,7 @@ use index::Indexed;
 use select::{SelectColumns, Selection};
 use util;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Compute a frequency table on CSV data.
 
 The frequency table is formatted as CSV data:
@@ -175,10 +175,8 @@ impl Args {
                 let field = trim(field.to_vec());
                 if !field.is_empty() {
                     tabs[i].add(field);
-                } else {
-                    if !self.flag_no_nulls {
-                        tabs[i].add(null.clone());
-                    }
+                } else if !self.flag_no_nulls {
+                    tabs[i].add(null.clone());
                 }
             }
         }

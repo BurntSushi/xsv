@@ -28,7 +28,7 @@ impl<R: io::Read + io::Seek, I: io::Read + io::Seek> Indexed<R, I> {
         idx_rdr: I,
     ) -> CliResult<Indexed<R, I>> {
         Ok(Indexed {
-            csv_rdr: csv_rdr,
+            csv_rdr,
             idx: RandomAccessSimple::open(idx_rdr)?,
         })
     }

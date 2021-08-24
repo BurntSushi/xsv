@@ -8,7 +8,7 @@ use CliResult;
 use config::{Config, Delimiter};
 use util;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Creates an index of the given CSV data, which can make other operations like
 slicing, splitting and gathering statistics much faster.
 
@@ -45,7 +45,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
 
     let pidx = match args.flag_output {
-        None => util::idx_path(&Path::new(&args.arg_input)),
+        None => util::idx_path(Path::new(&args.arg_input)),
         Some(p) => PathBuf::from(&p),
     };
 

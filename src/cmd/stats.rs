@@ -19,7 +19,7 @@ use util;
 
 use self::FieldType::{TUnknown, TNull, TUnicode, TFloat, TInteger};
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Computes basic statistics on CSV data.
 
 Basic statistics includes mean, median, mode, standard deviation, sum, max and
@@ -266,12 +266,12 @@ impl Stats {
         if which.median { median = Some(Default::default()); }
         Stats {
             typ: Default::default(),
-            sum: sum,
-            minmax: minmax,
-            online: online,
-            mode: mode,
-            median: median,
-            which: which,
+            sum,
+            minmax,
+            online,
+            mode,
+            median,
+            which,
         }
     }
 
@@ -280,26 +280,26 @@ impl Stats {
         self.typ.merge(sample_type);
 
         let t = self.typ;
-        self.sum.as_mut().map(|v| v.add(t, sample));
-        self.minmax.as_mut().map(|v| v.add(t, sample));
-        self.mode.as_mut().map(|v| v.add(sample.to_vec()));
+        if let Some(v) = self.sum.as_mut() { v.add(t, sample) }
+        if let Some(v) = self.minmax.as_mut() { v.add(t, sample) }
+        if let Some(v) = self.mode.as_mut() { v.add(sample.to_vec()) }
         match self.typ {
             TUnknown => {}
             TNull => {
                 if self.which.include_nulls {
-                    self.online.as_mut().map(|v| { v.add_null(); });
+                    if let Some(v) = self.online.as_mut() { v.add_null(); }
                 }
             }
             TUnicode => {}
             TFloat | TInteger => {
                 if sample_type.is_null() {
                     if self.which.include_nulls {
-                        self.online.as_mut().map(|v| { v.add_null(); });
+                        if let Some(v) = self.online.as_mut() { v.add_null(); }
                     }
                 } else {
                     let n = from_bytes::<f64>(sample).unwrap();
-                    self.median.as_mut().map(|v| { v.add(n); });
-                    self.online.as_mut().map(|v| { v.add(n); });
+                    if let Some(v) = self.median.as_mut() { v.add(n); }
+                    if let Some(v) = self.online.as_mut() { v.add(n); }
                 }
             }
         }
@@ -399,8 +399,8 @@ impl FieldType {
             Err(_) => return TUnknown,
             Ok(s) => s,
         };
-        if let Ok(_) = string.parse::<i64>() { return TInteger; }
-        if let Ok(_) = string.parse::<f64>() { return TFloat; }
+        if string.parse::<i64>().is_ok() { return TInteger; }
+        if string.parse::<f64>().is_ok() { return TFloat; }
         TUnicode
     }
 

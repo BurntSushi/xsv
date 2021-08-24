@@ -11,7 +11,7 @@ use config::{Config, Delimiter};
 use index::Indexed;
 use util::{self, FilenameTemplate};
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Splits the given CSV data into chunks.
 
 The files are written to the directory given with the name '{start}.csv',
@@ -128,7 +128,7 @@ impl Args {
         &self,
         headers: &csv::ByteRecord,
         start: usize,
-    ) -> CliResult<csv::Writer<Box<io::Write+'static>>> {
+    ) -> CliResult<csv::Writer<Box<dyn io::Write+'static>>> {
         let dir = Path::new(&self.arg_outdir);
         let path = dir.join(self.flag_filename.filename(&format!("{}", start)));
         let spath = Some(path.display().to_string());

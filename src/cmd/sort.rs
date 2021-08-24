@@ -8,7 +8,7 @@ use std::str::from_utf8;
 
 use self::Number::{Float, Int};
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Sorts CSV data lexicographically.
 
 Note that this requires reading all of the CSV data into memory.

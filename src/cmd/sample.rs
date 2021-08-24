@@ -10,7 +10,7 @@ use config::{Config, Delimiter};
 use index::Indexed;
 use util;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Randomly samples CSV data uniformly using memory proportional to the size of
 the sample.
 
