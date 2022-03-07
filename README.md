@@ -103,10 +103,6 @@ $ xsv stats worldcitiespop.csv --everything | xsv table
 Which cuts it down to about 8 seconds on my machine. (And creating the index
 takes less than 2 seconds.)
 
-Notably, the same type of "statistics" command in another
-[CSV command line toolkit](https://csvkit.readthedocs.io/)
-takes about 2 minutes to produce similar statistics on the same data set.
-
 Creating an index gives us more than just faster statistics gathering. It also
 makes slice operations extremely fast because *only the sliced portion* has to
 be parsed. For example, let's say you wanted to grab the last 10 records:
