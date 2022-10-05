@@ -57,7 +57,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
     }
 
-    let mut wtr: Box<io::Write> =
+    let mut wtr: Box<dyn io::Write> =
         if args.flag_just_names {
             Box::new(io::stdout())
         } else {
