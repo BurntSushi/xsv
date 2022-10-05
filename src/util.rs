@@ -187,7 +187,7 @@ impl FilenameTemplate {
     /// that we do not output headers; the caller must do that if
     /// desired.
     pub fn writer<P>(&self, path: P, unique_value: &str)
-                 -> io::Result<csv::Writer<Box<io::Write+'static>>>
+                 -> io::Result<csv::Writer<Box<dyn io::Write+'static>>>
         where P: AsRef<Path>
     {
         let filename = self.filename(unique_value);

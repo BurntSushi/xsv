@@ -194,12 +194,12 @@ impl Config {
     }
 
     pub fn writer(&self)
-                 -> io::Result<csv::Writer<Box<io::Write+'static>>> {
+                 -> io::Result<csv::Writer<Box<dyn io::Write+'static>>> {
         Ok(self.from_writer(self.io_writer()?))
     }
 
     pub fn reader(&self)
-                 -> io::Result<csv::Reader<Box<io::Read+'static>>> {
+                 -> io::Result<csv::Reader<Box<dyn io::Read+'static>>> {
         Ok(self.from_reader(self.io_reader()?))
     }
 
@@ -260,7 +260,7 @@ impl Config {
         }
     }
 
-    pub fn io_reader(&self) -> io::Result<Box<io::Read+'static>> {
+    pub fn io_reader(&self) -> io::Result<Box<dyn io::Read+'static>> {
         Ok(match self.path {
                 None => Box::new(io::stdin()),
                 Some(ref p) => {
@@ -290,7 +290,7 @@ impl Config {
             .from_reader(rdr)
     }
 
-    pub fn io_writer(&self) -> io::Result<Box<io::Write+'static>> {
+    pub fn io_writer(&self) -> io::Result<Box<dyn io::Write+'static>> {
         Ok(match self.path {
             None => Box::new(io::stdout()),
             Some(ref p) => Box::new(fs::File::create(p)?),
