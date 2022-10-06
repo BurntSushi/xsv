@@ -11,9 +11,9 @@ a quick tour of several commands.
 
 [![Linux build status](https://api.travis-ci.org/BurntSushi/xsv.svg)](https://travis-ci.org/BurntSushi/xsv)
 [![Windows build status](https://ci.appveyor.com/api/projects/status/github/BurntSushi/xsv?svg=true)](https://ci.appveyor.com/project/BurntSushi/xsv)
-[![](https://meritbadge.herokuapp.com/xsv)](https://crates.io/crates/xsv)
+[![crates.io](https://img.shields.io/crates/v/xsv.svg)](https://crates.io/crates/xsv)
 
-Dual-licensed under MIT or the [UNLICENSE](https://unlicense.org).
+Dual-licensed under MIT or the [UNLICENSE](https://unlicense.org/).
 
 
 ### Available commands
@@ -299,7 +299,7 @@ right and full outer join support too.
 
 ### Installation
 
-Binaries for Windows, Linux and macOS are available [from Github](https://github.com/BurntSushi/xsv/releases/latest).
+Binaries for Windows, Linux and macOS are available [from GitHub](https://github.com/BurntSushi/xsv/releases/latest).
 
 If you're a **macOS Homebrew** user, then you can install xsv
 from homebrew-core:
@@ -309,7 +309,7 @@ $ brew install xsv
 ```
 
 If you're a **macOS MacPorts** user, then you can install xsv
-from the [official ports](https://www.macports.org/ports.php?by=name&substr=xsv):
+from the [official ports](https://ports.macports.org/port/xsv/):
 
 ```
 $ sudo port install xsv
@@ -322,7 +322,7 @@ $ nix-env -i xsv
 ```
 
 Alternatively, you can compile from source by
-[installing Cargo](https://crates.io/install)
+[installing Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 ([Rust's](https://www.rust-lang.org/) package manager)
 and installing `xsv` using Cargo:
 
