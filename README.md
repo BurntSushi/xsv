@@ -20,7 +20,7 @@ Dual-licensed under MIT or the [UNLICENSE](https://unlicense.org).
 This forked version of xsv can be installed using cargo:
 
 ```
-cargo install --git https://github.com/Yomguithereal/xsv.git --branch prod
+cargo install --git https://github.com/medialab/xsv.git --branch prod
 ```
 
 **New Features**

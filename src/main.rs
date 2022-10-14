@@ -6,6 +6,7 @@ extern crate docopt;
 extern crate hlua;
 extern crate filetime;
 extern crate num_cpus;
+#[cfg(feature = "py")]
 extern crate pyo3;
 extern crate rand;
 extern crate regex;

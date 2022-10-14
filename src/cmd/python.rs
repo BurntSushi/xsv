@@ -1,13 +1,15 @@
-use csv;
-
-use pyo3::prelude::*;
-use pyo3::types::PyDict;
+#[cfg(feature = "py")] use {
+    csv,
+    pyo3::prelude::*,
+    pyo3::types::PyDict,
+    config::{Config, Delimiter},
+    CliError,
+    util,
+};
 
 use CliResult;
-use CliError;
-use config::{Config, Delimiter};
-use util;
 
+#[cfg(feature = "py")]
 const HELPERS: &str = r#"
 def cast_as_string(value):
     if isinstance(value, str):
@@ -41,7 +43,7 @@ class XSVRow(object):
 // }
 
 // TODO: options for boolean return coercion
-
+#[cfg(feature = "py")]
 static USAGE: &'static str = r#"
 Create a new column, filter rows or compute aggregations by evaluating a python
 expression on every row of a CSV file.
@@ -87,6 +89,7 @@ Common options:
                            Must be a single character. (default: ,)
 "#;
 
+#[cfg(feature = "py")]
 #[derive(Deserialize)]
 struct Args {
     cmd_map: bool,
@@ -99,12 +102,20 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
+#[cfg(feature = "py")]
 impl From<PyErr> for CliError {
     fn from(err: PyErr) -> CliError {
         CliError::Other(err.to_string())
     }
 }
 
+#[cfg(not(feature = "py"))]
+pub fn run(_argv: &[&str]) -> CliResult<()> {
+    Ok(println!("This version of XSV was not compiled with the py feature."))
+}
+
+
+#[cfg(feature = "py")]
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
     let rconfig = Config::new(&args.arg_input)

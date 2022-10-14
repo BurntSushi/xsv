@@ -1,11 +1,14 @@
 [package]
 name = "xsv"
-version = "0.13.0-yomguithereal10"  #:version
-authors = ["Andrew Gallant <jamslam@gmail.com>"]
+version = "0.13.0-medialab1"  #:version
+authors = [
+  "Andrew Gallant <jamslam@gmail.com>",
+  "Guillaume Plique <guillaume.plique@sciencespo.fr>"
+]
 description = "A high performance CSV command line toolkit."
 documentation = "https://burntsushi.net/rustdoc/xsv/"
-homepage = "https://github.com/BurntSushi/xsv"
-repository = "https://github.com/BurntSushi/xsv"
+homepage = "https://github.com/medialab/xsv"
+repository = "https://github.com/medialab/xsv"
 readme = "README.md"
 keywords = ["csv", "tsv", "slice", "command"]
 license = "Unlicense/MIT"
@@ -19,6 +22,9 @@ doctest = false
 
 [[test]]
 name = "tests"
+
+[features]
+py = ["dep:pyo3"]
 
 [profile.release]
 opt-level = 3
@@ -36,7 +42,7 @@ docopt = "1"
 filetime = "0.1"
 hlua = "0.4.1"
 num_cpus = "1.4"
-pyo3 = "0.13.2"
+pyo3 = { version = "0.13.2", optional = true }
 rand = "0.5"
 regex = "1"
 serde = "1"
