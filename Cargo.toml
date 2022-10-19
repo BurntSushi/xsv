@@ -41,6 +41,7 @@ csv-index = "0.1.5"
 docopt = "1"
 filetime = "0.1"
 hlua = "0.4.1"
+lingua = "1.4.0"
 num_cpus = "1.4"
 pyo3 = { version = "0.13.2", optional = true }
 rand = "0.5"

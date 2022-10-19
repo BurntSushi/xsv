@@ -5,6 +5,7 @@ extern crate csv_index;
 extern crate docopt;
 extern crate hlua;
 extern crate filetime;
+extern crate lingua;
 extern crate num_cpus;
 #[cfg(feature = "py")]
 extern crate pyo3;
@@ -66,6 +67,7 @@ macro_rules! command_list {
     input       Read CSV data with special quoting rules
     join        Join CSV files
     jsonl       Convert newline-delimited JSON files to CSV
+    lang        Add a column with the language detected in a given CSV column
     lua         Execute Lua script on CSV data
     partition   Partition CSV data based on a column value
     pseudo      Pseudonymise the values of a column
@@ -173,6 +175,7 @@ enum Command {
     Input,
     Join,
     Jsonl,
+    Lang,
     Lua,
     Partition,
     Pseudo,
@@ -218,6 +221,7 @@ impl Command {
             Command::Input => cmd::input::run(argv),
             Command::Join => cmd::join::run(argv),
             Command::Jsonl => cmd::jsonl::run(argv),
+            Command::Lang => cmd::lang::run(argv),
             Command::Lua => cmd::lua::run(argv),
             Command::Partition => cmd::partition::run(argv),
             Command::Pseudo => cmd::pseudo::run(argv),
