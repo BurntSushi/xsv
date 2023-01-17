@@ -2,6 +2,7 @@ pub mod apply;
 pub mod behead;
 pub mod cat;
 pub mod count;
+pub mod datefmt;
 pub mod explode;
 pub mod enumerate;
 pub mod foreach;

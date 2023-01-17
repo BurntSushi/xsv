@@ -6,13 +6,16 @@ use std::str;
 use std::thread;
 use std::time;
 
+use chrono::{DateTime, Utc, TimeZone};
+use chrono_tz::Tz;
+use dateparser::parse_with_timezone;
 use csv;
 use docopt::Docopt;
 use num_cpus;
-use serde::de::{Deserializer, Deserialize, DeserializeOwned, Error};
+use serde::de::{Deserialize, DeserializeOwned, Deserializer, Error};
 
-use CliResult;
 use config::{Config, Delimiter};
+use CliResult;
 
 pub fn num_cpus() -> usize {
     num_cpus::get()
@@ -33,7 +36,7 @@ pub fn version() -> String {
             else {
                 return format!("{}.{}.{}-{}", maj, min, pat, pre);
             }
-        },
+        }
         _ => "".to_owned(),
     }
 }
@@ -150,6 +153,26 @@ pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
             let s = start.unwrap_or(0);
             Ok((s, s + l))
         }
+    }
+}
+
+pub fn parse_timezone(tz: Option<String>) -> Result<Tz, String> {
+    match tz {
+        None => Ok(chrono_tz::UTC),
+        Some(time_string) => time_string.parse::<Tz>().or(Err(format!("{} is not a valid timezone", time_string)))
+    }
+}
+
+pub fn parse_date(date: &str, tz: Tz, input_fmt: &Option<String>) -> Result<DateTime<Utc>, String> {
+    match input_fmt {
+        Some(fmt) => match tz.datetime_from_str(date, &fmt) {
+            Ok(time) => Ok(time.with_timezone(&Utc)),
+            _ => Err(format!("{} is not a valid format", fmt)),
+        },
+        None => match parse_with_timezone(&date, &tz) {
+            Ok(time) => Ok(time),
+            _ => Err(format!("Time format could not be inferred for {}", date)),
+        },
     }
 }
 
