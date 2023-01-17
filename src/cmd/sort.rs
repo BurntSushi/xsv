@@ -59,9 +59,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .delimiter(args.flag_delimiter)
         .no_headers(args.flag_no_headers)
         .select(args.flag_select);
-    
+
     let count = &args.flag_count;
-    
+
     if !count.is_none() && !args.flag_uniq {
         return fail!("--count can only be used with --uniq")
     };
@@ -112,7 +112,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut prev: Option<csv::ByteRecord> = None;
     let mut counter: u64 = 1;
-    let mut line_buffer: csv::ByteRecord = csv::ByteRecord::new();
+    let mut line_buffer: Option<csv::ByteRecord> = None;
+
     for r in all.into_iter() {
         if args.flag_uniq {
             match prev {
@@ -122,10 +123,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                             counter += 1;
                         },
                         _ => {
-                            if !count.is_none() {
-                                line_buffer.push_field(&counter.to_string().as_bytes());
-                                wtr.write_byte_record(&line_buffer)?;
-                                line_buffer = r.clone();
+                            if let Some(mut to_flush) = line_buffer {
+                                to_flush.push_field(&counter.to_string().as_bytes());
+                                wtr.write_byte_record(&to_flush)?;
+                                line_buffer = Some(r.clone());
                                 counter = 1;
                             }
                             else {
@@ -136,7 +137,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 },
                 None => {
                     if !count.is_none() {
-                        line_buffer = r.clone();
+                        line_buffer = Some(r.clone());
                     }
                     else {
                         wtr.write_byte_record(&r)?;
@@ -150,9 +151,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             wtr.write_byte_record(&r)?;
         }
     }
-    if !count.is_none() && !line_buffer.is_empty() {
-        line_buffer.push_field(&counter.to_string().as_bytes());
-        wtr.write_byte_record(&line_buffer)?;
+    if let Some(mut to_flush) = line_buffer {
+        to_flush.push_field(&counter.to_string().as_bytes());
+        wtr.write_byte_record(&to_flush)?;
     }
     Ok(wtr.flush()?)
 }
