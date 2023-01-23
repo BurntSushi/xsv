@@ -23,6 +23,16 @@ This forked version of xsv can be installed using cargo:
 cargo install --git https://github.com/medialab/xsv.git --branch prod
 ```
 
+To install optional features (such as `lang` or `py`, for instance):
+
+```
+# Everything
+cargo install --git https://github.com/medialab/xsv.git --branch prod --all-features
+
+# Selected features
+cargo install --git https://github.com/medialab/xsv.git --branch prod --features lang,py
+```
+
 **New Features**
 
 * `xsv apply`
@@ -68,11 +78,11 @@ given separator.
 * **jsonl** - Convert newline-delimited JSON to CSV.
 * **join** - Inner, outer and cross joins. Uses a simple hash index to make it
   fast.
-* **lang** - Add a column with the language detected in a given CSV column.
+* **lang**, *optional* - Add a column with the language detected in a given CSV column.
 * **lua** - Execute a Lua script over CSV lines to transform, aggregate or filter them.
 * **partition** - Partition CSV data based on a column value.
 * **pseudo** - Pseudonymise the value of the given column by replacing them by an incremental identifier.
-* **py** - Evaluate a Python expression over CSV lines to transform, aggregate or filter them.
+* **py**, *optional* - Evaluate a Python expression over CSV lines to transform, aggregate or filter them.
 * **sample** - Randomly draw rows from CSV data using reservoir sampling (i.e.,
   use memory proportional to the size of the sample).
 * **replace** - Replace CSV data using a regex.
