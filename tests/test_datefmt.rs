@@ -11,6 +11,7 @@ fn datefmt() {
             svec!["May 8, 2009 5:57:51 PM"],
             svec!["2012/03/19 10:11:59.3186369"],
             svec!["2021-05-01T01:17:02.604456Z"],
+            svec!["1674467716"],
         ],
     );
     let mut cmd = wrk.command("datefmt");
@@ -29,6 +30,7 @@ fn datefmt() {
             "2021-05-01T01:17:02.604456Z",
             "2021-05-01 01:17:02.604456 UTC"
         ],
+        svec!["1674467716", "2023-01-23 09:55:16 UTC"],
     ];
     assert_eq!(got, expected);
 }
@@ -122,11 +124,15 @@ fn datefmt_detect_eastern() {
 }
 
 #[test]
-fn datefmt_detect_eastern_despite_option() {
+fn datefmt_detect_despite_intz_option() {
     let wrk = Workdir::new("datefmt");
     wrk.create(
         "data.csv",
-        vec![svec!["datetime"], svec!["2020-03-15 08:02:03 EDT"]],
+        vec![
+            svec!["datetime"],
+            svec!["2020-03-15 08:02:03 EDT"],
+            svec!["1674467716"],
+        ],
     );
 
     let mut cmd = wrk.command("datefmt");
@@ -141,6 +147,7 @@ fn datefmt_detect_eastern_despite_option() {
     let expected = vec![
         svec!["datetime", "formatted_date"],
         svec!["2020-03-15 08:02:03 EDT", "2020-03-15 12:02:03 UTC"],
+        svec!["1674467716", "2023-01-23 09:55:16 UTC"],
     ];
     assert_eq!(got, expected);
 }
