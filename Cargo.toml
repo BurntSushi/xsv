@@ -1,6 +1,6 @@
 [package]
 name = "xsv"
-version = "0.13.0-medialab2"  #:version
+version = "0.13.0-medialab3"  #:version
 authors = [
   "Andrew Gallant <jamslam@gmail.com>",
   "Guillaume Plique <guillaume.plique@sciencespo.fr>",
@@ -26,6 +26,7 @@ doctest = false
 name = "tests"
 
 [features]
+lang = ["dep:lingua"]
 py = ["dep:pyo3"]
 
 [profile.release]
@@ -45,7 +46,7 @@ csv-index = "0.1.5"
 docopt = "1"
 filetime = "0.1"
 hlua = "0.4.1"
-lingua = "1.4.0"
+lingua = { version = "1.4.0", optional = true }
 num_cpus = "1.4"
 pyo3 = { version = "0.13.2", optional = true }
 dateparser = "0.1.7"

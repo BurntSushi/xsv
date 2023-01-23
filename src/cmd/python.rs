@@ -111,9 +111,8 @@ impl From<PyErr> for CliError {
 
 #[cfg(not(feature = "py"))]
 pub fn run(_argv: &[&str]) -> CliResult<()> {
-    Ok(println!("This version of XSV was not compiled with the py feature."))
+    Ok(println!("This version of XSV was not compiled with the \"py\" feature."))
 }
-
 
 #[cfg(feature = "py")]
 pub fn run(argv: &[&str]) -> CliResult<()> {

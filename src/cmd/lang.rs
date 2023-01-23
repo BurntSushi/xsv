@@ -1,11 +1,14 @@
-use csv;
-use lingua::{Language, LanguageDetectorBuilder};
+#[cfg(feature = "lang")] use {
+    csv,
+    lingua::{Language, LanguageDetectorBuilder},
+    config::{Delimiter, Config},
+    select::SelectColumns,
+    util
+};
 
 use CliResult;
-use config::{Delimiter, Config};
-use select::SelectColumns;
-use util;
 
+#[cfg(feature = "lang")]
 static USAGE: &'static str = r#"
 Add a column with the language detected in a given CSV column
 
@@ -26,6 +29,7 @@ Common options:
                              Must be a single character. (default: ,)
 "#;
 
+#[cfg(feature = "lang")]
 #[derive(Deserialize)]
 struct Args {
     arg_column: SelectColumns,
@@ -36,6 +40,12 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
+#[cfg(not(feature = "lang"))]
+pub fn run(_argv: &[&str]) -> CliResult<()> {
+    Ok(println!("This version of XSV was not compiled with the \"lang\" feature."))
+}
+
+#[cfg(feature = "lang")]
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
     let rconfig = Config::new(&args.arg_input)
@@ -65,11 +75,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         let mut language = String::new();
 
         let detected_language = detector.detect_language_of(&cell);
-        
+
         if detected_language != None {
             language = Language::to_string(&detected_language.unwrap());
         }
-        
+
         record.push_field(&language);
         wtr.write_record(&record)?;
     }

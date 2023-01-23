@@ -7,6 +7,7 @@ extern crate csv_index;
 extern crate docopt;
 extern crate filetime;
 extern crate hlua;
+#[cfg(feature = "lang")]
 extern crate lingua;
 extern crate num_cpus;
 #[cfg(feature = "py")]
