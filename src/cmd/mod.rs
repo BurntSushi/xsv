@@ -15,10 +15,12 @@ pub mod index;
 pub mod input;
 pub mod join;
 pub mod jsonl;
+#[cfg(feature = "lang")]
 pub mod lang;
 pub mod lua;
 pub mod partition;
 pub mod pseudo;
+#[cfg(feature = "py")]
 pub mod python;
 pub mod replace;
 pub mod reverse;

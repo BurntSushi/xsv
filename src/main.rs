@@ -228,11 +228,17 @@ impl Command {
             Command::Input => cmd::input::run(argv),
             Command::Join => cmd::join::run(argv),
             Command::Jsonl => cmd::jsonl::run(argv),
+            #[cfg(feature = "lang")]
             Command::Lang => cmd::lang::run(argv),
+            #[cfg(not(feature = "lang"))]
+            Command::Lang => { Ok(println!("This version of XSV was not compiled with the \"lang\" feature.")) }
             Command::Lua => cmd::lua::run(argv),
             Command::Partition => cmd::partition::run(argv),
             Command::Pseudo => cmd::pseudo::run(argv),
+            #[cfg(feature = "py")]
             Command::Py => cmd::python::run(argv),
+            #[cfg(not(feature = "py"))]
+            Command::Py => { Ok(println!("This version of XSV was not compiled with the \"py\" feature.")) }
             Command::Replace => cmd::replace::run(argv),
             Command::Reverse => cmd::reverse::run(argv),
             Command::Sample => cmd::sample::run(argv),
