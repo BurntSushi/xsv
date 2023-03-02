@@ -36,16 +36,18 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv datefmt`
 * `xsv enum`
 * `xsv explode`
+* `xsv flatten --pretty`
 * `xsv foreach`
+* `xsv frequency --pretty`
 * `xsv jsonl`
 * `xsv lang`
 * `xsv lua`
 * `xsv pseudo`
 * `xsv py`
 * `xsv replace`
-* `xsv sort -u`
 * `xsv search --flag col`
-
+* `xsv sort -u`
+* `xsv stats --pretty`
 
 ### Available commands
 
