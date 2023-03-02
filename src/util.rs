@@ -106,8 +106,8 @@ pub fn condense<'a>(val: Cow<'a, [u8]>, n: Option<usize>) -> Cow<'a, [u8]> {
                 if n >= s.chars().count() {
                     is_short_utf8 = true;
                 } else {
-                    let mut s = s.chars().take(n).collect::<String>();
-                    s.push_str("...");
+                    let mut s = s.chars().take(n - 1).collect::<String>();
+                    s.push_str("…");
                     return Cow::Owned(s.into_bytes());
                 }
             }
@@ -116,7 +116,7 @@ pub fn condense<'a>(val: Cow<'a, [u8]>, n: Option<usize>) -> Cow<'a, [u8]> {
             } else {
                 // This is a non-Unicode string, so we just trim on bytes.
                 let mut s = val[0..n].to_vec();
-                s.extend(b"...".iter().cloned());
+                s.extend(b"\xE2".iter().cloned());
                 Cow::Owned(s)
             }
         }

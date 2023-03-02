@@ -1,6 +1,7 @@
 extern crate byteorder;
 extern crate chrono;
 extern crate chrono_tz;
+extern crate colored;
 extern crate crossbeam_channel as channel;
 extern crate csv;
 extern crate csv_index;
@@ -21,8 +22,11 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate stats;
 extern crate tabwriter;
+extern crate termsize;
 extern crate textwrap;
 extern crate threadpool;
+extern crate unicode_segmentation;
+extern crate unicode_width;
 extern crate uuid;
 
 use std::borrow::ToOwned;
