@@ -35,40 +35,44 @@ Usage:
     xsv join --help
 
 join options:
-    --no-case              When set, joins are done case insensitively.
-    --left                 Do a 'left outer' join. This returns all rows in
-                           first CSV data set, including rows with no
-                           corresponding row in the second data set. When no
-                           corresponding row exists, it is padded out with
-                           empty fields.
-    --right                Do a 'right outer' join. This returns all rows in
-                           second CSV data set, including rows with no
-                           corresponding row in the first data set. When no
-                           corresponding row exists, it is padded out with
-                           empty fields. (This is the reverse of 'outer left'.)
-    --full                 Do a 'full outer' join. This returns all rows in
-                           both data sets with matching records joined. If
-                           there is no match, the missing side will be padded
-                           out with empty fields. (This is the combination of
-                           'outer left' and 'outer right'.)
-    --cross                USE WITH CAUTION.
-                           This returns the cartesian product of the CSV
-                           data sets given. The number of rows return is
-                           equal to N * M, where N and M correspond to the
-                           number of rows in the given data sets, respectively.
-    --nulls                When set, joins will work on empty fields.
-                           Otherwise, empty fields are completely ignored.
-                           (In fact, any row that has an empty field in the
-                           key specified is ignored.)
+    --no-case                   When set, joins are done case insensitively.
+    --left                      Do a 'left outer' join. This returns all rows in
+                                first CSV data set, including rows with no
+                                corresponding row in the second data set. When no
+                                corresponding row exists, it is padded out with
+                                empty fields.
+    --right                     Do a 'right outer' join. This returns all rows in
+                                second CSV data set, including rows with no
+                                corresponding row in the first data set. When no
+                                corresponding row exists, it is padded out with
+                                empty fields. (This is the reverse of 'outer left'.)
+    --full                      Do a 'full outer' join. This returns all rows in
+                                both data sets with matching records joined. If
+                                there is no match, the missing side will be padded
+                                out with empty fields. (This is the combination of
+                                'outer left' and 'outer right'.)
+    --cross                     USE WITH CAUTION.
+                                This returns the cartesian product of the CSV
+                                data sets given. The number of rows return is
+                                equal to N * M, where N and M correspond to the
+                                number of rows in the given data sets, respectively.
+    --nulls                     When set, joins will work on empty fields.
+                                Otherwise, empty fields are completely ignored.
+                                (In fact, any row that has an empty field in the
+                                key specified is ignored.)
+    --prefix-left <prefix>      Add a prefix to the names of the columns in the
+                                first dataset.
+    --prefix-right <prefix>     Add a prefix to the names of the columns in the
+                                second dataset.
 
 Common options:
-    -h, --help             Display this message
-    -o, --output <file>    Write output to <file> instead of stdout.
-    -n, --no-headers       When set, the first row will not be interpreted
-                           as headers. (i.e., They are not searched, analyzed,
-                           sliced, etc.)
-    -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. (default: ,)
+    -h, --help                  Display this message
+    -o, --output <file>         Write output to <file> instead of stdout.
+    -n, --no-headers            When set, the first row will not be interpreted
+                                as headers. (i.e., They are not searched, analyzed,
+                                sliced, etc.)
+    -d, --delimiter <arg>       The field delimiter for reading CSV data.
+                                Must be a single character. (default: ,)
 ";
 
 type ByteString = Vec<u8>;
@@ -88,6 +92,8 @@ struct Args {
     flag_no_case: bool,
     flag_nulls: bool,
     flag_delimiter: Option<Delimiter>,
+    flag_prefix_left: Option<String>,
+    flag_prefix_right: Option<String>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -123,11 +129,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 }
 
-fn prefix_byte_header(headers: &csv::ByteRecord, prefix: &[u8]) -> csv::ByteRecord {
+fn prefix_header(headers: &csv::ByteRecord, prefix: &String) -> csv::ByteRecord {
     let mut prefixed_headers = csv::ByteRecord::new();
-
+    let byte_prefix = prefix.as_bytes();
     for column in headers.iter() {
-        prefixed_headers.push_field(&[prefix, column].concat());
+        prefixed_headers.push_field(&[byte_prefix, column].concat());
     }
 
     prefixed_headers
@@ -142,13 +148,25 @@ struct IoState<R, W: io::Write> {
     no_headers: bool,
     casei: bool,
     nulls: bool,
+    pfx_left: Option<String>,
+    pfx_right: Option<String> 
 }
 
 impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
     fn write_headers(&mut self) -> CliResult<()> {
         if !self.no_headers {
             let mut headers = self.rdr1.byte_headers()?.clone();
-            headers.extend(self.rdr2.byte_headers()?.iter());
+            if let Some(prefix) = &self.pfx_left {
+                headers = prefix_header(&headers, prefix);
+            }
+
+            if let Some(prefix) = &self.pfx_right {
+                headers.extend(
+                    prefix_header(&self.rdr2.byte_headers()?.clone(), prefix).iter()
+                )
+            } else {
+                headers.extend(self.rdr2.byte_headers()?.iter());
+            }
             self.wtr.write_record(&headers)?;
         }
         Ok(())
@@ -311,6 +329,8 @@ impl Args {
             no_headers: rconf1.no_headers,
             casei: self.flag_no_case,
             nulls: self.flag_nulls,
+            pfx_left: self.flag_prefix_left.clone(),
+            pfx_right: self.flag_prefix_right.clone(),
         })
     }
 
