@@ -123,6 +123,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 }
 
+fn prefix_byte_header(headers: &csv::ByteRecord, prefix: &[u8]) -> csv::ByteRecord {
+    let mut prefixed_headers = csv::ByteRecord::new();
+
+    for column in headers.iter() {
+        prefixed_headers.push_field(&[prefix, column].concat());
+    }
+
+    prefixed_headers
+}
+
 struct IoState<R, W: io::Write> {
     wtr: csv::Writer<W>,
     rdr1: csv::Reader<R>,
