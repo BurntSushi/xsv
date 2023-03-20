@@ -7,6 +7,7 @@ extern crate csv;
 extern crate csv_index;
 extern crate docopt;
 extern crate filetime;
+#[cfg(feature = "lua")]
 extern crate hlua;
 #[cfg(feature = "lang")]
 extern crate lingua;
@@ -236,7 +237,10 @@ impl Command {
             Command::Lang => cmd::lang::run(argv),
             #[cfg(not(feature = "lang"))]
             Command::Lang => { Ok(println!("This version of XSV was not compiled with the \"lang\" feature.")) }
+            #[cfg(feature = "lua")]
             Command::Lua => cmd::lua::run(argv),
+            #[cfg(not(feature = "lua"))]
+            Command::Lua => { Ok(println!("This version of XSV was not compiled with the \"lua\" feature.")) }
             Command::Partition => cmd::partition::run(argv),
             Command::Pseudo => cmd::pseudo::run(argv),
             #[cfg(feature = "py")]

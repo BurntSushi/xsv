@@ -78,7 +78,7 @@ given separator.
 * **join** - Inner, outer and cross joins. Uses a simple hash index to make it
   fast.
 * **lang**, *optional* - Add a column with the language detected in a given CSV column.
-* **lua** - Execute a Lua script over CSV lines to transform, aggregate or filter them.
+* **lua**, *optional* - Execute a Lua script over CSV lines to transform, aggregate or filter them.
 * **partition** - Partition CSV data based on a column value.
 * **pseudo** - Pseudonymise the value of the given column by replacing them by an incremental identifier.
 * **py**, *optional* - Evaluate a Python expression over CSV lines to transform, aggregate or filter them.
