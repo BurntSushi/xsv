@@ -4,9 +4,9 @@ use std::path::{Path, PathBuf};
 
 use csv_index::RandomAccessSimple;
 
-use CliResult;
 use config::{Config, Delimiter};
 use util;
+use CliResult;
 
 static USAGE: &'static str = "
 Creates an index of the given CSV data, which can make other operations like
@@ -49,8 +49,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         Some(p) => PathBuf::from(&p),
     };
 
-    let rconfig = Config::new(&Some(args.arg_input))
-                         .delimiter(args.flag_delimiter);
+    let rconfig = Config::new(&Some(args.arg_input)).delimiter(args.flag_delimiter);
     let mut rdr = rconfig.reader_file()?;
     let mut wtr = io::BufWriter::new(fs::File::create(&pidx)?);
     RandomAccessSimple::create(&mut rdr, &mut wtr)?;

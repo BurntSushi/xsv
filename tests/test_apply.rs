@@ -3,13 +3,16 @@ use workdir::Workdir;
 #[test]
 fn apply() {
     let wrk = Workdir::new("apply");
-    wrk.create("data.csv", vec![
-        svec!["name"],
-        svec!["John"],
-        svec!["Mary"],
-        svec!["Sue"],
-        svec!["Hopkins"],
-    ]);
+    wrk.create(
+        "data.csv",
+        vec![
+            svec!["name"],
+            svec!["John"],
+            svec!["Mary"],
+            svec!["Sue"],
+            svec!["Hopkins"],
+        ],
+    );
     let mut cmd = wrk.command("apply");
     cmd.arg("upper").arg("name").arg("data.csv");
 
@@ -27,13 +30,16 @@ fn apply() {
 #[test]
 fn apply_chain() {
     let wrk = Workdir::new("apply");
-    wrk.create("data.csv", vec![
-        svec!["name"],
-        svec!["John   "],
-        svec!["Mary"],
-        svec!["  Sue"],
-        svec!["Hopkins"],
-    ]);
+    wrk.create(
+        "data.csv",
+        vec![
+            svec!["name"],
+            svec!["John   "],
+            svec!["Mary"],
+            svec!["  Sue"],
+            svec!["Hopkins"],
+        ],
+    );
     let mut cmd = wrk.command("apply");
     cmd.arg("trim,upper").arg("name").arg("data.csv");
 
@@ -51,37 +57,45 @@ fn apply_chain() {
 #[test]
 fn apply_no_headers() {
     let wrk = Workdir::new("apply");
-    wrk.create("data.csv", vec![
-        svec!["John   "],
-        svec!["Mary"],
-        svec!["  Sue"],
-        svec!["Hopkins"],
-    ]);
+    wrk.create(
+        "data.csv",
+        vec![
+            svec!["John   "],
+            svec!["Mary"],
+            svec!["  Sue"],
+            svec!["Hopkins"],
+        ],
+    );
     let mut cmd = wrk.command("apply");
-    cmd.arg("trim,upper").arg("1").arg("--no-headers").arg("data.csv");
+    cmd.arg("trim,upper")
+        .arg("1")
+        .arg("--no-headers")
+        .arg("data.csv");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
-    let expected = vec![
-        svec!["JOHN"],
-        svec!["MARY"],
-        svec!["SUE"],
-        svec!["HOPKINS"],
-    ];
+    let expected = vec![svec!["JOHN"], svec!["MARY"], svec!["SUE"], svec!["HOPKINS"]];
     assert_eq!(got, expected);
 }
 
 #[test]
 fn apply_rename() {
     let wrk = Workdir::new("apply");
-    wrk.create("data.csv", vec![
-        svec!["name"],
-        svec!["John"],
-        svec!["Mary"],
-        svec!["Sue"],
-        svec!["Hopkins"],
-    ]);
+    wrk.create(
+        "data.csv",
+        vec![
+            svec!["name"],
+            svec!["John"],
+            svec!["Mary"],
+            svec!["Sue"],
+            svec!["Hopkins"],
+        ],
+    );
     let mut cmd = wrk.command("apply");
-    cmd.arg("upper").arg("name").arg("--rename").arg("upper_name").arg("data.csv");
+    cmd.arg("upper")
+        .arg("name")
+        .arg("--rename")
+        .arg("upper_name")
+        .arg("data.csv");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
@@ -97,15 +111,22 @@ fn apply_rename() {
 #[test]
 fn apply_new_column() {
     let wrk = Workdir::new("apply");
-    wrk.create("data.csv", vec![
-        svec!["name"],
-        svec!["John"],
-        svec!["Mary"],
-        svec!["Sue"],
-        svec!["Hopkins"],
-    ]);
+    wrk.create(
+        "data.csv",
+        vec![
+            svec!["name"],
+            svec!["John"],
+            svec!["Mary"],
+            svec!["Sue"],
+            svec!["Hopkins"],
+        ],
+    );
     let mut cmd = wrk.command("apply");
-    cmd.arg("upper").arg("name").arg("--new-column").arg("upper_name").arg("data.csv");
+    cmd.arg("upper")
+        .arg("name")
+        .arg("--new-column")
+        .arg("upper_name")
+        .arg("data.csv");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![

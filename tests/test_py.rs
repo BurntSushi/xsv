@@ -5,15 +5,21 @@ mod test {
     #[test]
     fn py_map() {
         let wrk = Workdir::new("py");
-        wrk.create("data.csv", vec![
-            svec!["letter", "number"],
-            svec!["a", "13"],
-            svec!["b", "24"],
-            svec!["c", "72"],
-            svec!["d", "7"],
-        ]);
+        wrk.create(
+            "data.csv",
+            vec![
+                svec!["letter", "number"],
+                svec!["a", "13"],
+                svec!["b", "24"],
+                svec!["c", "72"],
+                svec!["d", "7"],
+            ],
+        );
         let mut cmd = wrk.command("py");
-        cmd.arg("map").arg("inc").arg("int(number) + 1").arg("data.csv");
+        cmd.arg("map")
+            .arg("inc")
+            .arg("int(number) + 1")
+            .arg("data.csv");
 
         let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
         let expected = vec![
@@ -29,15 +35,21 @@ mod test {
     #[test]
     fn py_map_builtins() {
         let wrk = Workdir::new("py");
-        wrk.create("data.csv", vec![
-            svec!["letter", "number"],
-            svec!["a", "13"],
-            svec!["b", "24"],
-            svec!["c", "72"],
-            svec!["d", "7"],
-        ]);
+        wrk.create(
+            "data.csv",
+            vec![
+                svec!["letter", "number"],
+                svec!["a", "13"],
+                svec!["b", "24"],
+                svec!["c", "72"],
+                svec!["d", "7"],
+            ],
+        );
         let mut cmd = wrk.command("py");
-        cmd.arg("map").arg("sum").arg("sum([int(number), 2, 23])").arg("data.csv");
+        cmd.arg("map")
+            .arg("sum")
+            .arg("sum([int(number), 2, 23])")
+            .arg("data.csv");
 
         let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
         let expected = vec![
@@ -53,15 +65,21 @@ mod test {
     #[test]
     fn py_map_math() {
         let wrk = Workdir::new("py");
-        wrk.create("data.csv", vec![
-            svec!["letter", "number"],
-            svec!["a", "13"],
-            svec!["b", "24"],
-            svec!["c", "72"],
-            svec!["d", "7"],
-        ]);
+        wrk.create(
+            "data.csv",
+            vec![
+                svec!["letter", "number"],
+                svec!["a", "13"],
+                svec!["b", "24"],
+                svec!["c", "72"],
+                svec!["d", "7"],
+            ],
+        );
         let mut cmd = wrk.command("py");
-        cmd.arg("map").arg("div").arg("math.floor(int(number) / 2)").arg("data.csv");
+        cmd.arg("map")
+            .arg("div")
+            .arg("math.floor(int(number) / 2)")
+            .arg("data.csv");
 
         let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
         let expected = vec![
@@ -77,15 +95,21 @@ mod test {
     #[test]
     fn py_map_row_positional() {
         let wrk = Workdir::new("py");
-        wrk.create("data.csv", vec![
-            svec!["letter", "number"],
-            svec!["a", "13"],
-            svec!["b", "24"],
-            svec!["c", "72"],
-            svec!["d", "7"],
-        ]);
+        wrk.create(
+            "data.csv",
+            vec![
+                svec!["letter", "number"],
+                svec!["a", "13"],
+                svec!["b", "24"],
+                svec!["c", "72"],
+                svec!["d", "7"],
+            ],
+        );
         let mut cmd = wrk.command("py");
-        cmd.arg("map").arg("inc").arg("int(row[1]) + 1").arg("data.csv");
+        cmd.arg("map")
+            .arg("inc")
+            .arg("int(row[1]) + 1")
+            .arg("data.csv");
 
         let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
         let expected = vec![
@@ -101,15 +125,21 @@ mod test {
     #[test]
     fn py_map_row_by_key() {
         let wrk = Workdir::new("py");
-        wrk.create("data.csv", vec![
-            svec!["letter", "number"],
-            svec!["a", "13"],
-            svec!["b", "24"],
-            svec!["c", "72"],
-            svec!["d", "7"],
-        ]);
+        wrk.create(
+            "data.csv",
+            vec![
+                svec!["letter", "number"],
+                svec!["a", "13"],
+                svec!["b", "24"],
+                svec!["c", "72"],
+                svec!["d", "7"],
+            ],
+        );
         let mut cmd = wrk.command("py");
-        cmd.arg("map").arg("inc").arg("int(row['number']) + 1").arg("data.csv");
+        cmd.arg("map")
+            .arg("inc")
+            .arg("int(row['number']) + 1")
+            .arg("data.csv");
 
         let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
         let expected = vec![
@@ -125,15 +155,21 @@ mod test {
     #[test]
     fn py_map_row_by_attr() {
         let wrk = Workdir::new("py");
-        wrk.create("data.csv", vec![
-            svec!["letter", "number"],
-            svec!["a", "13"],
-            svec!["b", "24"],
-            svec!["c", "72"],
-            svec!["d", "7"],
-        ]);
+        wrk.create(
+            "data.csv",
+            vec![
+                svec!["letter", "number"],
+                svec!["a", "13"],
+                svec!["b", "24"],
+                svec!["c", "72"],
+                svec!["d", "7"],
+            ],
+        );
         let mut cmd = wrk.command("py");
-        cmd.arg("map").arg("inc").arg("int(row.number) + 1").arg("data.csv");
+        cmd.arg("map")
+            .arg("inc")
+            .arg("int(row.number) + 1")
+            .arg("data.csv");
 
         let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
         let expected = vec![
@@ -149,14 +185,20 @@ mod test {
     #[test]
     fn py_map_no_headers() {
         let wrk = Workdir::new("py");
-        wrk.create("data.csv", vec![
-            svec!["a", "13"],
-            svec!["b", "24"],
-            svec!["c", "72"],
-            svec!["d", "7"],
-        ]);
+        wrk.create(
+            "data.csv",
+            vec![
+                svec!["a", "13"],
+                svec!["b", "24"],
+                svec!["c", "72"],
+                svec!["d", "7"],
+            ],
+        );
         let mut cmd = wrk.command("py");
-        cmd.arg("map").arg("int(row[1]) + 1").arg("--no-headers").arg("data.csv");
+        cmd.arg("map")
+            .arg("int(row[1]) + 1")
+            .arg("--no-headers")
+            .arg("data.csv");
 
         let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
         let expected = vec![
@@ -171,15 +213,21 @@ mod test {
     #[test]
     fn py_map_boolean() {
         let wrk = Workdir::new("py");
-        wrk.create("data.csv", vec![
-            svec!["letter", "number"],
-            svec!["a", "13"],
-            svec!["b", "24"],
-            svec!["c", "72"],
-            svec!["d", "7"],
-        ]);
+        wrk.create(
+            "data.csv",
+            vec![
+                svec!["letter", "number"],
+                svec!["a", "13"],
+                svec!["b", "24"],
+                svec!["c", "72"],
+                svec!["d", "7"],
+            ],
+        );
         let mut cmd = wrk.command("py");
-        cmd.arg("map").arg("test").arg("int(number) > 14").arg("data.csv");
+        cmd.arg("map")
+            .arg("test")
+            .arg("int(number) > 14")
+            .arg("data.csv");
 
         let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
         let expected = vec![
@@ -195,13 +243,16 @@ mod test {
     #[test]
     fn py_filter() {
         let wrk = Workdir::new("py");
-        wrk.create("data.csv", vec![
-            svec!["letter", "number"],
-            svec!["a", "13"],
-            svec!["b", "24"],
-            svec!["c", "72"],
-            svec!["d", "7"],
-        ]);
+        wrk.create(
+            "data.csv",
+            vec![
+                svec!["letter", "number"],
+                svec!["a", "13"],
+                svec!["b", "24"],
+                svec!["c", "72"],
+                svec!["d", "7"],
+            ],
+        );
         let mut cmd = wrk.command("py");
         cmd.arg("filter").arg("int(number) > 14").arg("data.csv");
 

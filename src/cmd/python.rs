@@ -3,10 +3,10 @@ use csv;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use CliResult;
-use CliError;
 use config::{Config, Delimiter};
 use util;
+use CliError;
+use CliResult;
 
 const HELPERS: &str = r#"
 def cast_as_string(value):
@@ -135,15 +135,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     locals.set_item("row", py_row)?;
 
     if !rconfig.no_headers {
-
         if !args.cmd_filter {
-            let new_column = args.arg_new_column.as_ref().ok_or("Specify new column name")?;
+            let new_column = args
+                .arg_new_column
+                .as_ref()
+                .ok_or("Specify new column name")?;
             headers.push_field(new_column);
         }
 
         wtr.write_record(&headers)?;
-    }
-    else {
+    } else {
         headers = csv::StringRecord::new();
 
         for i in 0..headers_len {
@@ -154,7 +155,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut record = csv::StringRecord::new();
 
     while rdr.read_record(&mut record)? {
-
         // Initializing locals
         let mut row_data: Vec<&str> = Vec::with_capacity(headers_len);
 
@@ -166,10 +166,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
         py_row.call_method1("_update_underlying_data", (row_data,))?;
 
-        let result = py.eval(&args.arg_script, Some(&globals), Some(&locals)).map_err(|e| {
-            e.print_and_set_sys_last_vars(py);
-            "Evaluation of given expression failed with the above error!"
-        })?;
+        let result = py
+            .eval(&args.arg_script, Some(&globals), Some(&locals))
+            .map_err(|e| {
+                e.print_and_set_sys_last_vars(py);
+                "Evaluation of given expression failed with the above error!"
+            })?;
 
         if args.cmd_map {
             let result = helpers.call1("cast_as_string", (result,))?;
@@ -177,8 +179,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
             record.push_field(&value);
             wtr.write_record(&record)?;
-        }
-        else if args.cmd_filter {
+        } else if args.cmd_filter {
             let result = helpers.call1("cast_as_bool", (result,))?;
             let value: bool = result.extract()?;
 

@@ -3,21 +3,28 @@ use std::borrow::ToOwned;
 use workdir::Workdir;
 
 macro_rules! split_eq {
-    ($wrk:expr, $path:expr, $expected:expr) => (
+    ($wrk:expr, $path:expr, $expected:expr) => {
         // assert_eq!($wrk.path($path).into_os_string().into_string().unwrap(),
-                   // $expected.to_owned());
-        assert_eq!($wrk.from_str::<String>(&$wrk.path($path)),
-                   $expected.to_owned());
-    );
+        // $expected.to_owned());
+        assert_eq!(
+            $wrk.from_str::<String>(&$wrk.path($path)),
+            $expected.to_owned()
+        );
+    };
 }
 
 fn data(headers: bool) -> Vec<Vec<String>> {
     let mut rows = vec![
-        svec!["a", "b"], svec!["c", "d"],
-        svec!["e", "f"], svec!["g", "h"],
-        svec!["i", "j"], svec!["k", "l"],
+        svec!["a", "b"],
+        svec!["c", "d"],
+        svec!["e", "f"],
+        svec!["g", "h"],
+        svec!["i", "j"],
+        svec!["k", "l"],
     ];
-    if headers { rows.insert(0, svec!["h1", "h2"]); }
+    if headers {
+        rows.insert(0, svec!["h1", "h2"]);
+    }
     rows
 }
 
@@ -40,21 +47,33 @@ fn split() {
     cmd.args(&["--size", "2"]).arg(&wrk.path(".")).arg("in.csv");
     wrk.run(&mut cmd);
 
-    split_eq!(wrk, "0.csv", "\
+    split_eq!(
+        wrk,
+        "0.csv",
+        "\
 h1,h2
 a,b
 c,d
-");
-    split_eq!(wrk, "2.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "2.csv",
+        "\
 h1,h2
 e,f
 g,h
-");
-    split_eq!(wrk, "4.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "4.csv",
+        "\
 h1,h2
 i,j
 k,l
-");
+"
+    );
     assert!(!wrk.path("6.csv").exists());
 }
 
@@ -67,21 +86,33 @@ fn split_idx() {
     cmd.args(&["--size", "2"]).arg(&wrk.path(".")).arg("in.csv");
     wrk.run(&mut cmd);
 
-    split_eq!(wrk, "0.csv", "\
+    split_eq!(
+        wrk,
+        "0.csv",
+        "\
 h1,h2
 a,b
 c,d
-");
-    split_eq!(wrk, "2.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "2.csv",
+        "\
 h1,h2
 e,f
 g,h
-");
-    split_eq!(wrk, "4.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "4.csv",
+        "\
 h1,h2
 i,j
 k,l
-");
+"
+    );
     assert!(!wrk.path("6.csv").exists());
 }
 
@@ -92,22 +123,34 @@ fn split_no_headers() {
 
     let mut cmd = wrk.command("split");
     cmd.args(&["--no-headers", "--size", "2"])
-       .arg(&wrk.path("."))
-       .arg("in.csv");
+        .arg(&wrk.path("."))
+        .arg("in.csv");
     wrk.run(&mut cmd);
 
-    split_eq!(wrk, "0.csv", "\
+    split_eq!(
+        wrk,
+        "0.csv",
+        "\
 a,b
 c,d
-");
-    split_eq!(wrk, "2.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "2.csv",
+        "\
 e,f
 g,h
-");
-    split_eq!(wrk, "4.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "4.csv",
+        "\
 i,j
 k,l
-");
+"
+    );
 }
 
 #[test]
@@ -117,22 +160,34 @@ fn split_no_headers_idx() {
 
     let mut cmd = wrk.command("split");
     cmd.args(&["--no-headers", "--size", "2"])
-       .arg(&wrk.path("."))
-       .arg("in.csv");
+        .arg(&wrk.path("."))
+        .arg("in.csv");
     wrk.run(&mut cmd);
 
-    split_eq!(wrk, "0.csv", "\
+    split_eq!(
+        wrk,
+        "0.csv",
+        "\
 a,b
 c,d
-");
-    split_eq!(wrk, "2.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "2.csv",
+        "\
 e,f
 g,h
-");
-    split_eq!(wrk, "4.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "4.csv",
+        "\
 i,j
 k,l
-");
+"
+    );
 }
 
 #[test]
@@ -144,30 +199,54 @@ fn split_one() {
     cmd.args(&["--size", "1"]).arg(&wrk.path(".")).arg("in.csv");
     wrk.run(&mut cmd);
 
-    split_eq!(wrk, "0.csv", "\
+    split_eq!(
+        wrk,
+        "0.csv",
+        "\
 h1,h2
 a,b
-");
-    split_eq!(wrk, "1.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "1.csv",
+        "\
 h1,h2
 c,d
-");
-    split_eq!(wrk, "2.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "2.csv",
+        "\
 h1,h2
 e,f
-");
-    split_eq!(wrk, "3.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "3.csv",
+        "\
 h1,h2
 g,h
-");
-    split_eq!(wrk, "4.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "4.csv",
+        "\
 h1,h2
 i,j
-");
-    split_eq!(wrk, "5.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "5.csv",
+        "\
 h1,h2
 k,l
-");
+"
+    );
 }
 
 #[test]
@@ -179,30 +258,54 @@ fn split_one_idx() {
     cmd.args(&["--size", "1"]).arg(&wrk.path(".")).arg("in.csv");
     wrk.run(&mut cmd);
 
-    split_eq!(wrk, "0.csv", "\
+    split_eq!(
+        wrk,
+        "0.csv",
+        "\
 h1,h2
 a,b
-");
-    split_eq!(wrk, "1.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "1.csv",
+        "\
 h1,h2
 c,d
-");
-    split_eq!(wrk, "2.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "2.csv",
+        "\
 h1,h2
 e,f
-");
-    split_eq!(wrk, "3.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "3.csv",
+        "\
 h1,h2
 g,h
-");
-    split_eq!(wrk, "4.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "4.csv",
+        "\
 h1,h2
 i,j
-");
-    split_eq!(wrk, "5.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "5.csv",
+        "\
 h1,h2
 k,l
-");
+"
+    );
 }
 
 #[test]
@@ -214,18 +317,26 @@ fn split_uneven() {
     cmd.args(&["--size", "4"]).arg(&wrk.path(".")).arg("in.csv");
     wrk.run(&mut cmd);
 
-    split_eq!(wrk, "0.csv", "\
+    split_eq!(
+        wrk,
+        "0.csv",
+        "\
 h1,h2
 a,b
 c,d
 e,f
 g,h
-");
-    split_eq!(wrk, "4.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "4.csv",
+        "\
 h1,h2
 i,j
 k,l
-");
+"
+    );
 }
 
 #[test]
@@ -237,18 +348,26 @@ fn split_uneven_idx() {
     cmd.args(&["--size", "4"]).arg(&wrk.path(".")).arg("in.csv");
     wrk.run(&mut cmd);
 
-    split_eq!(wrk, "0.csv", "\
+    split_eq!(
+        wrk,
+        "0.csv",
+        "\
 h1,h2
 a,b
 c,d
 e,f
 g,h
-");
-    split_eq!(wrk, "4.csv", "\
+"
+    );
+    split_eq!(
+        wrk,
+        "4.csv",
+        "\
 h1,h2
 i,j
 k,l
-");
+"
+    );
 }
 
 #[test]
@@ -258,8 +377,9 @@ fn split_custom_filename() {
 
     let mut cmd = wrk.command("split");
     cmd.args(&["--size", "2"])
-       .args(&["--filename", "prefix-{}.csv"])
-       .arg(&wrk.path(".")).arg("in.csv");
+        .args(&["--filename", "prefix-{}.csv"])
+        .arg(&wrk.path("."))
+        .arg("in.csv");
     wrk.run(&mut cmd);
 
     assert!(wrk.path("prefix-0.csv").exists());

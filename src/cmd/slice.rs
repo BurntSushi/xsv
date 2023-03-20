@@ -1,10 +1,9 @@
 use std::fs;
 
-
-use CliResult;
 use config::{Config, Delimiter};
 use index::Indexed;
 use util;
+use CliResult;
 
 static USAGE: &'static str = "
 Returns the rows in the range specified (starting at 0, half-open interval).
@@ -74,10 +73,7 @@ impl Args {
         Ok(wtr.flush()?)
     }
 
-    fn with_index(
-        &self,
-        mut idx: Indexed<fs::File, fs::File>,
-    ) -> CliResult<()> {
+    fn with_index(&self, mut idx: Indexed<fs::File, fs::File>) -> CliResult<()> {
         let mut wtr = self.wconfig().writer()?;
         self.rconfig().write_headers(&mut *idx, &mut wtr)?;
 
@@ -95,7 +91,11 @@ impl Args {
 
     fn range(&self) -> Result<(usize, usize), String> {
         util::range(
-            self.flag_start, self.flag_end, self.flag_len, self.flag_index)
+            self.flag_start,
+            self.flag_end,
+            self.flag_len,
+            self.flag_index,
+        )
     }
 
     fn rconfig(&self) -> Config {

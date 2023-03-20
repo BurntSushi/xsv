@@ -2,10 +2,10 @@ use csv;
 use regex::bytes::RegexBuilder;
 use std::borrow::Cow;
 
-use CliResult;
 use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
+use CliResult;
 
 static USAGE: &'static str = "
 Replace occurrences of a pattern across a CSV file.
@@ -79,7 +79,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         record = record
             .into_iter()
             .enumerate()
-            .map(|(i, v)| if sel_indices.contains(&i) { pattern.replace_all(v, replacement) } else { Cow::Borrowed(v) })
+            .map(|(i, v)| {
+                if sel_indices.contains(&i) {
+                    pattern.replace_all(v, replacement)
+                } else {
+                    Cow::Borrowed(v)
+                }
+            })
             .collect();
 
         wtr.write_byte_record(&record)?;

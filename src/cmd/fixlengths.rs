@@ -2,9 +2,9 @@ use std::cmp;
 
 use csv;
 
-use CliResult;
 use config::{Config, Delimiter};
 use util;
+use CliResult;
 
 static USAGE: &'static str = "
 Transforms CSV data so that all records have the same length. The length is
@@ -56,8 +56,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
         None => {
             if config.is_std() {
-                return fail!("<stdin> cannot be used in this command. \
-                              Please specify a file path.");
+                return fail!(
+                    "<stdin> cannot be used in this command. \
+                              Please specify a file path."
+                );
             }
             let mut maxlen = 0usize;
             let mut rdr = config.reader()?;

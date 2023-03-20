@@ -1,9 +1,9 @@
 use csv;
 
-use CliResult;
-use config::{Delimiter, Config};
+use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
+use CliResult;
 
 static USAGE: &'static str = "
 Explodes a row into multiple ones by splitting a column value based on the
@@ -49,8 +49,11 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
-pub fn replace_column_value(record: &csv::StringRecord, column_index: usize, new_value: &String)
-                           -> csv::StringRecord {
+pub fn replace_column_value(
+    record: &csv::StringRecord,
+    column_index: usize,
+    new_value: &String,
+) -> csv::StringRecord {
     record
         .into_iter()
         .enumerate()

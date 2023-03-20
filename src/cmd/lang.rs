@@ -1,10 +1,10 @@
 use csv;
 use lingua::{Language, LanguageDetectorBuilder};
 
-use CliResult;
-use config::{Delimiter, Config};
+use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
+use CliResult;
 
 static USAGE: &'static str = r#"
 Add a column with the language detected in a given CSV column
@@ -51,7 +51,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let column_index = *sel.iter().next().unwrap();
 
     if !rconfig.no_headers {
-        headers.push_field(args.flag_new_column.map_or("lang".to_string(), |name| name).as_bytes());
+        headers.push_field(
+            args.flag_new_column
+                .map_or("lang".to_string(), |name| name)
+                .as_bytes(),
+        );
         wtr.write_byte_record(&headers)?;
     }
 

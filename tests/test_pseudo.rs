@@ -3,15 +3,18 @@ use workdir::Workdir;
 #[test]
 fn pseudo() {
     let wrk = Workdir::new("pseudo");
-    wrk.create("data.csv", vec![
-        svec!["name", "colors"],
-        svec!["Mary", "yellow"],
-        svec!["John", "blue"],
-        svec!["Mary", "purple"],
-        svec!["Sue", "orange"],
-        svec!["John", "magenta"],
-        svec!["Mary", "cyan"],
-    ]);
+    wrk.create(
+        "data.csv",
+        vec![
+            svec!["name", "colors"],
+            svec!["Mary", "yellow"],
+            svec!["John", "blue"],
+            svec!["Mary", "purple"],
+            svec!["Sue", "orange"],
+            svec!["John", "magenta"],
+            svec!["Mary", "cyan"],
+        ],
+    );
     let mut cmd = wrk.command("pseudo");
     cmd.arg("name").arg("data.csv");
 
@@ -31,14 +34,17 @@ fn pseudo() {
 #[test]
 fn pseudo_no_headers() {
     let wrk = Workdir::new("pseudo");
-    wrk.create("data.csv", vec![
-        svec!["Mary", "yellow"],
-        svec!["John", "blue"],
-        svec!["Mary", "purple"],
-        svec!["Sue", "orange"],
-        svec!["John", "magenta"],
-        svec!["Mary", "cyan"],
-    ]);
+    wrk.create(
+        "data.csv",
+        vec![
+            svec!["Mary", "yellow"],
+            svec!["John", "blue"],
+            svec!["Mary", "purple"],
+            svec!["Sue", "orange"],
+            svec!["John", "magenta"],
+            svec!["Mary", "cyan"],
+        ],
+    );
     let mut cmd = wrk.command("pseudo");
     cmd.arg("1").arg("--no-headers").arg("data.csv");
 

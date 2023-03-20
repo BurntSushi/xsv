@@ -1,6 +1,6 @@
 use std::fs;
 
-use filetime::{FileTime, set_file_times};
+use filetime::{set_file_times, FileTime};
 
 use workdir::Workdir;
 
@@ -14,7 +14,8 @@ fn index_outdated() {
         &wrk.path("in.csv"),
         future_time(FileTime::from_last_modification_time(&md)),
         future_time(FileTime::from_last_access_time(&md)),
-    ).unwrap();
+    )
+    .unwrap();
 
     let mut cmd = wrk.command("count");
     cmd.arg("--no-headers").arg("in.csv");

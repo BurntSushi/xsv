@@ -1,13 +1,13 @@
 use csv;
 
-use std::io::prelude::*;
 use std::fs::File;
+use std::io::prelude::*;
 
-use CliResult;
-use CliError;
 use config::{Config, Delimiter};
-use hlua::{Lua, LuaTable, LuaError, AnyLuaValue};
+use hlua::{AnyLuaValue, Lua, LuaError, LuaTable};
 use util;
+use CliError;
+use CliResult;
 
 // TODO: options for boolean return coercion
 
@@ -113,9 +113,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut headers = rdr.headers()?.clone();
 
     if !rconfig.no_headers {
-
         if !args.cmd_filter {
-            let new_column = args.arg_new_column.as_ref().ok_or("Specify new column name")?;
+            let new_column = args
+                .arg_new_column
+                .as_ref()
+                .ok_or("Specify new column name")?;
             headers.push_field(new_column);
         }
 
@@ -132,31 +134,26 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         let mut script_text = String::new();
         file.read_to_string(&mut script_text)?;
         script_text
-    }
-    else {
+    } else {
         args.arg_script
     };
 
-    let mut lua_program =
-        if args.flag_exec {
-            String::new()
-        }
-        else {
-            String::from("return ")
-        };
+    let mut lua_program = if args.flag_exec {
+        String::new()
+    } else {
+        String::from("return ")
+    };
 
     lua_program.push_str(&lua_script);
 
     let mut record = csv::StringRecord::new();
 
     while rdr.read_record(&mut record)? {
-
         // Updating col
         {
             let mut col: LuaTable<_> = lua.get("col").unwrap();
 
             for (i, v) in record.iter().enumerate() {
-
                 // TODO: drop this `as`
                 col.set((i as u16) + 1, v);
             }
@@ -184,13 +181,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             match computed_value {
                 AnyLuaValue::LuaString(string) => {
                     record.push_field(&string);
-                },
+                }
                 AnyLuaValue::LuaNumber(number) => {
                     record.push_field(&number.to_string());
-                },
+                }
                 AnyLuaValue::LuaBoolean(boolean) => {
                     record.push_field(if boolean { "true" } else { "false" });
-                },
+                }
                 AnyLuaValue::LuaNil => {
                     record.push_field("");
                 }
@@ -200,15 +197,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             }
 
             wtr.write_record(&record)?;
-        }
-
-        else if args.cmd_filter {
+        } else if args.cmd_filter {
             let must_keep_line = match computed_value {
                 AnyLuaValue::LuaString(string) => !string.is_empty(),
                 AnyLuaValue::LuaNumber(_) => true,
                 AnyLuaValue::LuaBoolean(boolean) => boolean,
                 AnyLuaValue::LuaNil => false,
-                _ => true
+                _ => true,
             };
 
             if must_keep_line {

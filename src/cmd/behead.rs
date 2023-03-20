@@ -1,8 +1,8 @@
 use csv;
 
-use CliResult;
-use config::{Delimiter, Config};
+use config::{Config, Delimiter};
 use util;
+use CliResult;
 
 static USAGE: &'static str = "
 Drop a CSV file's header.

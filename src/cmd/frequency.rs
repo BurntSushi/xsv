@@ -1,20 +1,20 @@
+use std::cmp;
 use std::fs;
 use std::io;
-use std::cmp;
 
 use channel;
-use csv;
 use colored::Colorize;
-use stats::{Frequencies, merge_all};
+use csv;
+use stats::{merge_all, Frequencies};
 use threadpool::ThreadPool;
-use unicode_width::UnicodeWidthStr;
 use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
-use CliResult;
 use config::{Config, Delimiter};
 use index::Indexed;
 use select::{SelectColumns, Selection};
 use util;
+use CliResult;
 
 static USAGE: &'static str = "
 Compute a frequency table on CSV data.
@@ -90,7 +90,10 @@ struct Args {
 }
 
 #[derive(Clone, Deserialize, PartialEq)]
-enum DomainMax { Max, Total }
+enum DomainMax {
+    Max,
+    Total,
+}
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
@@ -124,7 +127,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         };
 
         match bar.update_sizes() {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => return fail!(e),
         };
 
@@ -136,35 +139,43 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         for (i, (header, ftab)) in head_ftables.enumerate() {
             let vec_ftables = args_clone.counts(&ftab);
             if vec_ftables.len() == 0 {
-                let error_message = format!("The histogram for the column \"{}\" is empty.", String::from_utf8(header.to_vec()).unwrap());
+                let error_message = format!(
+                    "The histogram for the column \"{}\" is empty.",
+                    String::from_utf8(header.to_vec()).unwrap()
+                );
                 println!("{}\n", error_message.yellow().bold());
                 continue;
             }
 
-            let header_file =
-                if rconfig.no_headers {
-                    (i+1).to_string().into_bytes()
-                } else {
-                    header.to_vec()
-                };
-            bar.header = cut_properly(String::from_utf8(header_file.clone()).unwrap(), bar.size_labels);
+            let header_file = if rconfig.no_headers {
+                (i + 1).to_string().into_bytes()
+            } else {
+                header.to_vec()
+            };
+            bar.header = cut_properly(
+                String::from_utf8(header_file.clone()).unwrap(),
+                bar.size_labels,
+            );
             bar.print_title();
 
-            bar.longest_bar =
-                if domain_max == DomainMax::Max {
-                    if args.flag_asc {
-                        vec_ftables[vec_ftables.len() - 1].1 as usize
-                    } else {
-                        vec_ftables[0].1 as usize
-                    }
-                } else  {
-                    lines_total as usize
-                };
+            bar.longest_bar = if domain_max == DomainMax::Max {
+                if args.flag_asc {
+                    vec_ftables[vec_ftables.len() - 1].1 as usize
+                } else {
+                    vec_ftables[0].1 as usize
+                }
+            } else {
+                lines_total as usize
+            };
 
             let mut lines_done = 0;
-    
+
             for (j, (value, count)) in vec_ftables.into_iter().enumerate() {
-                bar.print_bar(cut_properly(String::from_utf8(value.clone()).unwrap(), bar.size_labels), count, j);
+                bar.print_bar(
+                    cut_properly(String::from_utf8(value.clone()).unwrap(), bar.size_labels),
+                    count,
+                    j,
+                );
                 lines_done += count;
 
                 if !args.flag_output.is_none() {
@@ -175,14 +186,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             }
 
             let nb_categories_total = ftab.cardinality();
-            let nb_categories_done =
-                if args.flag_limit != 0 {
-                    cmp::min(args.flag_limit as u64, nb_categories_total)
-                } else {
-                    nb_categories_total
-                };
-            let resume =
-                " ".repeat(bar.size_labels + 1)
+            let nb_categories_done = if args.flag_limit != 0 {
+                cmp::min(args.flag_limit as u64, nb_categories_total)
+            } else {
+                nb_categories_total
+            };
+            let resume = " ".repeat(bar.size_labels + 1)
                 + &"Histogram for ".to_owned()
                 + &format_number(lines_done)
                 + "/"
@@ -198,12 +207,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         wtr.write_record(vec!["field", "value", "count"])?;
         let head_ftables = headers.into_iter().zip(tables.into_iter());
         for (i, (header, ftab)) in head_ftables.enumerate() {
-            let header =
-                if rconfig.no_headers {
-                    (i+1).to_string().into_bytes()
-                } else {
-                    header.to_vec()
-                };
+            let header = if rconfig.no_headers {
+                (i + 1).to_string().into_bytes()
+            } else {
+                header.to_vec()
+            };
             for (value, count) in args_clone.counts(&ftab).into_iter() {
                 let count = count.to_string();
                 let row = vec![&*header, &*value, count.as_bytes()];
@@ -236,13 +244,16 @@ impl Args {
         if self.flag_limit > 0 {
             counts = counts.into_iter().take(self.flag_limit).collect();
         }
-        counts.into_iter().map(|(bs, c)| {
-            if b"" == &**bs {
-                (b"(NULL)"[..].to_vec(), c)
-            } else {
-                (bs.clone(), c)
-            }
-        }).collect()
+        counts
+            .into_iter()
+            .map(|(bs, c)| {
+                if b"" == &**bs {
+                    (b"(NULL)"[..].to_vec(), c)
+                } else {
+                    (bs.clone(), c)
+                }
+            })
+            .collect()
     }
 
     fn sequential_ftables(&self) -> CliResult<(Headers, FTables, u64)> {
@@ -252,8 +263,10 @@ impl Args {
         Ok((headers, ftables, count))
     }
 
-    fn parallel_ftables(&self, idx: &mut Indexed<fs::File, fs::File>)
-                       -> CliResult<(Headers, FTables, u64)> {
+    fn parallel_ftables(
+        &self,
+        idx: &mut Indexed<fs::File, fs::File>,
+    ) -> CliResult<(Headers, FTables, u64)> {
         let mut rdr = self.rconfig().reader()?;
         let (headers, sel) = self.sel_headers(&mut rdr)?;
 
@@ -281,11 +294,12 @@ impl Args {
     }
 
     fn ftables<I>(&self, sel: &Selection, it: I) -> CliResult<(FTables, u64)>
-            where I: Iterator<Item=csv::Result<csv::ByteRecord>> {
+    where
+        I: Iterator<Item = csv::Result<csv::ByteRecord>>,
+    {
         let null = &b""[..].to_vec();
         let nsel = sel.normal();
-        let mut tabs: Vec<_> =
-            (0..nsel.len()).map(|_| Frequencies::new()).collect();
+        let mut tabs: Vec<_> = (0..nsel.len()).map(|_| Frequencies::new()).collect();
         let mut count = 0;
         for row in it {
             let row = row?;
@@ -304,15 +318,21 @@ impl Args {
         Ok((tabs, count))
     }
 
-    fn sel_headers<R: io::Read>(&self, rdr: &mut csv::Reader<R>)
-                  -> CliResult<(csv::ByteRecord, Selection)> {
+    fn sel_headers<R: io::Read>(
+        &self,
+        rdr: &mut csv::Reader<R>,
+    ) -> CliResult<(csv::ByteRecord, Selection)> {
         let headers = rdr.byte_headers()?;
         let sel = self.rconfig().selection(headers)?;
         Ok((sel.select(headers).map(|h| h.to_vec()).collect(), sel))
     }
 
     fn njobs(&self) -> usize {
-        if self.flag_jobs == 0 { util::num_cpus() } else { self.flag_jobs }
+        if self.flag_jobs == 0 {
+            util::num_cpus()
+        } else {
+            self.flag_jobs
+        }
     }
 }
 
@@ -351,7 +371,8 @@ fn cut_properly(value: String, size_labels: usize) -> String {
     let mut value_str_len = UnicodeWidthStr::width(&value[..]);
     if value_str_len >= size_labels {
         let moved_value = value.clone();
-        let value_chars = UnicodeSegmentation::graphemes(&moved_value[..], true).collect::<Vec<&str>>();
+        let value_chars =
+            UnicodeSegmentation::graphemes(&moved_value[..], true).collect::<Vec<&str>>();
         let mut it = cmp::min(size_labels - 1, value_chars.len());
         while value_str_len >= size_labels {
             value = value_chars[0..it].join("");
@@ -375,7 +396,6 @@ struct Bar {
 }
 
 impl Bar {
-
     fn update_sizes(&mut self) -> CliResult<()> {
         if self.screen_size == 0 {
             if let Some(size) = termsize::get() {
@@ -395,7 +415,9 @@ impl Bar {
         }
 
         if self.screen_size <= (self.legend_str_len + 2) {
-            return fail!(format!("Too many lines in the input, we are not able to output the histogram."));
+            return fail!(format!(
+                "Too many lines in the input, we are not able to output the histogram."
+            ));
         }
 
         self.size_bar_cols = (self.screen_size - (self.legend_str_len + 1)) / 3 * 2;
@@ -408,20 +430,28 @@ impl Bar {
         let mut legend = "nb_lines | %     ".to_string();
         legend = " ".repeat(self.legend_str_len - 17) + &legend;
 
-        self.header = " ".repeat(self.size_labels - UnicodeWidthStr::width(&self.header[..])) + &self.header + &" ".repeat(self.size_bar_cols);
-        println!("{}\u{200E}  {}", self.header.yellow().bold(), legend.yellow().bold());
+        self.header = " ".repeat(self.size_labels - UnicodeWidthStr::width(&self.header[..]))
+            + &self.header
+            + &" ".repeat(self.size_bar_cols);
+        println!(
+            "{}\u{200E}  {}",
+            self.header.yellow().bold(),
+            legend.yellow().bold()
+        );
     }
 
     fn print_bar(&mut self, value: String, count: u64, j: usize) {
         let square_chars = vec!["", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"];
 
-        let value = " ".repeat(self.size_labels - UnicodeWidthStr::width(&value[..])) + &value.to_string();
+        let value =
+            " ".repeat(self.size_labels - UnicodeWidthStr::width(&value[..])) + &value.to_string();
         let mut count_str = format_number(count);
-        count_str = (" ".repeat(cmp::max(self.legend_str_len - 9, 8) - count_str.chars().count())) + &count_str;
+        count_str = (" ".repeat(cmp::max(self.legend_str_len - 9, 8) - count_str.chars().count()))
+            + &count_str;
 
         let mut nb_square = count as usize * self.size_bar_cols / self.longest_bar;
         let mut bar_str = square_chars[8].repeat(nb_square);
-        
+
         let count_float = count as f64 * self.size_bar_cols as f64 / self.longest_bar as f64;
         let remainder = ((count_float - nb_square as f64) * 8.0) as usize;
         bar_str += square_chars[remainder % 8];
@@ -430,12 +460,11 @@ impl Bar {
         }
         let empty = ".".repeat(self.size_bar_cols - nb_square as usize);
 
-        let colored_bar_str =
-            if j % 2 == 0 {
-                bar_str.dimmed().white()
-            } else {
-                bar_str.white()
-            };
+        let colored_bar_str = if j % 2 == 0 {
+            bar_str.dimmed().white()
+        } else {
+            bar_str.white()
+        };
 
         println!(
             "{}\u{200E} {}{} {} | {}",

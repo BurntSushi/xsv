@@ -1,15 +1,15 @@
 use csv;
-use regex::bytes::{Regex};
+use regex::bytes::Regex;
 use std::env;
-use std::process::{Command, Stdio};
-use std::io::{BufReader};
 use std::ffi::OsStr;
+use std::io::BufReader;
 use std::os::unix::ffi::OsStrExt;
+use std::process::{Command, Stdio};
 
-use CliResult;
-use config::{Delimiter, Config};
+use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
+use CliResult;
 
 static USAGE: &'static str = "
 Execute a bash command once per line in given CSV file.
@@ -78,8 +78,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     while rdr.read_byte_record(&mut record)? {
         let current_value = &record[column_index];
 
-        let templated_command = template_pattern
-            .replace_all(&args.arg_command.as_bytes(), current_value);
+        let templated_command =
+            template_pattern.replace_all(&args.arg_command.as_bytes(), current_value);
 
         let command = OsStr::from_bytes(&templated_command);
 
@@ -98,8 +98,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 .unwrap();
 
             cmd.wait().unwrap();
-        }
-        else {
+        } else {
             let mut cmd = Command::new(shell)
                 .arg("-c")
                 .arg(command)
@@ -116,7 +115,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 let mut stdout_rdr = csv::ReaderBuilder::new()
                     .delimiter(match &args.flag_delimiter {
                         Some(delimiter) => delimiter.as_byte(),
-                        None => b','
+                        None => b',',
                     })
                     .has_headers(true)
                     .from_reader(stdout_reader);

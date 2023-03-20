@@ -1,10 +1,10 @@
 use csv;
 use uuid::Uuid;
 
-use CliResult;
+use config::{Config, Delimiter};
 use select::SelectColumns;
-use config::{Delimiter, Config};
 use util;
+use CliResult;
 
 static USAGE: &'static str = r#"
 Add a new column enumerating the lines of a CSV file. This can be useful to keep
@@ -89,19 +89,15 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     if !rconfig.no_headers {
         if let Some(column_name) = &args.flag_new_column {
             headers.push_field(column_name.as_bytes());
-        }
-        else if args.flag_uuid {
+        } else if args.flag_uuid {
             headers.push_field(b"uuid");
-        }
-        else if let Some(_) = &args.flag_constant {
+        } else if let Some(_) = &args.flag_constant {
             headers.push_field(b"constant");
-        }
-        else if copy_operation {
+        } else if copy_operation {
             let current_header = String::from_utf8(headers[copy_index].to_vec())
                 .expect("Could not parse cell as utf-8!");
             headers.push_field(format!("{}_copy", current_header).as_bytes());
-        }
-        else {
+        } else {
             headers.push_field(b"index");
         };
 
@@ -114,15 +110,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     while rdr.read_byte_record(&mut record)? {
         if let Some(constant_value) = &args.flag_constant {
             record.push_field(constant_value.as_bytes());
-        }
-        else if copy_operation {
+        } else if copy_operation {
             record.push_field(&record[copy_index].to_vec());
-        }
-        else if args.flag_uuid {
+        } else if args.flag_uuid {
             let id = Uuid::new_v4();
-            record.push_field(id.to_hyphenated().encode_lower(&mut Uuid::encode_buffer()).as_bytes());
-        }
-        else {
+            record.push_field(
+                id.to_hyphenated()
+                    .encode_lower(&mut Uuid::encode_buffer())
+                    .as_bytes(),
+            );
+        } else {
             record.push_field(counter.to_string().as_bytes());
             counter += 1;
         }

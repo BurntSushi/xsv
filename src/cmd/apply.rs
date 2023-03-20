@@ -1,10 +1,10 @@
 use csv;
 use regex::Regex;
 
-use CliResult;
-use config::{Delimiter, Config};
+use config::{Config, Delimiter};
 use select::SelectColumns;
 use util;
+use CliResult;
 
 static USAGE: &'static str = "
 Apply a series of unary functions to a given CSV column. This can be used to
@@ -51,15 +51,8 @@ Common options:
                              Must be a single character. (default: ,)
 ";
 
-static OPERATIONS: &'static [&'static str] = &[
-    "len",
-    "lower",
-    "upper",
-    "squeeze",
-    "trim",
-    "rtrim",
-    "ltrim"
-];
+static OPERATIONS: &'static [&'static str] =
+    &["len", "lower", "upper", "squeeze", "trim", "rtrim", "ltrim"];
 
 #[derive(Deserialize)]
 struct Args {
@@ -73,8 +66,11 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
-pub fn replace_column_value(record: &csv::StringRecord, column_index: usize, new_value: &String)
-                           -> csv::StringRecord {
+pub fn replace_column_value(
+    record: &csv::StringRecord,
+    column_index: usize,
+    new_value: &String,
+) -> csv::StringRecord {
     record
         .into_iter()
         .enumerate()
@@ -102,7 +98,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     for op in &operations {
         if !OPERATIONS.contains(&op) {
-            return fail!(format!("Unknown \"{}\" operations found in \"{}\"", op, operations.join(",")));
+            return fail!(format!(
+                "Unknown \"{}\" operations found in \"{}\"",
+                op,
+                operations.join(",")
+            ));
         }
     }
 
@@ -111,7 +111,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 
     if !rconfig.no_headers {
-
         if let Some(new_column) = &args.flag_new_column {
             headers.push_field(new_column);
         }
@@ -130,25 +129,25 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             match op.as_ref() {
                 "len" => {
                     cell = cell.len().to_string();
-                },
+                }
                 "lower" => {
                     cell = cell.to_lowercase();
-                },
+                }
                 "upper" => {
                     cell = cell.to_uppercase();
-                },
+                }
                 "squeeze" => {
                     cell = squeezer.replace_all(&cell, " ").to_string();
-                },
+                }
                 "trim" => {
                     cell = String::from(cell.trim());
-                },
+                }
                 "ltrim" => {
                     cell = String::from(cell.trim_start());
-                },
+                }
                 "rtrim" => {
                     cell = String::from(cell.trim_end());
-                },
+                }
                 _ => {}
             }
         }

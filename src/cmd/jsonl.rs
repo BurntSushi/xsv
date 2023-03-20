@@ -1,11 +1,11 @@
 use csv;
+use serde_json::Value;
 use std::fs;
 use std::io::{self, BufRead, BufReader};
-use serde_json::Value;
 
-use CliResult;
-use config::{Config};
+use config::Config;
 use util;
+use CliResult;
 
 static USAGE: &'static str = "
 Converts a newline-delimited JSON file (.ndjson or .jsonl, typically) into
@@ -37,17 +37,13 @@ fn recurse_to_infer_headers(value: &Value, headers: &mut Vec<Vec<String>>, path:
     match value {
         Value::Object(map) => {
             for (key, value) in map.iter() {
-
                 match value {
-                    Value::Null |
-                    Value::Bool(_) |
-                    Value::Number(_) |
-                    Value::String(_) => {
+                    Value::Null | Value::Bool(_) | Value::Number(_) | Value::String(_) => {
                         let mut full_path = path.clone();
                         full_path.push(key.to_string());
 
                         headers.push(full_path);
-                    },
+                    }
                     Value::Object(_) => {
                         let mut new_path = path.clone();
                         new_path.push(key.to_string());
@@ -57,7 +53,7 @@ fn recurse_to_infer_headers(value: &Value, headers: &mut Vec<Vec<String>>, path:
                     _ => {}
                 }
             }
-        },
+        }
         _ => {
             headers.push(vec![String::from("value")]);
         }
@@ -98,13 +94,18 @@ fn json_line_to_csv_record(value: &Value, headers: &Vec<Vec<String>>) -> csv::St
         if let Some(value) = value {
             record.push_field(&match value {
                 Value::Null => String::new(),
-                Value::Bool(v) => if v { String::from("true") } else { String::from("false") },
+                Value::Bool(v) => {
+                    if v {
+                        String::from("true")
+                    } else {
+                        String::from("false")
+                    }
+                }
                 Value::Number(v) => v.to_string(),
                 Value::String(v) => v,
-                _ => String::new()
+                _ => String::new(),
             });
-        }
-        else {
+        } else {
             record.push_field("");
         }
     }
@@ -118,21 +119,21 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let rdr: Box<dyn BufRead> = match args.arg_input {
         None => Box::new(BufReader::new(io::stdin())),
-        Some(p) => Box::new(BufReader::new(fs::File::open(p)?))
+        Some(p) => Box::new(BufReader::new(fs::File::open(p)?)),
     };
 
     let mut headers: Vec<Vec<String>> = Vec::new();
     let mut headers_emitted: bool = false;
 
     for line in rdr.lines() {
-        let value: Value = serde_json::from_str(&line?)
-            .expect("Could not parse line as JSON!");
+        let value: Value = serde_json::from_str(&line?).expect("Could not parse line as JSON!");
 
         if !headers_emitted {
             if let Some(h) = infer_headers(&value) {
                 headers = h;
 
-                let headers_formatted = headers.iter().map(|v| v.join(".")).collect::<Vec<String>>();
+                let headers_formatted =
+                    headers.iter().map(|v| v.join(".")).collect::<Vec<String>>();
                 let headers_record = csv::StringRecord::from(headers_formatted);
                 wtr.write_record(&headers_record)?;
             }

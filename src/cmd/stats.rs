@@ -4,23 +4,23 @@ use std::default::Default;
 use std::fmt;
 use std::fs;
 use std::io;
-use std::iter::{FromIterator, repeat};
+use std::iter::{repeat, FromIterator};
 use std::str::{self, FromStr};
 
 use channel;
 use colored::Colorize;
 use csv;
-use stats::{Commute, OnlineStats, MinMax, Unsorted, merge_all};
+use stats::{merge_all, Commute, MinMax, OnlineStats, Unsorted};
 use threadpool::ThreadPool;
 use unicode_width::UnicodeWidthStr;
 
-use CliResult;
 use config::{Config, Delimiter};
 use index::Indexed;
 use select::{SelectColumns, Selection};
 use util;
+use CliResult;
 
-use self::FieldType::{TUnknown, TNull, TUnicode, TFloat, TInteger};
+use self::FieldType::{TFloat, TInteger, TNull, TUnicode, TUnknown};
 
 static USAGE: &'static str = "
 Computes basic statistics on CSV data.
@@ -112,14 +112,14 @@ struct Args {
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
 
-    if !args.flag_pretty && (
-        !args.flag_min.is_none() ||
-        !args.flag_max.is_none() ||
-        !args.flag_nans.is_none() ||
-        !args.flag_bins.is_none() ||
-        !args.flag_precision.is_none() ||
-        !args.flag_screen_size.is_none()
-    ) {
+    if !args.flag_pretty
+        && (!args.flag_min.is_none()
+            || !args.flag_max.is_none()
+            || !args.flag_nans.is_none()
+            || !args.flag_bins.is_none()
+            || !args.flag_precision.is_none()
+            || !args.flag_screen_size.is_none())
+    {
         return fail!("`--screen-size`, `--precision`, `--bins`, `--nans`, `--max` and `--min` can only be used with `--pretty`");
     }
 
@@ -141,12 +141,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         wtr.write_record(&args.stat_headers())?;
         let fields = headers.iter().zip(stats.into_iter());
         for (i, (header, stat)) in fields.enumerate() {
-            let header =
-                if args.flag_no_headers {
-                    i.to_string().into_bytes()
-                } else {
-                    header.to_vec()
-                };
+            let header = if args.flag_no_headers {
+                i.to_string().into_bytes()
+            } else {
+                header.to_vec()
+            };
             let stat = stat.iter().map(|f| f.as_bytes());
             wtr.write_record(vec![&*header].into_iter().chain(stat))?;
         }
@@ -169,14 +168,17 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let stats_record = args.stats_to_records(stats.clone());
     wtr.write_record(&args.stat_headers())?;
-    let fields = headers.iter().zip(stats_record.into_iter()).zip(stats.into_iter()).map(|((x, y), z)| (x, y, z));
+    let fields = headers
+        .iter()
+        .zip(stats_record.into_iter())
+        .zip(stats.into_iter())
+        .map(|((x, y), z)| (x, y, z));
     for (i, (header, stat_record, stat)) in fields.enumerate() {
-        let header_record =
-            if args.flag_no_headers {
-                i.to_string().into_bytes()
-            } else {
-                header.to_vec()
-            };
+        let header_record = if args.flag_no_headers {
+            i.to_string().into_bytes()
+        } else {
+            header.to_vec()
+        };
         let stat_record = stat_record.iter().map(|f| f.as_bytes());
         wtr.write_record(vec![&*header_record].into_iter().chain(stat_record))?;
 
@@ -227,15 +229,15 @@ impl Args {
     }
 
     fn stats_to_records(&self, stats: Vec<Stats>) -> Vec<csv::StringRecord> {
-        let mut records: Vec<_> = repeat(csv::StringRecord::new())
-            .take(stats.len())
-            .collect();
+        let mut records: Vec<_> = repeat(csv::StringRecord::new()).take(stats.len()).collect();
         let pool = ThreadPool::new(self.njobs());
         let mut results = vec![];
         for mut stat in stats.into_iter() {
             let (send, recv) = channel::bounded(0);
             results.push(recv);
-            pool.execute(move || { send.send(stat.to_record()); });
+            pool.execute(move || {
+                send.send(stat.to_record());
+            });
         }
         for (i, recv) in results.into_iter().enumerate() {
             records[i] = recv.recv().unwrap();
@@ -244,7 +246,9 @@ impl Args {
     }
 
     fn compute<I>(&self, sel: &Selection, it: I) -> CliResult<Vec<Stats>>
-            where I: Iterator<Item=csv::Result<csv::ByteRecord>> {
+    where
+        I: Iterator<Item = csv::Result<csv::ByteRecord>>,
+    {
         let mut stats = self.new_stats(sel.len());
         for row in it {
             let row = row?;
@@ -272,7 +276,11 @@ impl Args {
     }
 
     fn njobs(&self) -> usize {
-        if self.flag_jobs == 0 { util::num_cpus() } else { self.flag_jobs }
+        if self.flag_jobs == 0 {
+            util::num_cpus()
+        } else {
+            self.flag_jobs
+        }
     }
 
     fn new_stats(&self, record_len: usize) -> Vec<Stats> {
@@ -285,22 +293,42 @@ impl Args {
             median: self.flag_median || self.flag_everything,
             histogram: self.flag_pretty,
             mode: self.flag_mode || self.flag_everything,
-        })).take(record_len).collect()
+        }))
+        .take(record_len)
+        .collect()
     }
 
     fn stat_headers(&self) -> csv::StringRecord {
         let mut fields = vec![
-            "field", "type", "sum", "min", "max", "min_length", "max_length",
-            "mean", "stddev",
+            "field",
+            "type",
+            "sum",
+            "min",
+            "max",
+            "min_length",
+            "max_length",
+            "mean",
+            "stddev",
         ];
         let all = self.flag_everything;
-        if self.flag_median || all { fields.push("median"); }
-        if self.flag_mode || all { fields.push("mode"); }
-        if self.flag_cardinality || all { fields.push("cardinality"); }
+        if self.flag_median || all {
+            fields.push("median");
+        }
+        if self.flag_mode || all {
+            fields.push("mode");
+        }
+        if self.flag_cardinality || all {
+            fields.push("cardinality");
+        }
         csv::StringRecord::from(fields)
     }
 
-    fn bins_construction(&self, min: f64, max: f64, nb_bins: u64) -> CliResult<(Vec<(f64, f64, u64)>, f64)> {
+    fn bins_construction(
+        &self,
+        min: f64,
+        max: f64,
+        nb_bins: u64,
+    ) -> CliResult<(Vec<(f64, f64, u64)>, f64)> {
         let mut bins: Vec<(f64, f64, u64)> = Vec::new();
         let size_interval = ((max - min) / nb_bins as f64).abs();
         let mut min_interval = min;
@@ -328,7 +356,7 @@ impl Args {
         let screen_size = self.flag_screen_size.unwrap_or(0);
         let precision = self.flag_precision.unwrap_or(2);
         if precision >= 20 {
-            return fail!("precision must be greater than 20")
+            return fail!("precision must be greater than 20");
         }
         let nb_bins = self.flag_bins.unwrap_or(10);
         let nans = self.flag_nans.unwrap_or(false);
@@ -345,12 +373,15 @@ impl Args {
         };
 
         let (histo, nb_int_float, nb_nans, nb_nulls) = match stat.histogram {
-            Some(h) => { (h.values, h.nb_int_float, h.nb_nans, h.nb_nulls) },
+            Some(h) => (h.values, h.nb_int_float, h.nb_nans, h.nb_nulls),
             None => {
-                let error_mess = format!("There are only NULLs, Unknown or Unicode values in the \"{}\" column.", bar.header);
+                let error_mess = format!(
+                    "There are only NULLs, Unknown or Unicode values in the \"{}\" column.",
+                    bar.header
+                );
                 println!("{}\n", error_mess.yellow().bold());
                 return Ok(());
-            },
+            }
         };
         bar.lines_total = nb_int_float;
         if self.flag_nulls {
@@ -366,7 +397,7 @@ impl Args {
                 let error_mess = format!("There are {} NULLs, and {} Unknown or Unicode values in the \"{}\" column ({} lines).", nb_nulls, nb_nans, bar.header, format_number(nb_int_float + nb_nans + nb_nulls));
                 println!("{}\n", error_mess.yellow().bold());
                 return Ok(());
-            },
+            }
             (Some(min), _) => min,
             (None, Some(min)) => *min,
         };
@@ -375,7 +406,7 @@ impl Args {
                 let error_mess = format!("There are {} NULLs, and {} Unknown or Unicode values in the \"{}\" column ({} lines).", nb_nulls, nb_nans, bar.header, format_number(nb_int_float + nb_nans + nb_nulls));
                 println!("{}\n", error_mess.yellow().bold());
                 return Ok(());
-            },
+            }
             (Some(max), _) => max,
             (None, Some(max)) => *max,
         };
@@ -383,25 +414,33 @@ impl Args {
             return fail!("Can't output the histograms because min is greater than max");
         }
 
-        let max_label_len = cmp::max(cmp::max(cmp::max(
-            format_number_float(min, precision, false).chars().count(),
-            format_number_float(max, precision, true).chars().count()
-        ), UnicodeWidthStr::width(&header[..])), 5);
+        let max_label_len = cmp::max(
+            cmp::max(
+                cmp::max(
+                    format_number_float(min, precision, false).chars().count(),
+                    format_number_float(max, precision, true).chars().count(),
+                ),
+                UnicodeWidthStr::width(&header[..]),
+            ),
+            5,
+        );
 
         match bar.update_sizes(max_label_len) {
-            Ok(1) => { return Ok(()); }
+            Ok(1) => {
+                return Ok(());
+            }
             Ok(_) => {}
             Err(e) => return fail!(e),
         };
 
         let (mut bins, size_interval) = match self.bins_construction(min, max, nb_bins) {
-            Ok((bins, size_interval)) => { (bins, size_interval) },
+            Ok((bins, size_interval)) => (bins, size_interval),
             Err(e) => return fail!(e),
         };
 
         let mut lines_done = 0;
         for value in histo.into_iter() {
-            if value > max || value < min{
+            if value > max || value < min {
                 continue;
             }
             let temp = (value - min) / size_interval;
@@ -437,8 +476,7 @@ impl Args {
             bar.print_bar("NULLs".to_string(), nb_nulls as u64, j);
         }
 
-        let resume =
-            " ".repeat(bar.size_labels + 1)
+        let resume = " ".repeat(bar.size_labels + 1)
             + &"Distribution for ".to_owned()
             + &format_number(lines_done)
             + "/"
@@ -502,20 +540,28 @@ impl Stats {
     fn new(which: WhichStats) -> Stats {
         let (mut sum, mut minmax, mut online, mut mode, mut median, mut histogram) =
             (None, None, None, None, None, None);
-        if which.sum { sum = Some(Default::default()); }
-        if which.range { minmax = Some(Default::default()); }
-        if which.dist { online = Some(Default::default()); }
-        if which.mode || which.cardinality { mode = Some(Default::default()); }
-        if which.median { median = Some(Default::default()); }
+        if which.sum {
+            sum = Some(Default::default());
+        }
+        if which.range {
+            minmax = Some(Default::default());
+        }
+        if which.dist {
+            online = Some(Default::default());
+        }
+        if which.mode || which.cardinality {
+            mode = Some(Default::default());
+        }
+        if which.median {
+            median = Some(Default::default());
+        }
         if which.histogram {
-            histogram = Some(
-                Histogram {
-                    values: Default::default(),
-                    nb_int_float: Default::default(),
-                    nb_nans: Default::default(),
-                    nb_nulls: Default::default()
-                }
-            )
+            histogram = Some(Histogram {
+                values: Default::default(),
+                nb_int_float: Default::default(),
+                nb_nans: Default::default(),
+                nb_nulls: Default::default(),
+            })
         };
         Stats {
             typ: Default::default(),
@@ -537,36 +583,40 @@ impl Stats {
         self.minmax.as_mut().map(|v| v.add(sample_type, sample));
         self.mode.as_mut().map(|v| v.add(sample.to_vec()));
         match sample_type {
-            TUnknown => { match self.histogram.as_mut() {
-                    None => {},
-                    Some(h) => { h.nb_nans += 1 },
-                }
-            }
+            TUnknown => match self.histogram.as_mut() {
+                None => {}
+                Some(h) => h.nb_nans += 1,
+            },
             TNull => {
                 if self.which.include_nulls {
-                    self.online.as_mut().map(|v| { v.add_null(); });
+                    self.online.as_mut().map(|v| {
+                        v.add_null();
+                    });
                 }
                 match self.histogram.as_mut() {
-                    None => {},
-                    Some(h) => { h.nb_nulls += 1 },
+                    None => {}
+                    Some(h) => h.nb_nulls += 1,
                 }
             }
-            TUnicode => { match self.histogram.as_mut() {
-                    None => {},
-                    Some(h) => { h.nb_nans += 1 },
-                }
-            }
+            TUnicode => match self.histogram.as_mut() {
+                None => {}
+                Some(h) => h.nb_nans += 1,
+            },
             TFloat | TInteger => {
                 let n = from_bytes::<f64>(sample).unwrap();
-                self.median.as_mut().map(|v| { v.add(n); });
+                self.median.as_mut().map(|v| {
+                    v.add(n);
+                });
                 match self.histogram.as_mut() {
-                    None => {},
+                    None => {}
                     Some(h) => {
                         h.nb_int_float += 1;
                         h.values.push(n);
-                    },
+                    }
                 }
-                self.online.as_mut().map(|v| { v.add(n); });
+                self.online.as_mut().map(|v| {
+                    v.add(n);
+                });
             }
         }
     }
@@ -578,27 +628,47 @@ impl Stats {
 
         pieces.push(self.typ.to_string());
         match self.sum.as_ref().and_then(|sum| sum.show(typ)) {
-            Some(sum) => { pieces.push(sum); }
-            None => { pieces.push(empty()); }
+            Some(sum) => {
+                pieces.push(sum);
+            }
+            None => {
+                pieces.push(empty());
+            }
         }
         match self.minmax.as_ref().and_then(|mm| mm.show(typ)) {
-            Some(mm) => { pieces.push(mm.0); pieces.push(mm.1); }
-            None => { pieces.push(empty()); pieces.push(empty()); }
+            Some(mm) => {
+                pieces.push(mm.0);
+                pieces.push(mm.1);
+            }
+            None => {
+                pieces.push(empty());
+                pieces.push(empty());
+            }
         }
         match self.minmax.as_ref().and_then(|mm| mm.len_range()) {
-            Some(mm) => { pieces.push(mm.0); pieces.push(mm.1); }
-            None => { pieces.push(empty()); pieces.push(empty()); }
+            Some(mm) => {
+                pieces.push(mm.0);
+                pieces.push(mm.1);
+            }
+            None => {
+                pieces.push(empty());
+                pieces.push(empty());
+            }
         }
 
         if !self.typ.is_number() {
-            pieces.push(empty()); pieces.push(empty());
+            pieces.push(empty());
+            pieces.push(empty());
         } else {
             match self.online {
                 Some(ref v) => {
                     pieces.push(v.mean().to_string());
                     pieces.push(v.stddev().to_string());
                 }
-                None => { pieces.push(empty()); pieces.push(empty()); }
+                None => {
+                    pieces.push(empty());
+                    pieces.push(empty());
+                }
             }
         }
         match self.median.as_mut().and_then(|v| v.median()) {
@@ -607,7 +677,9 @@ impl Stats {
                     pieces.push(empty());
                 }
             }
-            Some(v) => { pieces.push(v.to_string()); }
+            Some(v) => {
+                pieces.push(v.to_string());
+            }
         }
         match self.mode.as_mut() {
             None => {
@@ -620,11 +692,9 @@ impl Stats {
             }
             Some(ref mut v) => {
                 if self.which.mode {
-                    let lossy = |s: Vec<u8>| -> String {
-                        String::from_utf8_lossy(&*s).into_owned()
-                    };
-                    pieces.push(
-                        v.mode().map_or("N/A".to_owned(), lossy));
+                    let lossy =
+                        |s: Vec<u8>| -> String { String::from_utf8_lossy(&*s).into_owned() };
+                    pieces.push(v.mode().map_or("N/A".to_owned(), lossy));
                 }
                 if self.which.cardinality {
                     pieces.push(v.cardinality().to_string());
@@ -666,8 +736,12 @@ impl FieldType {
             Err(_) => return TUnknown,
             Ok(s) => s,
         };
-        if let Ok(_) = string.parse::<i64>() { return TInteger; }
-        if let Ok(_) = string.parse::<f64>() { return TFloat; }
+        if let Ok(_) = string.parse::<i64>() {
+            return TInteger;
+        }
+        if let Ok(_) = string.parse::<f64>() {
+            return TFloat;
+        }
         TUnicode
     }
 
@@ -699,7 +773,9 @@ impl Default for FieldType {
     // The default is the most specific type.
     // Type inference proceeds by assuming the most specific type and then
     // relaxing the type as counter-examples are found.
-    fn default() -> FieldType { TNull }
+    fn default() -> FieldType {
+        TNull
+    }
 }
 
 impl fmt::Display for FieldType {
@@ -753,7 +829,7 @@ impl TypedSum {
 
     fn show(&self, typ: FieldType) -> Option<String> {
         match typ {
-            TNull | TUnicode | TUnknown  => None,
+            TNull | TUnicode | TUnknown => None,
             TInteger => Some(self.integer.to_string()),
             TFloat => Some(self.float.unwrap_or(0.0).to_string()),
         }
@@ -792,17 +868,17 @@ impl TypedMinMax {
             TUnicode | TUnknown | TNull => {}
             TFloat => {
                 let n = str::from_utf8(&*sample)
-                            .ok()
-                            .and_then(|s| s.parse::<f64>().ok())
-                            .unwrap();
+                    .ok()
+                    .and_then(|s| s.parse::<f64>().ok())
+                    .unwrap();
                 self.floats.add(n);
                 self.integers.add(n as i64);
             }
             TInteger => {
                 let n = str::from_utf8(&*sample)
-                            .ok()
-                            .and_then(|s| s.parse::<i64>().ok())
-                            .unwrap();
+                    .ok()
+                    .and_then(|s| s.parse::<i64>().ok())
+                    .unwrap();
                 self.integers.add(n);
                 self.floats.add(n as f64);
             }
@@ -819,32 +895,22 @@ impl TypedMinMax {
     fn show(&self, typ: FieldType) -> Option<(String, String)> {
         match typ {
             TNull => None,
-            TUnicode | TUnknown => {
-                match (self.strings.min(), self.strings.max()) {
-                    (Some(min), Some(max)) => {
-                        let min = String::from_utf8_lossy(&**min).to_string();
-                        let max = String::from_utf8_lossy(&**max).to_string();
-                        Some((min, max))
-                    }
-                    _ => None
+            TUnicode | TUnknown => match (self.strings.min(), self.strings.max()) {
+                (Some(min), Some(max)) => {
+                    let min = String::from_utf8_lossy(&**min).to_string();
+                    let max = String::from_utf8_lossy(&**max).to_string();
+                    Some((min, max))
                 }
-            }
-            TInteger => {
-                match (self.integers.min(), self.integers.max()) {
-                    (Some(min), Some(max)) => {
-                        Some((min.to_string(), max.to_string()))
-                    }
-                    _ => None
-                }
-            }
-            TFloat => {
-                match (self.floats.min(), self.floats.max()) {
-                    (Some(min), Some(max)) => {
-                        Some((min.to_string(), max.to_string()))
-                    }
-                    _ => None
-                }
-            }
+                _ => None,
+            },
+            TInteger => match (self.integers.min(), self.integers.max()) {
+                (Some(min), Some(max)) => Some((min.to_string(), max.to_string())),
+                _ => None,
+            },
+            TFloat => match (self.floats.min(), self.floats.max()) {
+                (Some(min), Some(max)) => Some((min.to_string(), max.to_string())),
+                _ => None,
+            },
         }
     }
 }
@@ -926,7 +992,7 @@ fn format_number_float(count: f64, mut precision: u8, ceil: bool) -> String {
         count_str += &count_chars[k].to_string();
     }
     if (count_str_len - count_str_int_len) < precision as usize {
-        count_str += &"0".repeat(precision as usize - (count_str_len -  count_str_int_len));   
+        count_str += &"0".repeat(precision as usize - (count_str_len - count_str_int_len));
     }
     if neg {
         count_str = "-".to_string() + &count_str;
@@ -935,22 +1001,20 @@ fn format_number_float(count: f64, mut precision: u8, ceil: bool) -> String {
 }
 
 fn ceil_float(value: f64, precision: u8) -> f64 {
-    let mul =
-        if precision == 1 {
-            1.0
-        } else {
-            u64::pow(10, precision as u32) as f64
-        };
+    let mul = if precision == 1 {
+        1.0
+    } else {
+        u64::pow(10, precision as u32) as f64
+    };
     return (value * mul).ceil() / mul;
 }
 
 fn floor_float(value: f64, precision: u8) -> f64 {
-    let mul =
-        if precision == 1 {
-            1.0
-        } else {
-            u64::pow(10, precision as u32) as f64
-        };
+    let mul = if precision == 1 {
+        1.0
+    } else {
+        u64::pow(10, precision as u32) as f64
+    };
     return (value * mul).floor() / mul;
 }
 
@@ -966,7 +1030,6 @@ struct Bar {
 }
 
 impl Bar {
-
     fn update_sizes(&mut self, max_str_len: usize) -> CliResult<u64> {
         if self.screen_size == 0 {
             if let Some(size) = termsize::get() {
@@ -986,7 +1049,9 @@ impl Bar {
         }
 
         if self.screen_size <= (self.legend_str_len + 2) {
-            return fail!(format!("Too many lines in the input, we are not able to output the histogram."));
+            return fail!(format!(
+                "Too many lines in the input, we are not able to output the histogram."
+            ));
         }
 
         self.size_bar_cols = (self.screen_size - (self.legend_str_len + 1)) / 3 * 2;
@@ -1003,8 +1068,14 @@ impl Bar {
         let mut legend = "nb_lines | %     ".to_string();
         legend = " ".repeat(self.legend_str_len - 17) + &legend;
 
-        self.header = " ".repeat(self.size_labels - UnicodeWidthStr::width(&self.header[..])) + &self.header + &" ".repeat(self.size_bar_cols);
-        println!("{}\u{200E}  {}", self.header.yellow().bold(), legend.yellow().bold());
+        self.header = " ".repeat(self.size_labels - UnicodeWidthStr::width(&self.header[..]))
+            + &self.header
+            + &" ".repeat(self.size_bar_cols);
+        println!(
+            "{}\u{200E}  {}",
+            self.header.yellow().bold(),
+            legend.yellow().bold()
+        );
     }
 
     fn print_bar(&mut self, value: String, count: u64, j: usize) {
@@ -1012,11 +1083,12 @@ impl Bar {
 
         let value = " ".repeat(self.size_labels - value.chars().count()) + &value.to_string();
         let mut count_str = format_number(count);
-        count_str = (" ".repeat(cmp::max(self.legend_str_len - 9, 8) - count_str.chars().count())) + &count_str;
+        count_str = (" ".repeat(cmp::max(self.legend_str_len - 9, 8) - count_str.chars().count()))
+            + &count_str;
 
         let mut nb_square = count as usize * self.size_bar_cols / self.longest_bar;
         let mut bar_str = square_chars[8].repeat(nb_square);
-        
+
         let count_float = count as f64 * self.size_bar_cols as f64 / self.longest_bar as f64;
         let remainder = ((count_float - nb_square as f64) * 8.0) as usize;
         bar_str += square_chars[remainder % 8];
@@ -1025,12 +1097,11 @@ impl Bar {
         }
         let empty = ".".repeat(self.size_bar_cols - nb_square as usize);
 
-        let colored_bar_str =
-            if j % 2 == 0 {
-                bar_str.dimmed().white()
-            } else {
-                bar_str.white()
-            };
+        let colored_bar_str = if j % 2 == 0 {
+            bar_str.dimmed().white()
+        } else {
+            bar_str.white()
+        };
 
         println!(
             "{} {}{} {} | {}",
