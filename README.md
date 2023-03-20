@@ -39,6 +39,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv flatten --pretty`
 * `xsv foreach`
 * `xsv frequency --pretty`
+* `xsv join --prefix-left/--prefix-right`
 * `xsv jsonl`
 * `xsv lang`
 * `xsv lua`
