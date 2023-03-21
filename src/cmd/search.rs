@@ -19,6 +19,8 @@ Usage:
     xsv search --help
 
 search options:
+    -e, --exact            Perform an exact match rather than using a
+                           regular expression.
     -i, --ignore-case      Case insensitive search. This is equivalent to
                            prefixing the regex with '(?i)'.
     -s, --select <arg>     Select the columns to search. See 'xsv select -h'
@@ -48,6 +50,7 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
     flag_invert_match: bool,
     flag_ignore_case: bool,
+    flag_exact: bool,
     flag_flag: Option<String>,
 }
 
@@ -56,10 +59,18 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let pattern = RegexBuilder::new(&*args.arg_regex)
         .case_insensitive(args.flag_ignore_case)
         .build()?;
+    let exact_pattern = args.arg_regex.as_bytes();
     let rconfig = Config::new(&args.arg_input)
         .delimiter(args.flag_delimiter)
         .no_headers(args.flag_no_headers)
         .select(args.flag_select);
+
+    let mut matcher: Box<dyn Fn(&[u8]) -> bool> =
+        Box::new(|cell: &[u8]| -> bool { pattern.is_match(cell) });
+
+    if args.flag_exact {
+        matcher = Box::new(|cell: &[u8]| -> bool { cell == exact_pattern });
+    }
 
     let mut rdr = rconfig.reader()?;
     let mut wtr = Config::new(&args.flag_output).writer()?;
@@ -76,7 +87,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
     let mut record = csv::ByteRecord::new();
     while rdr.read_byte_record(&mut record)? {
-        let mut m = sel.select(&record).any(|f| pattern.is_match(f));
+        let mut m = sel.select(&record).any(&matcher);
         if args.flag_invert_match {
             m = !m;
         }

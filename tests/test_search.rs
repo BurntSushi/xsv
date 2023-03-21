@@ -169,3 +169,23 @@ fn search_flag_invert_match() {
     ];
     assert_eq!(got, expected);
 }
+
+#[test]
+fn search_flag_exact() {
+    let wrk = Workdir::new("search_exact");
+    wrk.create(
+        "data.csv",
+        vec![
+            svec!["name", "number"],
+            svec!["John", "13"],
+            svec!["JohnJohn", "24"],
+            svec!["Abigail", "72"],
+        ],
+    );
+    let mut cmd = wrk.command("search");
+    cmd.arg("John").arg("data.csv").arg("--exact");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![svec!["name", "number"], svec!["John", "13"]];
+    assert_eq!(got, expected);
+}
