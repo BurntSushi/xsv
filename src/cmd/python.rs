@@ -113,81 +113,84 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = rconfig.reader()?;
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
-    let gil = Python::acquire_gil();
-    let py = gil.python();
+    Python::with_gil(|py| -> CliResult<()> {
+        let helpers = PyModule::from_code(py, HELPERS, "xsv_helpers.py", "xsv_helpers")?;
+        let globals = PyDict::new(py);
+        let locals = PyDict::new(py);
 
-    let helpers = PyModule::from_code(py, HELPERS, "xsv_helpers.py", "xsv_helpers")?;
-    let globals = PyDict::new(py);
-    let locals = PyDict::new(py);
+        // Global imports
+        let builtins = PyModule::import(py, "builtins")?;
+        let math_module = PyModule::import(py, "math")?;
 
-    // Global imports
-    let builtins = PyModule::import(py, "builtins")?;
-    let math_module = PyModule::import(py, "math")?;
+        globals.set_item("__builtins__", builtins)?;
+        globals.set_item("math", math_module)?;
 
-    globals.set_item("__builtins__", builtins)?;
-    globals.set_item("math", math_module)?;
+        let mut headers = rdr.headers()?.clone();
 
-    let mut headers = rdr.headers()?.clone();
+        let headers_len = headers.len();
 
-    let headers_len = headers.len();
+        let xsv_row_py_class = helpers.getattr("XSVRow")?;
+        let cast_as_string_py_fn = helpers.getattr("cast_as_string")?;
+        let cast_as_bool_py_fn = helpers.getattr("cast_as_bool")?;
 
-    let py_row = helpers.call1("XSVRow", (headers.iter().collect::<Vec<&str>>(),))?;
-    locals.set_item("row", py_row)?;
+        let py_row = xsv_row_py_class.call1((headers.iter().collect::<Vec<&str>>(),))?;
+        locals.set_item("row", py_row)?;
 
-    if !rconfig.no_headers {
-        if !args.cmd_filter {
-            let new_column = args
-                .arg_new_column
-                .as_ref()
-                .ok_or("Specify new column name")?;
-            headers.push_field(new_column);
-        }
+        if !rconfig.no_headers {
+            if !args.cmd_filter {
+                let new_column = args
+                    .arg_new_column
+                    .as_ref()
+                    .ok_or("Specify new column name")?;
+                headers.push_field(new_column);
+            }
 
-        wtr.write_record(&headers)?;
-    } else {
-        headers = csv::StringRecord::new();
+            wtr.write_record(&headers)?;
+        } else {
+            headers = csv::StringRecord::new();
 
-        for i in 0..headers_len {
-            headers.push_field(&i.to_string());
-        }
-    }
-
-    let mut record = csv::StringRecord::new();
-
-    while rdr.read_record(&mut record)? {
-        // Initializing locals
-        let mut row_data: Vec<&str> = Vec::with_capacity(headers_len);
-
-        for (i, h) in headers.iter().take(headers_len).enumerate() {
-            let cell_value = record.get(i).unwrap();
-            locals.set_item(h, cell_value)?;
-            row_data.push(cell_value);
-        }
-
-        py_row.call_method1("_update_underlying_data", (row_data,))?;
-
-        let result = py
-            .eval(&args.arg_script, Some(&globals), Some(&locals))
-            .map_err(|e| {
-                e.print_and_set_sys_last_vars(py);
-                "Evaluation of given expression failed with the above error!"
-            })?;
-
-        if args.cmd_map {
-            let result = helpers.call1("cast_as_string", (result,))?;
-            let value: String = result.extract()?;
-
-            record.push_field(&value);
-            wtr.write_record(&record)?;
-        } else if args.cmd_filter {
-            let result = helpers.call1("cast_as_bool", (result,))?;
-            let value: bool = result.extract()?;
-
-            if value {
-                wtr.write_record(&record)?;
+            for i in 0..headers_len {
+                headers.push_field(&i.to_string());
             }
         }
-    }
 
-    Ok(wtr.flush()?)
+        let mut record = csv::StringRecord::new();
+
+        while rdr.read_record(&mut record)? {
+            // Initializing locals
+            let mut row_data: Vec<&str> = Vec::with_capacity(headers_len);
+
+            for (i, h) in headers.iter().take(headers_len).enumerate() {
+                let cell_value = record.get(i).unwrap();
+                locals.set_item(h, cell_value)?;
+                row_data.push(cell_value);
+            }
+
+            py_row.call_method1("_update_underlying_data", (row_data,))?;
+
+            let result = py
+                .eval(&args.arg_script, Some(&globals), Some(&locals))
+                .map_err(|e| {
+                    e.print_and_set_sys_last_vars(py);
+                    "Evaluation of given expression failed with the above error!"
+                })?;
+
+            if args.cmd_map {
+                let result = cast_as_string_py_fn.call1((result,))?;
+                let value: String = result.extract()?;
+
+                record.push_field(&value);
+                wtr.write_record(&record)?;
+            } else if args.cmd_filter {
+                let result = cast_as_bool_py_fn.call1((result,))?;
+                let value: bool = result.extract()?;
+
+                if value {
+                    wtr.write_record(&record)?;
+                }
+            }
+        }
+
+        Ok(wtr.flush()?)
+    })
 }

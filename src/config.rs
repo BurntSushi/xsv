@@ -223,7 +223,7 @@ impl Config {
                     io::ErrorKind::Other,
                     "Cannot use <stdin> with indexes",
                     // Some(format!("index file: {}", p.display()))
-                ))
+                ));
             }
             (&Some(ref p), &None) => {
                 // We generally don't want to report an error here, since we're
