@@ -122,10 +122,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
         // Global imports
         let builtins = PyModule::import(py, "builtins")?;
-        let math_module = PyModule::import(py, "math")?;
+        let math_py_module = PyModule::import(py, "math")?;
+        let urllib_parse_py_module = PyModule::import(py, "urllib.parse")?;
 
         globals.set_item("__builtins__", builtins)?;
-        globals.set_item("math", math_module)?;
+        globals.set_item("math", math_py_module)?;
+        globals.set_item("urljoin", urllib_parse_py_module.getattr("urljoin")?)?;
 
         let mut headers = rdr.headers()?.clone();
 
