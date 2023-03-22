@@ -113,8 +113,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = rconfig.reader()?;
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
-    pyo3::prepare_freethreaded_python();
-
     Python::with_gil(|py| -> CliResult<()> {
         let helpers = PyModule::from_code(py, HELPERS, "xsv_helpers.py", "xsv_helpers")?;
         let globals = PyDict::new(py);
