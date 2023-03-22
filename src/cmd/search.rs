@@ -65,13 +65,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .no_headers(args.flag_no_headers)
         .select(args.flag_select);
 
-    let mut matcher: Box<dyn Fn(&[u8]) -> bool> =
-        Box::new(|cell: &[u8]| -> bool { pattern.is_match(cell) });
-
-    if args.flag_exact {
-        matcher = Box::new(|cell: &[u8]| -> bool { cell == exact_pattern });
-    }
-
     let mut rdr = rconfig.reader()?;
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
@@ -87,7 +80,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
     let mut record = csv::ByteRecord::new();
     while rdr.read_byte_record(&mut record)? {
-        let mut m = sel.select(&record).any(&matcher);
+
+        // Thanks to LLVM loop unswitch, no guerilla optimization seem to be
+        // needed here.
+        // Ref: https://llvm.org/docs/Passes.html#loop-unswitch-unswitch-loops
+        let mut m = if args.flag_exact {
+            sel.select(&record).any(|cell| cell == exact_pattern)
+        } else {
+            sel.select(&record).any(|cell| pattern.is_match(cell))
+        };
+
         if args.flag_invert_match {
             m = !m;
         }
