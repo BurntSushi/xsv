@@ -189,3 +189,28 @@ fn search_flag_exact() {
     let expected = vec![svec!["name", "number"], svec!["John", "13"]];
     assert_eq!(got, expected);
 }
+
+#[test]
+#[ignore]
+fn search_flag_exact_case_insensitive() {
+    let wrk = Workdir::new("search_exact_case_insensitive");
+    wrk.create(
+        "data.csv",
+        vec![
+            svec!["name", "number"],
+            svec!["JOHN", "13"],
+            svec!["John", "24"],
+            svec!["Abigail", "72"],
+        ],
+    );
+    let mut cmd = wrk.command("search");
+    cmd.arg("john").arg("data.csv").arg("--exact").arg("-i");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["name", "number"],
+        svec!["JOHN", "13"],
+        svec!["John", "24"],
+    ];
+    assert_eq!(got, expected);
+}

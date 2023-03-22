@@ -80,7 +80,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
     let mut record = csv::ByteRecord::new();
     while rdr.read_byte_record(&mut record)? {
-
         // Thanks to LLVM loop unswitch, no guerilla optimization seem to be
         // needed here.
         // Ref: https://llvm.org/docs/Passes.html#loop-unswitch-unswitch-loops
