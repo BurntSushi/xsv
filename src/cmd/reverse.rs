@@ -26,7 +26,7 @@ Common options:
 ";
 
 #[derive(Deserialize)]
-struct Args {
+pub struct Args {
     arg_input: Option<String>,
     flag_output: Option<String>,
     flag_no_headers: bool,
@@ -37,72 +37,70 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
+    return if args.flag_in_memory {
+        run_without_memory_efficiency(args)
+    } else {
+        run_with_memory_efficiency(args)
+    }
+}
+
+pub fn run_with_memory_efficiency(args: Args) -> CliResult<()> {
     let rconfig = Config::new(&args.arg_input)
         .delimiter(args.flag_delimiter)
         .no_headers(true);
 
     let mut config_csv_reader= rconfig.reader()?;
-
     let headers = config_csv_reader.byte_headers()?.clone();
-
     let headers_size = if args.flag_no_headers {
         0
     } else {
         let position = config_csv_reader.position();
         position.clone().byte()
     };
-    
-    let reverse_reader = rconfig.io_reader_for_reverse_reading(headers_size as u64);
+    let reverse_reader = rconfig.io_reader_for_reverse_reading(headers_size as u64)?;
+    let mut wtr = Config::new(&args.flag_output).writer()?;
+    let mut reverse_csv_reader = rconfig.from_reader(reverse_reader);
 
-    match reverse_reader {
-        Ok(reader) => {
-            let mut wtr = Config::new(&args.flag_output).writer()?;
-            
-            let mut reverse_csv_reader = rconfig.from_reader(reader);
+    if !args.flag_no_headers { wtr.write_byte_record(&headers)?; }
 
-            if !args.flag_no_headers { wtr.write_byte_record(&headers)?; }
+    for r in reverse_csv_reader.byte_records() {
+        match r {
+            Ok(record) => {
+                let mut new_record = csv::ByteRecord::new();
 
-            for r in reverse_csv_reader.byte_records() {
-                match r {
-                    Ok(record) => {
-                        let mut new_record = csv::ByteRecord::new();
-
-                        for b in record.iter().rev() {
-                            let mut rec = Vec::<u8>::with_capacity(b.len());
-                            for c in b.iter().rev() { rec.push(*c); }
-                            new_record.push_field(rec.as_slice())
-                        }
-
-                        wtr.write_record(new_record.iter())?;
-                    },
-                    Err(_) => {}
-                }
-            }
-            
-            Ok(wtr.flush()?)
-        },
-        Err(e) => {
-            if !args.flag_in_memory { 
-                Err(crate::CliError::Io(e)) 
-            }
-            else {
-                let dconfig = Config::new(&args.arg_input)
-                    .delimiter(args.flag_delimiter)
-                    .no_headers(args.flag_no_headers);
-
-                let mut reader = dconfig.reader()?;
-                let mut all = reader.byte_records().collect::<Result<Vec<_>, _>>()?;
-                all.reverse();
-
-                let mut wtr = Config::new(&args.flag_output).writer()?;
-                rconfig.write_headers(&mut reader, &mut wtr)?;
-
-                for r in all.into_iter() {
-                    wtr.write_byte_record(&r)?;
+                for b in record.iter().rev() {
+                    let mut rec = Vec::<u8>::with_capacity(b.len());
+                    for c in b.iter().rev() { rec.push(*c); }
+                    new_record.push_field(rec.as_slice())
                 }
 
-                Ok(wtr.flush()?)
-            }
+                wtr.write_record(new_record.iter())?;
+            },
+            Err(_) => {}
         }
     }
+    
+    Ok(wtr.flush()?)
+}
+
+pub fn run_without_memory_efficiency(args: Args) -> CliResult<()> {
+    let dconfig = Config::new(&args.arg_input)
+        .delimiter(args.flag_delimiter)
+        .no_headers(args.flag_no_headers);
+
+    let io_reader = dconfig.io_reader()?;
+    let mut reader = csv::Reader::from_reader(io_reader);
+
+    let mut all = reader.byte_records().collect::<Result<Vec<_>, _>>()?;
+    all.reverse();
+
+    let mut wtr = Config::new(&args.flag_output).writer()?;
+    
+    dconfig.write_headers(&mut reader, &mut wtr)?;
+
+    for r in all.into_iter() {
+        wtr.write_byte_record(&r)?;
+    }
+
+    Ok(wtr.flush()?)
 }

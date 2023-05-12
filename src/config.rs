@@ -96,7 +96,7 @@ impl Read for ReverseRead {
             self.ptr -= buff_size as u64;
             return Ok(buff_size as usize)
         }
-    
+
     }
 }
 
@@ -329,19 +329,18 @@ impl Config {
     }
 
     pub fn io_reader_for_reverse_reading(&self, offset: u64) -> io::Result<Box<dyn io::Read + 'static>> {
+        let msg = format!("can't use provided input : needs to be loaded in the RAM (using -m, --in-memory flag)");
         match self.path {
             None => {
-                let msg = format!("can't use input : needs to be seekable");
                 return Err(io::Error::new(io::ErrorKind::Unsupported, msg));
             },
             Some(ref p) => match fs::File::open(p) {
-                Ok(x) => match x.borrow().seek(SeekFrom::Current(0)).is_ok() {
-                    true => {
+                Ok(x) => match x.borrow().seek(SeekFrom::Current(0)) {
+                    Ok(_) => {
                         let filesize = x.metadata()?.len();
                         return Ok(Box::new(ReverseRead::build(Box::new(x), filesize, offset)))
                     },
-                    false => {
-                        let msg = format!("can't use input : needs to be seekable");
+                    Err(_) => {
                         return Err(io::Error::new(io::ErrorKind::Unsupported, msg))
                     }
                 },

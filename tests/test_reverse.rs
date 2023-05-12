@@ -2,7 +2,7 @@ use workdir::Workdir;
 
 use {qcheck, Csv, CsvData};
 
-fn prop_reverse(name: &str, rows: CsvData, headers: bool) -> bool {
+fn prop_reverse(name: &str, rows: CsvData, headers: bool, in_memory: bool) -> bool {
     let wrk = Workdir::new(name);
     wrk.create("in.csv", rows.clone());
 
@@ -10,6 +10,10 @@ fn prop_reverse(name: &str, rows: CsvData, headers: bool) -> bool {
     cmd.arg("in.csv");
     if !headers {
         cmd.arg("--no-headers");
+    }
+
+    if in_memory {
+        cmd.arg("--in-memory");
     }
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
@@ -27,9 +31,25 @@ fn prop_reverse(name: &str, rows: CsvData, headers: bool) -> bool {
 }
 
 #[test]
+fn prop_reverse_headers_in_memory() {
+    fn p(rows: CsvData) -> bool {
+        prop_reverse("prop_reverse_headers_in_memory", rows, true, true)
+    }
+    qcheck(p as fn(CsvData) -> bool);
+}
+
+#[test]
+fn prop_reverse_no_headers_in_memory() {
+    fn p(rows: CsvData) -> bool {
+        prop_reverse("prop_reverse_no_headers_in_memory", rows, false, true)
+    }
+    qcheck(p as fn(CsvData) -> bool);
+}
+
+#[test]
 fn prop_reverse_headers() {
     fn p(rows: CsvData) -> bool {
-        prop_reverse("prop_reverse_headers", rows, true)
+        prop_reverse("prop_reverse_headers", rows, true, false)
     }
     qcheck(p as fn(CsvData) -> bool);
 }
@@ -37,7 +57,7 @@ fn prop_reverse_headers() {
 #[test]
 fn prop_reverse_no_headers() {
     fn p(rows: CsvData) -> bool {
-        prop_reverse("prop_reverse_no_headers", rows, false)
+        prop_reverse("prop_reverse_no_headers", rows, false, false)
     }
     qcheck(p as fn(CsvData) -> bool);
 }
