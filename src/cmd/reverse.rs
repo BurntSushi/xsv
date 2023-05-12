@@ -1,10 +1,6 @@
-use std::borrow::Borrow;
-
 use config::{Config, Delimiter};
 use util;
 use CliResult;
-
-use crate::CliError;
 
 static USAGE: &'static str = "
 Reverses rows of CSV data.
@@ -46,7 +42,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .no_headers(true);
 
     let mut config_csv_reader= rconfig.reader()?;
-    let mut wtr = Config::new(&args.flag_output).writer()?;
 
     let headers = config_csv_reader.byte_headers()?.clone();
 
@@ -58,8 +53,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     };
     
     let reverse_reader = rconfig.io_reader_for_reverse_reading(headers_size as u64);
+
     match reverse_reader {
         Ok(reader) => {
+            let mut wtr = Config::new(&args.flag_output).writer()?;
+            
             let mut reverse_csv_reader = rconfig.from_reader(reader);
 
             if !args.flag_no_headers { wtr.write_byte_record(&headers)?; }
@@ -88,18 +86,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 Err(crate::CliError::Io(e)) 
             }
             else {
-                println!("cheers");
-
                 let dconfig = Config::new(&args.arg_input)
                     .delimiter(args.flag_delimiter)
-                    .no_headers(false);
+                    .no_headers(args.flag_no_headers);
 
-                let mut default_csv_reader = dconfig.reader()?;
-                let mut all = default_csv_reader.byte_records().collect::<Result<Vec<_>, _>>()?;
+                let mut reader = dconfig.reader()?;
+                let mut all = reader.byte_records().collect::<Result<Vec<_>, _>>()?;
                 all.reverse();
 
                 let mut wtr = Config::new(&args.flag_output).writer()?;
-                rconfig.write_headers(&mut default_csv_reader, &mut wtr)?;
+                rconfig.write_headers(&mut reader, &mut wtr)?;
 
                 for r in all.into_iter() {
                     wtr.write_byte_record(&r)?;
