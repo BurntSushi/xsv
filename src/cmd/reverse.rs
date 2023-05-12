@@ -88,14 +88,11 @@ pub fn run_without_memory_efficiency(args: Args) -> CliResult<()> {
         .delimiter(args.flag_delimiter)
         .no_headers(args.flag_no_headers);
 
-    let io_reader = dconfig.io_reader()?;
-    let mut reader = csv::Reader::from_reader(io_reader);
-
+    let mut reader = dconfig.reader()?;
     let mut all = reader.byte_records().collect::<Result<Vec<_>, _>>()?;
     all.reverse();
 
     let mut wtr = Config::new(&args.flag_output).writer()?;
-    
     dconfig.write_headers(&mut reader, &mut wtr)?;
 
     for r in all.into_iter() {
