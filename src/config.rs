@@ -1,9 +1,13 @@
 #[allow(deprecated, unused_imports)]
 use std::ascii::AsciiExt;
+use std::borrow::Borrow;
 use std::borrow::ToOwned;
 use std::env;
 use std::fs;
-use std::io::{self, Read};
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::{self, Read, SeekFrom};
+use std::mem;
 use std::ops::Deref;
 use std::path::PathBuf;
 
@@ -56,6 +60,56 @@ impl<'de> Deserialize<'de> for Delimiter {
                 }
             }
         }
+    }
+}
+
+struct ReverseRead {
+    input: Box<File>,
+    offset: u64,
+    ptr: u64
+}
+
+impl Read for ReverseRead {
+
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        let buff_size = mem::size_of_val(buf) as u64;
+        
+        if self.ptr == self.offset { return Ok(0 as usize) }      
+
+        if self.offset + buff_size > self.ptr {
+            self.input.seek(SeekFrom::Start(self.offset))?;
+            self.input.read(buf)?;
+
+            let e = (self.ptr - self.offset) as usize;
+            buf[0..e].reverse();
+
+            
+            self.ptr = self.offset;
+            return Ok(e as usize)
+        } else {
+            let new_position = self.ptr - buff_size;
+            
+            self.input.seek(SeekFrom::Start(new_position as u64))?;
+            self.input.read(buf)?;
+            buf.reverse();
+
+            self.ptr -= buff_size as u64;
+            return Ok(buff_size as usize)
+        }
+    
+    }
+}
+
+impl ReverseRead {
+    fn build(
+        input: Box<File>, 
+        filesize: u64, 
+        offset: u64) -> ReverseRead {
+            ReverseRead { 
+                input: input,
+                offset: offset,
+                ptr: filesize
+            }
     }
 }
 
@@ -272,6 +326,31 @@ impl Config {
                 }
             },
         })
+    }
+
+    pub fn io_reader_for_reverse_reading(&self, offset: u64) -> io::Result<Box<dyn io::Read + 'static>> {
+        match self.path {
+            None => {
+                let msg = format!("can't use input : needs to be seekable");
+                return Err(io::Error::new(io::ErrorKind::Unsupported, msg));
+            },
+            Some(ref p) => match fs::File::open(p) {
+                Ok(x) => match x.borrow().seek(SeekFrom::Current(0)).is_ok() {
+                    true => {
+                        let filesize = x.metadata()?.len();
+                        return Ok(Box::new(ReverseRead::build(Box::new(x), filesize, offset)))
+                    },
+                    false => {
+                        let msg = format!("can't use input : needs to be seekable");
+                        return Err(io::Error::new(io::ErrorKind::Unsupported, msg))
+                    }
+                },
+                Err(err) => {
+                    let msg = format!("failed to open {}: {}", p.display(), err);
+                    return Err(io::Error::new(io::ErrorKind::NotFound, msg));
+                }
+            }
+        }
     }
 
     pub fn from_reader<R: Read>(&self, rdr: R) -> csv::Reader<R> {
