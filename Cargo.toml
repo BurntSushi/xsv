@@ -1,11 +1,12 @@
 [package]
 name = "xsv"
-version = "0.13.0-medialab6"  #:version
+version = "0.13.0-medialab7"  #:version
 authors = [
   "Andrew Gallant <jamslam@gmail.com>",
   "Guillaume Plique <guillaume.plique@sciencespo.fr>",
   "Béatrice Mazoyer <beatrice.mazoyer@sciencespo.fr>",
-  "Laura Miguel <laura.miguel@sciencespo.fr>"
+  "Laura Miguel <laura.miguel@sciencespo.fr>",
+  "César Pichon <cesar.pichon@sciencespo.fr>"
 ]
 description = "A high performance CSV command line toolkit."
 documentation = "https://burntsushi.net/rustdoc/xsv/"
