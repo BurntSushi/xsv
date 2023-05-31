@@ -94,7 +94,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut headers = rdr.headers()?.clone();
 
-    let operations: Vec<&str> = args.arg_operations.split(",").collect();
+    let operations: Vec<&str> = if args.arg_operations.is_empty() {
+        Vec::new()
+    } else {
+        args.arg_operations.split(",").collect()
+    };
 
     for op in &operations {
         if !OPERATIONS.contains(&op) {

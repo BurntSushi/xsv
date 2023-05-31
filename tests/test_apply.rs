@@ -28,6 +28,44 @@ fn apply() {
 }
 
 #[test]
+fn apply_noop() {
+    let wrk = Workdir::new("apply");
+    wrk.create(
+        "data.csv",
+        vec![svec!["name"], svec!["John"], svec!["Mary"]],
+    );
+    let mut cmd = wrk.command("apply");
+    cmd.arg("").arg("name").arg("data.csv");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![svec!["name"], svec!["John"], svec!["Mary"]];
+    assert_eq!(got, expected);
+}
+
+#[test]
+fn apply_copy() {
+    let wrk = Workdir::new("apply");
+    wrk.create(
+        "data.csv",
+        vec![svec!["name"], svec!["John"], svec!["Mary"]],
+    );
+    let mut cmd = wrk.command("apply");
+    cmd.arg("")
+        .arg("name")
+        .arg("data.csv")
+        .arg("-c")
+        .arg("copy");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![
+        svec!["name", "copy"],
+        svec!["John", "John"],
+        svec!["Mary", "Mary"],
+    ];
+    assert_eq!(got, expected);
+}
+
+#[test]
 fn apply_chain() {
     let wrk = Workdir::new("apply");
     wrk.create(
