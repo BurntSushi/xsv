@@ -146,7 +146,7 @@ pub fn range(start: Idx, end: Idx, len: Idx, index: Idx)
     }
 }
 
-/// Create a directory recursively, avoiding the race conditons fixed by
+/// Create a directory recursively, avoiding the race conditions fixed by
 /// https://github.com/rust-lang/rust/pull/39799.
 fn create_dir_all_threadsafe(path: &Path) -> io::Result<()> {
     // Try 20 times. This shouldn't theoretically need to be any larger

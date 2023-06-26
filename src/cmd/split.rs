@@ -24,7 +24,7 @@ Usage:
 split options:
     -s, --size <arg>       The number of records to write into each chunk.
                            [default: 500]
-    -j, --jobs <arg>       The number of spliting jobs to run in parallel.
+    -j, --jobs <arg>       The number of splitting jobs to run in parallel.
                            This only works when the given CSV data has
                            an index already created. Note that a file handle
                            is opened for each job.
