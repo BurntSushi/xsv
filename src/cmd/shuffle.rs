@@ -8,6 +8,7 @@ use util;
 use CliResult;
 
 // TODO: add --in-memory
+// TODO: we should reserialize
 static USAGE: &'static str = "
 Shuffle the given CSV file. Requires memory proportional to the
 number of rows of the file (approx. 2 u64 per row).
@@ -74,7 +75,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                     .into_inner()
                     .expect("error while serializing binary header");
 
-                output_wtr.write(&binary_header[..binary_header.len() - 1])?;
+                // NOTE: the minus 1 is here to prevent double break in output later
+                output_wtr.write_all(&binary_header[..binary_header.len() - 1])?;
             }
         }
 
