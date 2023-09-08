@@ -191,7 +191,6 @@ fn search_flag_exact() {
 }
 
 #[test]
-#[ignore]
 fn search_flag_exact_case_insensitive() {
     let wrk = Workdir::new("search_exact_case_insensitive");
     wrk.create(

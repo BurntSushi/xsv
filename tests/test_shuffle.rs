@@ -41,7 +41,9 @@ fn shuffle_in_memory() {
         ],
     );
     let mut cmd = wrk.command("shuffle");
-    cmd.arg("data.csv").args(&["--seed", "123"]).arg("--in-memory");
+    cmd.arg("data.csv")
+        .args(&["--seed", "123"])
+        .arg("--in-memory");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
@@ -60,23 +62,15 @@ fn shuffle_no_headers() {
     let wrk = Workdir::new("shuffle");
     wrk.create(
         "data.csv",
-        vec![
-            svec!["1"],
-            svec!["2"],
-            svec!["3"],
-            svec!["4"],
-        ],
+        vec![svec!["1"], svec!["2"], svec!["3"], svec!["4"]],
     );
     let mut cmd = wrk.command("shuffle");
-    cmd.arg("data.csv").args(&["--seed", "123"]).arg("--no-headers");
+    cmd.arg("data.csv")
+        .args(&["--seed", "123"])
+        .arg("--no-headers");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
-    let expected = vec![
-        svec!["2"],
-        svec!["3"],
-        svec!["1"],
-        svec!["4"],
-    ];
+    let expected = vec![svec!["2"], svec!["3"], svec!["1"], svec!["4"]];
     assert_eq!(got, expected);
 }
 
@@ -85,22 +79,15 @@ fn shuffle_in_memory_no_headers() {
     let wrk = Workdir::new("shuffle");
     wrk.create(
         "data.csv",
-        vec![
-            svec!["1"],
-            svec!["2"],
-            svec!["3"],
-            svec!["4"],
-        ],
+        vec![svec!["1"], svec!["2"], svec!["3"], svec!["4"]],
     );
     let mut cmd = wrk.command("shuffle");
-    cmd.arg("data.csv").args(&["--seed", "123"]).arg("--no-headers").arg("--in-memory");
+    cmd.arg("data.csv")
+        .args(&["--seed", "123"])
+        .arg("--no-headers")
+        .arg("--in-memory");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
-    let expected = vec![
-        svec!["2"],
-        svec!["3"],
-        svec!["1"],
-        svec!["4"],
-    ];
+    let expected = vec![svec!["2"], svec!["3"], svec!["1"], svec!["4"]];
     assert_eq!(got, expected);
 }

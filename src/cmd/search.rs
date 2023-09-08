@@ -59,7 +59,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let pattern = RegexBuilder::new(&*args.arg_regex)
         .case_insensitive(args.flag_ignore_case)
         .build()?;
-    let exact_pattern = args.arg_regex.as_bytes();
+    let exact_pattern: &[u8] = args.arg_regex.as_bytes();
+    let exact_pattern_decoded = std::str::from_utf8(exact_pattern).unwrap().to_lowercase();
     let rconfig = Config::new(&args.arg_input)
         .delimiter(args.flag_delimiter)
         .no_headers(args.flag_no_headers)
@@ -84,7 +85,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         // needed here.
         // Ref: https://llvm.org/docs/Passes.html#loop-unswitch-unswitch-loops
         let mut m = if args.flag_exact {
-            sel.select(&record).any(|cell| cell == exact_pattern)
+            if args.flag_ignore_case {
+                sel.select(&record).any(|cell| {
+                    std::str::from_utf8(cell).unwrap().to_lowercase() == exact_pattern_decoded
+                })
+            } else {
+                sel.select(&record).any(|cell| cell == exact_pattern)
+            }
         } else {
             sel.select(&record).any(|cell| pattern.is_match(cell))
         };
