@@ -8,13 +8,16 @@ use util;
 use CliResult;
 
 // TODO: add --in-memory
-// TODO: we should reserialize
 static USAGE: &'static str = "
 Shuffle the given CSV file. Requires memory proportional to the
 number of rows of the file (approx. 2 u64 per row).
 
-Since this command needs random access in the input file, it
-does not work with stdin or piping.
+Note that rows from input file are copied as-is in the output.
+This means that no CSV serialization harmonization will happen,
+unless --in-memory is set.
+
+Also, since this command needs random access in the input file, it
+does not work with stdin or piping (unless --in-memory) is set.
 
 Usage:
     xsv shuffle [options] [<input>]
@@ -58,7 +61,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
     };
 
+    let mut header_len: Option<usize> = None;
     let mut positions: Vec<(u64, usize)> = Vec::new();
+    let mut last_pos: u64 = 0;
+
     let mut output_wtr = wconf.io_writer()?;
 
     {
@@ -68,20 +74,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             let header = rdr.byte_headers()?;
 
             if !header.is_empty() {
-                let mut wtr = csv::Writer::from_writer(vec![]);
-                wtr.write_record(header)?;
-
-                let binary_header = wtr
-                    .into_inner()
-                    .expect("error while serializing binary header");
-
-                // NOTE: the minus 1 is here to prevent double break in output later
-                output_wtr.write_all(&binary_header[..binary_header.len() - 1])?;
+                last_pos = rdr.position().byte();
+                header_len = Some(last_pos as usize);
             }
         }
 
         let mut record = csv::ByteRecord::new();
-        let mut last_pos: u64 = rdr.position().byte();
 
         while rdr.read_byte_record(&mut record)? {
             let pos = rdr.position().byte();
@@ -94,6 +92,17 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut input_rdr = rconf.io_reader_for_random_access()?;
     let mut reading_buffer: Vec<u8> = Vec::new();
+
+    if let Some(l) = header_len {
+        reading_buffer.try_reserve(l).expect("not enough memory");
+
+        unsafe {
+            reading_buffer.set_len(l);
+        }
+
+        input_rdr.read_exact(&mut reading_buffer)?;
+        output_wtr.write_all(&reading_buffer)?;
+    }
 
     for (byte_offset, length) in positions {
         input_rdr.seek(SeekFrom::Start(byte_offset))?;
