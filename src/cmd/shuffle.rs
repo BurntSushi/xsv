@@ -1,6 +1,5 @@
-use byteorder::{ByteOrder, LittleEndian};
 use csv;
-use rand::{Rng, SeedableRng, StdRng};
+use rand::Rng;
 use std::io::SeekFrom;
 
 use config::{Config, Delimiter};
@@ -37,17 +36,6 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-fn acquire_rng(seed: Option<usize>) -> StdRng {
-    match seed {
-        None => StdRng::from_rng(rand::thread_rng()).unwrap(),
-        Some(seed) => {
-            let mut buf = [0u8; 32];
-            LittleEndian::write_u64(&mut buf, seed as u64);
-            SeedableRng::from_seed(buf)
-        }
-    }
-}
-
 #[derive(Deserialize)]
 struct Args {
     arg_input: Option<String>,
@@ -65,7 +53,7 @@ fn run_random_access(args: Args) -> CliResult<()> {
     let wconf = Config::new(&args.flag_output);
 
     // Seeding rng
-    let mut rng = acquire_rng(args.flag_seed);
+    let mut rng = util::acquire_rng(args.flag_seed);
 
     let mut header_len: Option<usize> = None;
     let mut positions: Vec<(u64, usize)> = Vec::new();
@@ -135,7 +123,7 @@ fn run_in_memory(args: Args) -> CliResult<()> {
     let wconf = Config::new(&args.flag_output);
 
     // Seeding rng
-    let mut rng = acquire_rng(args.flag_seed);
+    let mut rng = util::acquire_rng(args.flag_seed);
 
     let mut rdr = rconf.reader()?;
     let mut wtr = wconf.writer()?;

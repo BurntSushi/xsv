@@ -6,12 +6,14 @@ use std::str;
 use std::thread;
 use std::time;
 
+use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, TimeZone, Utc};
 use chrono_tz::Tz;
 use csv;
 use dateparser::parse_with_timezone;
 use docopt::Docopt;
 use num_cpus;
+use rand::{SeedableRng, StdRng};
 use serde::de::{Deserialize, DeserializeOwned, Deserializer, Error};
 
 use config::{Config, Delimiter};
@@ -268,6 +270,17 @@ impl<'de> Deserialize<'de> for FilenameTemplate {
             Err(D::Error::custom(
                 "The --filename argument must contain one '{}'.",
             ))
+        }
+    }
+}
+
+pub fn acquire_rng(seed: Option<usize>) -> StdRng {
+    match seed {
+        None => StdRng::from_rng(rand::thread_rng()).unwrap(),
+        Some(seed) => {
+            let mut buf = [0u8; 32];
+            LittleEndian::write_u64(&mut buf, seed as u64);
+            SeedableRng::from_seed(buf)
         }
     }
 }

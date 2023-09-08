@@ -1,9 +1,7 @@
 use std::io;
 
-use byteorder::{ByteOrder, LittleEndian};
 use csv;
-use rand::rngs::StdRng;
-use rand::{self, Rng, SeedableRng};
+use rand::Rng;
 
 use config::{Config, Delimiter};
 use index::Indexed;
@@ -118,14 +116,7 @@ fn sample_reservoir<R: io::Read>(
     }
 
     // Seeding rng
-    let mut rng: StdRng = match seed {
-        None => StdRng::from_rng(rand::thread_rng()).unwrap(),
-        Some(seed) => {
-            let mut buf = [0u8; 32];
-            LittleEndian::write_u64(&mut buf, seed as u64);
-            SeedableRng::from_seed(buf)
-        }
-    };
+    let mut rng = util::acquire_rng(seed);
 
     // Now do the sampling.
     for (i, row) in records {
