@@ -7,7 +7,6 @@ use config::{Config, Delimiter};
 use util;
 use CliResult;
 
-// TODO: add --in-memory
 static USAGE: &'static str = "
 Shuffle the given CSV file. Requires memory proportional to the
 number of rows of the file (approx. 2 u64 per row).
@@ -25,6 +24,9 @@ Usage:
 
 shuffle options:
     --seed <number>        RNG seed.
+    -m, --in-memory        Load all CSV data in memory before shuffling it. Can
+                           be useful for streamed inputs such as stdin but of
+                           course costs more memory.
 
 Common options:
     -h, --help             Display this message
@@ -35,31 +37,35 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-#[derive(Deserialize)]
-struct Args {
-    arg_input: Option<String>,
-    flag_output: Option<String>,
-    flag_no_headers: bool,
-    flag_delimiter: Option<Delimiter>,
-    flag_seed: Option<isize>,
-}
-
-pub fn run(argv: &[&str]) -> CliResult<()> {
-    let args: Args = util::get_args(USAGE, argv)?;
-    let rconf = Config::new(&args.arg_input)
-        .delimiter(args.flag_delimiter)
-        .no_headers(args.flag_no_headers);
-    let wconf = Config::new(&args.flag_output);
-
-    // Seeding rng
-    let mut rng: StdRng = match args.flag_seed {
+fn acquire_rng(seed: Option<usize>) -> StdRng {
+    match seed {
         None => StdRng::from_rng(rand::thread_rng()).unwrap(),
         Some(seed) => {
             let mut buf = [0u8; 32];
             LittleEndian::write_u64(&mut buf, seed as u64);
             SeedableRng::from_seed(buf)
         }
-    };
+    }
+}
+
+#[derive(Deserialize)]
+struct Args {
+    arg_input: Option<String>,
+    flag_output: Option<String>,
+    flag_no_headers: bool,
+    flag_delimiter: Option<Delimiter>,
+    flag_seed: Option<usize>,
+    flag_in_memory: bool,
+}
+
+fn run_random_access(args: Args) -> CliResult<()> {
+    let rconf = Config::new(&args.arg_input)
+        .delimiter(args.flag_delimiter)
+        .no_headers(args.flag_no_headers);
+    let wconf = Config::new(&args.flag_output);
+
+    // Seeding rng
+    let mut rng = acquire_rng(args.flag_seed);
 
     let mut header_len: Option<usize> = None;
     let mut positions: Vec<(u64, usize)> = Vec::new();
@@ -120,4 +126,42 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 
     Ok(output_wtr.flush()?)
+}
+
+fn run_in_memory(args: Args) -> CliResult<()> {
+    let rconf = Config::new(&args.arg_input)
+        .delimiter(args.flag_delimiter)
+        .no_headers(args.flag_no_headers);
+    let wconf = Config::new(&args.flag_output);
+
+    // Seeding rng
+    let mut rng = acquire_rng(args.flag_seed);
+
+    let mut rdr = rconf.reader()?;
+    let mut wtr = wconf.writer()?;
+    rconf.write_headers(&mut rdr, &mut wtr)?;
+
+    let mut rows: Vec<csv::ByteRecord> = Vec::new();
+
+    for record in rdr.into_byte_records() {
+        rows.push(record.unwrap());
+    }
+
+    rng.shuffle(&mut rows);
+
+    for record in rows {
+        wtr.write_byte_record(&record)?;
+    }
+
+    Ok(wtr.flush()?)
+}
+
+pub fn run(argv: &[&str]) -> CliResult<()> {
+    let args: Args = util::get_args(USAGE, argv)?;
+
+    if args.flag_in_memory {
+        run_in_memory(args)
+    } else {
+        run_random_access(args)
+    }
 }

@@ -21,6 +21,11 @@ file into memory unfortunately.
 Usage:
     xsv reverse [options] [<input>]
 
+reverse options:
+    -m, --in-memory        Load all CSV data in memory before shuffling it. Can
+                           be useful for streamed inputs such as stdin but of
+                           course costs more memory.
+
 Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
@@ -30,8 +35,6 @@ Common options:
                            appear as the header row in the output.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. (default: ,)
-    -m, --in-memory        Load the csv content in memory before reversing it. Can
-                           be useful for streamed inputs such as stdin.
 ";
 
 #[derive(Deserialize)]
