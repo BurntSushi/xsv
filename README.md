@@ -2,6 +2,8 @@
 
 **Warning**: this repository stores [SciencesPo's médialab](https://medialab.sciencespo.fr/en/) fork of [BurntSushi](https://github.com/BurntSushi)'s [`xsv`](https://github.com/BurntSushi/xsv) command line tool.
 
+Feel free to use it, if you feel its added [features](#new-features) are useful to your own workflows.
+
 ## Presentation
 
 `xsv` is a command line program for indexing, slicing, analyzing, splitting
@@ -35,7 +37,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --all-feat
 cargo install --git https://github.com/medialab/xsv.git --branch prod --features lang
 ```
 
-**New Features**
+<strong id="new-features">New Features</strong>
 
 * `xsv apply`
 * `xsv behead`
