@@ -49,6 +49,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv reverse --in-memory`
 * `xsv search --exact`
 * `xsv search --flag col`
+* `xsv shuffle`
 * `xsv sort -u`
 * `xsv stats --pretty`
 
@@ -91,6 +92,7 @@ given separator.
 * **search** - Run a regex over CSV data. Applies the regex to each field
   individually and shows only matching rows.
 * **select** - Select or re-order columns from CSV data.
+* **shuffle** - Shuffle rows of a CSV file.
 * **slice** - Slice rows from any part of a CSV file. When an index is present,
   this only has to parse the rows in the slice (instead of all rows leading up
   to the start of the slice).

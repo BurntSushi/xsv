@@ -108,6 +108,9 @@ impl ReverseRead {
     }
 }
 
+pub trait SeekRead: Seek + Read {}
+impl<T: Seek + Read> SeekRead for T {}
+
 #[derive(Debug)]
 pub struct Config {
     path: Option<PathBuf>, // None implies <stdin>
@@ -323,11 +326,30 @@ impl Config {
         })
     }
 
+    pub fn io_reader_for_random_access(&self) -> io::Result<Box<dyn SeekRead + 'static>> {
+        let msg = format!("can't use provided input because it does not allow for random access (e.g. stdin or piping)");
+        match self.path {
+            None => {
+                return Err(io::Error::new(io::ErrorKind::Unsupported, msg));
+            }
+            Some(ref p) => match fs::File::open(p) {
+                Ok(x) => match x.borrow().seek(SeekFrom::Current(0)) {
+                    Ok(_) => return Ok(Box::new(x)),
+                    Err(_) => return Err(io::Error::new(io::ErrorKind::Unsupported, msg)),
+                },
+                Err(err) => {
+                    let msg = format!("failed to open {}: {}", p.display(), err);
+                    return Err(io::Error::new(io::ErrorKind::NotFound, msg));
+                }
+            },
+        }
+    }
+
     pub fn io_reader_for_reverse_reading(
         &self,
         offset: u64,
     ) -> io::Result<Box<dyn io::Read + 'static>> {
-        let msg = format!("can't use provided input : needs to be loaded in the RAM");
+        let msg = format!("can't use provided input because it does not allow for random access (e.g. stdin or piping)");
         match self.path {
             None => {
                 return Err(io::Error::new(io::ErrorKind::Unsupported, msg));

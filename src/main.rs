@@ -89,6 +89,7 @@ macro_rules! command_list {
     reverse     Reverse rows of CSV data
     search      Search CSV data with regexes
     select      Select columns from CSV
+    shuffle     Shuffle CSV data
     slice       Slice records from CSV
     sort        Sort CSV data
     split       Split CSV data into many files
@@ -201,6 +202,7 @@ enum Command {
     Sample,
     Search,
     Select,
+    Shuffle,
     Slice,
     Sort,
     Split,
@@ -270,6 +272,7 @@ impl Command {
             Command::Sample => cmd::sample::run(argv),
             Command::Search => cmd::search::run(argv),
             Command::Select => cmd::select::run(argv),
+            Command::Shuffle => cmd::shuffle::run(argv),
             Command::Slice => cmd::slice::run(argv),
             Command::Sort => cmd::sort::run(argv),
             Command::Split => cmd::split::run(argv),
