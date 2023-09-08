@@ -1,4 +1,10 @@
-xsv is a command line program for indexing, slicing, analyzing, splitting
+# médialab xsv fork
+
+**Warning**: this repository stores [SciencesPo's médialab](https://medialab.sciencespo.fr/en/) fork of [BurntSushi](https://github.com/BurntSushi)'s [`xsv`](https://github.com/BurntSushi/xsv) command line tool.
+
+## Presentation
+
+`xsv` is a command line program for indexing, slicing, analyzing, splitting
 and joining CSV files. Commands should be simple, fast and composable:
 
 1. Simple tasks should be easy.
@@ -19,14 +25,14 @@ This forked version of xsv can be installed using cargo:
 cargo install --git https://github.com/medialab/xsv.git --branch prod
 ```
 
-To install optional features (such as `lang` or `py`, for instance):
+To install optional features (such as `lang`, for instance):
 
 ```
 # Everything
 cargo install --git https://github.com/medialab/xsv.git --branch prod --all-features
 
 # Selected features
-cargo install --git https://github.com/medialab/xsv.git --branch prod --features lang,py
+cargo install --git https://github.com/medialab/xsv.git --branch prod --features lang
 ```
 
 **New Features**
@@ -42,9 +48,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv join --prefix-left/--prefix-right`
 * `xsv jsonl`
 * `xsv lang`
-* `xsv lua`
 * `xsv pseudo`
-* `xsv py`
 * `xsv replace`
 * `xsv reverse --in-memory`
 * `xsv search --exact`
@@ -81,10 +85,8 @@ given separator.
 * **join** - Inner, outer and cross joins. Uses a simple hash index to make it
   fast.
 * **lang**, *optional* - Add a column with the language detected in a given CSV column.
-* **lua**, *optional* - Execute a Lua script over CSV lines to transform, aggregate or filter them.
 * **partition** - Partition CSV data based on a column value.
 * **pseudo** - Pseudonymise the value of the given column by replacing them by an incremental identifier.
-* **py**, *optional* - Evaluate a Python expression over CSV lines to transform, aggregate or filter them.
 * **sample** - Randomly draw rows from CSV data using reservoir sampling (i.e.,
   use memory proportional to the size of the sample).
 * **replace** - Replace CSV data using a regex.

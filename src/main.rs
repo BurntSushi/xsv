@@ -8,13 +8,9 @@ extern crate csv_index;
 extern crate dateparser;
 extern crate docopt;
 extern crate filetime;
-#[cfg(feature = "lua")]
-extern crate hlua;
 #[cfg(feature = "lang")]
 extern crate lingua;
 extern crate num_cpus;
-#[cfg(feature = "py")]
-extern crate pyo3;
 extern crate rand;
 extern crate regex;
 extern crate serde;
@@ -80,10 +76,8 @@ macro_rules! command_list {
     join        Join CSV files
     jsonl       Convert newline-delimited JSON files to CSV
     lang        Add a column with the language detected in a given CSV column
-    lua         Execute Lua script on CSV data
     partition   Partition CSV data based on a column value
     pseudo      Pseudonymise the values of a column
-    py          Execute Python script on CSV data
     sample      Randomly sample CSV data
     replace     Replace patterns in CSV data
     reverse     Reverse rows of CSV data
@@ -193,10 +187,8 @@ enum Command {
     Join,
     Jsonl,
     Lang,
-    Lua,
     Partition,
     Pseudo,
-    Py,
     Replace,
     Reverse,
     Sample,
@@ -253,20 +245,8 @@ impl Command {
             Command::Lang => Ok(println!(
                 "This version of XSV was not compiled with the \"lang\" feature."
             )),
-            #[cfg(feature = "lua")]
-            Command::Lua => cmd::lua::run(argv),
-            #[cfg(not(feature = "lua"))]
-            Command::Lua => Ok(println!(
-                "This version of XSV was not compiled with the \"lua\" feature."
-            )),
             Command::Partition => cmd::partition::run(argv),
             Command::Pseudo => cmd::pseudo::run(argv),
-            #[cfg(feature = "py")]
-            Command::Py => cmd::python::run(argv),
-            #[cfg(not(feature = "py"))]
-            Command::Py => Ok(println!(
-                "This version of XSV was not compiled with the \"py\" feature."
-            )),
             Command::Replace => cmd::replace::run(argv),
             Command::Reverse => cmd::reverse::run(argv),
             Command::Sample => cmd::sample::run(argv),

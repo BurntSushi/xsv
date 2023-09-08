@@ -17,12 +17,8 @@ pub mod join;
 pub mod jsonl;
 #[cfg(feature = "lang")]
 pub mod lang;
-#[cfg(feature = "lua")]
-pub mod lua;
 pub mod partition;
 pub mod pseudo;
-#[cfg(feature = "py")]
-pub mod python;
 pub mod replace;
 pub mod reverse;
 pub mod sample;
