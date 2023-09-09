@@ -2,10 +2,11 @@
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{alpha1, alphanumeric1, char, space0},
-    combinator::{all_consuming, map_res, opt, recognize, value},
+    character::complete::{alpha1, alphanumeric1, char, digit1, space0},
+    combinator::{all_consuming, map_res, not, opt, recognize, value},
     multi::{many0, separated_list0},
-    sequence::{delimited, pair, tuple},
+    number::complete::double,
+    sequence::{delimited, pair, terminated, tuple},
     IResult,
 };
 
@@ -37,6 +38,10 @@ fn boolean_literal(input: &str) -> IResult<&str, Argument> {
     alt((true_literal, false_literal))(input)
 }
 
+fn float_literal(input: &str) -> IResult<&str, Argument> {
+    double(input).map(|t| (t.0, Argument::FloatLiteral(t.1)))
+}
+
 fn underscore(input: &str) -> IResult<&str, Argument> {
     char('_')(input).map(|t| (t.0, Argument::Underscore))
 }
@@ -46,6 +51,18 @@ fn identifier(input: &str) -> IResult<&str, &str> {
         alpha1,
         many0(alt((alphanumeric1, tag("_"), tag("-")))),
     ))(input)
+}
+
+fn integer_literal(input: &str) -> IResult<&str, Argument> {
+    map_res(
+        recognize(pair(digit1, many0(alt((digit1, tag("_")))))),
+        |string: &str| {
+            string
+                .replace("_", "")
+                .parse::<i64>()
+                .map(|i| Argument::IntegerLiteral(i))
+        },
+    )(input)
 }
 
 fn argument_separator(input: &str) -> IResult<&str, ()> {
@@ -59,6 +76,8 @@ fn argument(input: &str) -> IResult<&str, Argument> {
             Ok(Argument::Identifier(String::from(name)))
         }),
         underscore,
+        terminated(integer_literal, not(char('.'))),
+        float_literal,
     ))(input)
 }
 
@@ -107,6 +126,22 @@ mod tests {
         assert_eq!(
             boolean_literal("false"),
             Ok(("", Argument::BooleanLiteral(false)))
+        );
+    }
+
+    #[test]
+    fn test_float_literal() {
+        assert_eq!(
+            float_literal("3.56"),
+            Ok(("", Argument::FloatLiteral(3.56)))
+        )
+    }
+
+    #[test]
+    fn test_integer_literal() {
+        assert_eq!(
+            integer_literal("456_400"),
+            Ok(("", Argument::IntegerLiteral(456_400i64)))
         );
     }
 
@@ -166,12 +201,18 @@ mod tests {
         );
 
         assert_eq!(
-            function_call("trim(_, true)"),
+            function_call("trim(_, true, 4.5, 56, col)"),
             Ok((
                 "",
                 FunctionCall {
                     name: String::from("trim"),
-                    args: vec![Argument::Underscore, Argument::BooleanLiteral(true)]
+                    args: vec![
+                        Argument::Underscore,
+                        Argument::BooleanLiteral(true),
+                        Argument::FloatLiteral(4.5),
+                        Argument::IntegerLiteral(56),
+                        Argument::Identifier(String::from("col"))
+                    ]
                 }
             ))
         );
