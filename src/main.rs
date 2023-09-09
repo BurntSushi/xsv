@@ -10,6 +10,7 @@ extern crate docopt;
 extern crate filetime;
 #[cfg(feature = "lang")]
 extern crate lingua;
+extern crate nom;
 extern crate num_cpus;
 extern crate rand;
 extern crate regex;
@@ -98,6 +99,7 @@ mod config;
 mod index;
 mod select;
 mod util;
+mod xan;
 
 static USAGE: &'static str = concat!(
     "
