@@ -11,13 +11,13 @@ use nom::{
 };
 
 #[derive(Debug, PartialEq)]
-struct IndexationInfo {
+pub struct IndexationInfo {
     key: String,
     pos: usize,
 }
 
 #[derive(Debug, PartialEq)]
-enum Argument {
+pub enum Argument {
     Identifier(String),
     Indexation(IndexationInfo),
     StringLiteral(String),
@@ -28,12 +28,12 @@ enum Argument {
 }
 
 #[derive(Debug, PartialEq)]
-struct FunctionCall {
+pub struct FunctionCall {
     name: String,
     args: Vec<Argument>,
 }
 
-type Pipeline = Vec<FunctionCall>;
+pub type Pipeline = Vec<FunctionCall>;
 
 fn boolean_literal(input: &str) -> IResult<&str, bool> {
     alt((value(true, tag("true")), value(false, tag("false"))))(input)
@@ -204,7 +204,7 @@ fn pipe(input: &str) -> IResult<&str, ()> {
     value((), tuple((space0, char('|'), space0)))(input)
 }
 
-fn pipeline(input: &str) -> IResult<&str, Pipeline> {
+pub fn pipeline(input: &str) -> IResult<&str, Pipeline> {
     all_consuming(separated_list0(pipe, function_call))(input)
 }
 
