@@ -2,9 +2,9 @@
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{alpha1, alphanumeric1, char, digit1, space0},
+    character::complete::{alpha1, alphanumeric1, anychar, char, digit1, none_of, space0},
     combinator::{all_consuming, map_res, not, opt, recognize, value},
-    multi::{many0, separated_list0},
+    multi::{fold_many0, many0, separated_list0},
     number::complete::double,
     sequence::{delimited, pair, terminated, tuple},
     IResult,
@@ -62,6 +62,42 @@ fn integer_literal(input: &str) -> IResult<&str, Argument> {
                 .parse::<i64>()
                 .map(|i| Argument::IntegerLiteral(i))
         },
+    )(input)
+}
+
+fn string_character_literal(input: &str) -> IResult<&str, char> {
+    let (input, c) = none_of("\"")(input)?;
+
+    if c == '\\' {
+        let (input, c) = anychar(input)?;
+
+        Ok((
+            input,
+            match c {
+                '"' | '\\' | '/' => c,
+                'n' => '\n',
+                'r' => '\r',
+                't' => '\t',
+                _ => {
+                    return Err(nom::Err::Failure(nom::error::ParseError::from_char(
+                        input, c,
+                    )))
+                }
+            },
+        ))
+    } else {
+        Ok((input, c))
+    }
+}
+
+fn string_literal(input: &str) -> IResult<&str, String> {
+    delimited(
+        char('"'),
+        fold_many0(string_character_literal, String::new, |mut string, c| {
+            string.push(c);
+            string
+        }),
+        char('"'),
     )(input)
 }
 
@@ -146,6 +182,22 @@ mod tests {
     }
 
     #[test]
+    fn test_string_literal() {
+        assert_eq!(
+            string_literal(r#""hello", 45"#),
+            Ok((", 45", String::from("hello")))
+        );
+        assert_eq!(
+            string_literal(r#""héllo", 45"#),
+            Ok((", 45", String::from("héllo")))
+        );
+        assert_eq!(
+            string_literal(r#""hel\nlo", 45"#),
+            Ok((", 45", String::from("hel\nlo")))
+        );
+    }
+
+    #[test]
     fn test_underscore() {
         assert_eq!(underscore("_, 45"), Ok((", 45", Argument::Underscore)))
     }
@@ -220,8 +272,27 @@ mod tests {
 
     #[test]
     fn test_pipeline() {
+        assert!(pipeline("test |").is_err());
+
         assert_eq!(
             pipeline("trim(name) | len  (_)"),
+            Ok((
+                "",
+                vec![
+                    FunctionCall {
+                        name: String::from("trim"),
+                        args: vec![Argument::Identifier(String::from("name"))]
+                    },
+                    FunctionCall {
+                        name: String::from("len"),
+                        args: vec![Argument::Underscore]
+                    }
+                ]
+            ))
+        );
+
+        assert_eq!(
+            pipeline("trim(name)|len  (_)"),
             Ok((
                 "",
                 vec![
