@@ -13,6 +13,7 @@ use nom::{
 #[derive(Debug, PartialEq)]
 enum Argument {
     Identifier(String),
+    Indexation((String, u64)),
     StringLiteral(String),
     FloatLiteral(f64),
     IntegerLiteral(i64),
@@ -25,6 +26,8 @@ struct FunctionCall {
     name: String,
     args: Vec<Argument>,
 }
+
+type Pipeline = Vec<FunctionCall>;
 
 fn boolean_literal(input: &str) -> IResult<&str, bool> {
     alt((value(true, tag("true")), value(false, tag("false"))))(input)
@@ -45,10 +48,16 @@ fn identifier(input: &str) -> IResult<&str, &str> {
     ))(input)
 }
 
-fn integer_literal(input: &str) -> IResult<&str, i64> {
+fn integer_literal<T>(input: &str) -> IResult<&str, T>
+where
+    T: std::str::FromStr,
+{
     map_res(
-        recognize(pair(digit1, many0(alt((digit1, tag("_")))))),
-        |string: &str| string.replace("_", "").parse::<i64>(),
+        recognize(pair(
+            alt((digit1, tag("-"))),
+            many0(alt((digit1, tag("_")))),
+        )),
+        |string: &str| string.replace("_", "").parse::<T>(),
     )(input)
 }
 
@@ -171,7 +180,7 @@ fn pipe(input: &str) -> IResult<&str, ()> {
     value((), tuple((space0, char('|'), space0)))(input)
 }
 
-fn pipeline(input: &str) -> IResult<&str, Vec<FunctionCall>> {
+fn pipeline(input: &str) -> IResult<&str, Pipeline> {
     all_consuming(separated_list0(pipe, function_call))(input)
 }
 
@@ -194,6 +203,7 @@ mod tests {
     #[test]
     fn test_integer_literal() {
         assert_eq!(integer_literal("456_400"), Ok(("", 456_400i64)));
+        assert_eq!(integer_literal("-36, test"), Ok((", test", -36i64)));
     }
 
     #[test]
