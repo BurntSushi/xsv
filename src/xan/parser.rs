@@ -52,40 +52,81 @@ fn integer_literal(input: &str) -> IResult<&str, i64> {
     )(input)
 }
 
-fn string_character_literal(input: &str) -> IResult<&str, char> {
+fn unescape(c: char, delimiter: char) -> Result<char, ()> {
+    if c == delimiter {
+        return Ok(c);
+    }
+
+    Ok(match c {
+        '\\' | '/' => c,
+        'n' => '\n',
+        'r' => '\r',
+        't' => '\t',
+        _ => return Err(()),
+    })
+}
+
+fn double_quote_string_character_literal(input: &str) -> IResult<&str, char> {
     let (input, c) = none_of("\"")(input)?;
 
     if c == '\\' {
         let (input, c) = anychar(input)?;
 
-        Ok((
-            input,
-            match c {
-                '"' | '\\' | '/' => c,
-                'n' => '\n',
-                'r' => '\r',
-                't' => '\t',
-                _ => {
-                    return Err(nom::Err::Failure(nom::error::ParseError::from_char(
-                        input, c,
-                    )))
-                }
-            },
-        ))
+        match unescape(c, '"') {
+            Ok(c) => Ok((input, c)),
+            Err(_) => Err(nom::Err::Failure(nom::error::ParseError::from_char(
+                input, c,
+            ))),
+        }
+    } else {
+        Ok((input, c))
+    }
+}
+
+fn single_quote_string_character_literal(input: &str) -> IResult<&str, char> {
+    let (input, c) = none_of("'")(input)?;
+
+    if c == '\\' {
+        let (input, c) = anychar(input)?;
+
+        match unescape(c, '\'') {
+            Ok(c) => Ok((input, c)),
+            Err(_) => Err(nom::Err::Failure(nom::error::ParseError::from_char(
+                input, c,
+            ))),
+        }
     } else {
         Ok((input, c))
     }
 }
 
 fn string_literal(input: &str) -> IResult<&str, String> {
-    delimited(
-        char('"'),
-        fold_many0(string_character_literal, String::new, |mut string, c| {
-            string.push(c);
-            string
-        }),
-        char('"'),
-    )(input)
+    alt((
+        delimited(
+            char('"'),
+            fold_many0(
+                double_quote_string_character_literal,
+                String::new,
+                |mut string, c| {
+                    string.push(c);
+                    string
+                },
+            ),
+            char('"'),
+        ),
+        delimited(
+            char('\''),
+            fold_many0(
+                single_quote_string_character_literal,
+                String::new,
+                |mut string, c| {
+                    string.push(c);
+                    string
+                },
+            ),
+            char('\''),
+        ),
+    ))(input)
 }
 
 fn argument_separator(input: &str) -> IResult<&str, ()> {
@@ -168,6 +209,14 @@ mod tests {
         assert_eq!(
             string_literal(r#""hel\nlo", 45"#),
             Ok((", 45", String::from("hel\nlo")))
+        );
+        assert_eq!(
+            string_literal(r#""hello \"world\"", 45"#),
+            Ok((", 45", String::from("hello \"world\"")))
+        );
+        assert_eq!(
+            string_literal(r#"'hello \'world\'', 45"#),
+            Ok((", 45", String::from("hello 'world'")))
         );
     }
 
