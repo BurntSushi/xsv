@@ -6,14 +6,20 @@ use nom::{
     combinator::{all_consuming, map, map_res, not, opt, recognize, value},
     multi::{fold_many0, many0, separated_list0},
     number::complete::double,
-    sequence::{delimited, pair, terminated, tuple},
+    sequence::{delimited, pair, preceded, terminated, tuple},
     IResult,
 };
 
 #[derive(Debug, PartialEq)]
+struct IndexationInfo {
+    key: String,
+    pos: usize,
+}
+
+#[derive(Debug, PartialEq)]
 enum Argument {
     Identifier(String),
-    Indexation((String, u64)),
+    Indexation(IndexationInfo),
     StringLiteral(String),
     FloatLiteral(f64),
     IntegerLiteral(i64),
@@ -142,10 +148,28 @@ fn argument_separator(input: &str) -> IResult<&str, ()> {
     value((), tuple((space0, char(','), space0)))(input)
 }
 
+fn indexation(input: &str) -> IResult<&str, IndexationInfo> {
+    map(
+        delimited(
+            char('['),
+            pair(
+                string_literal,
+                opt(preceded(argument_separator, integer_literal::<usize>)),
+            ),
+            char(']'),
+        ),
+        |(string, index)| IndexationInfo {
+            key: string,
+            pos: index.unwrap_or(0),
+        },
+    )(input)
+}
+
 fn argument(input: &str) -> IResult<&str, Argument> {
     alt((
         map(boolean_literal, |value| Argument::BooleanLiteral(value)),
         map(identifier, |name| Argument::Identifier(String::from(name))),
+        map(indexation, |value| Argument::Indexation(value)),
         map(terminated(integer_literal, not(char('.'))), |value| {
             Argument::IntegerLiteral(value)
         }),
@@ -241,6 +265,30 @@ mod tests {
     }
 
     #[test]
+    fn test_indexation() {
+        assert_eq!(
+            indexation("['name']"),
+            Ok((
+                "",
+                IndexationInfo {
+                    key: String::from("name"),
+                    pos: 0
+                }
+            ))
+        );
+        assert_eq!(
+            indexation("['name', 3]"),
+            Ok((
+                "",
+                IndexationInfo {
+                    key: String::from("name"),
+                    pos: 3
+                }
+            ))
+        );
+    }
+
+    #[test]
     fn test_argument() {
         assert_eq!(argument("true"), Ok(("", Argument::BooleanLiteral(true))));
         assert_eq!(
@@ -312,7 +360,7 @@ mod tests {
         assert!(pipeline("test |").is_err());
 
         assert_eq!(
-            pipeline("trim(name) | len  (_)"),
+            pipeline("trim(name) | len  (_, ['name'])"),
             Ok((
                 "",
                 vec![
@@ -322,7 +370,13 @@ mod tests {
                     },
                     FunctionCall {
                         name: String::from("len"),
-                        args: vec![Argument::Underscore]
+                        args: vec![
+                            Argument::Underscore,
+                            Argument::Indexation(IndexationInfo {
+                                key: String::from("name"),
+                                pos: 0
+                            })
+                        ]
                     }
                 ]
             ))
