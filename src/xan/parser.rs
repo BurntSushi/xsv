@@ -3,7 +3,7 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{alpha1, alphanumeric1, anychar, char, digit1, none_of, space0},
-    combinator::{all_consuming, map_res, not, opt, recognize, value},
+    combinator::{all_consuming, map, map_res, not, opt, recognize, value},
     multi::{fold_many0, many0, separated_list0},
     number::complete::double,
     sequence::{delimited, pair, terminated, tuple},
@@ -94,22 +94,14 @@ fn argument_separator(input: &str) -> IResult<&str, ()> {
 
 fn argument(input: &str) -> IResult<&str, Argument> {
     alt((
-        map_res(boolean_literal, |value| -> Result<Argument, ()> {
-            Ok(Argument::BooleanLiteral(value))
+        map(boolean_literal, |value| Argument::BooleanLiteral(value)),
+        map(identifier, |name| Argument::Identifier(String::from(name))),
+        map(terminated(integer_literal, not(char('.'))), |value| {
+            Argument::IntegerLiteral(value)
         }),
-        map_res(identifier, |name| -> Result<Argument, ()> {
-            Ok(Argument::Identifier(String::from(name)))
-        }),
-        map_res(
-            terminated(integer_literal, not(char('.'))),
-            |value| -> Result<Argument, ()> { Ok(Argument::IntegerLiteral(value)) },
-        ),
-        map_res(float_literal, |value| -> Result<Argument, ()> {
-            Ok(Argument::FloatLiteral(value))
-        }),
-        map_res(underscore, |_| -> Result<Argument, ()> {
-            Ok(Argument::Underscore)
-        }),
+        map(float_literal, |value| Argument::FloatLiteral(value)),
+        map(string_literal, |string| Argument::StringLiteral(string)),
+        map(underscore, |_| Argument::Underscore),
     ))(input)
 }
 
@@ -118,7 +110,7 @@ fn argument_list(input: &str) -> IResult<&str, Vec<Argument>> {
 }
 
 fn function_call(input: &str) -> IResult<&str, FunctionCall> {
-    map_res(
+    map(
         pair(
             identifier,
             opt(delimited(
@@ -127,11 +119,9 @@ fn function_call(input: &str) -> IResult<&str, FunctionCall> {
                 pair(char(')'), space0),
             )),
         ),
-        |(name, args)| -> Result<FunctionCall, ()> {
-            Ok(FunctionCall {
-                name: String::from(name),
-                args: args.unwrap_or_else(|| vec![Argument::Underscore]),
-            })
+        |(name, args)| FunctionCall {
+            name: String::from(name),
+            args: args.unwrap_or_else(|| vec![Argument::Underscore]),
         },
     )(input)
 }
@@ -194,6 +184,10 @@ mod tests {
     #[test]
     fn test_argument() {
         assert_eq!(argument("true"), Ok(("", Argument::BooleanLiteral(true))));
+        assert_eq!(
+            argument("\"test\""),
+            Ok(("", Argument::StringLiteral(String::from("test"))))
+        );
     }
 
     #[test]
