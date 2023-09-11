@@ -26,24 +26,16 @@ struct FunctionCall {
     args: Vec<Argument>,
 }
 
-fn true_literal(input: &str) -> IResult<&str, Argument> {
-    tag("true")(input).map(|t| (t.0, Argument::BooleanLiteral(true)))
+fn boolean_literal(input: &str) -> IResult<&str, bool> {
+    alt((value(true, tag("true")), value(false, tag("false"))))(input)
 }
 
-fn false_literal(input: &str) -> IResult<&str, Argument> {
-    tag("false")(input).map(|t| (t.0, Argument::BooleanLiteral(false)))
+fn float_literal(input: &str) -> IResult<&str, f64> {
+    double(input)
 }
 
-fn boolean_literal(input: &str) -> IResult<&str, Argument> {
-    alt((true_literal, false_literal))(input)
-}
-
-fn float_literal(input: &str) -> IResult<&str, Argument> {
-    double(input).map(|t| (t.0, Argument::FloatLiteral(t.1)))
-}
-
-fn underscore(input: &str) -> IResult<&str, Argument> {
-    char('_')(input).map(|t| (t.0, Argument::Underscore))
+fn underscore(input: &str) -> IResult<&str, ()> {
+    value((), char('_'))(input)
 }
 
 fn identifier(input: &str) -> IResult<&str, &str> {
@@ -53,15 +45,10 @@ fn identifier(input: &str) -> IResult<&str, &str> {
     ))(input)
 }
 
-fn integer_literal(input: &str) -> IResult<&str, Argument> {
+fn integer_literal(input: &str) -> IResult<&str, i64> {
     map_res(
         recognize(pair(digit1, many0(alt((digit1, tag("_")))))),
-        |string: &str| {
-            string
-                .replace("_", "")
-                .parse::<i64>()
-                .map(|i| Argument::IntegerLiteral(i))
-        },
+        |string: &str| string.replace("_", "").parse::<i64>(),
     )(input)
 }
 
@@ -107,13 +94,22 @@ fn argument_separator(input: &str) -> IResult<&str, ()> {
 
 fn argument(input: &str) -> IResult<&str, Argument> {
     alt((
-        boolean_literal,
+        map_res(boolean_literal, |value| -> Result<Argument, ()> {
+            Ok(Argument::BooleanLiteral(value))
+        }),
         map_res(identifier, |name| -> Result<Argument, ()> {
             Ok(Argument::Identifier(String::from(name)))
         }),
-        underscore,
-        terminated(integer_literal, not(char('.'))),
-        float_literal,
+        map_res(
+            terminated(integer_literal, not(char('.'))),
+            |value| -> Result<Argument, ()> { Ok(Argument::IntegerLiteral(value)) },
+        ),
+        map_res(float_literal, |value| -> Result<Argument, ()> {
+            Ok(Argument::FloatLiteral(value))
+        }),
+        map_res(underscore, |_| -> Result<Argument, ()> {
+            Ok(Argument::Underscore)
+        }),
     ))(input)
 }
 
@@ -154,31 +150,19 @@ mod tests {
 
     #[test]
     fn test_boolean_literal() {
-        assert_eq!(
-            boolean_literal("true, test"),
-            Ok((", test", Argument::BooleanLiteral(true)))
-        );
+        assert_eq!(boolean_literal("true, test"), Ok((", test", true)));
 
-        assert_eq!(
-            boolean_literal("false"),
-            Ok(("", Argument::BooleanLiteral(false)))
-        );
+        assert_eq!(boolean_literal("false"), Ok(("", false)));
     }
 
     #[test]
     fn test_float_literal() {
-        assert_eq!(
-            float_literal("3.56"),
-            Ok(("", Argument::FloatLiteral(3.56)))
-        )
+        assert_eq!(float_literal("3.56"), Ok(("", 3.56f64)))
     }
 
     #[test]
     fn test_integer_literal() {
-        assert_eq!(
-            integer_literal("456_400"),
-            Ok(("", Argument::IntegerLiteral(456_400i64)))
-        );
+        assert_eq!(integer_literal("456_400"), Ok(("", 456_400i64)));
     }
 
     #[test]
@@ -199,7 +183,7 @@ mod tests {
 
     #[test]
     fn test_underscore() {
-        assert_eq!(underscore("_, 45"), Ok((", 45", Argument::Underscore)))
+        assert_eq!(underscore("_, 45"), Ok((", 45", ())))
     }
 
     #[test]
