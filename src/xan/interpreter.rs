@@ -1,6 +1,7 @@
 use csv::ByteRecord;
 
-use xan::functions::DynamicValue;
+use xan::error::EvaluationError;
+use xan::functions::{trim, DynamicValue};
 use xan::parser::{Argument, IndexationInfo, Pipeline};
 
 enum ConcreteArgument {
@@ -13,22 +14,27 @@ enum ConcreteArgument {
     Underscore,
 }
 
+// TODO: handle variables
 impl ConcreteArgument {
-    fn bind(self, record: &ByteRecord, last_value: DynamicValue) -> Result<DynamicValue, ()> {
+    fn bind(
+        self,
+        record: &ByteRecord,
+        last_value: &DynamicValue,
+    ) -> Result<DynamicValue, EvaluationError> {
         Ok(match self {
             Self::StringLiteral(value) => DynamicValue::String(value),
             Self::FloatLiteral(value) => DynamicValue::Float(value),
             Self::IntegerLiteral(value) => DynamicValue::Integer(value),
             Self::BooleanLiteral(value) => DynamicValue::Boolean(value),
-            Self::Underscore => last_value,
+            Self::Underscore => last_value.clone(),
             Self::Column(index) => match record.get(index) {
-                None => return Err(()),
+                None => return Err(EvaluationError::ColumnOutOfRange(index)),
                 Some(cell) => match String::from_utf8(cell.to_vec()) {
-                    Err(_) => return Err(()),
+                    Err(_) => return Err(EvaluationError::UnicodeDecodeError),
                     Ok(value) => DynamicValue::String(value),
                 },
             },
-            Self::Variable(name) => return Err(()),
+            Self::Variable(name) => return Err(EvaluationError::UnknownVariable(name.clone())),
         })
     }
 }
@@ -36,6 +42,35 @@ impl ConcreteArgument {
 struct ConcreteFunctionCall {
     name: String,
     args: Vec<ConcreteArgument>,
+}
+
+impl ConcreteFunctionCall {
+    fn bind(
+        self,
+        record: &ByteRecord,
+        last_value: &DynamicValue,
+    ) -> Result<(String, Vec<DynamicValue>), EvaluationError> {
+        let mut bound_args: Vec<DynamicValue> = Vec::new();
+
+        for arg in self.args {
+            bound_args.push(arg.bind(record, last_value)?);
+        }
+
+        Ok((self.name, bound_args))
+    }
+
+    fn call(
+        self,
+        record: &ByteRecord,
+        last_value: &DynamicValue,
+    ) -> Result<DynamicValue, EvaluationError> {
+        let (name, args) = self.bind(record, last_value)?;
+
+        match name.as_ref() {
+            "trim" => trim(&args),
+            _ => Err(EvaluationError::UnknownFunction(name)),
+        }
+    }
 }
 
 type ConcretePipeline = Vec<ConcreteFunctionCall>;
@@ -111,6 +146,15 @@ fn concretize_pipeline(
     Ok(concrete_pipeline)
 }
 
-fn interpret(pipeline: &ConcretePipeline, record: &ByteRecord) -> Result<DynamicValue, ()> {
-    Err(())
+fn interpret(
+    pipeline: ConcretePipeline,
+    record: &ByteRecord,
+) -> Result<DynamicValue, EvaluationError> {
+    let mut last_value = DynamicValue::None;
+
+    for function_call in pipeline.into_iter() {
+        last_value = function_call.call(&record, &last_value)?;
+    }
+
+    Ok(last_value)
 }
