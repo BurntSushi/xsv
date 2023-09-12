@@ -77,6 +77,7 @@ macro_rules! command_list {
     join        Join CSV files
     jsonl       Convert newline-delimited JSON files to CSV
     lang        Add a column with the language detected in a given CSV column
+    map         Create a new column by applying transformations.
     partition   Partition CSV data based on a column value
     pseudo      Pseudonymise the values of a column
     sample      Randomly sample CSV data
@@ -189,6 +190,7 @@ enum Command {
     Join,
     Jsonl,
     Lang,
+    Map,
     Partition,
     Pseudo,
     Replace,
@@ -247,6 +249,7 @@ impl Command {
             Command::Lang => Ok(println!(
                 "This version of XSV was not compiled with the \"lang\" feature."
             )),
+            Command::Map => cmd::map::run(argv),
             Command::Partition => cmd::partition::run(argv),
             Command::Pseudo => cmd::pseudo::run(argv),
             Command::Replace => cmd::replace::run(argv),

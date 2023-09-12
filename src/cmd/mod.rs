@@ -17,6 +17,7 @@ pub mod join;
 pub mod jsonl;
 #[cfg(feature = "lang")]
 pub mod lang;
+pub mod map;
 pub mod partition;
 pub mod pseudo;
 pub mod replace;

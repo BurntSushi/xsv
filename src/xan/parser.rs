@@ -7,7 +7,7 @@ use nom::{
     multi::{fold_many0, many0, separated_list0},
     number::complete::double,
     sequence::{delimited, pair, preceded, terminated, tuple},
-    Finish, IResult,
+    IResult,
 };
 
 #[derive(Debug, PartialEq)]

@@ -40,7 +40,7 @@ impl ConcreteArgument {
     }
 }
 
-struct ConcreteFunctionCall {
+pub struct ConcreteFunctionCall {
     name: String,
     args: Vec<ConcreteArgument>,
 }
@@ -148,7 +148,7 @@ fn concretize_pipeline(
 }
 
 // TODO: write this better
-fn prepare(
+pub fn prepare(
     code: &str,
     header: &ByteRecord,
     reserved: &Vec<String>,
@@ -162,7 +162,7 @@ fn prepare(
     }
 }
 
-fn interpret(
+pub fn interpret(
     pipeline: &ConcretePipeline,
     record: &ByteRecord,
 ) -> Result<DynamicValue, EvaluationError> {
