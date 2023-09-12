@@ -1,7 +1,7 @@
 use csv::ByteRecord;
 
 use xan::error::EvaluationError;
-use xan::functions::{trim, DynamicValue};
+use xan::functions::{len, trim, DynamicValue};
 use xan::parser::{parse, Argument, IndexationInfo, Pipeline};
 
 enum ConcreteArgument {
@@ -68,6 +68,7 @@ impl ConcreteFunctionCall {
         let args = self.bind(record, last_value)?;
 
         match self.name.as_ref() {
+            "len" => len(&args),
             "trim" => trim(&args),
             _ => Err(EvaluationError::UnknownFunction(self.name.clone())),
         }

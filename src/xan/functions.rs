@@ -42,3 +42,8 @@ pub fn trim(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
         args[0].cast_to_string()?.trim(),
     )))
 }
+
+pub fn len(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    validate_arity(args, 1)?;
+    Ok(DynamicValue::Integer(args[0].cast_to_string()?.len() as i64))
+}
