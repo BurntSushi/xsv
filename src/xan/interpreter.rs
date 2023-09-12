@@ -2,7 +2,7 @@ use csv::ByteRecord;
 
 use xan::error::EvaluationError;
 use xan::functions::{trim, DynamicValue};
-use xan::parser::{Argument, IndexationInfo, Pipeline};
+use xan::parser::{parse, Argument, IndexationInfo, Pipeline};
 
 enum ConcreteArgument {
     Variable(String),
@@ -15,20 +15,21 @@ enum ConcreteArgument {
 }
 
 // TODO: handle variables
+// TODO: investigate cows
 impl ConcreteArgument {
     fn bind(
-        self,
+        &self,
         record: &ByteRecord,
         last_value: &DynamicValue,
     ) -> Result<DynamicValue, EvaluationError> {
         Ok(match self {
-            Self::StringLiteral(value) => DynamicValue::String(value),
-            Self::FloatLiteral(value) => DynamicValue::Float(value),
-            Self::IntegerLiteral(value) => DynamicValue::Integer(value),
-            Self::BooleanLiteral(value) => DynamicValue::Boolean(value),
+            Self::StringLiteral(value) => DynamicValue::String(value.clone()),
+            Self::FloatLiteral(value) => DynamicValue::Float(*value),
+            Self::IntegerLiteral(value) => DynamicValue::Integer(*value),
+            Self::BooleanLiteral(value) => DynamicValue::Boolean(*value),
             Self::Underscore => last_value.clone(),
-            Self::Column(index) => match record.get(index) {
-                None => return Err(EvaluationError::ColumnOutOfRange(index)),
+            Self::Column(index) => match record.get(*index) {
+                None => return Err(EvaluationError::ColumnOutOfRange(*index)),
                 Some(cell) => match String::from_utf8(cell.to_vec()) {
                     Err(_) => return Err(EvaluationError::UnicodeDecodeError),
                     Ok(value) => DynamicValue::String(value),
@@ -46,29 +47,29 @@ struct ConcreteFunctionCall {
 
 impl ConcreteFunctionCall {
     fn bind(
-        self,
+        &self,
         record: &ByteRecord,
         last_value: &DynamicValue,
-    ) -> Result<(String, Vec<DynamicValue>), EvaluationError> {
+    ) -> Result<Vec<DynamicValue>, EvaluationError> {
         let mut bound_args: Vec<DynamicValue> = Vec::new();
 
-        for arg in self.args {
+        for arg in self.args.iter() {
             bound_args.push(arg.bind(record, last_value)?);
         }
 
-        Ok((self.name, bound_args))
+        Ok(bound_args)
     }
 
     fn call(
-        self,
+        &self,
         record: &ByteRecord,
         last_value: &DynamicValue,
     ) -> Result<DynamicValue, EvaluationError> {
-        let (name, args) = self.bind(record, last_value)?;
+        let args = self.bind(record, last_value)?;
 
-        match name.as_ref() {
+        match self.name.as_ref() {
             "trim" => trim(&args),
-            _ => Err(EvaluationError::UnknownFunction(name)),
+            _ => Err(EvaluationError::UnknownFunction(self.name.clone())),
         }
     }
 }
@@ -146,15 +147,47 @@ fn concretize_pipeline(
     Ok(concrete_pipeline)
 }
 
+// TODO: write this better
+fn prepare(
+    code: &str,
+    header: &ByteRecord,
+    reserved: &Vec<String>,
+) -> Result<ConcretePipeline, ()> {
+    match parse(code) {
+        Err(_) => Err(()),
+        Ok(pipeline) => match concretize_pipeline(pipeline, header, reserved) {
+            Err(_) => Err(()),
+            Ok(concrete_pipeline) => Ok(concrete_pipeline),
+        },
+    }
+}
+
 fn interpret(
-    pipeline: ConcretePipeline,
+    pipeline: &ConcretePipeline,
     record: &ByteRecord,
 ) -> Result<DynamicValue, EvaluationError> {
     let mut last_value = DynamicValue::None;
 
-    for function_call in pipeline.into_iter() {
+    for function_call in pipeline {
         last_value = function_call.call(&record, &last_value)?;
     }
 
     Ok(last_value)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_interpret() -> Result<(), ()> {
+        let pipeline = prepare("trim", &ByteRecord::new(), &Vec::new())?;
+
+        match interpret(&pipeline, &ByteRecord::new()) {
+            Err(_) => return Err(()),
+            Ok(value) => assert_eq!(value.serialize(), String::new()),
+        }
+
+        Ok(())
+    }
 }

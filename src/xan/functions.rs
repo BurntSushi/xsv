@@ -1,6 +1,6 @@
 use xan::error::{EvaluationError, InvalidArityErrorContext};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum DynamicValue {
     String(String),
     Float(f64),
@@ -10,7 +10,7 @@ pub enum DynamicValue {
 }
 
 impl DynamicValue {
-    fn serialize(&self) -> String {
+    pub fn serialize(&self) -> String {
         match self {
             Self::String(value) => value.clone(),
             Self::Float(value) => value.to_string(),

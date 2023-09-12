@@ -7,7 +7,7 @@ use nom::{
     multi::{fold_many0, many0, separated_list0},
     number::complete::double,
     sequence::{delimited, pair, preceded, terminated, tuple},
-    IResult,
+    Finish, IResult,
 };
 
 #[derive(Debug, PartialEq)]
@@ -204,8 +204,16 @@ fn pipe(input: &str) -> IResult<&str, ()> {
     value((), tuple((space0, char('|'), space0)))(input)
 }
 
-pub fn pipeline(input: &str) -> IResult<&str, Pipeline> {
+fn pipeline(input: &str) -> IResult<&str, Pipeline> {
     all_consuming(separated_list0(pipe, function_call))(input)
+}
+
+// TODO: write this better
+pub fn parse(code: &str) -> Result<Pipeline, ()> {
+    match pipeline(code) {
+        Ok(p) => Ok(p.1),
+        Err(_) => Err(()),
+    }
 }
 
 #[cfg(test)]
