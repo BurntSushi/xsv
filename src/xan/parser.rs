@@ -12,8 +12,8 @@ use nom::{
 
 #[derive(Debug, PartialEq)]
 pub struct IndexationInfo {
-    key: String,
-    pos: usize,
+    pub name: String,
+    pub pos: usize,
 }
 
 #[derive(Debug, PartialEq)]
@@ -29,8 +29,8 @@ pub enum Argument {
 
 #[derive(Debug, PartialEq)]
 pub struct FunctionCall {
-    name: String,
-    args: Vec<Argument>,
+    pub name: String,
+    pub args: Vec<Argument>,
 }
 
 pub type Pipeline = Vec<FunctionCall>;
@@ -159,7 +159,7 @@ fn indexation(input: &str) -> IResult<&str, IndexationInfo> {
             char(']'),
         ),
         |(string, index)| IndexationInfo {
-            key: string,
+            name: string,
             pos: index.unwrap_or(0),
         },
     )(input)
@@ -271,7 +271,7 @@ mod tests {
             Ok((
                 "",
                 IndexationInfo {
-                    key: String::from("name"),
+                    name: String::from("name"),
                     pos: 0
                 }
             ))
@@ -281,7 +281,7 @@ mod tests {
             Ok((
                 "",
                 IndexationInfo {
-                    key: String::from("name"),
+                    name: String::from("name"),
                     pos: 3
                 }
             ))
@@ -373,7 +373,7 @@ mod tests {
                         args: vec![
                             Argument::Underscore,
                             Argument::Indexation(IndexationInfo {
-                                key: String::from("name"),
+                                name: String::from("name"),
                                 pos: 0
                             })
                         ]
