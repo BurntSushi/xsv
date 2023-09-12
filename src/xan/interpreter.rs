@@ -1,14 +1,7 @@
 use csv::ByteRecord;
 
+use xan::functions::DynamicValue;
 use xan::parser::{Argument, IndexationInfo, Pipeline};
-
-enum DynamicValue {
-    String(String),
-    Float(f64),
-    Integer(i64),
-    Boolean(bool),
-    None,
-}
 
 enum ConcreteArgument {
     Variable(String),
@@ -18,6 +11,26 @@ enum ConcreteArgument {
     IntegerLiteral(i64),
     BooleanLiteral(bool),
     Underscore,
+}
+
+impl ConcreteArgument {
+    fn bind(self, record: &ByteRecord, last_value: DynamicValue) -> Result<DynamicValue, ()> {
+        Ok(match self {
+            Self::StringLiteral(value) => DynamicValue::String(value),
+            Self::FloatLiteral(value) => DynamicValue::Float(value),
+            Self::IntegerLiteral(value) => DynamicValue::Integer(value),
+            Self::BooleanLiteral(value) => DynamicValue::Boolean(value),
+            Self::Underscore => last_value,
+            Self::Column(index) => match record.get(index) {
+                None => return Err(()),
+                Some(cell) => match String::from_utf8(cell.to_vec()) {
+                    Err(_) => return Err(()),
+                    Ok(value) => DynamicValue::String(value),
+                },
+            },
+            Self::Variable(name) => return Err(()),
+        })
+    }
 }
 
 struct ConcreteFunctionCall {
@@ -96,4 +109,8 @@ fn concretize_pipeline(
     }
 
     Ok(concrete_pipeline)
+}
+
+fn interpret(pipeline: &ConcretePipeline, record: &ByteRecord) -> Result<DynamicValue, ()> {
+    Err(())
 }
