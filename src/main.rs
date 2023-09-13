@@ -8,6 +8,7 @@ extern crate csv_index;
 extern crate dateparser;
 extern crate docopt;
 extern crate filetime;
+extern crate flate2;
 #[cfg(feature = "lang")]
 extern crate lingua;
 extern crate nom;

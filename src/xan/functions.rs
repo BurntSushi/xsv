@@ -1,3 +1,8 @@
+use flate2::read::GzDecoder;
+use std::fs::File;
+use std::io::Read;
+use std::path::PathBuf;
+
 use xan::error::{EvaluationError, InvalidArityErrorContext};
 
 #[derive(Clone, Debug)]
@@ -78,6 +83,7 @@ fn validate_arity(args: &Vec<DynamicValue>, expected: usize) -> Result<(), Evalu
     }
 }
 
+// String transformations
 pub fn trim(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 1)?;
     Ok(DynamicValue::String(String::from(
@@ -104,16 +110,7 @@ pub fn len(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     Ok(DynamicValue::Integer(args[0].cast_to_string()?.len() as i64))
 }
 
-pub fn coalesce(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
-    for arg in args {
-        if arg.cast_to_bool()? {
-            return Ok(arg.clone());
-        }
-    }
-
-    Ok(DynamicValue::None)
-}
-
+// String queries
 pub fn count(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 2)?;
 
@@ -123,6 +120,17 @@ pub fn count(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> 
             .matches(&args[1].cast_to_string()?)
             .count() as i64,
     ))
+}
+
+// Utilities
+pub fn coalesce(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    for arg in args {
+        if arg.cast_to_bool()? {
+            return Ok(arg.clone());
+        }
+    }
+
+    Ok(DynamicValue::None)
 }
 
 pub fn concat(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
@@ -135,6 +143,7 @@ pub fn concat(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError>
     Ok(DynamicValue::String(result))
 }
 
+// Comparison
 pub fn eq(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 2)?;
 
@@ -168,4 +177,41 @@ pub fn eq(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     }))
 }
 
-// TODO: rayon and read file
+// IO
+pub fn pathjoin(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    let mut path = PathBuf::new();
+
+    for arg in args {
+        path.push(arg.cast_to_string()?);
+    }
+
+    let path = String::from(path.to_str().ok_or(EvaluationError::InvalidPath)?);
+
+    Ok(DynamicValue::String(path))
+}
+
+pub fn read(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    validate_arity(args, 1)?;
+
+    let path = args[0].cast_to_string()?;
+
+    let mut file = match File::open(&path) {
+        Err(_) => return Err(EvaluationError::CannotOpenFile),
+        Ok(f) => f,
+    };
+
+    let mut buffer = String::new();
+
+    if path.ends_with(".gz") {
+        let mut gz = GzDecoder::new(file);
+        gz.read_to_string(&mut buffer)
+            .map_err(|_| EvaluationError::CannotReadFile)?;
+    } else {
+        file.read_to_string(&mut buffer)
+            .map_err(|_| EvaluationError::CannotReadFile)?;
+    }
+
+    Ok(DynamicValue::String(buffer))
+}
+
+// TODO: rayon

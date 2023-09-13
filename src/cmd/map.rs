@@ -7,8 +7,17 @@ use xan::{prepare, EvaluationError};
 use CliResult;
 
 impl From<EvaluationError> for CliError {
-    fn from(_: EvaluationError) -> CliError {
-        CliError::Other("evaluation error".to_string())
+    fn from(err: EvaluationError) -> CliError {
+        CliError::Other(
+            (match err {
+                EvaluationError::InvalidPath => "invalid path",
+                EvaluationError::InvalidArity(_) => "invalid arity",
+                EvaluationError::CannotOpenFile => "cannot open file",
+                EvaluationError::CannotReadFile => "cannot read file",
+                _ => "evaluation error",
+            })
+            .to_string(),
+        )
     }
 }
 

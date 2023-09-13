@@ -1,7 +1,9 @@
 use csv::ByteRecord;
 
 use xan::error::EvaluationError;
-use xan::functions::{coalesce, concat, count, eq, len, lower, trim, upper, DynamicValue};
+use xan::functions::{
+    coalesce, concat, count, eq, len, lower, pathjoin, read, trim, upper, DynamicValue,
+};
 use xan::parser::{parse, Argument, IndexationInfo, Pipeline};
 
 enum ConcreteArgument {
@@ -74,6 +76,8 @@ impl ConcreteFunctionCall {
             "eq" => eq(&args),
             "len" => len(&args),
             "lower" => lower(&args),
+            "pathjoin" => pathjoin(&args),
+            "read" => read(&args),
             "trim" => trim(&args),
             "upper" => upper(&args),
             _ => Err(EvaluationError::UnknownFunction(self.name.clone())),
