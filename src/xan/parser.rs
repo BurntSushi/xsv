@@ -156,29 +156,32 @@ fn argument_separator(input: &str) -> IResult<&str, ()> {
 }
 
 fn indexation(input: &str) -> IResult<&str, IndexationInfo> {
-    map(
-        delimited(
-            char('['),
-            pair(
-                string_literal,
-                opt(preceded(argument_separator, integer_literal::<usize>)),
+    preceded(
+        tag("row"),
+        map(
+            delimited(
+                char('['),
+                pair(
+                    string_literal,
+                    opt(preceded(argument_separator, integer_literal::<usize>)),
+                ),
+                char(']'),
             ),
-            char(']'),
+            |(string, index)| IndexationInfo {
+                name: string,
+                pos: index.unwrap_or(0),
+            },
         ),
-        |(string, index)| IndexationInfo {
-            name: string,
-            pos: index.unwrap_or(0),
-        },
     )(input)
 }
 
 fn argument(input: &str) -> IResult<&str, Argument> {
     alt((
         map(boolean_literal, |value| Argument::BooleanLiteral(value)),
+        map(indexation, |value| Argument::Indexation(value)),
         map(inner_identifier, |name| {
             Argument::Identifier(String::from(name))
         }),
-        map(indexation, |value| Argument::Indexation(value)),
         map(terminated(integer_literal, not(char('.'))), |value| {
             Argument::IntegerLiteral(value)
         }),
@@ -288,7 +291,7 @@ mod tests {
     #[test]
     fn test_indexation() {
         assert_eq!(
-            indexation("['name']"),
+            indexation("row['name']"),
             Ok((
                 "",
                 IndexationInfo {
@@ -298,7 +301,17 @@ mod tests {
             ))
         );
         assert_eq!(
-            indexation("['name', 3]"),
+            indexation("row[\"name\"]"),
+            Ok((
+                "",
+                IndexationInfo {
+                    name: String::from("name"),
+                    pos: 0
+                }
+            ))
+        );
+        assert_eq!(
+            indexation("row['name', 3]"),
             Ok((
                 "",
                 IndexationInfo {
@@ -381,7 +394,7 @@ mod tests {
         assert!(pipeline("test |").is_err());
 
         assert_eq!(
-            pipeline("trim(name) | len  (_, ['name'])"),
+            pipeline("trim(name) | len  (_, row['name'])"),
             Ok((
                 "",
                 vec![
