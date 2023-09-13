@@ -85,6 +85,20 @@ pub fn trim(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     )))
 }
 
+pub fn lower(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    validate_arity(args, 1)?;
+    Ok(DynamicValue::String(String::from(
+        args[0].cast_to_string()?.to_lowercase(),
+    )))
+}
+
+pub fn upper(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    validate_arity(args, 1)?;
+    Ok(DynamicValue::String(String::from(
+        args[0].cast_to_string()?.to_uppercase(),
+    )))
+}
+
 pub fn len(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 1)?;
     Ok(DynamicValue::Integer(args[0].cast_to_string()?.len() as i64))
@@ -138,8 +152,20 @@ pub fn eq(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
         },
         DynamicValue::String(left_value) => match right {
             DynamicValue::String(right_value) => left_value == right_value,
-            _ => false,
+            DynamicValue::None => false,
+            _ => left_value == &right.cast_to_string()?,
         },
-        _ => return Err(EvaluationError::NotImplemented),
+        DynamicValue::Integer(left_value) => match right {
+            DynamicValue::Integer(right_value) => left_value == right_value,
+            DynamicValue::None => false,
+            _ => left_value == &right.cast_to_integer()?,
+        },
+        DynamicValue::Float(left_value) => match right {
+            DynamicValue::Float(right_value) => left_value == right_value,
+            DynamicValue::None => false,
+            _ => left_value == &right.cast_to_float()?,
+        },
     }))
 }
+
+// TODO: rayon and read file
