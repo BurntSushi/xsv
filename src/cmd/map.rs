@@ -1,33 +1,31 @@
 use csv;
 
-use crate::{xan::interpret, CliError};
+use crate::xan::interpret;
 use config::{Config, Delimiter};
 use util;
-use xan::{prepare, EvaluationError};
+use xan::prepare;
 use CliResult;
 
-impl From<EvaluationError> for CliError {
-    fn from(err: EvaluationError) -> CliError {
-        CliError::Other(match err {
-            EvaluationError::InvalidPath => "invalid path".to_string(),
-            EvaluationError::InvalidArity(_) => "invalid arity".to_string(),
-            EvaluationError::CannotOpenFile(path) => {
-                format!("cannot open file {}", path)
-            }
-            EvaluationError::CannotReadFile(path) => format!("cannot read file {}", path),
-            _ => "evaluation error".to_string(),
-        })
-    }
-}
-
-impl From<()> for CliError {
-    fn from(_: ()) -> CliError {
-        CliError::Other("unknown error".to_string())
-    }
-}
-
 static USAGE: &'static str = "
-TODO map
+The map command evaluates an expression for each row of the given CSV file and
+output the row with an added column containing the result of beforementioned
+expression.
+
+For instance, given the following CSV file:
+
+a,b
+1,4
+5,2
+
+The following command:
+
+$ xsv map 'add(a, b)' c
+
+Will produce the following result:
+
+a,b,c
+1,4,5
+5,2,7
 
 Usage:
     xsv map [options] <operations> <column> [<input>]

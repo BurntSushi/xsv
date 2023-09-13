@@ -2,7 +2,7 @@ use csv::ByteRecord;
 
 use xan::error::EvaluationError;
 use xan::functions::{
-    coalesce, concat, count, eq, len, lower, pathjoin, read, trim, upper, DynamicValue,
+    add, coalesce, concat, count, eq, len, lower, pathjoin, read, trim, upper, DynamicValue,
 };
 use xan::parser::{parse, Argument, IndexationInfo, Pipeline};
 
@@ -70,6 +70,7 @@ impl ConcreteFunctionCall {
         let args = self.bind(record, last_value)?;
 
         match self.name.as_ref() {
+            "add" => add(&args),
             "coalesce" => coalesce(&args),
             "concat" => concat(&args),
             "count" => count(&args),

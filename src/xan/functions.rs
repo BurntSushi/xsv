@@ -5,6 +5,11 @@ use std::path::PathBuf;
 
 use xan::error::{EvaluationError, InvalidArityErrorContext};
 
+pub enum Number {
+    Float(f64),
+    Integer(i64),
+}
+
 #[derive(Clone, Debug)]
 pub enum DynamicValue {
     String(String),
@@ -70,12 +75,39 @@ impl DynamicValue {
             Self::None => return Err(EvaluationError::Cast),
         })
     }
+
+    fn cast_to_number(&self) -> Result<Number, EvaluationError> {
+        Ok(match self {
+            Self::String(string) => match string.parse::<i64>() {
+                Ok(value) => Number::Integer(value),
+                Err(_) => match string.parse::<f64>() {
+                    Ok(value) => Number::Float(value),
+                    Err(_) => return Err(EvaluationError::Cast),
+                },
+            },
+            Self::Integer(value) => Number::Integer(*value),
+            Self::Float(value) => Number::Float(*value),
+            Self::Boolean(value) => Number::Integer(*value as i64),
+            _ => return Err(EvaluationError::Cast),
+        })
+    }
 }
 
 fn validate_arity(args: &Vec<DynamicValue>, expected: usize) -> Result<(), EvaluationError> {
     if args.len() != expected {
         Err(EvaluationError::InvalidArity(InvalidArityErrorContext {
             expected,
+            got: args.len(),
+        }))
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_min_arity(args: &Vec<DynamicValue>, min: usize) -> Result<(), EvaluationError> {
+    if args.len() < min {
+        Err(EvaluationError::InvalidArity(InvalidArityErrorContext {
+            expected: min,
             got: args.len(),
         }))
     } else {
@@ -120,6 +152,31 @@ pub fn count(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> 
             .matches(&args[1].cast_to_string()?)
             .count() as i64,
     ))
+}
+
+// Arithmetics
+pub fn add(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    validate_min_arity(args, 2)?;
+
+    let mut sum = Number::Integer(0);
+
+    for arg in args {
+        sum = match arg.cast_to_number()? {
+            Number::Integer(n) => match sum {
+                Number::Integer(s) => Number::Integer(s + n),
+                Number::Float(s) => Number::Float(s + (n as f64)),
+            },
+            Number::Float(n) => match sum {
+                Number::Integer(s) => Number::Float((s as f64) + n),
+                Number::Float(s) => Number::Float(s + n),
+            },
+        }
+    }
+
+    Ok(match sum {
+        Number::Integer(value) => DynamicValue::Integer(value),
+        Number::Float(value) => DynamicValue::Float(value),
+    })
 }
 
 // Utilities
@@ -179,6 +236,8 @@ pub fn eq(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
 
 // IO
 pub fn pathjoin(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    validate_min_arity(args, 2)?;
+
     let mut path = PathBuf::new();
 
     for arg in args {

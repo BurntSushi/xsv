@@ -36,6 +36,8 @@ use std::process;
 
 use docopt::Docopt;
 
+use xan::EvaluationError;
+
 macro_rules! wout {
     ($($arg:tt)*) => ({
         use std::io::Write;
@@ -325,5 +327,25 @@ impl<'a> From<&'a str> for CliError {
 impl From<regex::Error> for CliError {
     fn from(err: regex::Error) -> CliError {
         CliError::Other(format!("{:?}", err))
+    }
+}
+
+impl From<EvaluationError> for CliError {
+    fn from(err: EvaluationError) -> CliError {
+        CliError::Other(match err {
+            EvaluationError::InvalidPath => "invalid path".to_string(),
+            EvaluationError::InvalidArity(_) => "invalid arity".to_string(),
+            EvaluationError::CannotOpenFile(path) => {
+                format!("cannot open file {}", path)
+            }
+            EvaluationError::CannotReadFile(path) => format!("cannot read file {}", path),
+            _ => "evaluation error".to_string(),
+        })
+    }
+}
+
+impl From<()> for CliError {
+    fn from(_: ()) -> CliError {
+        CliError::Other("unknown error".to_string())
     }
 }
