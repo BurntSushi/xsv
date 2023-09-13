@@ -254,6 +254,7 @@ pub fn read(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
 
     let path = args[0].cast_to_string()?;
 
+    // TODO: handle encoding
     let mut file = match File::open(&path) {
         Err(_) => return Err(EvaluationError::CannotOpenFile(path)),
         Ok(f) => f,
@@ -272,5 +273,3 @@ pub fn read(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
 
     Ok(DynamicValue::String(buffer))
 }
-
-// TODO: rayon, encoding support
