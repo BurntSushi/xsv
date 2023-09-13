@@ -33,6 +33,38 @@ impl DynamicValue {
             Self::None => false,
         })
     }
+
+    fn cast_to_float(&self) -> Result<f64, EvaluationError> {
+        Ok(match self {
+            Self::String(string) => match string.parse::<f64>() {
+                Err(_) => return Err(EvaluationError::Cast),
+                Ok(value) => value,
+            },
+            Self::Float(value) => *value,
+            Self::Integer(value) => *value as f64,
+            Self::Boolean(value) => {
+                if *value {
+                    1.0
+                } else {
+                    0.0
+                }
+            }
+            Self::None => return Err(EvaluationError::Cast),
+        })
+    }
+
+    fn cast_to_integer(&self) -> Result<i64, EvaluationError> {
+        Ok(match self {
+            Self::String(string) => match string.parse::<i64>() {
+                Err(_) => return Err(EvaluationError::Cast),
+                Ok(value) => value,
+            },
+            Self::Float(value) => value.trunc() as i64,
+            Self::Integer(value) => *value,
+            Self::Boolean(value) => *value as i64,
+            Self::None => return Err(EvaluationError::Cast),
+        })
+    }
 }
 
 fn validate_arity(args: &Vec<DynamicValue>, expected: usize) -> Result<(), EvaluationError> {
@@ -77,4 +109,37 @@ pub fn count(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> 
             .matches(&args[1].cast_to_string()?)
             .count() as i64,
     ))
+}
+
+pub fn concat(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    let mut result = String::new();
+
+    for arg in args {
+        result.push_str(&arg.cast_to_string()?);
+    }
+
+    Ok(DynamicValue::String(result))
+}
+
+pub fn eq(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    validate_arity(args, 2)?;
+
+    let left = &args[0];
+    let right = &args[1];
+
+    Ok(DynamicValue::Boolean(match left {
+        DynamicValue::Boolean(left_value) => match right {
+            DynamicValue::Boolean(right_value) => left_value == right_value,
+            _ => left_value == &right.cast_to_bool()?,
+        },
+        DynamicValue::None => match right {
+            DynamicValue::None => true,
+            _ => false,
+        },
+        DynamicValue::String(left_value) => match right {
+            DynamicValue::String(right_value) => left_value == right_value,
+            _ => false,
+        },
+        _ => return Err(EvaluationError::NotImplemented),
+    }))
 }

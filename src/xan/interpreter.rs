@@ -1,7 +1,7 @@
 use csv::ByteRecord;
 
 use xan::error::EvaluationError;
-use xan::functions::{coalesce, count, len, trim, DynamicValue};
+use xan::functions::{coalesce, concat, count, eq, len, trim, DynamicValue};
 use xan::parser::{parse, Argument, IndexationInfo, Pipeline};
 
 enum ConcreteArgument {
@@ -69,7 +69,9 @@ impl ConcreteFunctionCall {
 
         match self.name.as_ref() {
             "coalesce" => coalesce(&args),
+            "concat" => concat(&args),
             "count" => count(&args),
+            "eq" => eq(&args),
             "len" => len(&args),
             "trim" => trim(&args),
             _ => Err(EvaluationError::UnknownFunction(self.name.clone())),

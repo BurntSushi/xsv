@@ -8,6 +8,7 @@ pub enum EvaluationError {
     ColumnOutOfRange(usize),
     UnknownVariable(String),
     UnknownFunction(String),
+    NotImplemented,
     UnicodeDecodeError,
     Cast,
 }
