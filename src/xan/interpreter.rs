@@ -2,7 +2,8 @@ use csv::ByteRecord;
 
 use xan::error::EvaluationError;
 use xan::functions::{
-    add, coalesce, concat, count, eq, len, lower, pathjoin, read, trim, upper, DynamicValue,
+    add, coalesce, concat, count, eq, len, lower, pathjoin, read, trim, type_of, upper,
+    DynamicValue,
 };
 use xan::parser::{parse, Argument, IndexationInfo, Pipeline};
 
@@ -80,6 +81,7 @@ impl ConcreteFunctionCall {
             "pathjoin" => pathjoin(&args),
             "read" => read(&args),
             "trim" => trim(&args),
+            "typeof" => type_of(&args),
             "upper" => upper(&args),
             _ => Err(EvaluationError::UnknownFunction(self.name.clone())),
         }

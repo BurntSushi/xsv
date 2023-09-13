@@ -2,6 +2,7 @@ use flate2::read::GzDecoder;
 use std::cmp::{Ord, Ordering, PartialOrd};
 use std::fs::File;
 use std::io::Read;
+use std::ops::Add;
 use std::path::PathBuf;
 
 use xan::error::{EvaluationError, InvalidArityErrorContext};
@@ -21,6 +22,32 @@ pub enum Number {
     Integer(i64),
 }
 
+impl Number {
+    fn to_dynamic_value(self) -> DynamicValue {
+        match self {
+            Self::Float(value) => DynamicValue::Float(value),
+            Self::Integer(value) => DynamicValue::Integer(value),
+        }
+    }
+}
+
+impl Add for Number {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Integer(a) => match rhs {
+                Self::Integer(b) => Self::Integer(a + b),
+                Self::Float(b) => Self::Float((a as f64) + b),
+            },
+            Self::Float(a) => match rhs {
+                Self::Integer(b) => Self::Float(a + (b as f64)),
+                Self::Float(b) => Self::Float(a + b),
+            },
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum DynamicValue {
     String(String),
@@ -31,6 +58,16 @@ pub enum DynamicValue {
 }
 
 impl DynamicValue {
+    pub fn type_of(&self) -> &str {
+        match self {
+            Self::String(_) => "string",
+            Self::Float(_) => "float",
+            Self::Integer(_) => "integer",
+            Self::Boolean(_) => "boolean",
+            Self::None => "none",
+        }
+    }
+
     pub fn serialize(&self) -> String {
         match self {
             Self::String(value) => value.clone(),
@@ -260,22 +297,10 @@ pub fn add(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     let mut sum = Number::Integer(0);
 
     for arg in args {
-        sum = match arg.cast_to_number()? {
-            Number::Integer(n) => match sum {
-                Number::Integer(s) => Number::Integer(s + n),
-                Number::Float(s) => Number::Float(s + (n as f64)),
-            },
-            Number::Float(n) => match sum {
-                Number::Integer(s) => Number::Float((s as f64) + n),
-                Number::Float(s) => Number::Float(s + n),
-            },
-        }
+        sum = sum + arg.cast_to_number()?;
     }
 
-    Ok(match sum {
-        Number::Integer(value) => DynamicValue::Integer(value),
-        Number::Float(value) => DynamicValue::Float(value),
-    })
+    Ok(sum.to_dynamic_value())
 }
 
 // Utilities
@@ -344,4 +369,10 @@ pub fn read(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     }
 
     Ok(DynamicValue::String(buffer))
+}
+
+// Introspection
+pub fn type_of(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    validate_arity(args, 1)?;
+    Ok(DynamicValue::String(String::from(args[0].type_of())))
 }
