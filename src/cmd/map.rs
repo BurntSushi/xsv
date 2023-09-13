@@ -8,16 +8,15 @@ use CliResult;
 
 impl From<EvaluationError> for CliError {
     fn from(err: EvaluationError) -> CliError {
-        CliError::Other(
-            (match err {
-                EvaluationError::InvalidPath => "invalid path",
-                EvaluationError::InvalidArity(_) => "invalid arity",
-                EvaluationError::CannotOpenFile => "cannot open file",
-                EvaluationError::CannotReadFile => "cannot read file",
-                _ => "evaluation error",
-            })
-            .to_string(),
-        )
+        CliError::Other(match err {
+            EvaluationError::InvalidPath => "invalid path".to_string(),
+            EvaluationError::InvalidArity(_) => "invalid arity".to_string(),
+            EvaluationError::CannotOpenFile(path) => {
+                format!("cannot open file {}", path)
+            }
+            EvaluationError::CannotReadFile(path) => format!("cannot read file {}", path),
+            _ => "evaluation error".to_string(),
+        })
     }
 }
 

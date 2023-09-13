@@ -11,7 +11,7 @@ pub enum EvaluationError {
     InvalidPath,
     NotImplemented,
     UnicodeDecodeError,
-    CannotOpenFile,
-    CannotReadFile,
+    CannotOpenFile(String),
+    CannotReadFile(String),
     Cast,
 }

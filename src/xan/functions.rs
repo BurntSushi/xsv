@@ -196,7 +196,7 @@ pub fn read(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     let path = args[0].cast_to_string()?;
 
     let mut file = match File::open(&path) {
-        Err(_) => return Err(EvaluationError::CannotOpenFile),
+        Err(_) => return Err(EvaluationError::CannotOpenFile(path)),
         Ok(f) => f,
     };
 
@@ -205,13 +205,13 @@ pub fn read(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     if path.ends_with(".gz") {
         let mut gz = GzDecoder::new(file);
         gz.read_to_string(&mut buffer)
-            .map_err(|_| EvaluationError::CannotReadFile)?;
+            .map_err(|_| EvaluationError::CannotReadFile(path))?;
     } else {
         file.read_to_string(&mut buffer)
-            .map_err(|_| EvaluationError::CannotReadFile)?;
+            .map_err(|_| EvaluationError::CannotReadFile(path))?;
     }
 
     Ok(DynamicValue::String(buffer))
 }
 
-// TODO: rayon
+// TODO: rayon, encoding support
