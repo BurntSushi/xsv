@@ -13,5 +13,6 @@ pub enum EvaluationError {
     UnicodeDecodeError,
     CannotOpenFile(String),
     CannotReadFile(String),
+    CannotCompare,
     Cast,
 }

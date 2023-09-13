@@ -1,4 +1,5 @@
 use flate2::read::GzDecoder;
+use std::cmp::{Ord, Ordering, PartialOrd};
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
@@ -66,7 +67,10 @@ impl DynamicValue {
     fn cast_to_integer(&self) -> Result<i64, EvaluationError> {
         Ok(match self {
             Self::String(string) => match string.parse::<i64>() {
-                Err(_) => return Err(EvaluationError::Cast),
+                Err(_) => match string.parse::<f64>() {
+                    Err(_) => return Err(EvaluationError::Cast),
+                    Ok(value) => value.trunc() as i64,
+                },
                 Ok(value) => value,
             },
             Self::Float(value) => value.trunc() as i64,
@@ -93,6 +97,85 @@ impl DynamicValue {
     }
 }
 
+impl PartialEq for DynamicValue {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            DynamicValue::None => match other {
+                DynamicValue::None => true,
+                _ => false,
+            },
+            DynamicValue::Boolean(self_value) => match other {
+                DynamicValue::Boolean(other_value) => self_value.eq(other_value),
+                _ => match other.cast_to_bool() {
+                    Err(_) => false,
+                    Ok(other_value) => self_value.eq(&other_value),
+                },
+            },
+            DynamicValue::String(self_value) => match other {
+                DynamicValue::String(other_value) => self_value.eq(other_value),
+                _ => match other.cast_to_string() {
+                    Err(_) => false,
+                    Ok(other_value) => self_value.eq(&other_value),
+                },
+            },
+            DynamicValue::Integer(self_value) => match other {
+                DynamicValue::Integer(other_value) => self_value.eq(other_value),
+                _ => match other.cast_to_integer() {
+                    Err(_) => false,
+                    Ok(other_value) => self_value.eq(&other_value),
+                },
+            },
+            DynamicValue::Float(self_value) => match other {
+                DynamicValue::Float(other_value) => self_value.eq(other_value),
+                _ => match other.cast_to_float() {
+                    Err(_) => false,
+                    Ok(other_value) => self_value.eq(&other_value),
+                },
+            },
+        }
+    }
+}
+
+impl PartialOrd for DynamicValue {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match self {
+            DynamicValue::None => match other {
+                DynamicValue::None => Some(Ordering::Equal),
+                _ => None,
+            },
+            DynamicValue::Boolean(self_value) => match other {
+                DynamicValue::Boolean(other_value) => Some(self_value.cmp(other_value)),
+                _ => match other.cast_to_bool() {
+                    Err(_) => None,
+                    Ok(other_value) => Some(self_value.cmp(&other_value)),
+                },
+            },
+            DynamicValue::String(self_value) => match other {
+                DynamicValue::String(other_value) => Some(self_value.cmp(other_value)),
+                _ => match other.cast_to_string() {
+                    Err(_) => None,
+                    Ok(other_value) => Some(self_value.cmp(&other_value)),
+                },
+            },
+            DynamicValue::Integer(self_value) => match other {
+                DynamicValue::Integer(other_value) => Some(self_value.cmp(other_value)),
+                _ => match other.cast_to_integer() {
+                    Err(_) => None,
+                    Ok(other_value) => Some(self_value.cmp(&other_value)),
+                },
+            },
+            DynamicValue::Float(self_value) => match other {
+                DynamicValue::Float(other_value) => self_value.partial_cmp(other_value),
+                _ => match other.cast_to_float() {
+                    Err(_) => None,
+                    Ok(other_value) => self_value.partial_cmp(&other_value),
+                },
+            },
+        }
+    }
+}
+
+// Arity helpers
 fn validate_arity(args: &Vec<DynamicValue>, expected: usize) -> Result<(), EvaluationError> {
     if args.len() != expected {
         Err(EvaluationError::InvalidArity(InvalidArityErrorContext {
@@ -201,37 +284,10 @@ pub fn concat(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError>
 }
 
 // Comparison
+// TODO: distinguish between numbers and strings
 pub fn eq(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 2)?;
-
-    let left = &args[0];
-    let right = &args[1];
-
-    Ok(DynamicValue::Boolean(match left {
-        DynamicValue::Boolean(left_value) => match right {
-            DynamicValue::Boolean(right_value) => left_value == right_value,
-            _ => left_value == &right.cast_to_bool()?,
-        },
-        DynamicValue::None => match right {
-            DynamicValue::None => true,
-            _ => false,
-        },
-        DynamicValue::String(left_value) => match right {
-            DynamicValue::String(right_value) => left_value == right_value,
-            DynamicValue::None => false,
-            _ => left_value == &right.cast_to_string()?,
-        },
-        DynamicValue::Integer(left_value) => match right {
-            DynamicValue::Integer(right_value) => left_value == right_value,
-            DynamicValue::None => false,
-            _ => left_value == &right.cast_to_integer()?,
-        },
-        DynamicValue::Float(left_value) => match right {
-            DynamicValue::Float(right_value) => left_value == right_value,
-            DynamicValue::None => false,
-            _ => left_value == &right.cast_to_float()?,
-        },
-    }))
+    Ok(DynamicValue::Boolean(args[0].eq(&args[1])))
 }
 
 // IO
