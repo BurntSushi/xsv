@@ -24,6 +24,8 @@ sort options:
     -R, --reverse          Reverse order
     -c, --count <name>     Number of times the line was consecutively duplicated.
                            Needs a column name. Can only be used with '--uniq'.
+    -u, --uniq             When set, identical consecutive lines will be dropped
+                           to keep only one line per sorted value.
 
 Common options:
     -h, --help             Display this message
@@ -34,8 +36,6 @@ Common options:
                            appear as the header row in the output.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. (default: ,)
-    -u, --uniq             When set, identical consecutive lines will be dropped
-                           to keep only one line per sorted value.
 ";
 
 #[derive(Deserialize)]
