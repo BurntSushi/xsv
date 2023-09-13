@@ -39,7 +39,6 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 
 <strong id="new-features">New Features</strong>
 
-* `xsv apply`
 * `xsv behead`
 * `xsv datefmt`
 * `xsv enum`
@@ -61,7 +60,6 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 
 ### Available commands
 
-* **apply** - Apply series of string transformations to a CSV column.
 * **behead** - Drop headers from CSV file.
 * **cat** - Concatenate CSV files by row or by column.
 * **count** - Count the rows in a CSV file. (Instantaneous with an index.)

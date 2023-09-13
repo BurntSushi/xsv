@@ -59,7 +59,6 @@ macro_rules! fail {
 macro_rules! command_list {
     () => {
         "
-    apply       Apply series of transformations to a column
     behead      Drop header from CSV file
     cat         Concatenate by row or column
     count       Count records
@@ -172,7 +171,6 @@ Please choose one of the following commands:",
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
 enum Command {
-    Apply,
     Behead,
     Cat,
     Count,
@@ -223,7 +221,6 @@ impl Command {
             ));
         }
         match self {
-            Command::Apply => cmd::apply::run(argv),
             Command::Behead => cmd::behead::run(argv),
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),

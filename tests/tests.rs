@@ -36,7 +36,6 @@ macro_rules! rassert_eq {
 
 mod workdir;
 
-mod test_apply;
 mod test_behead;
 mod test_cat;
 mod test_count;
