@@ -6,6 +6,16 @@ use std::path::PathBuf;
 
 use xan::error::{EvaluationError, InvalidArityErrorContext};
 
+fn downgrade_float(f: f64) -> Option<i64> {
+    let t = f.trunc();
+
+    if f - t <= f64::EPSILON {
+        return Some(t as i64);
+    }
+
+    None
+}
+
 pub enum Number {
     Float(f64),
     Integer(i64),
@@ -69,11 +79,17 @@ impl DynamicValue {
             Self::String(string) => match string.parse::<i64>() {
                 Err(_) => match string.parse::<f64>() {
                     Err(_) => return Err(EvaluationError::Cast),
-                    Ok(value) => value.trunc() as i64,
+                    Ok(value) => match downgrade_float(value) {
+                        Some(safe_downgraded_value) => safe_downgraded_value,
+                        None => return Err(EvaluationError::Cast),
+                    },
                 },
                 Ok(value) => value,
             },
-            Self::Float(value) => value.trunc() as i64,
+            Self::Float(value) => match downgrade_float(*value) {
+                Some(safe_downgraded_value) => safe_downgraded_value,
+                None => return Err(EvaluationError::Cast),
+            },
             Self::Integer(value) => *value,
             Self::Boolean(value) => *value as i64,
             Self::None => return Err(EvaluationError::Cast),
