@@ -47,7 +47,14 @@ fn underscore(input: &str) -> IResult<&str, ()> {
     value((), char('_'))(input)
 }
 
-fn identifier(input: &str) -> IResult<&str, &str> {
+fn inner_identifier(input: &str) -> IResult<&str, &str> {
+    recognize(pair(
+        alpha1,
+        many0(alt((alphanumeric1, tag("_"), tag("-"), tag(" ")))),
+    ))(input)
+}
+
+fn outer_identifier(input: &str) -> IResult<&str, &str> {
     recognize(pair(
         alpha1,
         many0(alt((alphanumeric1, tag("_"), tag("-")))),
@@ -168,7 +175,9 @@ fn indexation(input: &str) -> IResult<&str, IndexationInfo> {
 fn argument(input: &str) -> IResult<&str, Argument> {
     alt((
         map(boolean_literal, |value| Argument::BooleanLiteral(value)),
-        map(identifier, |name| Argument::Identifier(String::from(name))),
+        map(inner_identifier, |name| {
+            Argument::Identifier(String::from(name))
+        }),
         map(indexation, |value| Argument::Indexation(value)),
         map(terminated(integer_literal, not(char('.'))), |value| {
             Argument::IntegerLiteral(value)
@@ -186,7 +195,7 @@ fn argument_list(input: &str) -> IResult<&str, Vec<Argument>> {
 fn function_call(input: &str) -> IResult<&str, FunctionCall> {
     map(
         pair(
-            identifier,
+            outer_identifier,
             opt(delimited(
                 pair(space0, char('(')),
                 argument_list,
@@ -269,7 +278,11 @@ mod tests {
 
     #[test]
     fn test_identifier() {
-        assert_eq!(identifier("input, test"), Ok((", test", "input")));
+        assert_eq!(outer_identifier("input, test"), Ok((", test", "input")));
+        assert_eq!(
+            inner_identifier("PREFIXES AS URL, test"),
+            Ok((", test", "PREFIXES AS URL"))
+        );
     }
 
     #[test]

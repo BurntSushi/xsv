@@ -67,3 +67,14 @@ pub fn coalesce(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationErro
 
     Ok(DynamicValue::None)
 }
+
+pub fn count(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    validate_arity(args, 2)?;
+
+    Ok(DynamicValue::Integer(
+        args[0]
+            .cast_to_string()?
+            .matches(&args[1].cast_to_string()?)
+            .count() as i64,
+    ))
+}
