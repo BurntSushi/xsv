@@ -24,6 +24,7 @@ pub enum Argument {
     FloatLiteral(f64),
     IntegerLiteral(i64),
     BooleanLiteral(bool),
+    Call(FunctionCall),
     Underscore,
 }
 
@@ -177,6 +178,7 @@ fn indexation(input: &str) -> IResult<&str, IndexationInfo> {
 
 fn argument(input: &str) -> IResult<&str, Argument> {
     alt((
+        map(inner_function_call, |value| Argument::Call(value)),
         map(boolean_literal, |value| Argument::BooleanLiteral(value)),
         map(indexation, |value| Argument::Indexation(value)),
         map(inner_identifier, |name| {
@@ -195,7 +197,24 @@ fn argument_list(input: &str) -> IResult<&str, Vec<Argument>> {
     separated_list0(argument_separator, argument)(input)
 }
 
-fn function_call(input: &str) -> IResult<&str, FunctionCall> {
+fn inner_function_call(input: &str) -> IResult<&str, FunctionCall> {
+    map(
+        pair(
+            outer_identifier,
+            delimited(
+                pair(space0, char('(')),
+                argument_list,
+                pair(char(')'), space0),
+            ),
+        ),
+        |(name, args)| FunctionCall {
+            name: String::from(name),
+            args,
+        },
+    )(input)
+}
+
+fn outer_function_call(input: &str) -> IResult<&str, FunctionCall> {
     map(
         pair(
             outer_identifier,
@@ -217,7 +236,7 @@ fn pipe(input: &str) -> IResult<&str, ()> {
 }
 
 fn pipeline(input: &str) -> IResult<&str, Pipeline> {
-    all_consuming(separated_list0(pipe, function_call))(input)
+    all_consuming(separated_list0(pipe, outer_function_call))(input)
 }
 
 // TODO: write this better
@@ -350,7 +369,7 @@ mod tests {
     #[test]
     fn test_function_call() {
         assert_eq!(
-            function_call("trim()"),
+            outer_function_call("trim()"),
             Ok((
                 "",
                 FunctionCall {
@@ -361,7 +380,7 @@ mod tests {
         );
 
         assert_eq!(
-            function_call("trim(_)"),
+            outer_function_call("trim(_)"),
             Ok((
                 "",
                 FunctionCall {
@@ -372,7 +391,7 @@ mod tests {
         );
 
         assert_eq!(
-            function_call("trim(_, true, 4.5, 56, col)"),
+            outer_function_call("trim(_, true, 4.5, 56, col)"),
             Ok((
                 "",
                 FunctionCall {
@@ -413,6 +432,59 @@ mod tests {
                         ]
                     }
                 ]
+            ))
+        );
+
+        assert_eq!(
+            pipeline("add(len(name), len(surname)) | len  (_, row['name'])"),
+            Ok((
+                "",
+                vec![
+                    FunctionCall {
+                        name: String::from("add"),
+                        args: vec![
+                            Argument::Call(FunctionCall {
+                                name: "len".to_string(),
+                                args: vec![Argument::Identifier("name".to_string())]
+                            }),
+                            Argument::Call(FunctionCall {
+                                name: "len".to_string(),
+                                args: vec![Argument::Identifier("surname".to_string())]
+                            })
+                        ]
+                    },
+                    FunctionCall {
+                        name: String::from("len"),
+                        args: vec![
+                            Argument::Underscore,
+                            Argument::Indexation(IndexationInfo {
+                                name: String::from("name"),
+                                pos: 0
+                            })
+                        ]
+                    }
+                ]
+            ))
+        );
+
+        assert_eq!(
+            pipeline("if(true, len(name), len(surname))"),
+            Ok((
+                "",
+                vec![FunctionCall {
+                    name: String::from("if"),
+                    args: vec![
+                        Argument::BooleanLiteral(true),
+                        Argument::Call(FunctionCall {
+                            name: "len".to_string(),
+                            args: vec![Argument::Identifier("name".to_string())]
+                        }),
+                        Argument::Call(FunctionCall {
+                            name: "len".to_string(),
+                            args: vec![Argument::Identifier("surname".to_string())]
+                        })
+                    ]
+                }]
             ))
         );
 

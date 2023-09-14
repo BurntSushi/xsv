@@ -135,6 +135,7 @@ fn concretize_argument(
             Some(index) => ConcreteArgument::Column(index),
             None => return Err(info),
         },
+        Argument::Call(_) => panic!("not implemented"),
     })
 }
 
