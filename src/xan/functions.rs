@@ -1,14 +1,13 @@
 use flate2::read::GzDecoder;
-use std::cmp::{Ord, Ordering, PartialOrd};
+use std::cmp::{Ordering, PartialOrd};
 use std::fs::File;
 use std::io::Read;
-use std::ops::Add;
 use std::path::PathBuf;
 
 use xan::error::EvaluationError;
-use xan::types::{BoundArguments, DynamicNumber, DynamicValue, EvaluationResult};
+use xan::types::{BoundArguments, DynamicValue, EvaluationResult};
 
-// TODO: contains, startswith, endswith, comp, str comp, add, sub etc.
+// TODO: contains, startswith, endswith, comp, str comp, add, sub, lte, etc.
 // TODO: test variable bindings
 // TODO: parse most likely and cast functions
 // TODO: -p and --ignore-errors
@@ -18,17 +17,17 @@ use xan::types::{BoundArguments, DynamicNumber, DynamicValue, EvaluationResult};
 pub fn call(name: &str, args: BoundArguments) -> EvaluationResult {
     match name {
         "add" => add(args),
-        // "and" => and(args),
+        "and" => and(args),
         "coalesce" => coalesce(args),
-        // "concat" => concat(args),
+        "concat" => concat(args),
         "count" => count(args),
-        // "eq" => number_compare(args, Ordering::is_eq),
+        "eq" => number_compare(args, Ordering::is_eq),
         "len" => len(args),
         "lower" => lower(args),
-        // "not" => not(args),
-        // "or" => or(args),
-        // "pathjoin" => pathjoin(args),
-        // "read" => read(args),
+        "not" => not(args),
+        "or" => or(args),
+        "pathjoin" => pathjoin(args),
+        "read" => read(args),
         "trim" => trim(args),
         "typeof" => type_of(args),
         "upper" => upper(args),
@@ -53,11 +52,21 @@ fn len(mut args: BoundArguments) -> EvaluationResult {
     Ok(DynamicValue::from(args.get1_string()?.len()))
 }
 
-// String queries
+// Strings
 fn count(mut args: BoundArguments) -> EvaluationResult {
     let (string, pattern) = args.get2_string()?;
 
     Ok(DynamicValue::from(string.matches(&pattern).count()))
+}
+
+fn concat(args: BoundArguments) -> EvaluationResult {
+    let mut result = String::new();
+
+    for arg in args {
+        result.push_str(&arg.into_string());
+    }
+
+    Ok(DynamicValue::from(result))
 }
 
 // Arithmetics
@@ -78,94 +87,71 @@ fn coalesce(args: BoundArguments) -> EvaluationResult {
     Ok(DynamicValue::None)
 }
 
-// fn concat(args: BoundArguments) -> EvaluationResult {
-//     let mut result = String::new();
-
-//     for arg in args {
-//         result.push_str(&arg.cast_to_string()?);
-//     }
-
-//     Ok(DynamicValue::String(result))
-// }
-
 // Boolean
-// fn not(args: BoundArguments) -> EvaluationResult {
-//     validate_arity(args, 1)?;
+fn not(mut args: BoundArguments) -> EvaluationResult {
+    Ok(DynamicValue::from(!args.get1_bool()?))
+}
 
-//     Ok(DynamicValue::Boolean(!args[0].cast_to_bool()?))
-// }
+fn and(mut args: BoundArguments) -> EvaluationResult {
+    let (a, b) = args.get2_bool()?;
+    Ok(DynamicValue::from(a && b))
+}
 
-// fn and(args: BoundArguments) -> EvaluationResult {
-//     validate_arity(args, 2)?;
-
-//     Ok(DynamicValue::Boolean(
-//         args[0].cast_to_bool()? && args[1].cast_to_bool()?,
-//     ))
-// }
-
-// fn or(args: BoundArguments) -> EvaluationResult {
-//     validate_arity(args, 2)?;
-
-//     Ok(DynamicValue::Boolean(
-//         args[0].cast_to_bool()? || args[1].cast_to_bool()?,
-//     ))
-// }
+fn or(mut args: BoundArguments) -> EvaluationResult {
+    let (a, b) = args.get2_bool()?;
+    Ok(DynamicValue::from(a || b))
+}
 
 // Comparison
-// fn number_compare<F>(args: BoundArguments, validate: F) -> EvaluationResult
-// where
-//     F: FnOnce(Ordering) -> bool,
-// {
-//     validate_arity(args, 2)?;
+fn number_compare<F>(mut args: BoundArguments, validate: F) -> EvaluationResult
+where
+    F: FnOnce(Ordering) -> bool,
+{
+    let (a, b) = args.get2_number()?;
 
-//     let a = args[0].cast_to_number()?;
-//     let b = args[1].cast_to_number()?;
-
-//     Ok(DynamicValue::Boolean(match a.partial_cmp(&b) {
-//         Some(ordering) => validate(ordering),
-//         None => false,
-//     }))
-// }
+    Ok(DynamicValue::from(match a.partial_cmp(&b) {
+        Some(ordering) => validate(ordering),
+        None => false,
+    }))
+}
 
 // IO
-// fn pathjoin(args: BoundArguments) -> EvaluationResult {
-//     validate_min_arity(args, 2)?;
+fn pathjoin(args: BoundArguments) -> EvaluationResult {
+    args.validate_min_arity(2)?;
 
-//     let mut path = PathBuf::new();
+    let mut path = PathBuf::new();
 
-//     for arg in args {
-//         path.push(arg.cast_to_string()?);
-//     }
+    for arg in args {
+        path.push(arg.into_string());
+    }
 
-//     let path = String::from(path.to_str().ok_or(EvaluationError::InvalidPath)?);
+    let path = String::from(path.to_str().ok_or(EvaluationError::InvalidPath)?);
 
-//     Ok(DynamicValue::String(path))
-// }
+    Ok(DynamicValue::from(path))
+}
 
-// fn read(args: BoundArguments) -> EvaluationResult {
-//     validate_arity(args, 1)?;
+fn read(mut args: BoundArguments) -> EvaluationResult {
+    let path = args.get1_string()?;
 
-//     let path = args[0].cast_to_string()?;
+    // TODO: handle encoding
+    let mut file = match File::open(&path) {
+        Err(_) => return Err(EvaluationError::CannotOpenFile(path)),
+        Ok(f) => f,
+    };
 
-//     // TODO: handle encoding
-//     let mut file = match File::open(&path) {
-//         Err(_) => return Err(EvaluationError::CannotOpenFile(path)),
-//         Ok(f) => f,
-//     };
+    let mut buffer = String::new();
 
-//     let mut buffer = String::new();
+    if path.ends_with(".gz") {
+        let mut gz = GzDecoder::new(file);
+        gz.read_to_string(&mut buffer)
+            .map_err(|_| EvaluationError::CannotReadFile(path))?;
+    } else {
+        file.read_to_string(&mut buffer)
+            .map_err(|_| EvaluationError::CannotReadFile(path))?;
+    }
 
-//     if path.ends_with(".gz") {
-//         let mut gz = GzDecoder::new(file);
-//         gz.read_to_string(&mut buffer)
-//             .map_err(|_| EvaluationError::CannotReadFile(path))?;
-//     } else {
-//         file.read_to_string(&mut buffer)
-//             .map_err(|_| EvaluationError::CannotReadFile(path))?;
-//     }
-
-//     Ok(DynamicValue::String(buffer))
-// }
+    Ok(DynamicValue::String(buffer))
+}
 
 // Introspection
 fn type_of(mut args: BoundArguments) -> EvaluationResult {

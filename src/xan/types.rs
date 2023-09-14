@@ -153,16 +153,22 @@ impl DynamicValue {
         self.into()
     }
 
-    pub fn try_into_integer(self) -> Result<i64, EvaluationError> {
-        self.try_into()
-    }
+    // pub fn try_into_integer(self) -> Result<i64, EvaluationError> {
+    //     self.try_into()
+    // }
 
-    pub fn try_into_float(self) -> Result<f64, EvaluationError> {
-        self.try_into()
-    }
+    // pub fn try_into_float(self) -> Result<f64, EvaluationError> {
+    //     self.try_into()
+    // }
 
     pub fn try_into_number(self) -> Result<DynamicNumber, EvaluationError> {
         self.try_into()
+    }
+}
+
+impl From<bool> for DynamicValue {
+    fn from(value: bool) -> Self {
+        DynamicValue::Boolean(value)
     }
 }
 
@@ -305,6 +311,14 @@ impl BoundArguments {
         self.stack.push(arg);
     }
 
+    pub fn validate_min_arity(&self, min: usize) -> Result<(), EvaluationError> {
+        if self.len() < min {
+            Err(EvaluationError::from_invalid_min_arity(min, self.len()))
+        } else {
+            Ok(())
+        }
+    }
+
     pub fn get1(&mut self) -> EvaluationResult {
         match self.stack.pop() {
             None => Err(EvaluationError::from_invalid_arity(1, 0)),
@@ -322,6 +336,10 @@ impl BoundArguments {
         self.get1().map(|value| value.into_string())
     }
 
+    pub fn get1_bool(&mut self) -> Result<bool, EvaluationError> {
+        self.get1().map(|value| value.into_bool())
+    }
+
     pub fn get2(&mut self) -> Result<(DynamicValue, DynamicValue), EvaluationError> {
         match pop2(&mut self.stack) {
             None => Err(EvaluationError::from_invalid_arity(2, self.len())),
@@ -337,6 +355,10 @@ impl BoundArguments {
 
     pub fn get2_string(&mut self) -> Result<(String, String), EvaluationError> {
         self.get2().map(|(a, b)| (a.into_string(), b.into_string()))
+    }
+
+    pub fn get2_bool(&mut self) -> Result<(bool, bool), EvaluationError> {
+        self.get2().map(|(a, b)| (a.into_bool(), b.into_bool()))
     }
 
     pub fn get2_number(&mut self) -> Result<(DynamicNumber, DynamicNumber), EvaluationError> {
