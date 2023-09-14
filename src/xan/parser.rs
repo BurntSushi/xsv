@@ -22,6 +22,7 @@ pub enum Argument {
     BooleanLiteral(bool),
     Call(FunctionCall),
     Underscore,
+    Null,
 }
 
 #[derive(Debug, PartialEq)]
@@ -42,6 +43,10 @@ fn float_literal(input: &str) -> IResult<&str, f64> {
 
 fn underscore(input: &str) -> IResult<&str, ()> {
     value((), char('_'))(input)
+}
+
+fn null(input: &str) -> IResult<&str, ()> {
+    value((), tag("null"))(input)
 }
 
 fn inner_identifier(input: &str) -> IResult<&str, &str> {
@@ -179,6 +184,7 @@ fn argument(input: &str) -> IResult<&str, Argument> {
     alt((
         map(inner_function_call, |value| Argument::Call(value)),
         map(boolean_literal, |value| Argument::BooleanLiteral(value)),
+        map(null, |_| Argument::Null),
         map(indexation, |value| Argument::Indexation(value)),
         map(inner_identifier, |name| {
             Argument::Identifier(String::from(name))
@@ -499,7 +505,7 @@ mod tests {
         );
 
         assert_eq!(
-            pipeline("trim | len"),
+            pipeline("trim | len | coalesce(null)"),
             Ok((
                 "",
                 vec![
@@ -510,6 +516,10 @@ mod tests {
                     FunctionCall {
                         name: String::from("len"),
                         args: vec![Argument::Underscore]
+                    },
+                    FunctionCall {
+                        name: String::from("coalesce"),
+                        args: vec![Argument::Null]
                     }
                 ]
             ))

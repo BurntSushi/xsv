@@ -1,11 +1,14 @@
 use std::collections::BTreeMap;
+use std::rc::Rc;
 
 use csv::ByteRecord;
 
 use xan::error::{EvaluationError, PrepareError};
-use xan::functions::{call, DynamicValue};
+use xan::functions::call;
 use xan::parser::{parse, Argument, Pipeline};
-use xan::types::ColumIndexation;
+use xan::types::{BoundArguments, ColumIndexation, DynamicValue, EvaluationResult};
+
+type Variables = BTreeMap<String, Rc<DynamicValue>>;
 
 enum ConcreteArgument {
     Variable(String),
@@ -15,23 +18,24 @@ enum ConcreteArgument {
     IntegerLiteral(i64),
     BooleanLiteral(bool),
     Call(ConcreteFunctionCall),
+    Null,
     Underscore,
 }
 
-// TODO: investigate cows, or make dynamic values hold pointers
 impl ConcreteArgument {
     fn bind(
         &self,
         record: &ByteRecord,
         last_value: &DynamicValue,
-        variables: &BTreeMap<&String, DynamicValue>,
-    ) -> Result<DynamicValue, EvaluationError> {
+        _variables: &Variables,
+    ) -> EvaluationResult {
         Ok(match self {
             Self::StringLiteral(value) => DynamicValue::String(value.clone()),
             Self::FloatLiteral(value) => DynamicValue::Float(*value),
             Self::IntegerLiteral(value) => DynamicValue::Integer(*value),
             Self::BooleanLiteral(value) => DynamicValue::Boolean(*value),
             Self::Underscore => last_value.clone(),
+            Self::Null => DynamicValue::None,
             Self::Column(index) => match record.get(*index) {
                 None => return Err(EvaluationError::ColumnOutOfRange(*index)),
                 Some(cell) => match String::from_utf8(cell.to_vec()) {
@@ -39,10 +43,11 @@ impl ConcreteArgument {
                     Ok(value) => DynamicValue::String(value),
                 },
             },
-            Self::Variable(name) => match variables.get(name) {
-                Some(value) => value.clone(),
-                None => return Err(EvaluationError::UnknownVariable(name.clone())),
-            },
+            // Self::Variable(name) => match variables.get(name) {
+            //     Some(value) => *value,
+            //     None => return Err(EvaluationError::UnknownVariable(name.clone())),
+            // },
+            Self::Variable(_) => unimplemented!(),
             Self::Call(_) => return Err(EvaluationError::IllegalBinding),
         })
     }
@@ -62,6 +67,7 @@ fn concretize_argument(
 ) -> Result<ConcreteArgument, PrepareError> {
     Ok(match argument {
         Argument::Underscore => ConcreteArgument::Underscore,
+        Argument::Null => ConcreteArgument::Null,
         Argument::BooleanLiteral(v) => ConcreteArgument::BooleanLiteral(v),
         Argument::FloatLiteral(v) => ConcreteArgument::FloatLiteral(v),
         Argument::IntegerLiteral(v) => ConcreteArgument::IntegerLiteral(v),
@@ -135,9 +141,9 @@ fn eval_function(
     function_call: &ConcreteFunctionCall,
     record: &ByteRecord,
     last_value: &DynamicValue,
-    variables: &BTreeMap<&String, DynamicValue>,
-) -> Result<DynamicValue, EvaluationError> {
-    let mut bound_args: Vec<DynamicValue> = Vec::new();
+    variables: &Variables,
+) -> EvaluationResult {
+    let mut bound_args = BoundArguments::new();
 
     for arg in function_call.args.iter() {
         match arg {
@@ -148,15 +154,15 @@ fn eval_function(
         }
     }
 
-    call(&function_call.name, &bound_args)
+    call(&function_call.name, bound_args)
 }
 
 fn eval(
     arg: &ConcreteArgument,
     record: &ByteRecord,
     last_value: &DynamicValue,
-    variables: &BTreeMap<&String, DynamicValue>,
-) -> Result<DynamicValue, EvaluationError> {
+    variables: &Variables,
+) -> EvaluationResult {
     match arg {
         ConcreteArgument::Call(function_call) => {
             eval_function(function_call, record, last_value, variables)
@@ -169,8 +175,8 @@ fn traverse(
     function_call: &ConcreteFunctionCall,
     record: &ByteRecord,
     last_value: &DynamicValue,
-    variables: &BTreeMap<&String, DynamicValue>,
-) -> Result<DynamicValue, EvaluationError> {
+    variables: &Variables,
+) -> EvaluationResult {
     // Branching
     if function_call.name == "if".to_string() {
         let arity = function_call.args.len();
@@ -184,7 +190,7 @@ fn traverse(
 
         let mut branch: Option<&ConcreteArgument> = None;
 
-        if result.cast_to_bool()? {
+        if result.truthy() {
             branch = Some(&function_call.args[1]);
         } else if arity == 3 {
             branch = Some(&function_call.args[2]);
@@ -204,8 +210,8 @@ fn traverse(
 pub fn interpret(
     pipeline: &ConcretePipeline,
     record: &ByteRecord,
-    variables: &BTreeMap<&String, DynamicValue>,
-) -> Result<DynamicValue, EvaluationError> {
+    variables: &Variables,
+) -> EvaluationResult {
     let mut last_value = DynamicValue::None;
 
     for function_call in pipeline {
