@@ -5,7 +5,7 @@ use std::io::Read;
 use std::ops::Add;
 use std::path::PathBuf;
 
-use xan::error::{EvaluationError, InvalidArityErrorContext};
+use xan::error::EvaluationError;
 
 fn downgrade_float(f: f64) -> Option<i64> {
     let t = f.trunc();
@@ -78,11 +78,11 @@ impl DynamicValue {
         }
     }
 
-    fn cast_to_string(&self) -> Result<String, EvaluationError> {
+    pub fn cast_to_string(&self) -> Result<String, EvaluationError> {
         Ok(self.serialize())
     }
 
-    fn cast_to_bool(&self) -> Result<bool, EvaluationError> {
+    pub fn cast_to_bool(&self) -> Result<bool, EvaluationError> {
         Ok(match self {
             Self::String(value) => value.len() > 0,
             Self::Float(value) => value.total_cmp(&0f64).is_eq(),
@@ -92,7 +92,7 @@ impl DynamicValue {
         })
     }
 
-    fn cast_to_float(&self) -> Result<f64, EvaluationError> {
+    pub fn cast_to_float(&self) -> Result<f64, EvaluationError> {
         Ok(match self {
             Self::String(string) => match string.parse::<f64>() {
                 Err(_) => return Err(EvaluationError::Cast),
@@ -111,7 +111,7 @@ impl DynamicValue {
         })
     }
 
-    fn cast_to_integer(&self) -> Result<i64, EvaluationError> {
+    pub fn cast_to_integer(&self) -> Result<i64, EvaluationError> {
         Ok(match self {
             Self::String(string) => match string.parse::<i64>() {
                 Err(_) => match string.parse::<f64>() {
@@ -231,10 +231,7 @@ impl PartialOrd for DynamicValue {
 // Arity helpers
 fn validate_arity(args: &Vec<DynamicValue>, expected: usize) -> Result<(), EvaluationError> {
     if args.len() != expected {
-        Err(EvaluationError::InvalidArity(InvalidArityErrorContext {
-            expected,
-            got: args.len(),
-        }))
+        Err(EvaluationError::from_invalid_arity(expected, args.len()))
     } else {
         Ok(())
     }
@@ -242,10 +239,7 @@ fn validate_arity(args: &Vec<DynamicValue>, expected: usize) -> Result<(), Evalu
 
 fn validate_min_arity(args: &Vec<DynamicValue>, min: usize) -> Result<(), EvaluationError> {
     if args.len() < min {
-        Err(EvaluationError::InvalidArity(InvalidArityErrorContext {
-            expected: min,
-            got: args.len(),
-        }))
+        Err(EvaluationError::from_invalid_min_arity(min, args.len()))
     } else {
         Ok(())
     }

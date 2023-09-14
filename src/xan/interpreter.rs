@@ -175,7 +175,41 @@ pub fn prepare(
     }
 }
 
-pub fn traverse(
+fn eval_function(
+    function_call: &ConcreteFunctionCall,
+    record: &ByteRecord,
+    last_value: &DynamicValue,
+    variables: &BTreeMap<&String, DynamicValue>,
+) -> Result<DynamicValue, EvaluationError> {
+    let mut bound_args: Vec<DynamicValue> = Vec::new();
+
+    for arg in function_call.args.iter() {
+        match arg {
+            ConcreteArgument::Call(sub_function_call) => {
+                bound_args.push(traverse(&sub_function_call, record, last_value, variables)?);
+            }
+            _ => bound_args.push(arg.bind(record, last_value, variables)?),
+        }
+    }
+
+    call(&function_call.name, &bound_args)
+}
+
+fn eval(
+    arg: &ConcreteArgument,
+    record: &ByteRecord,
+    last_value: &DynamicValue,
+    variables: &BTreeMap<&String, DynamicValue>,
+) -> Result<DynamicValue, EvaluationError> {
+    match arg {
+        ConcreteArgument::Call(function_call) => {
+            eval_function(function_call, record, last_value, variables)
+        }
+        _ => arg.bind(record, last_value, variables),
+    }
+}
+
+fn traverse(
     function_call: &ConcreteFunctionCall,
     record: &ByteRecord,
     last_value: &DynamicValue,
@@ -183,26 +217,34 @@ pub fn traverse(
 ) -> Result<DynamicValue, EvaluationError> {
     // Branching
     if function_call.name == "if".to_string() {
-        panic!("todo")
+        let arity = function_call.args.len();
+
+        if arity < 2 || arity > 3 {
+            return Err(EvaluationError::from_range_arity(2, 3, arity));
+        }
+
+        let condition = &function_call.args[0];
+        let result = eval(condition, record, last_value, variables)?;
+
+        let mut branch: Option<&ConcreteArgument> = None;
+
+        if result.cast_to_bool()? {
+            branch = Some(&function_call.args[1]);
+        } else if arity == 3 {
+            branch = Some(&function_call.args[2]);
+        }
+
+        match branch {
+            None => Ok(DynamicValue::None),
+            Some(arg) => eval(arg, record, last_value, variables),
+        }
     }
     // Regular call
     else {
-        let mut bound_args: Vec<DynamicValue> = Vec::new();
-
-        for arg in function_call.args.iter() {
-            match arg {
-                ConcreteArgument::Call(sub_function_call) => {
-                    bound_args.push(traverse(&sub_function_call, record, last_value, variables)?);
-                }
-                _ => bound_args.push(arg.bind(record, last_value, variables)?),
-            }
-        }
-
-        call(&function_call.name, &bound_args)
+        eval_function(function_call, record, last_value, variables)
     }
 }
 
-// TODO: drop impl for ConcreteFunctionCall
 pub fn interpret(
     pipeline: &ConcretePipeline,
     record: &ByteRecord,
