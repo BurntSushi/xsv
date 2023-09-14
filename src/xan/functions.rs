@@ -7,6 +7,9 @@ use std::path::PathBuf;
 
 use xan::error::EvaluationError;
 
+// TODO: contains, startswith, endswith, comp, str comp, add, sub etc.
+// TODO: never clone strings, implement Into and TryInto, Vec of arguments
+// shall be owned so we can safely transform them as needed on the fly for no cost and own them
 pub fn call(name: &str, args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     match name {
         "add" => add(args),
