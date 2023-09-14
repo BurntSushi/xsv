@@ -7,6 +7,27 @@ use std::path::PathBuf;
 
 use xan::error::EvaluationError;
 
+pub fn call(name: &str, args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    match name {
+        "add" => add(args),
+        "and" => and(args),
+        "coalesce" => coalesce(args),
+        "concat" => concat(args),
+        "count" => count(args),
+        "eq" => number_compare(args, Ordering::is_eq),
+        "len" => len(args),
+        "lower" => lower(args),
+        "not" => not(args),
+        "or" => or(args),
+        "pathjoin" => pathjoin(args),
+        "read" => read(args),
+        "trim" => trim(args),
+        "typeof" => type_of(args),
+        "upper" => upper(args),
+        _ => Err(EvaluationError::UnknownFunction(name.to_string())),
+    }
+}
+
 fn downgrade_float(f: f64) -> Option<i64> {
     let t = f.trunc();
 
@@ -17,7 +38,7 @@ fn downgrade_float(f: f64) -> Option<i64> {
     None
 }
 
-pub enum DynamicNumber {
+enum DynamicNumber {
     Float(f64),
     Integer(i64),
 }
@@ -87,6 +108,7 @@ pub enum DynamicValue {
     None,
 }
 
+// TODO: find a way to avoid cloning also here
 impl DynamicValue {
     pub fn type_of(&self) -> &str {
         match self {
@@ -276,34 +298,34 @@ fn validate_min_arity(args: &Vec<DynamicValue>, min: usize) -> Result<(), Evalua
 }
 
 // String transformations
-pub fn trim(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+fn trim(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 1)?;
     Ok(DynamicValue::String(String::from(
         args[0].cast_to_string()?.trim(),
     )))
 }
 
-pub fn lower(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+fn lower(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 1)?;
     Ok(DynamicValue::String(String::from(
         args[0].cast_to_string()?.to_lowercase(),
     )))
 }
 
-pub fn upper(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+fn upper(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 1)?;
     Ok(DynamicValue::String(String::from(
         args[0].cast_to_string()?.to_uppercase(),
     )))
 }
 
-pub fn len(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+fn len(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 1)?;
     Ok(DynamicValue::Integer(args[0].cast_to_string()?.len() as i64))
 }
 
 // String queries
-pub fn count(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+fn count(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 2)?;
 
     Ok(DynamicValue::Integer(
@@ -315,7 +337,7 @@ pub fn count(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> 
 }
 
 // Arithmetics
-pub fn add(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+fn add(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_min_arity(args, 2)?;
 
     let mut sum = DynamicNumber::Integer(0);
@@ -328,7 +350,7 @@ pub fn add(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
 }
 
 // Utilities
-pub fn coalesce(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+fn coalesce(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     for arg in args {
         if arg.cast_to_bool()? {
             return Ok(arg.clone());
@@ -338,7 +360,7 @@ pub fn coalesce(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationErro
     Ok(DynamicValue::None)
 }
 
-pub fn concat(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+fn concat(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     let mut result = String::new();
 
     for arg in args {
@@ -348,15 +370,47 @@ pub fn concat(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError>
     Ok(DynamicValue::String(result))
 }
 
-// Comparison
-// TODO: distinguish between numbers and strings
-pub fn eq(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+// Boolean
+fn not(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    validate_arity(args, 1)?;
+
+    Ok(DynamicValue::Boolean(!args[0].cast_to_bool()?))
+}
+
+fn and(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 2)?;
-    Ok(DynamicValue::Boolean(args[0].eq(&args[1])))
+
+    Ok(DynamicValue::Boolean(
+        args[0].cast_to_bool()? && args[1].cast_to_bool()?,
+    ))
+}
+
+fn or(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    validate_arity(args, 2)?;
+
+    Ok(DynamicValue::Boolean(
+        args[0].cast_to_bool()? || args[1].cast_to_bool()?,
+    ))
+}
+
+// Comparison
+fn number_compare<F>(args: &Vec<DynamicValue>, validate: F) -> Result<DynamicValue, EvaluationError>
+where
+    F: FnOnce(Ordering) -> bool,
+{
+    validate_arity(args, 2)?;
+
+    let a = args[0].cast_to_number()?;
+    let b = args[1].cast_to_number()?;
+
+    Ok(DynamicValue::Boolean(match a.partial_cmp(&b) {
+        Some(ordering) => validate(ordering),
+        None => false,
+    }))
 }
 
 // IO
-pub fn pathjoin(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+fn pathjoin(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_min_arity(args, 2)?;
 
     let mut path = PathBuf::new();
@@ -370,7 +424,7 @@ pub fn pathjoin(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationErro
     Ok(DynamicValue::String(path))
 }
 
-pub fn read(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+fn read(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 1)?;
 
     let path = args[0].cast_to_string()?;
@@ -396,7 +450,7 @@ pub fn read(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
 }
 
 // Introspection
-pub fn type_of(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+fn type_of(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_arity(args, 1)?;
     Ok(DynamicValue::String(String::from(args[0].type_of())))
 }

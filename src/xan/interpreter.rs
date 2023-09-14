@@ -3,10 +3,7 @@ use std::collections::BTreeMap;
 use csv::ByteRecord;
 
 use xan::error::{EvaluationError, PrepareError};
-use xan::functions::{
-    add, coalesce, concat, count, eq, len, lower, pathjoin, read, trim, type_of, upper,
-    DynamicValue,
-};
+use xan::functions::{call, DynamicValue};
 use xan::parser::{parse, Argument, Pipeline};
 use xan::types::ColumIndexation;
 
@@ -54,24 +51,6 @@ impl ConcreteArgument {
 pub struct ConcreteFunctionCall {
     name: String,
     args: Vec<ConcreteArgument>,
-}
-
-fn call(name: &str, args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
-    match name {
-        "add" => add(&args),
-        "coalesce" => coalesce(&args),
-        "concat" => concat(&args),
-        "count" => count(&args),
-        "eq" => eq(&args),
-        "len" => len(&args),
-        "lower" => lower(&args),
-        "pathjoin" => pathjoin(&args),
-        "read" => read(&args),
-        "trim" => trim(&args),
-        "typeof" => type_of(&args),
-        "upper" => upper(&args),
-        _ => Err(EvaluationError::UnknownFunction(name.to_string())),
-    }
 }
 
 type ConcretePipeline = Vec<ConcreteFunctionCall>;
