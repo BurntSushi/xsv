@@ -17,12 +17,12 @@ fn downgrade_float(f: f64) -> Option<i64> {
     None
 }
 
-pub enum Number {
+pub enum DynamicNumber {
     Float(f64),
     Integer(i64),
 }
 
-impl PartialEq for Number {
+impl PartialEq for DynamicNumber {
     fn eq(&self, other: &Self) -> bool {
         match self {
             Self::Float(self_value) => match other {
@@ -37,7 +37,7 @@ impl PartialEq for Number {
     }
 }
 
-impl PartialOrd for Number {
+impl PartialOrd for DynamicNumber {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match self {
             Self::Float(self_value) => match other {
@@ -52,7 +52,7 @@ impl PartialOrd for Number {
     }
 }
 
-impl Number {
+impl DynamicNumber {
     fn to_dynamic_value(self) -> DynamicValue {
         match self {
             Self::Float(value) => DynamicValue::Float(value),
@@ -61,7 +61,7 @@ impl Number {
     }
 }
 
-impl Add for Number {
+impl Add for DynamicNumber {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -163,18 +163,18 @@ impl DynamicValue {
         })
     }
 
-    fn cast_to_number(&self) -> Result<Number, EvaluationError> {
+    fn cast_to_number(&self) -> Result<DynamicNumber, EvaluationError> {
         Ok(match self {
             Self::String(string) => match string.parse::<i64>() {
-                Ok(value) => Number::Integer(value),
+                Ok(value) => DynamicNumber::Integer(value),
                 Err(_) => match string.parse::<f64>() {
-                    Ok(value) => Number::Float(value),
+                    Ok(value) => DynamicNumber::Float(value),
                     Err(_) => return Err(EvaluationError::Cast),
                 },
             },
-            Self::Integer(value) => Number::Integer(*value),
-            Self::Float(value) => Number::Float(*value),
-            Self::Boolean(value) => Number::Integer(*value as i64),
+            Self::Integer(value) => DynamicNumber::Integer(*value),
+            Self::Float(value) => DynamicNumber::Float(*value),
+            Self::Boolean(value) => DynamicNumber::Integer(*value as i64),
             _ => return Err(EvaluationError::Cast),
         })
     }
@@ -318,7 +318,7 @@ pub fn count(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> 
 pub fn add(args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
     validate_min_arity(args, 2)?;
 
-    let mut sum = Number::Integer(0);
+    let mut sum = DynamicNumber::Integer(0);
 
     for arg in args {
         sum = sum + arg.cast_to_number()?;
