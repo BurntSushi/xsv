@@ -152,10 +152,7 @@ fn sort_uniq() {
     );
 
     let mut cmd = wrk.command("sort");
-    cmd.arg("-u")
-        .args(["-s", "number"])
-        .arg("-N")
-        .arg("in.csv");
+    cmd.arg("-u").args(["-s", "number"]).arg("-N").arg("in.csv");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
