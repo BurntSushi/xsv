@@ -1,9 +1,10 @@
+use std::collections::BTreeMap;
+
 use csv;
 
-use crate::xan::interpret;
 use config::{Config, Delimiter};
 use util;
-use xan::prepare;
+use xan::{interpret, prepare};
 use CliResult;
 
 static USAGE: &'static str = "
@@ -74,9 +75,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let pipeline = prepare(&args.arg_operations, &headers, &Vec::new())?;
 
     let mut record = csv::ByteRecord::new();
+    let variables = BTreeMap::new();
 
     while rdr.read_byte_record(&mut record)? {
-        let value = interpret(&pipeline, &record)?;
+        let value = interpret(&pipeline, &record, &variables)?;
         record.push_field(value.serialize().as_bytes());
         wtr.write_byte_record(&record)?;
     }

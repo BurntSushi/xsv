@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use csv::ByteRecord;
 
 use xan::error::EvaluationError;
@@ -18,13 +20,13 @@ enum ConcreteArgument {
     Underscore,
 }
 
-// TODO: handle variables
-// TODO: investigate cows
+// TODO: investigate cows, or make dynamic values hold pointers
 impl ConcreteArgument {
     fn bind(
         &self,
         record: &ByteRecord,
         last_value: &DynamicValue,
+        variables: &BTreeMap<&String, DynamicValue>,
     ) -> Result<DynamicValue, EvaluationError> {
         Ok(match self {
             Self::StringLiteral(value) => DynamicValue::String(value.clone()),
@@ -39,8 +41,11 @@ impl ConcreteArgument {
                     Ok(value) => DynamicValue::String(value),
                 },
             },
-            Self::Variable(name) => return Err(EvaluationError::UnknownVariable(name.clone())),
-            _ => panic!("not implemented!"),
+            Self::Variable(name) => match variables.get(name) {
+                Some(value) => value.clone(),
+                None => return Err(EvaluationError::UnknownVariable(name.clone())),
+            },
+            Self::Call(_) => return Err(EvaluationError::IllegalBinding),
         })
     }
 }
@@ -55,11 +60,12 @@ impl ConcreteFunctionCall {
         &self,
         record: &ByteRecord,
         last_value: &DynamicValue,
+        variables: &BTreeMap<&String, DynamicValue>,
     ) -> Result<Vec<DynamicValue>, EvaluationError> {
         let mut bound_args: Vec<DynamicValue> = Vec::new();
 
         for arg in self.args.iter() {
-            bound_args.push(arg.bind(record, last_value)?);
+            bound_args.push(arg.bind(record, last_value, variables)?);
         }
 
         Ok(bound_args)
@@ -69,8 +75,9 @@ impl ConcreteFunctionCall {
         &self,
         record: &ByteRecord,
         last_value: &DynamicValue,
+        variables: &BTreeMap<&String, DynamicValue>,
     ) -> Result<DynamicValue, EvaluationError> {
-        let args = self.bind(record, last_value)?;
+        let args = self.bind(record, last_value, variables)?;
 
         match self.name.as_ref() {
             "add" => add(&args),
@@ -195,11 +202,12 @@ pub fn prepare(
 pub fn interpret(
     pipeline: &ConcretePipeline,
     record: &ByteRecord,
+    variables: &BTreeMap<&String, DynamicValue>,
 ) -> Result<DynamicValue, EvaluationError> {
     let mut last_value = DynamicValue::None;
 
     for function_call in pipeline {
-        last_value = function_call.call(&record, &last_value)?;
+        last_value = function_call.call(record, &last_value, variables)?;
     }
 
     Ok(last_value)
@@ -212,8 +220,9 @@ mod tests {
     #[test]
     fn test_interpret() -> Result<(), ()> {
         let pipeline = prepare("trim", &ByteRecord::new(), &Vec::new())?;
+        let variables = BTreeMap::new();
 
-        match interpret(&pipeline, &ByteRecord::new()) {
+        match interpret(&pipeline, &ByteRecord::new(), &variables) {
             Err(_) => return Err(()),
             Ok(value) => assert_eq!(value.serialize(), String::new()),
         }

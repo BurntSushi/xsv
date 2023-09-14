@@ -4,6 +4,7 @@ pub struct InvalidArityErrorContext {
 }
 
 pub enum EvaluationError {
+    IllegalBinding,
     InvalidArity(InvalidArityErrorContext),
     ColumnOutOfRange(usize),
     UnknownVariable(String),
