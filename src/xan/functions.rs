@@ -17,7 +17,7 @@ use xan::types::{BoundArguments, DynamicNumber, DynamicValue, EvaluationResult};
 // shall be owned so we can safely transform them as needed on the fly for no cost and own them
 pub fn call(name: &str, args: BoundArguments) -> EvaluationResult {
     match name {
-        // "add" => add(args),
+        "add" => add(args),
         // "and" => and(args),
         "coalesce" => coalesce(args),
         // "concat" => concat(args),
@@ -61,17 +61,11 @@ fn count(mut args: BoundArguments) -> EvaluationResult {
 }
 
 // Arithmetics
-// fn add(args: BoundArguments) -> EvaluationResult {
-//     validate_min_arity(args, 2)?;
+fn add(mut args: BoundArguments) -> EvaluationResult {
+    let (a, b) = args.get2_number()?;
 
-//     let mut sum = DynamicNumber::Integer(0);
-
-//     for arg in args {
-//         sum = sum + arg.cast_to_number()?;
-//     }
-
-//     Ok(sum.to_dynamic_value())
-// }
+    return Ok(DynamicValue::from(a + b));
+}
 
 // Utilities
 fn coalesce(args: BoundArguments) -> EvaluationResult {

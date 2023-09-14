@@ -93,15 +93,6 @@ impl PartialOrd for DynamicNumber {
     }
 }
 
-impl DynamicNumber {
-    fn to_dynamic_value(self) -> DynamicValue {
-        match self {
-            Self::Float(value) => DynamicValue::Float(value),
-            Self::Integer(value) => DynamicValue::Integer(value),
-        }
-    }
-}
-
 impl Add for DynamicNumber {
     type Output = Self;
 
@@ -158,66 +149,21 @@ impl DynamicValue {
         self.into()
     }
 
-    // pub fn cast_to_string(&self) -> Option<String> {
-    //     Some(self.serialize())
-    // }
+    pub fn into_bool(self) -> bool {
+        self.into()
+    }
 
-    // pub fn cast_to_float(&self) -> Option<f64> {
-    //     Some(match self {
-    //         Self::String(string) => match string.parse::<f64>() {
-    //             Err(_) => return None,
-    //             Ok(value) => value,
-    //         },
-    //         Self::Float(value) => *value,
-    //         Self::Integer(value) => *value as f64,
-    //         Self::Boolean(value) => {
-    //             if *value {
-    //                 1.0
-    //             } else {
-    //                 0.0
-    //             }
-    //         }
-    //         Self::None => return None,
-    //     })
-    // }
+    pub fn try_into_integer(self) -> Result<i64, EvaluationError> {
+        self.try_into()
+    }
 
-    // pub fn cast_to_integer(&self) -> Option<i64> {
-    //     Some(match self {
-    //         Self::String(string) => match string.parse::<i64>() {
-    //             Err(_) => match string.parse::<f64>() {
-    //                 Err(_) => return None,
-    //                 Ok(value) => match downgrade_float(value) {
-    //                     Some(safe_downgraded_value) => safe_downgraded_value,
-    //                     None => return None,
-    //                 },
-    //             },
-    //             Ok(value) => value,
-    //         },
-    //         Self::Float(value) => match downgrade_float(*value) {
-    //             Some(safe_downgraded_value) => safe_downgraded_value,
-    //             None => return None,
-    //         },
-    //         Self::Integer(value) => *value,
-    //         Self::Boolean(value) => *value as i64,
-    //         Self::None => return None,
-    //     })
-    // }
+    pub fn try_into_float(self) -> Result<f64, EvaluationError> {
+        self.try_into()
+    }
 
-    // fn cast_to_number(&self) -> Option<DynamicNumber> {
-    //     Some(match self {
-    //         Self::String(string) => match string.parse::<i64>() {
-    //             Ok(value) => DynamicNumber::Integer(value),
-    //             Err(_) => match string.parse::<f64>() {
-    //                 Ok(value) => DynamicNumber::Float(value),
-    //                 Err(_) => return None,
-    //             },
-    //         },
-    //         Self::Integer(value) => DynamicNumber::Integer(*value),
-    //         Self::Float(value) => DynamicNumber::Float(*value),
-    //         Self::Boolean(value) => DynamicNumber::Integer(*value as i64),
-    //         _ => return None,
-    //     })
-    // }
+    pub fn try_into_number(self) -> Result<DynamicNumber, EvaluationError> {
+        self.try_into()
+    }
 }
 
 impl From<usize> for DynamicValue {
@@ -235,6 +181,15 @@ impl From<String> for DynamicValue {
 impl From<&str> for DynamicValue {
     fn from(value: &str) -> Self {
         DynamicValue::String(String::from(value))
+    }
+}
+
+impl From<DynamicNumber> for DynamicValue {
+    fn from(value: DynamicNumber) -> Self {
+        match value {
+            DynamicNumber::Integer(value) => DynamicValue::Integer(value),
+            DynamicNumber::Float(value) => DynamicValue::Float(value),
+        }
     }
 }
 
@@ -276,6 +231,49 @@ impl TryInto<i64> for DynamicValue {
     }
 }
 
+impl TryInto<f64> for DynamicValue {
+    type Error = EvaluationError;
+
+    fn try_into(self) -> Result<f64, Self::Error> {
+        Ok(match self {
+            Self::String(string) => match string.parse::<f64>() {
+                Err(_) => return Err(EvaluationError::Cast),
+                Ok(value) => value,
+            },
+            Self::Float(value) => value,
+            Self::Integer(value) => value as f64,
+            Self::Boolean(value) => {
+                if value {
+                    1.0
+                } else {
+                    0.0
+                }
+            }
+            Self::None => return Err(EvaluationError::Cast),
+        })
+    }
+}
+
+impl TryInto<DynamicNumber> for DynamicValue {
+    type Error = EvaluationError;
+
+    fn try_into(self) -> Result<DynamicNumber, Self::Error> {
+        Ok(match self {
+            Self::String(string) => match string.parse::<i64>() {
+                Ok(value) => DynamicNumber::Integer(value),
+                Err(_) => match string.parse::<f64>() {
+                    Ok(value) => DynamicNumber::Float(value),
+                    Err(_) => return Err(EvaluationError::Cast),
+                },
+            },
+            Self::Integer(value) => DynamicNumber::Integer(value),
+            Self::Float(value) => DynamicNumber::Float(value),
+            Self::Boolean(value) => DynamicNumber::Integer(value as i64),
+            _ => return Err(EvaluationError::Cast),
+        })
+    }
+}
+
 impl Into<String> for DynamicValue {
     fn into(self) -> String {
         match self {
@@ -287,84 +285,6 @@ impl Into<String> for DynamicValue {
         }
     }
 }
-
-// impl PartialEq for DynamicValue {
-//     fn eq(&self, other: &Self) -> bool {
-//         match self {
-//             DynamicValue::None => match other {
-//                 DynamicValue::None => true,
-//                 _ => false,
-//             },
-//             DynamicValue::Boolean(self_value) => match other {
-//                 DynamicValue::Boolean(other_value) => self_value.eq(other_value),
-//                 _ => match other.cast_to_bool() {
-//                     Err(_) => false,
-//                     Ok(other_value) => self_value.eq(&other_value),
-//                 },
-//             },
-//             DynamicValue::String(self_value) => match other {
-//                 DynamicValue::String(other_value) => self_value.eq(other_value),
-//                 _ => match other.cast_to_string() {
-//                     Err(_) => false,
-//                     Ok(other_value) => self_value.eq(&other_value),
-//                 },
-//             },
-//             DynamicValue::Integer(self_value) => match other {
-//                 DynamicValue::Integer(other_value) => self_value.eq(other_value),
-//                 _ => match other.cast_to_integer() {
-//                     Err(_) => false,
-//                     Ok(other_value) => self_value.eq(&other_value),
-//                 },
-//             },
-//             DynamicValue::Float(self_value) => match other {
-//                 DynamicValue::Float(other_value) => self_value.eq(other_value),
-//                 _ => match other.cast_to_float() {
-//                     Err(_) => false,
-//                     Ok(other_value) => self_value.eq(&other_value),
-//                 },
-//             },
-//         }
-//     }
-// }
-
-// impl PartialOrd for DynamicValue {
-//     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-//         match self {
-//             DynamicValue::None => match other {
-//                 DynamicValue::None => Some(Ordering::Equal),
-//                 _ => None,
-//             },
-//             DynamicValue::Boolean(self_value) => match other {
-//                 DynamicValue::Boolean(other_value) => Some(self_value.cmp(other_value)),
-//                 _ => match other.cast_to_bool() {
-//                     Err(_) => None,
-//                     Ok(other_value) => Some(self_value.cmp(&other_value)),
-//                 },
-//             },
-//             DynamicValue::String(self_value) => match other {
-//                 DynamicValue::String(other_value) => Some(self_value.cmp(other_value)),
-//                 _ => match other.cast_to_string() {
-//                     Err(_) => None,
-//                     Ok(other_value) => Some(self_value.cmp(&other_value)),
-//                 },
-//             },
-//             DynamicValue::Integer(self_value) => match other {
-//                 DynamicValue::Integer(other_value) => Some(self_value.cmp(other_value)),
-//                 _ => match other.cast_to_integer() {
-//                     Err(_) => None,
-//                     Ok(other_value) => Some(self_value.cmp(&other_value)),
-//                 },
-//             },
-//             DynamicValue::Float(self_value) => match other {
-//                 DynamicValue::Float(other_value) => self_value.partial_cmp(other_value),
-//                 _ => match other.cast_to_float() {
-//                     Err(_) => None,
-//                     Ok(other_value) => self_value.partial_cmp(&other_value),
-//                 },
-//             },
-//         }
-//     }
-// }
 
 pub type EvaluationResult = Result<DynamicValue, EvaluationError>;
 
@@ -417,6 +337,15 @@ impl BoundArguments {
 
     pub fn get2_string(&mut self) -> Result<(String, String), EvaluationError> {
         self.get2().map(|(a, b)| (a.into_string(), b.into_string()))
+    }
+
+    pub fn get2_number(&mut self) -> Result<(DynamicNumber, DynamicNumber), EvaluationError> {
+        let (a, b) = self.get2()?;
+
+        let a = a.try_into_number()?;
+        let b = b.try_into_number()?;
+
+        Ok((a, b))
     }
 }
 
