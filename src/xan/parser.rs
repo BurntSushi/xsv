@@ -155,19 +155,22 @@ fn argument_separator(input: &str) -> IResult<&str, ()> {
 fn indexation(input: &str) -> IResult<&str, ColumIndexation> {
     preceded(
         tag("row"),
-        map(
-            delimited(
-                char('['),
-                pair(
-                    string_literal,
-                    opt(preceded(argument_separator, integer_literal::<usize>)),
+        delimited(
+            char('['),
+            alt((
+                map(
+                    pair(
+                        string_literal,
+                        opt(preceded(argument_separator, integer_literal::<usize>)),
+                    ),
+                    |(string, index)| match index {
+                        Some(pos) => ColumIndexation::ByNameAndNth((string, pos)),
+                        None => ColumIndexation::ByName(string),
+                    },
                 ),
-                char(']'),
-            ),
-            |(string, index)| match index {
-                Some(pos) => ColumIndexation::ByNameAndNth((string, pos)),
-                None => ColumIndexation::ByName(string),
-            },
+                map(integer_literal::<usize>, |pos| ColumIndexation::ByPos(pos)),
+            )),
+            char(']'),
         ),
     )(input)
 }
@@ -317,6 +320,7 @@ mod tests {
             indexation("row['name', 3]"),
             Ok(("", ColumIndexation::ByNameAndNth(("name".to_string(), 3))))
         );
+        assert_eq!(indexation("row[34]"), Ok(("", ColumIndexation::ByPos(34))));
     }
 
     #[test]
