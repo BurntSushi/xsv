@@ -14,6 +14,7 @@ enum ConcreteArgument {
     FloatLiteral(f64),
     IntegerLiteral(i64),
     BooleanLiteral(bool),
+    Call(ConcreteFunctionCall),
     Underscore,
 }
 
@@ -39,6 +40,7 @@ impl ConcreteArgument {
                 },
             },
             Self::Variable(name) => return Err(EvaluationError::UnknownVariable(name.clone())),
+            _ => panic!("not implemented!"),
         })
     }
 }
@@ -110,6 +112,7 @@ fn find_column_index(header: &ByteRecord, name: &str, pos: usize) -> Option<usiz
     None
 }
 
+// TODO: create a concretization error enum
 fn concretize_argument(
     argument: Argument,
     header: &ByteRecord,
@@ -135,7 +138,18 @@ fn concretize_argument(
             Some(index) => ConcreteArgument::Column(index),
             None => return Err(info),
         },
-        Argument::Call(_) => panic!("not implemented"),
+        Argument::Call(call) => {
+            let mut concrete_args = Vec::new();
+
+            for arg in call.args {
+                concrete_args.push(concretize_argument(arg, header, reserved)?);
+            }
+
+            ConcreteArgument::Call(ConcreteFunctionCall {
+                name: call.name,
+                args: concrete_args,
+            })
+        }
     })
 }
 
@@ -163,6 +177,7 @@ fn concretize_pipeline(
 }
 
 // TODO: write this better
+// TODO: enum for errors
 pub fn prepare(
     code: &str,
     header: &ByteRecord,
