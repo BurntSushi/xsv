@@ -40,7 +40,7 @@ fn explode_rename() {
     );
     let mut cmd = wrk.command("explode");
     cmd.arg("colors")
-        .args(&["--rename", "color"])
+        .args(["--rename", "color"])
         .arg("|")
         .arg("data.csv");
 

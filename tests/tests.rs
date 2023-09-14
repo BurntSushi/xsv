@@ -105,7 +105,7 @@ impl CsvRecord {
 impl ops::Deref for CsvRecord {
     type Target = [String];
     fn deref<'a>(&'a self) -> &'a [String] {
-        &*self.0
+        &self.0
     }
 }
 
@@ -130,7 +130,7 @@ impl Arbitrary for CsvRecord {
             self.clone()
                 .unwrap()
                 .shrink()
-                .filter(|r| r.len() > 0)
+                .filter(|r| !r.is_empty())
                 .map(CsvRecord),
         )
     }
@@ -156,7 +156,7 @@ impl CsvData {
     }
 
     fn len(&self) -> usize {
-        (&**self).len()
+        (**self).len()
     }
 
     fn is_empty(&self) -> bool {
@@ -167,7 +167,7 @@ impl CsvData {
 impl ops::Deref for CsvData {
     type Target = [CsvRecord];
     fn deref<'a>(&'a self) -> &'a [CsvRecord] {
-        &*self.data
+        &self.data
     }
 }
 

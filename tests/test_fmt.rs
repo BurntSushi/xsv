@@ -21,7 +21,7 @@ fn setup(name: &str) -> (Workdir, process::Command) {
 #[test]
 fn fmt_delimiter() {
     let (wrk, mut cmd) = setup("fmt_delimiter");
-    cmd.args(&["--out-delimiter", "\t"]);
+    cmd.args(["--out-delimiter", "\t"]);
 
     let got: String = wrk.stdout(&mut cmd);
     let expected = "\
@@ -34,7 +34,7 @@ mnopqr\tstuvwx";
 #[test]
 fn fmt_weird_delimiter() {
     let (wrk, mut cmd) = setup("fmt_weird_delimiter");
-    cmd.args(&["--out-delimiter", "h"]);
+    cmd.args(["--out-delimiter", "h"]);
 
     let got: String = wrk.stdout(&mut cmd);
     let expected = "\

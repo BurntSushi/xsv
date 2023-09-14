@@ -142,7 +142,7 @@ fn search_flag() {
     let wrk = Workdir::new("search_flag");
     wrk.create("data.csv", data(false));
     let mut cmd = wrk.command("search");
-    cmd.arg("^foo").arg("data.csv").args(&["--flag", "flagged"]);
+    cmd.arg("^foo").arg("data.csv").args(["--flag", "flagged"]);
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
@@ -158,7 +158,7 @@ fn search_flag_invert_match() {
     let wrk = Workdir::new("search_flag");
     wrk.create("data.csv", data(false));
     let mut cmd = wrk.command("search");
-    cmd.arg("^foo").arg("data.csv").args(&["--flag", "flagged"]);
+    cmd.arg("^foo").arg("data.csv").args(["--flag", "flagged"]);
     cmd.arg("--invert-match");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);

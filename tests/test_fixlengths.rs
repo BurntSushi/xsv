@@ -82,7 +82,7 @@ fn prop_fixlengths_explicit_len() {
         wrk.create("in.csv", rows);
 
         let mut cmd = wrk.command("fixlengths");
-        cmd.arg("in.csv").args(&["-l", &*expected_len.to_string()]);
+        cmd.arg("in.csv").args(["-l", &*expected_len.to_string()]);
 
         let got: Vec<CsvRecord> = wrk.read_stdout(&mut cmd);
         let got_len = got.iter().map(|r| r.len()).max().unwrap();

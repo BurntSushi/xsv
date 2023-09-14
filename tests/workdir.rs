@@ -12,7 +12,7 @@ use csv;
 
 use Csv;
 
-static XSV_INTEGRATION_TEST_DIR: &'static str = "xit";
+static XSV_INTEGRATION_TEST_DIR: &str = "xit";
 
 static NEXT_ID: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
 
@@ -36,14 +36,14 @@ impl Workdir {
         let dir = root
             .join(XSV_INTEGRATION_TEST_DIR)
             .join(name)
-            .join(&format!("test-{}", id));
+            .join(format!("test-{}", id));
         // println!("{:?}", dir);
         if let Err(err) = create_dir_all(&dir) {
             panic!("Could not create '{:?}': {}", dir, err);
         }
         Workdir {
-            root: root,
-            dir: dir,
+            root,
+            dir,
             flexible: false,
         }
     }
@@ -89,7 +89,7 @@ impl Workdir {
     }
 
     pub fn command(&self, sub_command: &str) -> process::Command {
-        let mut cmd = process::Command::new(&self.xsv_bin());
+        let mut cmd = process::Command::new(self.xsv_bin());
         cmd.current_dir(&self.dir).arg(sub_command);
         cmd
     }
@@ -127,7 +127,7 @@ impl Workdir {
             .trim_matches(&['\r', '\n'][..])
             .parse()
             .ok()
-            .expect(&format!("Could not convert from string: '{}'", stdout))
+            .unwrap_or_else(|| panic!("Could not convert from string: '{}'", stdout))
     }
 
     pub fn assert_err(&self, cmd: &mut process::Command) {

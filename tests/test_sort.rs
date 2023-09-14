@@ -51,7 +51,7 @@ fn sort_select() {
 
     let mut cmd = wrk.command("sort");
     cmd.arg("--no-headers")
-        .args(&["--select", "2"])
+        .args(["--select", "2"])
         .arg("in.csv");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
@@ -153,7 +153,7 @@ fn sort_uniq() {
 
     let mut cmd = wrk.command("sort");
     cmd.arg("-u")
-        .args(&["-s", "number"])
+        .args(["-s", "number"])
         .arg("-N")
         .arg("in.csv");
 
@@ -185,8 +185,8 @@ fn sort_count() {
 
     let mut cmd = wrk.command("sort");
     cmd.arg("-u")
-        .args(&["-c", "duplicate_count"])
-        .args(&["-s", "number"])
+        .args(["-c", "duplicate_count"])
+        .args(["-s", "number"])
         .arg("-N")
         .arg("in.csv");
 
@@ -217,8 +217,8 @@ fn sort_count_not_uniq() {
     );
 
     let mut cmd = wrk.command("sort");
-    cmd.args(&["-c", "duplicate_count"])
-        .args(&["-s", "number"])
+    cmd.args(["-c", "duplicate_count"])
+        .args(["-s", "number"])
         .arg("-N")
         .arg("in.csv");
 
@@ -232,8 +232,8 @@ fn sort_count_empty() {
 
     let mut cmd = wrk.command("sort");
     cmd.arg("-u")
-        .args(&["-c", "duplicate_count"])
-        .args(&["-s", "number"])
+        .args(["-c", "duplicate_count"])
+        .args(["-s", "number"])
         .arg("-N")
         .arg("in.csv");
 
@@ -249,8 +249,8 @@ fn sort_count_one_line() {
 
     let mut cmd = wrk.command("sort");
     cmd.arg("-u")
-        .args(&["-c", "duplicate_count"])
-        .args(&["-s", "number"])
+        .args(["-c", "duplicate_count"])
+        .args(["-s", "number"])
         .arg("-N")
         .arg("in.csv");
 
@@ -277,8 +277,8 @@ fn sort_count_one_group() {
 
     let mut cmd = wrk.command("sort");
     cmd.arg("-u")
-        .args(&["-c", "duplicate_count"])
-        .args(&["-s", "number"])
+        .args(["-c", "duplicate_count"])
+        .args(["-s", "number"])
         .arg("-N")
         .arg("in.csv");
 

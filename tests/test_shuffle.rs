@@ -14,7 +14,7 @@ fn shuffle() {
         ],
     );
     let mut cmd = wrk.command("shuffle");
-    cmd.arg("data.csv").args(&["--seed", "123"]);
+    cmd.arg("data.csv").args(["--seed", "123"]);
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     let expected = vec![
@@ -42,7 +42,7 @@ fn shuffle_in_memory() {
     );
     let mut cmd = wrk.command("shuffle");
     cmd.arg("data.csv")
-        .args(&["--seed", "123"])
+        .args(["--seed", "123"])
         .arg("--in-memory");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
@@ -66,7 +66,7 @@ fn shuffle_no_headers() {
     );
     let mut cmd = wrk.command("shuffle");
     cmd.arg("data.csv")
-        .args(&["--seed", "123"])
+        .args(["--seed", "123"])
         .arg("--no-headers");
 
     let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
@@ -83,7 +83,7 @@ fn shuffle_in_memory_no_headers() {
     );
     let mut cmd = wrk.command("shuffle");
     cmd.arg("data.csv")
-        .args(&["--seed", "123"])
+        .args(["--seed", "123"])
         .arg("--no-headers")
         .arg("--in-memory");
 
