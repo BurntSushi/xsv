@@ -55,45 +55,21 @@ pub struct ConcreteFunctionCall {
     args: Vec<ConcreteArgument>,
 }
 
-impl ConcreteFunctionCall {
-    fn bind(
-        &self,
-        record: &ByteRecord,
-        last_value: &DynamicValue,
-        variables: &BTreeMap<&String, DynamicValue>,
-    ) -> Result<Vec<DynamicValue>, EvaluationError> {
-        let mut bound_args: Vec<DynamicValue> = Vec::new();
-
-        for arg in self.args.iter() {
-            bound_args.push(arg.bind(record, last_value, variables)?);
-        }
-
-        Ok(bound_args)
-    }
-
-    fn call(
-        &self,
-        record: &ByteRecord,
-        last_value: &DynamicValue,
-        variables: &BTreeMap<&String, DynamicValue>,
-    ) -> Result<DynamicValue, EvaluationError> {
-        let args = self.bind(record, last_value, variables)?;
-
-        match self.name.as_ref() {
-            "add" => add(&args),
-            "coalesce" => coalesce(&args),
-            "concat" => concat(&args),
-            "count" => count(&args),
-            "eq" => eq(&args),
-            "len" => len(&args),
-            "lower" => lower(&args),
-            "pathjoin" => pathjoin(&args),
-            "read" => read(&args),
-            "trim" => trim(&args),
-            "typeof" => type_of(&args),
-            "upper" => upper(&args),
-            _ => Err(EvaluationError::UnknownFunction(self.name.clone())),
-        }
+fn call(name: &str, args: &Vec<DynamicValue>) -> Result<DynamicValue, EvaluationError> {
+    match name {
+        "add" => add(&args),
+        "coalesce" => coalesce(&args),
+        "concat" => concat(&args),
+        "count" => count(&args),
+        "eq" => eq(&args),
+        "len" => len(&args),
+        "lower" => lower(&args),
+        "pathjoin" => pathjoin(&args),
+        "read" => read(&args),
+        "trim" => trim(&args),
+        "typeof" => type_of(&args),
+        "upper" => upper(&args),
+        _ => Err(EvaluationError::UnknownFunction(name.to_string())),
     }
 }
 
@@ -199,6 +175,34 @@ pub fn prepare(
     }
 }
 
+pub fn traverse(
+    function_call: &ConcreteFunctionCall,
+    record: &ByteRecord,
+    last_value: &DynamicValue,
+    variables: &BTreeMap<&String, DynamicValue>,
+) -> Result<DynamicValue, EvaluationError> {
+    // Branching
+    if function_call.name == "if".to_string() {
+        panic!("todo")
+    }
+    // Regular call
+    else {
+        let mut bound_args: Vec<DynamicValue> = Vec::new();
+
+        for arg in function_call.args.iter() {
+            match arg {
+                ConcreteArgument::Call(sub_function_call) => {
+                    bound_args.push(traverse(&sub_function_call, record, last_value, variables)?);
+                }
+                _ => bound_args.push(arg.bind(record, last_value, variables)?),
+            }
+        }
+
+        call(&function_call.name, &bound_args)
+    }
+}
+
+// TODO: drop impl for ConcreteFunctionCall
 pub fn interpret(
     pipeline: &ConcretePipeline,
     record: &ByteRecord,
@@ -207,7 +211,7 @@ pub fn interpret(
     let mut last_value = DynamicValue::None;
 
     for function_call in pipeline {
-        last_value = function_call.call(record, &last_value, variables)?;
+        last_value = traverse(function_call, record, &last_value, variables)?;
     }
 
     Ok(last_value)
