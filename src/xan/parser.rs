@@ -467,4 +467,60 @@ mod tests {
             ))
         );
     }
+
+    #[derive(Debug)]
+    struct FunctionNode {
+        name: String,
+        args: Vec<Node>,
+    }
+
+    #[derive(Debug)]
+    struct BranchNode {
+        condition: Node,
+        if_true: Node,
+        if_false: Node,
+    }
+
+    #[derive(Debug)]
+    enum Node {
+        Leaf(isize),
+        Function(FunctionNode),
+        Branch(Box<BranchNode>),
+    }
+
+    fn traverse(tree: &Node) -> isize {
+        match tree {
+            Node::Leaf(value) => *value,
+            Node::Function(call) => call.args.iter().map(|arg| traverse(arg)).sum(),
+            Node::Branch(branch) => {
+                let value = traverse(&branch.condition);
+
+                if value > 0 {
+                    traverse(&branch.if_true)
+                } else {
+                    traverse(&branch.if_false)
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn ast() {
+        let tree = Node::Function(FunctionNode {
+            name: "add".to_string(),
+            args: vec![
+                Node::Function(FunctionNode {
+                    name: "add".to_string(),
+                    args: vec![Node::Leaf(3), Node::Leaf(4)],
+                }),
+                Node::Branch(Box::new(BranchNode {
+                    condition: Node::Leaf(1),
+                    if_true: Node::Leaf(10),
+                    if_false: Node::Leaf(-10),
+                })),
+            ],
+        });
+
+        // println!("{:?}", traverse(&tree));
+    }
 }
