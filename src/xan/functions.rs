@@ -22,6 +22,36 @@ pub enum Number {
     Integer(i64),
 }
 
+impl PartialEq for Number {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            Self::Float(self_value) => match other {
+                Self::Float(other_value) => self_value == other_value,
+                Self::Integer(other_value) => *self_value == (*other_value as f64),
+            },
+            Self::Integer(self_value) => match other {
+                Self::Float(other_value) => (*self_value as f64) == *other_value,
+                Self::Integer(other_value) => self_value == other_value,
+            },
+        }
+    }
+}
+
+impl PartialOrd for Number {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match self {
+            Self::Float(self_value) => match other {
+                Self::Float(other_value) => self_value.partial_cmp(other_value),
+                Self::Integer(other_value) => self_value.partial_cmp(&(*other_value as f64)),
+            },
+            Self::Integer(self_value) => match other {
+                Self::Float(other_value) => (*other_value as f64).partial_cmp(other_value),
+                Self::Integer(other_value) => Some(self_value.cmp(other_value)),
+            },
+        }
+    }
+}
+
 impl Number {
     fn to_dynamic_value(self) -> DynamicValue {
         match self {
