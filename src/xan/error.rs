@@ -1,4 +1,10 @@
-// TODO: better arity error info
+use xan::types::ColumIndexation;
+
+pub enum PrepareError {
+    ParseError(String),
+    ColumnNotFound(ColumIndexation),
+}
+
 pub struct StrictArityErrorContext {
     pub expected: usize,
     pub got: usize,

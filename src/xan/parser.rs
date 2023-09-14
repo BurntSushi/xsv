@@ -10,16 +10,12 @@ use nom::{
     IResult,
 };
 
-#[derive(Debug, PartialEq)]
-pub struct IndexationInfo {
-    pub name: String,
-    pub pos: usize,
-}
+use xan::types::ColumIndexation;
 
 #[derive(Debug, PartialEq)]
 pub enum Argument {
     Identifier(String),
-    Indexation(IndexationInfo),
+    Indexation(ColumIndexation),
     StringLiteral(String),
     FloatLiteral(f64),
     IntegerLiteral(i64),
@@ -156,7 +152,7 @@ fn argument_separator(input: &str) -> IResult<&str, ()> {
     value((), tuple((space0, char(','), space0)))(input)
 }
 
-fn indexation(input: &str) -> IResult<&str, IndexationInfo> {
+fn indexation(input: &str) -> IResult<&str, ColumIndexation> {
     preceded(
         tag("row"),
         map(
@@ -168,9 +164,9 @@ fn indexation(input: &str) -> IResult<&str, IndexationInfo> {
                 ),
                 char(']'),
             ),
-            |(string, index)| IndexationInfo {
-                name: string,
-                pos: index.unwrap_or(0),
+            |(string, index)| match index {
+                Some(pos) => ColumIndexation::ByNameAndNth((string, pos)),
+                None => ColumIndexation::ByName(string),
             },
         ),
     )(input)
@@ -311,33 +307,15 @@ mod tests {
     fn test_indexation() {
         assert_eq!(
             indexation("row['name']"),
-            Ok((
-                "",
-                IndexationInfo {
-                    name: String::from("name"),
-                    pos: 0
-                }
-            ))
+            Ok(("", ColumIndexation::ByName("name".to_string())))
         );
         assert_eq!(
             indexation("row[\"name\"]"),
-            Ok((
-                "",
-                IndexationInfo {
-                    name: String::from("name"),
-                    pos: 0
-                }
-            ))
+            Ok(("", ColumIndexation::ByName("name".to_string())))
         );
         assert_eq!(
             indexation("row['name', 3]"),
-            Ok((
-                "",
-                IndexationInfo {
-                    name: String::from("name"),
-                    pos: 3
-                }
-            ))
+            Ok(("", ColumIndexation::ByNameAndNth(("name".to_string(), 3))))
         );
     }
 
@@ -425,10 +403,7 @@ mod tests {
                         name: String::from("len"),
                         args: vec![
                             Argument::Underscore,
-                            Argument::Indexation(IndexationInfo {
-                                name: String::from("name"),
-                                pos: 0
-                            })
+                            Argument::Indexation(ColumIndexation::ByName("name".to_string()))
                         ]
                     }
                 ]
@@ -457,10 +432,7 @@ mod tests {
                         name: String::from("len"),
                         args: vec![
                             Argument::Underscore,
-                            Argument::Indexation(IndexationInfo {
-                                name: String::from("name"),
-                                pos: 0
-                            })
+                            Argument::Indexation(ColumIndexation::ByName("name".to_string()))
                         ]
                     }
                 ]

@@ -2,12 +2,13 @@ use std::collections::BTreeMap;
 
 use csv::ByteRecord;
 
-use xan::error::EvaluationError;
+use xan::error::{EvaluationError, PrepareError};
 use xan::functions::{
     add, coalesce, concat, count, eq, len, lower, pathjoin, read, trim, type_of, upper,
     DynamicValue,
 };
-use xan::parser::{parse, Argument, IndexationInfo, Pipeline};
+use xan::parser::{parse, Argument, Pipeline};
+use xan::types::ColumIndexation;
 
 enum ConcreteArgument {
     Variable(String),
@@ -75,32 +76,11 @@ fn call(name: &str, args: &Vec<DynamicValue>) -> Result<DynamicValue, Evaluation
 
 type ConcretePipeline = Vec<ConcreteFunctionCall>;
 
-fn find_column_index(header: &ByteRecord, name: &str, pos: usize) -> Option<usize> {
-    let mut i: usize = 0;
-    let mut pos = pos;
-
-    let name_bytes = name.as_bytes();
-
-    for cell in header {
-        if cell == name_bytes {
-            if pos == 0 {
-                return Some(i);
-            }
-            pos -= 1;
-        }
-
-        i += 1;
-    }
-
-    None
-}
-
-// TODO: create a concretization error enum
 fn concretize_argument(
     argument: Argument,
-    header: &ByteRecord,
+    headers: &ByteRecord,
     reserved: &Vec<String>,
-) -> Result<ConcreteArgument, IndexationInfo> {
+) -> Result<ConcreteArgument, PrepareError> {
     Ok(match argument {
         Argument::Underscore => ConcreteArgument::Underscore,
         Argument::BooleanLiteral(v) => ConcreteArgument::BooleanLiteral(v),
@@ -111,21 +91,23 @@ fn concretize_argument(
             if reserved.contains(&name) {
                 ConcreteArgument::Variable(name)
             } else {
-                match find_column_index(header, &name, 0) {
+                let indexation = ColumIndexation::ByName(name);
+
+                match indexation.find_column_index(headers) {
                     Some(index) => ConcreteArgument::Column(index),
-                    None => return Err(IndexationInfo { name: name, pos: 0 }),
+                    None => return Err(PrepareError::ColumnNotFound(indexation)),
                 }
             }
         }
-        Argument::Indexation(info) => match find_column_index(header, &info.name, info.pos) {
+        Argument::Indexation(indexation) => match indexation.find_column_index(headers) {
             Some(index) => ConcreteArgument::Column(index),
-            None => return Err(info),
+            None => return Err(PrepareError::ColumnNotFound(indexation)),
         },
         Argument::Call(call) => {
             let mut concrete_args = Vec::new();
 
             for arg in call.args {
-                concrete_args.push(concretize_argument(arg, header, reserved)?);
+                concrete_args.push(concretize_argument(arg, headers, reserved)?);
             }
 
             ConcreteArgument::Call(ConcreteFunctionCall {
@@ -138,16 +120,16 @@ fn concretize_argument(
 
 fn concretize_pipeline(
     pipeline: Pipeline,
-    header: &ByteRecord,
+    headers: &ByteRecord,
     reserved: &Vec<String>,
-) -> Result<ConcretePipeline, IndexationInfo> {
+) -> Result<ConcretePipeline, PrepareError> {
     let mut concrete_pipeline: ConcretePipeline = Vec::new();
 
     for function_call in pipeline {
         let mut concrete_arguments: Vec<ConcreteArgument> = Vec::new();
 
         for argument in function_call.args {
-            concrete_arguments.push(concretize_argument(argument, header, reserved)?);
+            concrete_arguments.push(concretize_argument(argument, headers, reserved)?);
         }
 
         concrete_pipeline.push(ConcreteFunctionCall {
@@ -159,19 +141,14 @@ fn concretize_pipeline(
     Ok(concrete_pipeline)
 }
 
-// TODO: write this better
-// TODO: enum for errors
 pub fn prepare(
     code: &str,
-    header: &ByteRecord,
+    headers: &ByteRecord,
     reserved: &Vec<String>,
-) -> Result<ConcretePipeline, ()> {
+) -> Result<ConcretePipeline, PrepareError> {
     match parse(code) {
-        Err(_) => Err(()),
-        Ok(pipeline) => match concretize_pipeline(pipeline, header, reserved) {
-            Err(_) => Err(()),
-            Ok(concrete_pipeline) => Ok(concrete_pipeline),
-        },
+        Err(_) => Err(PrepareError::ParseError(code.to_string())),
+        Ok(pipeline) => concretize_pipeline(pipeline, headers, reserved),
     }
 }
 
@@ -265,14 +242,18 @@ mod tests {
 
     #[test]
     fn test_interpret() -> Result<(), ()> {
-        let pipeline = prepare("trim", &ByteRecord::new(), &Vec::new())?;
-        let variables = BTreeMap::new();
+        match prepare("trim", &ByteRecord::new(), &Vec::new()) {
+            Err(_) => Err(()),
+            Ok(pipeline) => {
+                let variables = BTreeMap::new();
 
-        match interpret(&pipeline, &ByteRecord::new(), &variables) {
-            Err(_) => return Err(()),
-            Ok(value) => assert_eq!(value.serialize(), String::new()),
+                match interpret(&pipeline, &ByteRecord::new(), &variables) {
+                    Err(_) => return Err(()),
+                    Ok(value) => assert_eq!(value.serialize(), String::new()),
+                }
+
+                Ok(())
+            }
         }
-
-        Ok(())
     }
 }
