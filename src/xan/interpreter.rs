@@ -203,7 +203,7 @@ fn traverse<'a>(
 
         match branch {
             None => Ok(DynamicValue::None),
-            Some(arg) => eval(arg, record, last_value.clone(), variables),
+            Some(arg) => eval(arg, record, last_value, variables),
         }
     }
     // Regular call
@@ -217,7 +217,7 @@ pub fn interpret<'a>(
     record: &'a ByteRecord,
     variables: &'a Variables,
 ) -> EvaluationResult<'a> {
-    let mut last_value = Cow::Owned(DynamicValue::None);
+    let mut last_value = Cow::Borrowed(&DynamicValue::None);
 
     for function_call in pipeline {
         last_value = Cow::Owned(traverse(function_call, record, last_value, variables)?);
