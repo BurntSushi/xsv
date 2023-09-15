@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::collections::BTreeMap;
+use std::rc::Rc;
 
 use csv::ByteRecord;
 
@@ -26,7 +27,7 @@ impl<'a> ConcreteArgument<'a> {
     fn bind(
         &self,
         record: &'a ByteRecord,
-        last_value: Cow<DynamicValue<'a>>,
+        last_value: Rc<DynamicValue<'a>>,
         _variables: &'a Variables,
     ) -> EvaluationResult {
         Ok(match self {
@@ -34,7 +35,10 @@ impl<'a> ConcreteArgument<'a> {
             Self::FloatLiteral(value) => DynamicValue::Float(*value),
             Self::IntegerLiteral(value) => DynamicValue::Integer(*value),
             Self::BooleanLiteral(value) => DynamicValue::Boolean(*value),
-            Self::Underscore => (*last_value).clone(),
+            Self::Underscore => match Rc::try_unwrap(last_value) {
+                Err(res) => (*res).clone(),
+                Ok(res) => res,
+            },
             Self::Null => DynamicValue::None,
             Self::Column(index) => match record.get(*index) {
                 None => return Err(EvaluationError::ColumnOutOfRange(*index)),
@@ -118,7 +122,7 @@ fn concretize_pipeline<'a>(
         }
 
         concrete_pipeline.push(ConcreteFunctionCall {
-            name: function_call.name.clone(),
+            name: function_call.name,
             args: concrete_arguments,
         });
     }
@@ -140,7 +144,7 @@ pub fn prepare<'a>(
 fn eval_function<'a>(
     function_call: &'a ConcreteFunctionCall,
     record: &'a ByteRecord,
-    last_value: Cow<DynamicValue<'a>>,
+    last_value: Rc<DynamicValue<'a>>,
     variables: &'a Variables,
 ) -> EvaluationResult<'a> {
     let mut bound_args = BoundArguments::new();
@@ -165,7 +169,7 @@ fn eval_function<'a>(
 fn eval<'a>(
     arg: &'a ConcreteArgument,
     record: &'a ByteRecord,
-    last_value: Cow<DynamicValue<'a>>,
+    last_value: Rc<DynamicValue<'a>>,
     variables: &'a Variables,
 ) -> EvaluationResult<'a> {
     match arg {
@@ -179,7 +183,7 @@ fn eval<'a>(
 fn traverse<'a>(
     function_call: &'a ConcreteFunctionCall,
     record: &'a ByteRecord,
-    last_value: Cow<DynamicValue<'a>>,
+    last_value: Rc<DynamicValue<'a>>,
     variables: &'a Variables,
 ) -> EvaluationResult<'a> {
     // Branching
@@ -216,14 +220,14 @@ pub fn interpret<'a>(
     pipeline: &'a ConcretePipeline,
     record: &'a ByteRecord,
     variables: &'a Variables,
-) -> EvaluationResult<'a> {
-    let mut last_value = Cow::Borrowed(&DynamicValue::None);
+) -> Result<Rc<DynamicValue<'a>>, EvaluationError> {
+    let mut last_value = Rc::new(DynamicValue::None);
 
     for function_call in pipeline {
-        last_value = Cow::Owned(traverse(function_call, record, last_value, variables)?);
+        last_value = Rc::new(traverse(function_call, record, last_value, variables)?);
     }
 
-    Ok(last_value.into_owned())
+    Ok(last_value)
 }
 
 #[cfg(test)]
