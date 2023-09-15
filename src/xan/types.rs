@@ -34,26 +34,23 @@ impl ColumIndexation {
                     }
                 }
 
-                return None;
+                None
             }
             Self::ByNameAndNth((name, pos)) => {
-                let mut i: usize = 0;
                 let mut c = *pos;
 
                 let name_bytes = name.as_bytes();
 
-                for cell in headers {
+                for (i, cell) in headers.iter().enumerate() {
                     if cell == name_bytes {
                         if c == 0 {
                             return Some(i);
                         }
                         c -= 1;
                     }
-
-                    i += 1;
                 }
 
-                return None;
+                None
             }
         }
     }
@@ -87,7 +84,7 @@ impl PartialOrd for DynamicNumber {
                 Self::Integer(other_value) => self_value.partial_cmp(&(*other_value as f64)),
             },
             Self::Integer(self_value) => match other {
-                Self::Float(other_value) => (*other_value as f64).partial_cmp(other_value),
+                Self::Float(other_value) => (*self_value as f64).partial_cmp(other_value),
                 Self::Integer(other_value) => Some(self_value.cmp(other_value)),
             },
         }

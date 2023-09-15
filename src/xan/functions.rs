@@ -75,10 +75,9 @@ fn concat(args: BoundArguments) -> EvaluationResult {
 }
 
 // Arithmetics
-fn add<'a>(args: BoundArguments<'a>) -> EvaluationResult<'a> {
+fn add(args: BoundArguments) -> EvaluationResult {
     let (a, b) = args.pop2_number()?;
-
-    return Ok(DynamicValue::from(a + b));
+    Ok(DynamicValue::from(a + b))
 }
 
 // Utilities

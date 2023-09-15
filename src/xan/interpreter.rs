@@ -149,7 +149,7 @@ fn eval_function<'a>(
         match arg {
             ConcreteArgument::Call(sub_function_call) => {
                 bound_args.push(traverse(
-                    &sub_function_call,
+                    sub_function_call,
                     record,
                     last_value.clone(),
                     variables,
@@ -183,7 +183,7 @@ fn traverse<'a>(
     variables: &'a Variables,
 ) -> EvaluationResult<'a> {
     // Branching
-    if function_call.name == "if".to_string() {
+    if function_call.name == *"if" {
         let arity = function_call.args.len();
 
         if arity < 2 || arity > 3 {

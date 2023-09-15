@@ -207,18 +207,15 @@ enum Command {
 
 impl Command {
     fn run(self) -> CliResult<()> {
-        let argv: Vec<_> = env::args().map(|v| v.to_owned()).collect();
+        let argv: Vec<_> = env::args().collect();
         let argv: Vec<_> = argv.iter().map(|s| &**s).collect();
         let argv = &*argv;
 
         if !argv[1].chars().all(char::is_lowercase) {
-            return Err(CliError::Other(
-                format!(
-                    "xsv expects commands in lowercase. Did you mean '{}'?",
-                    argv[1].to_lowercase()
-                )
-                .to_string(),
-            ));
+            return Err(CliError::Other(format!(
+                "xsv expects commands in lowercase. Did you mean '{}'?",
+                argv[1].to_lowercase()
+            )));
         }
         match self {
             Command::Behead => cmd::behead::run(argv),
@@ -281,7 +278,7 @@ impl fmt::Display for CliError {
             CliError::Flag(ref e) => e.fmt(f),
             CliError::Csv(ref e) => e.fmt(f),
             CliError::Io(ref e) => e.fmt(f),
-            CliError::Other(ref s) => f.write_str(&**s),
+            CliError::Other(ref s) => f.write_str(s),
         }
     }
 }
@@ -339,7 +336,7 @@ impl From<xan::PrepareError> for CliError {
                 }
             },
             xan::PrepareError::ParseError(_) => {
-                format!("code is invalid and cannot be parsed correctly")
+                "code is invalid and cannot be parsed correctly".to_string()
             }
         })
     }

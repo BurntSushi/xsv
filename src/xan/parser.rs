@@ -72,7 +72,7 @@ where
             alt((digit1, tag("-"))),
             many0(alt((digit1, tag("_")))),
         )),
-        |string: &str| string.replace("_", "").parse::<T>(),
+        |string: &str| string.replace('_', "").parse::<T>(),
     )(input)
 }
 
@@ -173,7 +173,7 @@ fn indexation(input: &str) -> IResult<&str, ColumIndexation> {
                         None => ColumIndexation::ByName(string),
                     },
                 ),
-                map(integer_literal::<usize>, |pos| ColumIndexation::ByPos(pos)),
+                map(integer_literal::<usize>, ColumIndexation::ByPos),
             )),
             char(']'),
         ),
@@ -182,18 +182,18 @@ fn indexation(input: &str) -> IResult<&str, ColumIndexation> {
 
 fn argument(input: &str) -> IResult<&str, Argument> {
     alt((
-        map(inner_function_call, |value| Argument::Call(value)),
-        map(boolean_literal, |value| Argument::BooleanLiteral(value)),
+        map(inner_function_call, Argument::Call),
+        map(boolean_literal, Argument::BooleanLiteral),
         map(null, |_| Argument::Null),
-        map(indexation, |value| Argument::Indexation(value)),
+        map(indexation, Argument::Indexation),
         map(inner_identifier, |name| {
             Argument::Identifier(String::from(name))
         }),
         map(terminated(integer_literal, not(char('.'))), |value| {
             Argument::IntegerLiteral(value)
         }),
-        map(float_literal, |value| Argument::FloatLiteral(value)),
-        map(string_literal, |string| Argument::StringLiteral(string)),
+        map(float_literal, Argument::FloatLiteral),
+        map(string_literal, Argument::StringLiteral),
         map(underscore, |_| Argument::Underscore),
     ))(input)
 }
