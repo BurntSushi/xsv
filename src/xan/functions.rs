@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use xan::error::EvaluationError;
 use xan::types::{BoundArguments, DynamicValue, EvaluationResult};
 
-// TODO: contains, startswith, endswith, comp, str comp, add, sub, lte, etc.
+// TODO: contains, startswith, endswith, comp, str comp, add, sub, lte, deburr, etc.
 // TODO: do and test variable bindings
 // TODO: parse most likely and cast functions
 // TODO: -p and --ignore-errors
@@ -34,7 +34,15 @@ pub fn call<'a>(name: &str, args: BoundArguments<'a>) -> EvaluationResult<'a> {
 
 // String transformations
 fn trim(args: BoundArguments) -> EvaluationResult {
-    Ok(DynamicValue::from(args.pop1_str()?.trim().to_owned()))
+    let string = args.pop1_str()?;
+    let trimmed = string.trim();
+
+    // NOTE: only cloning if actually different
+    Ok(if trimmed.len() != string.len() {
+        DynamicValue::from(trimmed.to_owned())
+    } else {
+        DynamicValue::from(string)
+    })
 }
 
 fn lower(args: BoundArguments) -> EvaluationResult {
