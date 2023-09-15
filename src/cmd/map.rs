@@ -79,7 +79,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     while rdr.read_byte_record(&mut record)? {
         let value = interpret(&pipeline, &record, &variables)?;
-        record.push_field(value.serialize().as_bytes());
+        record.push_field(&value.as_bytes());
         wtr.write_byte_record(&record)?;
     }
 

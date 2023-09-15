@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::cmp::{Ord, Ordering, PartialEq, PartialOrd};
 use std::convert::{From, Into, TryInto};
 use std::ops::Add;
@@ -121,6 +122,22 @@ pub enum DynamicValue {
 
 // TODO: find a way to avoid cloning also here
 impl DynamicValue {
+    pub fn as_bytes(&self) -> Cow<[u8]> {
+        match self {
+            Self::String(value) => Cow::Borrowed(value.as_bytes()),
+            Self::Float(value) => Cow::Owned(value.to_string().into_bytes()),
+            Self::Integer(value) => Cow::Owned(value.to_string().into_bytes()),
+            Self::Boolean(value) => {
+                if *value {
+                    Cow::Borrowed(b"true")
+                } else {
+                    Cow::Borrowed(b"false")
+                }
+            }
+            Self::None => Cow::Borrowed(b""),
+        }
+    }
+
     pub fn type_of(&self) -> &str {
         match self {
             Self::String(_) => "string",
@@ -139,10 +156,6 @@ impl DynamicValue {
             Self::Boolean(value) => *value,
             Self::None => false,
         }
-    }
-
-    pub fn serialize(self) -> String {
-        self.into()
     }
 
     pub fn into_string(self) -> String {
