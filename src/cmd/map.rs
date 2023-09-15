@@ -72,14 +72,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
     }
 
-    let pipeline = prepare(&args.arg_operations, &headers, &Vec::new())?;
+    let reserved = Vec::new();
+
+    let pipeline = prepare(&args.arg_operations, &headers, &reserved)?;
 
     let mut record = csv::ByteRecord::new();
     let variables = BTreeMap::new();
 
     while rdr.read_byte_record(&mut record)? {
         let value = interpret(&pipeline, &record, &variables)?;
-        record.push_field(&value.as_bytes());
+        record.push_field(&value.as_bytes().into_owned());
         wtr.write_byte_record(&record)?;
     }
 

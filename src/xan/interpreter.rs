@@ -1,5 +1,5 @@
+use std::borrow::Cow;
 use std::collections::BTreeMap;
-use std::rc::Rc;
 
 use csv::ByteRecord;
 
@@ -8,44 +8,44 @@ use xan::functions::call;
 use xan::parser::{parse, Argument, Pipeline};
 use xan::types::{BoundArguments, ColumIndexation, DynamicValue, EvaluationResult};
 
-type Variables = BTreeMap<String, Rc<DynamicValue>>;
+type Variables<'a> = BTreeMap<&'a str, DynamicValue<'a>>;
 
-enum ConcreteArgument {
-    Variable(String),
+enum ConcreteArgument<'a> {
+    Variable(Cow<'a, str>),
     Column(usize),
-    StringLiteral(String),
+    StringLiteral(Cow<'a, str>),
     FloatLiteral(f64),
     IntegerLiteral(i64),
     BooleanLiteral(bool),
-    Call(ConcreteFunctionCall),
+    Call(ConcreteFunctionCall<'a>),
     Null,
     Underscore,
 }
 
-impl ConcreteArgument {
+impl<'a> ConcreteArgument<'a> {
     fn bind(
         &self,
-        record: &ByteRecord,
-        last_value: &DynamicValue,
-        _variables: &Variables,
+        record: &'a ByteRecord,
+        last_value: Cow<DynamicValue<'a>>,
+        _variables: &'a Variables,
     ) -> EvaluationResult {
         Ok(match self {
             Self::StringLiteral(value) => DynamicValue::String(value.clone()),
             Self::FloatLiteral(value) => DynamicValue::Float(*value),
             Self::IntegerLiteral(value) => DynamicValue::Integer(*value),
             Self::BooleanLiteral(value) => DynamicValue::Boolean(*value),
-            Self::Underscore => last_value.clone(),
+            Self::Underscore => (*last_value).clone(),
             Self::Null => DynamicValue::None,
             Self::Column(index) => match record.get(*index) {
                 None => return Err(EvaluationError::ColumnOutOfRange(*index)),
-                Some(cell) => match String::from_utf8(cell.to_vec()) {
+                Some(cell) => match std::str::from_utf8(cell) {
                     Err(_) => return Err(EvaluationError::UnicodeDecodeError),
-                    Ok(value) => DynamicValue::String(value),
+                    Ok(value) => DynamicValue::String(Cow::Borrowed(value)),
                 },
             },
-            // Self::Variable(name) => match variables.get(name) {
+            // Self::Variable(name) => match variables.get(name.as_ref()) {
             //     Some(value) => *value,
-            //     None => return Err(EvaluationError::UnknownVariable(name.clone())),
+            //     None => return Err(EvaluationError::UnknownVariable(name.into_owned())),
             // },
             Self::Variable(_) => unimplemented!(),
             Self::Call(_) => return Err(EvaluationError::IllegalBinding),
@@ -53,28 +53,28 @@ impl ConcreteArgument {
     }
 }
 
-pub struct ConcreteFunctionCall {
+pub struct ConcreteFunctionCall<'a> {
     name: String,
-    args: Vec<ConcreteArgument>,
+    args: Vec<ConcreteArgument<'a>>,
 }
 
-type ConcretePipeline = Vec<ConcreteFunctionCall>;
+type ConcretePipeline<'a> = Vec<ConcreteFunctionCall<'a>>;
 
-fn concretize_argument(
+fn concretize_argument<'a>(
     argument: Argument,
-    headers: &ByteRecord,
-    reserved: &Vec<String>,
-) -> Result<ConcreteArgument, PrepareError> {
+    headers: &'a ByteRecord,
+    reserved: &'a Vec<String>,
+) -> Result<ConcreteArgument<'a>, PrepareError> {
     Ok(match argument {
         Argument::Underscore => ConcreteArgument::Underscore,
         Argument::Null => ConcreteArgument::Null,
         Argument::BooleanLiteral(v) => ConcreteArgument::BooleanLiteral(v),
         Argument::FloatLiteral(v) => ConcreteArgument::FloatLiteral(v),
         Argument::IntegerLiteral(v) => ConcreteArgument::IntegerLiteral(v),
-        Argument::StringLiteral(v) => ConcreteArgument::StringLiteral(v),
+        Argument::StringLiteral(v) => ConcreteArgument::StringLiteral(Cow::Owned(v)),
         Argument::Identifier(name) => {
             if reserved.contains(&name) {
-                ConcreteArgument::Variable(name)
+                ConcreteArgument::Variable(Cow::Owned(name))
             } else {
                 let indexation = ColumIndexation::ByName(name);
 
@@ -103,11 +103,11 @@ fn concretize_argument(
     })
 }
 
-fn concretize_pipeline(
+fn concretize_pipeline<'a>(
     pipeline: Pipeline,
-    headers: &ByteRecord,
-    reserved: &Vec<String>,
-) -> Result<ConcretePipeline, PrepareError> {
+    headers: &'a ByteRecord,
+    reserved: &'a Vec<String>,
+) -> Result<ConcretePipeline<'a>, PrepareError> {
     let mut concrete_pipeline: ConcretePipeline = Vec::new();
 
     for function_call in pipeline {
@@ -126,43 +126,48 @@ fn concretize_pipeline(
     Ok(concrete_pipeline)
 }
 
-pub fn prepare(
-    code: &str,
-    headers: &ByteRecord,
-    reserved: &Vec<String>,
-) -> Result<ConcretePipeline, PrepareError> {
+pub fn prepare<'a>(
+    code: &'a str,
+    headers: &'a ByteRecord,
+    reserved: &'a Vec<String>,
+) -> Result<ConcretePipeline<'a>, PrepareError> {
     match parse(code) {
         Err(_) => Err(PrepareError::ParseError(code.to_string())),
         Ok(pipeline) => concretize_pipeline(pipeline, headers, reserved),
     }
 }
 
-fn eval_function(
-    function_call: &ConcreteFunctionCall,
-    record: &ByteRecord,
-    last_value: &DynamicValue,
-    variables: &Variables,
-) -> EvaluationResult {
+fn eval_function<'a>(
+    function_call: &'a ConcreteFunctionCall,
+    record: &'a ByteRecord,
+    last_value: Cow<DynamicValue<'a>>,
+    variables: &'a Variables,
+) -> EvaluationResult<'a> {
     let mut bound_args = BoundArguments::new();
 
     for arg in function_call.args.iter() {
         match arg {
             ConcreteArgument::Call(sub_function_call) => {
-                bound_args.push(traverse(&sub_function_call, record, last_value, variables)?);
+                bound_args.push(traverse(
+                    &sub_function_call,
+                    record,
+                    last_value.clone(),
+                    variables,
+                )?);
             }
-            _ => bound_args.push(arg.bind(record, last_value, variables)?),
+            _ => bound_args.push(arg.bind(record, last_value.clone(), variables)?),
         }
     }
 
     call(&function_call.name, bound_args)
 }
 
-fn eval(
-    arg: &ConcreteArgument,
-    record: &ByteRecord,
-    last_value: &DynamicValue,
-    variables: &Variables,
-) -> EvaluationResult {
+fn eval<'a>(
+    arg: &'a ConcreteArgument,
+    record: &'a ByteRecord,
+    last_value: Cow<DynamicValue<'a>>,
+    variables: &'a Variables,
+) -> EvaluationResult<'a> {
     match arg {
         ConcreteArgument::Call(function_call) => {
             eval_function(function_call, record, last_value, variables)
@@ -171,12 +176,12 @@ fn eval(
     }
 }
 
-fn traverse(
-    function_call: &ConcreteFunctionCall,
-    record: &ByteRecord,
-    last_value: &DynamicValue,
-    variables: &Variables,
-) -> EvaluationResult {
+fn traverse<'a>(
+    function_call: &'a ConcreteFunctionCall,
+    record: &'a ByteRecord,
+    last_value: Cow<DynamicValue<'a>>,
+    variables: &'a Variables,
+) -> EvaluationResult<'a> {
     // Branching
     if function_call.name == "if".to_string() {
         let arity = function_call.args.len();
@@ -186,7 +191,7 @@ fn traverse(
         }
 
         let condition = &function_call.args[0];
-        let result = eval(condition, record, last_value, variables)?;
+        let result = eval(condition, record, last_value.clone(), variables)?;
 
         let mut branch: Option<&ConcreteArgument> = None;
 
@@ -198,7 +203,7 @@ fn traverse(
 
         match branch {
             None => Ok(DynamicValue::None),
-            Some(arg) => eval(arg, record, last_value, variables),
+            Some(arg) => eval(arg, record, last_value.clone(), variables),
         }
     }
     // Regular call
@@ -207,18 +212,18 @@ fn traverse(
     }
 }
 
-pub fn interpret(
-    pipeline: &ConcretePipeline,
-    record: &ByteRecord,
-    variables: &Variables,
-) -> EvaluationResult {
-    let mut last_value = DynamicValue::None;
+pub fn interpret<'a>(
+    pipeline: &'a ConcretePipeline,
+    record: &'a ByteRecord,
+    variables: &'a Variables,
+) -> EvaluationResult<'a> {
+    let mut last_value = Cow::Owned(DynamicValue::None);
 
     for function_call in pipeline {
-        last_value = traverse(function_call, record, &last_value, variables)?;
+        last_value = Cow::Owned(traverse(function_call, record, last_value, variables)?);
     }
 
-    Ok(last_value)
+    Ok(last_value.into_owned())
 }
 
 #[cfg(test)]
@@ -234,7 +239,7 @@ mod tests {
 
                 match interpret(&pipeline, &ByteRecord::new(), &variables) {
                     Err(_) => return Err(()),
-                    Ok(value) => assert_eq!(value.serialize(), String::new()),
+                    Ok(value) => assert_eq!(String::from(value.into_str()), String::new()),
                 }
 
                 Ok(())

@@ -8,13 +8,10 @@ use xan::error::EvaluationError;
 use xan::types::{BoundArguments, DynamicValue, EvaluationResult};
 
 // TODO: contains, startswith, endswith, comp, str comp, add, sub, lte, etc.
-// TODO: test variable bindings
+// TODO: do and test variable bindings
 // TODO: parse most likely and cast functions
 // TODO: -p and --ignore-errors
-// TODO: never clone strings, implement Into and TryInto, Vec of arguments
-// TODO: try bound arguments containing Rc or Arc of dynamic values instead
-// shall be owned so we can safely transform them as needed on the fly for no cost and own them
-pub fn call(name: &str, args: BoundArguments) -> EvaluationResult {
+pub fn call<'a>(name: &str, args: BoundArguments<'a>) -> EvaluationResult<'a> {
     match name {
         "add" => add(args),
         "and" => and(args),
@@ -36,42 +33,42 @@ pub fn call(name: &str, args: BoundArguments) -> EvaluationResult {
 }
 
 // String transformations
-fn trim(mut args: BoundArguments) -> EvaluationResult {
-    Ok(DynamicValue::from(args.get1_string()?.trim()))
+fn trim(args: BoundArguments) -> EvaluationResult {
+    Ok(DynamicValue::from(args.pop1_str()?.trim().to_owned()))
 }
 
-fn lower(mut args: BoundArguments) -> EvaluationResult {
-    Ok(DynamicValue::from(args.get1_string()?.to_lowercase()))
+fn lower(args: BoundArguments) -> EvaluationResult {
+    Ok(DynamicValue::from(args.pop1_str()?.to_lowercase()))
 }
 
-fn upper(mut args: BoundArguments) -> EvaluationResult {
-    Ok(DynamicValue::from(args.get1_string()?.to_uppercase()))
+fn upper(args: BoundArguments) -> EvaluationResult {
+    Ok(DynamicValue::from(args.pop1_str()?.to_uppercase()))
 }
 
-fn len(mut args: BoundArguments) -> EvaluationResult {
-    Ok(DynamicValue::from(args.get1_string()?.len()))
+fn len(args: BoundArguments) -> EvaluationResult {
+    Ok(DynamicValue::from(args.pop1_str()?.len()))
 }
 
 // Strings
-fn count(mut args: BoundArguments) -> EvaluationResult {
-    let (string, pattern) = args.get2_string()?;
+fn count(args: BoundArguments) -> EvaluationResult {
+    let (string, pattern) = args.pop2_str()?;
 
-    Ok(DynamicValue::from(string.matches(&pattern).count()))
+    Ok(DynamicValue::from(string.matches(pattern.as_ref()).count()))
 }
 
 fn concat(args: BoundArguments) -> EvaluationResult {
     let mut result = String::new();
 
     for arg in args {
-        result.push_str(&arg.into_string());
+        result.push_str(&arg.into_str());
     }
 
     Ok(DynamicValue::from(result))
 }
 
 // Arithmetics
-fn add(mut args: BoundArguments) -> EvaluationResult {
-    let (a, b) = args.get2_number()?;
+fn add<'a>(args: BoundArguments<'a>) -> EvaluationResult<'a> {
+    let (a, b) = args.pop2_number()?;
 
     return Ok(DynamicValue::from(a + b));
 }
@@ -88,26 +85,26 @@ fn coalesce(args: BoundArguments) -> EvaluationResult {
 }
 
 // Boolean
-fn not(mut args: BoundArguments) -> EvaluationResult {
-    Ok(DynamicValue::from(!args.get1_bool()?))
+fn not(args: BoundArguments) -> EvaluationResult {
+    Ok(DynamicValue::from(!args.pop1_bool()?))
 }
 
-fn and(mut args: BoundArguments) -> EvaluationResult {
-    let (a, b) = args.get2_bool()?;
+fn and(args: BoundArguments) -> EvaluationResult {
+    let (a, b) = args.pop2_bool()?;
     Ok(DynamicValue::from(a && b))
 }
 
-fn or(mut args: BoundArguments) -> EvaluationResult {
-    let (a, b) = args.get2_bool()?;
+fn or(args: BoundArguments) -> EvaluationResult {
+    let (a, b) = args.pop2_bool()?;
     Ok(DynamicValue::from(a || b))
 }
 
 // Comparison
-fn number_compare<F>(mut args: BoundArguments, validate: F) -> EvaluationResult
+fn number_compare<F>(args: BoundArguments, validate: F) -> EvaluationResult
 where
     F: FnOnce(Ordering) -> bool,
 {
-    let (a, b) = args.get2_number()?;
+    let (a, b) = args.pop2_number()?;
 
     Ok(DynamicValue::from(match a.partial_cmp(&b) {
         Some(ordering) => validate(ordering),
@@ -122,7 +119,7 @@ fn pathjoin(args: BoundArguments) -> EvaluationResult {
     let mut path = PathBuf::new();
 
     for arg in args {
-        path.push(arg.into_string());
+        path.push(arg.into_str().as_ref());
     }
 
     let path = String::from(path.to_str().ok_or(EvaluationError::InvalidPath)?);
@@ -130,12 +127,12 @@ fn pathjoin(args: BoundArguments) -> EvaluationResult {
     Ok(DynamicValue::from(path))
 }
 
-fn read(mut args: BoundArguments) -> EvaluationResult {
-    let path = args.get1_string()?;
+fn read(args: BoundArguments) -> EvaluationResult {
+    let path = args.pop1_str()?;
 
     // TODO: handle encoding
-    let mut file = match File::open(&path) {
-        Err(_) => return Err(EvaluationError::CannotOpenFile(path)),
+    let mut file = match File::open(path.as_ref()) {
+        Err(_) => return Err(EvaluationError::CannotOpenFile(path.into_owned())),
         Ok(f) => f,
     };
 
@@ -144,16 +141,16 @@ fn read(mut args: BoundArguments) -> EvaluationResult {
     if path.ends_with(".gz") {
         let mut gz = GzDecoder::new(file);
         gz.read_to_string(&mut buffer)
-            .map_err(|_| EvaluationError::CannotReadFile(path))?;
+            .map_err(|_| EvaluationError::CannotReadFile(path.into_owned()))?;
     } else {
         file.read_to_string(&mut buffer)
-            .map_err(|_| EvaluationError::CannotReadFile(path))?;
+            .map_err(|_| EvaluationError::CannotReadFile(path.into_owned()))?;
     }
 
-    Ok(DynamicValue::String(buffer))
+    Ok(DynamicValue::from(buffer))
 }
 
 // Introspection
-fn type_of(mut args: BoundArguments) -> EvaluationResult {
-    Ok(DynamicValue::from(args.get1()?.type_of()))
+fn type_of(args: BoundArguments) -> EvaluationResult {
+    Ok(DynamicValue::from(args.pop1()?.type_of().to_owned()))
 }

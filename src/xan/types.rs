@@ -112,8 +112,8 @@ impl Add for DynamicNumber {
 }
 
 #[derive(Debug, Clone)]
-pub enum DynamicValue {
-    String(String),
+pub enum DynamicValue<'a> {
+    String(Cow<'a, str>),
     Float(f64),
     Integer(i64),
     Boolean(bool),
@@ -121,7 +121,7 @@ pub enum DynamicValue {
 }
 
 // TODO: find a way to avoid cloning also here
-impl DynamicValue {
+impl<'a> DynamicValue<'a> {
     pub fn as_bytes(&self) -> Cow<[u8]> {
         match self {
             Self::String(value) => Cow::Borrowed(value.as_bytes()),
@@ -158,7 +158,7 @@ impl DynamicValue {
         }
     }
 
-    pub fn into_string(self) -> String {
+    pub fn into_str(self) -> Cow<'a, str> {
         self.into()
     }
 
@@ -179,31 +179,37 @@ impl DynamicValue {
     }
 }
 
-impl From<bool> for DynamicValue {
+impl<'a> From<bool> for DynamicValue<'a> {
     fn from(value: bool) -> Self {
         DynamicValue::Boolean(value)
     }
 }
 
-impl From<usize> for DynamicValue {
+impl<'a> From<usize> for DynamicValue<'a> {
     fn from(value: usize) -> Self {
         DynamicValue::Integer(value as i64)
     }
 }
 
-impl From<String> for DynamicValue {
+impl<'a> From<String> for DynamicValue<'a> {
     fn from(value: String) -> Self {
+        DynamicValue::String(Cow::Owned(value))
+    }
+}
+
+impl<'a> From<&'a str> for DynamicValue<'a> {
+    fn from(value: &'a str) -> Self {
+        DynamicValue::String(Cow::Borrowed(value))
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for DynamicValue<'a> {
+    fn from(value: Cow<'a, str>) -> Self {
         DynamicValue::String(value)
     }
 }
 
-impl From<&str> for DynamicValue {
-    fn from(value: &str) -> Self {
-        DynamicValue::String(String::from(value))
-    }
-}
-
-impl From<DynamicNumber> for DynamicValue {
+impl<'a> From<DynamicNumber> for DynamicValue<'a> {
     fn from(value: DynamicNumber) -> Self {
         match value {
             DynamicNumber::Integer(value) => DynamicValue::Integer(value),
@@ -212,7 +218,7 @@ impl From<DynamicNumber> for DynamicValue {
     }
 }
 
-impl Into<bool> for DynamicValue {
+impl<'a> Into<bool> for DynamicValue<'a> {
     fn into(self) -> bool {
         match self {
             Self::String(value) => value.len() > 0,
@@ -224,7 +230,7 @@ impl Into<bool> for DynamicValue {
     }
 }
 
-impl TryInto<i64> for DynamicValue {
+impl<'a> TryInto<i64> for DynamicValue<'a> {
     type Error = EvaluationError;
 
     fn try_into(self) -> Result<i64, Self::Error> {
@@ -250,7 +256,7 @@ impl TryInto<i64> for DynamicValue {
     }
 }
 
-impl TryInto<f64> for DynamicValue {
+impl<'a> TryInto<f64> for DynamicValue<'a> {
     type Error = EvaluationError;
 
     fn try_into(self) -> Result<f64, Self::Error> {
@@ -273,7 +279,7 @@ impl TryInto<f64> for DynamicValue {
     }
 }
 
-impl TryInto<DynamicNumber> for DynamicValue {
+impl<'a> TryInto<DynamicNumber> for DynamicValue<'a> {
     type Error = EvaluationError;
 
     fn try_into(self) -> Result<DynamicNumber, Self::Error> {
@@ -293,25 +299,25 @@ impl TryInto<DynamicNumber> for DynamicValue {
     }
 }
 
-impl Into<String> for DynamicValue {
-    fn into(self) -> String {
+impl<'a> Into<Cow<'a, str>> for DynamicValue<'a> {
+    fn into(self) -> Cow<'a, str> {
         match self {
             Self::String(value) => value,
-            Self::Float(value) => value.to_string(),
-            Self::Integer(value) => value.to_string(),
-            Self::Boolean(value) => String::from(if value { "true" } else { "false" }),
-            Self::None => "".to_string(),
+            Self::Float(value) => Cow::Owned(value.to_string()),
+            Self::Integer(value) => Cow::Owned(value.to_string()),
+            Self::Boolean(value) => Cow::Borrowed(if value { "true" } else { "false" }),
+            Self::None => Cow::Borrowed(""),
         }
     }
 }
 
-pub type EvaluationResult = Result<DynamicValue, EvaluationError>;
+pub type EvaluationResult<'a> = Result<DynamicValue<'a>, EvaluationError>;
 
-pub struct BoundArguments {
-    stack: Vec<DynamicValue>,
+pub struct BoundArguments<'a> {
+    stack: Vec<DynamicValue<'a>>,
 }
 
-impl BoundArguments {
+impl<'a> BoundArguments<'a> {
     pub fn new() -> Self {
         Self { stack: Vec::new() }
     }
@@ -320,7 +326,7 @@ impl BoundArguments {
         self.stack.len()
     }
 
-    pub fn push(&mut self, arg: DynamicValue) {
+    pub fn push(&mut self, arg: DynamicValue<'a>) {
         self.stack.push(arg);
     }
 
@@ -332,7 +338,21 @@ impl BoundArguments {
         }
     }
 
-    pub fn get1(&mut self) -> EvaluationResult {
+    // pub fn get1(&mut self) -> EvaluationResult<'a> {
+    //     match self.stack.pop() {
+    //         None => Err(EvaluationError::from_invalid_arity(1, 0)),
+    //         Some(value) => {
+    //             if self.len() > 1 {
+    //                 return Err(EvaluationError::from_invalid_arity(1, self.len()));
+    //             }
+
+    //             Ok(value)
+    //         }
+    //     }
+    // }
+
+    // TODO: error will be incorrect on subsequent pops
+    pub fn pop1(mut self) -> EvaluationResult<'a> {
         match self.stack.pop() {
             None => Err(EvaluationError::from_invalid_arity(1, 0)),
             Some(value) => {
@@ -345,15 +365,15 @@ impl BoundArguments {
         }
     }
 
-    pub fn get1_string(&mut self) -> Result<String, EvaluationError> {
-        self.get1().map(|value| value.into_string())
+    pub fn pop1_str(self) -> Result<Cow<'a, str>, EvaluationError> {
+        self.pop1().map(|value| value.into_str())
     }
 
-    pub fn get1_bool(&mut self) -> Result<bool, EvaluationError> {
-        self.get1().map(|value| value.into_bool())
+    pub fn pop1_bool(self) -> Result<bool, EvaluationError> {
+        self.pop1().map(|value| value.into_bool())
     }
 
-    pub fn get2(&mut self) -> Result<(DynamicValue, DynamicValue), EvaluationError> {
+    pub fn pop2(mut self) -> Result<(DynamicValue<'a>, DynamicValue<'a>), EvaluationError> {
         match pop2(&mut self.stack) {
             None => Err(EvaluationError::from_invalid_arity(2, self.len())),
             Some(t) => {
@@ -366,16 +386,16 @@ impl BoundArguments {
         }
     }
 
-    pub fn get2_string(&mut self) -> Result<(String, String), EvaluationError> {
-        self.get2().map(|(a, b)| (a.into_string(), b.into_string()))
+    pub fn pop2_str(self) -> Result<(Cow<'a, str>, Cow<'a, str>), EvaluationError> {
+        self.pop2().map(|(a, b)| (a.into_str(), b.into_str()))
     }
 
-    pub fn get2_bool(&mut self) -> Result<(bool, bool), EvaluationError> {
-        self.get2().map(|(a, b)| (a.into_bool(), b.into_bool()))
+    pub fn pop2_bool(self) -> Result<(bool, bool), EvaluationError> {
+        self.pop2().map(|(a, b)| (a.into_bool(), b.into_bool()))
     }
 
-    pub fn get2_number(&mut self) -> Result<(DynamicNumber, DynamicNumber), EvaluationError> {
-        let (a, b) = self.get2()?;
+    pub fn pop2_number(self) -> Result<(DynamicNumber, DynamicNumber), EvaluationError> {
+        let (a, b) = self.pop2()?;
 
         let a = a.try_into_number()?;
         let b = b.try_into_number()?;
@@ -384,9 +404,9 @@ impl BoundArguments {
     }
 }
 
-impl IntoIterator for BoundArguments {
-    type Item = DynamicValue;
-    type IntoIter = <Vec<DynamicValue> as IntoIterator>::IntoIter;
+impl<'a> IntoIterator for BoundArguments<'a> {
+    type Item = DynamicValue<'a>;
+    type IntoIter = <Vec<DynamicValue<'a>> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.stack.into_iter()
