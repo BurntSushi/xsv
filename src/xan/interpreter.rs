@@ -26,7 +26,7 @@ impl ConcreteArgument {
     fn bind(
         &self,
         record: &ByteRecord,
-        last_value: Weak<DynamicValue>,
+        last_value: &Weak<DynamicValue>,
         _variables: &Variables,
     ) -> EvaluationResult {
         Ok(match self {
@@ -37,7 +37,10 @@ impl ConcreteArgument {
             Self::Underscore => match last_value.upgrade() {
                 Some(reference) => match Rc::try_unwrap(reference) {
                     Ok(value) => value,
-                    Err(reference) => (*reference).clone(),
+                    Err(reference) => {
+                        println!("cloning {:?}", reference);
+                        (*reference).clone()
+                    }
                 },
                 None => unreachable!(),
             },
@@ -146,7 +149,7 @@ pub fn prepare(
 fn eval_function(
     function_call: &ConcreteFunctionCall,
     record: &ByteRecord,
-    last_value: Weak<DynamicValue>,
+    last_value: &Weak<DynamicValue>,
     variables: &Variables,
 ) -> EvaluationResult {
     let mut bound_args = BoundArguments::new();
@@ -154,14 +157,9 @@ fn eval_function(
     for arg in function_call.args.iter() {
         match arg {
             ConcreteArgument::Call(sub_function_call) => {
-                bound_args.push(traverse(
-                    sub_function_call,
-                    record,
-                    last_value.clone(),
-                    variables,
-                )?);
+                bound_args.push(traverse(sub_function_call, record, last_value, variables)?);
             }
-            _ => bound_args.push(arg.bind(record, last_value.clone(), variables)?),
+            _ => bound_args.push(arg.bind(record, last_value, variables)?),
         }
     }
 
@@ -171,7 +169,7 @@ fn eval_function(
 fn eval(
     arg: &ConcreteArgument,
     record: &ByteRecord,
-    last_value: Weak<DynamicValue>,
+    last_value: &Weak<DynamicValue>,
     variables: &Variables,
 ) -> EvaluationResult {
     match arg {
@@ -185,7 +183,7 @@ fn eval(
 fn traverse(
     function_call: &ConcreteFunctionCall,
     record: &ByteRecord,
-    last_value: Weak<DynamicValue>,
+    last_value: &Weak<DynamicValue>,
     variables: &Variables,
 ) -> EvaluationResult {
     // Branching
@@ -197,7 +195,7 @@ fn traverse(
         }
 
         let condition = &function_call.args[0];
-        let result = eval(condition, record, last_value.clone(), variables)?;
+        let result = eval(condition, record, last_value, variables)?;
 
         let mut branch: Option<&ConcreteArgument> = None;
 
@@ -227,7 +225,7 @@ pub fn interpret(
 
     for function_call in pipeline {
         let reference = Rc::new(last_value);
-        last_value = traverse(function_call, record, Rc::downgrade(&reference), variables)?;
+        last_value = traverse(function_call, record, &Rc::downgrade(&reference), variables)?;
     }
 
     Ok(last_value)
