@@ -33,13 +33,14 @@ pub fn call(name: &str, args: BoundArguments) -> EvaluationResult {
 }
 
 // String transformations
+// TODO: cast to dynamic value in call function? bof, not possible to handle polymorphism
 fn trim(args: BoundArguments) -> EvaluationResult {
     let string = args.pop1_str()?;
     let trimmed = string.trim();
 
     // NOTE: only cloning if actually different
     Ok(if trimmed.len() != string.len() {
-        DynamicValue::from(trimmed.to_owned())
+        DynamicValue::from(trimmed)
     } else {
         DynamicValue::from(string)
     })

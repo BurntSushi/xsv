@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::rc::{Rc, Weak};
 
@@ -22,34 +23,26 @@ enum ConcreteArgument {
     Underscore,
 }
 
+// TODO: concretize into dynamicvalue already
 impl ConcreteArgument {
-    fn bind(
-        &self,
-        record: &ByteRecord,
-        last_value: &Weak<DynamicValue>,
-        _variables: &Variables,
-    ) -> EvaluationResult {
+    fn bind<'a>(
+        &'a self,
+        record: &'a ByteRecord,
+        last_value: &'a DynamicValue,
+        _variables: &'a Variables,
+    ) -> Result<Cow<'a, DynamicValue>, EvaluationError> {
         Ok(match self {
-            Self::StringLiteral(value) => DynamicValue::String(value.clone()),
-            Self::FloatLiteral(value) => DynamicValue::Float(*value),
-            Self::IntegerLiteral(value) => DynamicValue::Integer(*value),
-            Self::BooleanLiteral(value) => DynamicValue::Boolean(*value),
-            Self::Underscore => match last_value.upgrade() {
-                Some(reference) => match Rc::try_unwrap(reference) {
-                    Ok(value) => value,
-                    Err(reference) => {
-                        println!("cloning {:?}", reference);
-                        (*reference).clone()
-                    }
-                },
-                None => unreachable!(),
-            },
-            Self::Null => DynamicValue::None,
+            Self::StringLiteral(value) => Cow::Owned(DynamicValue::String(value.clone())),
+            Self::FloatLiteral(value) => Cow::Owned(DynamicValue::Float(*value)),
+            Self::IntegerLiteral(value) => Cow::Owned(DynamicValue::Integer(*value)),
+            Self::BooleanLiteral(value) => Cow::Owned(DynamicValue::Boolean(*value)),
+            Self::Underscore => Cow::Borrowed(last_value),
+            Self::Null => Cow::Owned(DynamicValue::None),
             Self::Column(index) => match record.get(*index) {
                 None => return Err(EvaluationError::ColumnOutOfRange(*index)),
-                Some(cell) => match String::from_utf8(cell.to_vec()) {
+                Some(cell) => match std::str::from_utf8(cell) {
                     Err(_) => return Err(EvaluationError::UnicodeDecodeError),
-                    Ok(value) => DynamicValue::String(value),
+                    Ok(value) => Cow::Owned(DynamicValue::from(value)),
                 },
             },
             // Self::Variable(name) => match variables.get(name.as_ref()) {
@@ -149,7 +142,7 @@ pub fn prepare(
 fn eval_function(
     function_call: &ConcreteFunctionCall,
     record: &ByteRecord,
-    last_value: &Weak<DynamicValue>,
+    last_value: &DynamicValue,
     variables: &Variables,
 ) -> EvaluationResult {
     let mut bound_args = BoundArguments::new();
@@ -157,7 +150,12 @@ fn eval_function(
     for arg in function_call.args.iter() {
         match arg {
             ConcreteArgument::Call(sub_function_call) => {
-                bound_args.push(traverse(sub_function_call, record, last_value, variables)?);
+                let res = traverse(sub_function_call, record, last_value, variables);
+
+                match res {
+                    Ok(bound_arg) => bound_args.push(bound_arg),
+                    Err(e) => return Err(e),
+                }
             }
             _ => bound_args.push(arg.bind(record, last_value, variables)?),
         }
@@ -169,7 +167,7 @@ fn eval_function(
 fn eval(
     arg: &ConcreteArgument,
     record: &ByteRecord,
-    last_value: &Weak<DynamicValue>,
+    last_value: &DynamicValue,
     variables: &Variables,
 ) -> EvaluationResult {
     match arg {
@@ -183,7 +181,7 @@ fn eval(
 fn traverse(
     function_call: &ConcreteFunctionCall,
     record: &ByteRecord,
-    last_value: &Weak<DynamicValue>,
+    last_value: &DynamicValue,
     variables: &Variables,
 ) -> EvaluationResult {
     // Branching
@@ -224,8 +222,7 @@ pub fn interpret(
     let mut last_value = DynamicValue::None;
 
     for function_call in pipeline {
-        let reference = Rc::new(last_value);
-        last_value = traverse(function_call, record, &Rc::downgrade(&reference), variables)?;
+        last_value = traverse(function_call, record, &last_value, variables)?;
     }
 
     Ok(last_value)

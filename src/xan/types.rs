@@ -119,6 +119,17 @@ pub enum DynamicValue {
 
 // TODO: find a way to avoid cloning also here
 impl DynamicValue {
+    pub fn type_of(&self) -> &str {
+        match self {
+            Self::String(_) => "string",
+            Self::Float(_) => "float",
+            Self::Integer(_) => "integer",
+            Self::Boolean(_) => "boolean",
+            Self::None => "none",
+        }
+    }
+
+    // TODO: rework
     pub fn as_bytes(&self) -> Cow<[u8]> {
         match self {
             Self::String(value) => Cow::Borrowed(value.as_bytes()),
@@ -135,13 +146,19 @@ impl DynamicValue {
         }
     }
 
-    pub fn type_of(&self) -> &str {
+    pub fn as_str(&self) -> Cow<str> {
         match self {
-            Self::String(_) => "string",
-            Self::Float(_) => "float",
-            Self::Integer(_) => "integer",
-            Self::Boolean(_) => "boolean",
-            Self::None => "none",
+            Self::String(value) => Cow::Borrowed(value),
+            Self::Float(value) => Cow::Owned(value.to_string()),
+            Self::Integer(value) => Cow::Owned(value.to_string()),
+            Self::Boolean(value) => {
+                if *value {
+                    Cow::Owned("true".to_string())
+                } else {
+                    Cow::Owned("false".to_string())
+                }
+            }
+            Self::None => Cow::Owned("".to_string()),
         }
     }
 
@@ -155,13 +172,13 @@ impl DynamicValue {
         }
     }
 
-    pub fn into_string(self) -> String {
-        self.into()
-    }
+    // pub fn into_string(self) -> String {
+    //     self.into()
+    // }
 
-    pub fn into_bool(self) -> bool {
-        self.into()
-    }
+    // pub fn into_bool(self) -> bool {
+    //     self.into()
+    // }
 
     // pub fn try_into_integer(self) -> Result<i64, EvaluationError> {
     //     self.try_into()
@@ -171,138 +188,150 @@ impl DynamicValue {
     //     self.try_into()
     // }
 
-    pub fn try_into_number(self) -> Result<DynamicNumber, EvaluationError> {
-        self.try_into()
+    // pub fn try_into_number(self) -> Result<DynamicNumber, EvaluationError> {
+    //     self.try_into()
+    // }
+}
+
+impl From<&str> for DynamicValue {
+    fn from(value: &str) -> Self {
+        DynamicValue::String(value.to_string())
     }
 }
 
-impl From<bool> for DynamicValue {
-    fn from(value: bool) -> Self {
-        DynamicValue::Boolean(value)
+impl<'a> From<Cow<'a, str>> for DynamicValue {
+    fn from(value: Cow<str>) -> Self {
+        DynamicValue::String(value.into_owned())
     }
 }
 
-impl From<usize> for DynamicValue {
-    fn from(value: usize) -> Self {
-        DynamicValue::Integer(value as i64)
-    }
-}
+// impl From<bool> for DynamicValue {
+//     fn from(value: bool) -> Self {
+//         DynamicValue::Boolean(value)
+//     }
+// }
 
-impl From<String> for DynamicValue {
-    fn from(value: String) -> Self {
-        DynamicValue::String(value)
-    }
-}
+// impl From<usize> for DynamicValue {
+//     fn from(value: usize) -> Self {
+//         DynamicValue::Integer(value as i64)
+//     }
+// }
 
-impl From<DynamicNumber> for DynamicValue {
-    fn from(value: DynamicNumber) -> Self {
-        match value {
-            DynamicNumber::Integer(value) => DynamicValue::Integer(value),
-            DynamicNumber::Float(value) => DynamicValue::Float(value),
-        }
-    }
-}
+// impl From<String> for DynamicValue {
+//     fn from(value: String) -> Self {
+//         DynamicValue::String(value)
+//     }
+// }
 
-impl Into<bool> for DynamicValue {
-    fn into(self) -> bool {
-        match self {
-            Self::String(value) => value.len() > 0,
-            Self::Float(value) => value == 0.0,
-            Self::Integer(value) => value != 0,
-            Self::Boolean(value) => value,
-            Self::None => false,
-        }
-    }
-}
+// impl From<DynamicNumber> for DynamicValue {
+//     fn from(value: DynamicNumber) -> Self {
+//         match value {
+//             DynamicNumber::Integer(value) => DynamicValue::Integer(value),
+//             DynamicNumber::Float(value) => DynamicValue::Float(value),
+//         }
+//     }
+// }
 
-impl TryInto<i64> for DynamicValue {
-    type Error = EvaluationError;
+// impl Into<bool> for DynamicValue {
+//     fn into(self) -> bool {
+//         match self {
+//             Self::String(value) => value.len() > 0,
+//             Self::Float(value) => value == 0.0,
+//             Self::Integer(value) => value != 0,
+//             Self::Boolean(value) => value,
+//             Self::None => false,
+//         }
+//     }
+// }
 
-    fn try_into(self) -> Result<i64, Self::Error> {
-        Ok(match self {
-            Self::String(string) => match string.parse::<i64>() {
-                Err(_) => match string.parse::<f64>() {
-                    Err(_) => return Err(EvaluationError::Cast),
-                    Ok(value) => match downgrade_float(value) {
-                        Some(safe_downgraded_value) => safe_downgraded_value,
-                        None => return Err(EvaluationError::Cast),
-                    },
-                },
-                Ok(value) => value,
-            },
-            Self::Float(value) => match downgrade_float(value) {
-                Some(safe_downgraded_value) => safe_downgraded_value,
-                None => return Err(EvaluationError::Cast),
-            },
-            Self::Integer(value) => value,
-            Self::Boolean(value) => value as i64,
-            Self::None => return Err(EvaluationError::Cast),
-        })
-    }
-}
+// impl TryInto<i64> for DynamicValue {
+//     type Error = EvaluationError;
 
-impl TryInto<f64> for DynamicValue {
-    type Error = EvaluationError;
+//     fn try_into(self) -> Result<i64, Self::Error> {
+//         Ok(match self {
+//             Self::String(string) => match string.parse::<i64>() {
+//                 Err(_) => match string.parse::<f64>() {
+//                     Err(_) => return Err(EvaluationError::Cast),
+//                     Ok(value) => match downgrade_float(value) {
+//                         Some(safe_downgraded_value) => safe_downgraded_value,
+//                         None => return Err(EvaluationError::Cast),
+//                     },
+//                 },
+//                 Ok(value) => value,
+//             },
+//             Self::Float(value) => match downgrade_float(value) {
+//                 Some(safe_downgraded_value) => safe_downgraded_value,
+//                 None => return Err(EvaluationError::Cast),
+//             },
+//             Self::Integer(value) => value,
+//             Self::Boolean(value) => value as i64,
+//             Self::None => return Err(EvaluationError::Cast),
+//         })
+//     }
+// }
 
-    fn try_into(self) -> Result<f64, Self::Error> {
-        Ok(match self {
-            Self::String(string) => match string.parse::<f64>() {
-                Err(_) => return Err(EvaluationError::Cast),
-                Ok(value) => value,
-            },
-            Self::Float(value) => value,
-            Self::Integer(value) => value as f64,
-            Self::Boolean(value) => {
-                if value {
-                    1.0
-                } else {
-                    0.0
-                }
-            }
-            Self::None => return Err(EvaluationError::Cast),
-        })
-    }
-}
+// impl TryInto<f64> for DynamicValue {
+//     type Error = EvaluationError;
 
-impl TryInto<DynamicNumber> for DynamicValue {
-    type Error = EvaluationError;
+//     fn try_into(self) -> Result<f64, Self::Error> {
+//         Ok(match self {
+//             Self::String(string) => match string.parse::<f64>() {
+//                 Err(_) => return Err(EvaluationError::Cast),
+//                 Ok(value) => value,
+//             },
+//             Self::Float(value) => value,
+//             Self::Integer(value) => value as f64,
+//             Self::Boolean(value) => {
+//                 if value {
+//                     1.0
+//                 } else {
+//                     0.0
+//                 }
+//             }
+//             Self::None => return Err(EvaluationError::Cast),
+//         })
+//     }
+// }
 
-    fn try_into(self) -> Result<DynamicNumber, Self::Error> {
-        Ok(match self {
-            Self::String(string) => match string.parse::<i64>() {
-                Ok(value) => DynamicNumber::Integer(value),
-                Err(_) => match string.parse::<f64>() {
-                    Ok(value) => DynamicNumber::Float(value),
-                    Err(_) => return Err(EvaluationError::Cast),
-                },
-            },
-            Self::Integer(value) => DynamicNumber::Integer(value),
-            Self::Float(value) => DynamicNumber::Float(value),
-            Self::Boolean(value) => DynamicNumber::Integer(value as i64),
-            _ => return Err(EvaluationError::Cast),
-        })
-    }
-}
+// impl TryInto<DynamicNumber> for DynamicValue {
+//     type Error = EvaluationError;
 
-impl Into<String> for DynamicValue {
-    fn into(self) -> String {
-        match self {
-            Self::String(value) => value,
-            Self::Float(value) => value.to_string(),
-            Self::Integer(value) => value.to_string(),
-            Self::Boolean(value) => (if value { "true" } else { "false" }).to_string(),
-            Self::None => "".to_string(),
-        }
-    }
-}
+//     fn try_into(self) -> Result<DynamicNumber, Self::Error> {
+//         Ok(match self {
+//             Self::String(string) => match string.parse::<i64>() {
+//                 Ok(value) => DynamicNumber::Integer(value),
+//                 Err(_) => match string.parse::<f64>() {
+//                     Ok(value) => DynamicNumber::Float(value),
+//                     Err(_) => return Err(EvaluationError::Cast),
+//                 },
+//             },
+//             Self::Integer(value) => DynamicNumber::Integer(value),
+//             Self::Float(value) => DynamicNumber::Float(value),
+//             Self::Boolean(value) => DynamicNumber::Integer(value as i64),
+//             _ => return Err(EvaluationError::Cast),
+//         })
+//     }
+// }
+
+// impl Into<String> for DynamicValue {
+//     fn into(self) -> String {
+//         match self {
+//             Self::String(value) => value,
+//             Self::Float(value) => value.to_string(),
+//             Self::Integer(value) => value.to_string(),
+//             Self::Boolean(value) => (if value { "true" } else { "false" }).to_string(),
+//             Self::None => "".to_string(),
+//         }
+//     }
+// }
 
 pub type EvaluationResult = Result<DynamicValue, EvaluationError>;
 
-pub struct BoundArguments {
-    stack: Vec<DynamicValue>,
+pub struct BoundArguments<'a> {
+    stack: Vec<Cow<'a, DynamicValue>>,
 }
 
-impl BoundArguments {
+impl<'a> BoundArguments<'a> {
     pub fn new() -> Self {
         Self { stack: Vec::new() }
     }
@@ -311,7 +340,7 @@ impl BoundArguments {
         self.stack.len()
     }
 
-    pub fn push(&mut self, arg: DynamicValue) {
+    pub fn push(&mut self, arg: Cow<'a, DynamicValue>) {
         self.stack.push(arg);
     }
 
@@ -337,7 +366,7 @@ impl BoundArguments {
     // }
 
     // TODO: error will be incorrect on subsequent pops
-    pub fn pop1(mut self) -> EvaluationResult {
+    pub fn pop1(mut self) -> Result<Cow<'a, DynamicValue>, EvaluationError> {
         match self.stack.pop() {
             None => Err(EvaluationError::from_invalid_arity(1, 0)),
             Some(value) => {
@@ -350,8 +379,8 @@ impl BoundArguments {
         }
     }
 
-    pub fn pop1_str(self) -> Result<String, EvaluationError> {
-        self.pop1().map(|value| value.into_string())
+    pub fn pop1_str(self) -> Result<Cow<'a, str>, EvaluationError> {
+        self.pop1().map(|value| value.as_str())
     }
 
     // pub fn pop1_bool(self) -> Result<bool, EvaluationError> {
