@@ -30,7 +30,7 @@ impl ConcreteArgument {
         record: &'a ByteRecord,
         last_value: &'a DynamicValue,
         _variables: &'a Variables,
-    ) -> Result<Cow<'a, DynamicValue>, EvaluationError> {
+    ) -> EvaluationResult {
         Ok(match self {
             Self::StringLiteral(value) => Cow::Owned(DynamicValue::String(value.clone())),
             Self::FloatLiteral(value) => Cow::Owned(DynamicValue::Float(*value)),
@@ -139,23 +139,18 @@ pub fn prepare(
     }
 }
 
-fn eval_function(
+fn eval_function<'a>(
     function_call: &ConcreteFunctionCall,
     record: &ByteRecord,
     last_value: &DynamicValue,
     variables: &Variables,
-) -> EvaluationResult {
+) -> EvaluationResult<'a> {
     let mut bound_args = BoundArguments::new();
 
     for arg in function_call.args.iter() {
         match arg {
             ConcreteArgument::Call(sub_function_call) => {
-                let res = traverse(sub_function_call, record, last_value, variables);
-
-                match res {
-                    Ok(bound_arg) => bound_args.push(bound_arg),
-                    Err(e) => return Err(e),
-                }
+                bound_args.push(traverse(sub_function_call, record, last_value, variables)?);
             }
             _ => bound_args.push(arg.bind(record, last_value, variables)?),
         }
@@ -164,12 +159,12 @@ fn eval_function(
     call(&function_call.name, bound_args)
 }
 
-fn eval(
-    arg: &ConcreteArgument,
-    record: &ByteRecord,
-    last_value: &DynamicValue,
-    variables: &Variables,
-) -> EvaluationResult {
+fn eval<'a>(
+    arg: &'a ConcreteArgument,
+    record: &'a ByteRecord,
+    last_value: &'a DynamicValue,
+    variables: &'a Variables,
+) -> EvaluationResult<'a> {
     match arg {
         ConcreteArgument::Call(function_call) => {
             eval_function(function_call, record, last_value, variables)
@@ -178,12 +173,12 @@ fn eval(
     }
 }
 
-fn traverse(
-    function_call: &ConcreteFunctionCall,
-    record: &ByteRecord,
-    last_value: &DynamicValue,
-    variables: &Variables,
-) -> EvaluationResult {
+fn traverse<'a>(
+    function_call: &'a ConcreteFunctionCall,
+    record: &'a ByteRecord,
+    last_value: &'a DynamicValue,
+    variables: &'a Variables,
+) -> EvaluationResult<'a> {
     // Branching
     if function_call.name == *"if" {
         let arity = function_call.args.len();
@@ -204,7 +199,7 @@ fn traverse(
         }
 
         match branch {
-            None => Ok(DynamicValue::None),
+            None => Ok(Cow::Owned(DynamicValue::None)),
             Some(arg) => eval(arg, record, last_value, variables),
         }
     }
@@ -222,7 +217,15 @@ pub fn interpret(
     let mut last_value = DynamicValue::None;
 
     for function_call in pipeline {
-        last_value = traverse(function_call, record, &last_value, variables)?;
+        let res = traverse(function_call, record, &last_value, variables)?;
+        println!(
+            "{:?}",
+            match res {
+                Cow::Borrowed(_) => "borrowed",
+                Cow::Owned(_) => "owned",
+            }
+        );
+        last_value = res.into_owned();
     }
 
     Ok(last_value)
@@ -241,7 +244,7 @@ mod tests {
 
                 match interpret(&pipeline, &ByteRecord::new(), &variables) {
                     Err(_) => return Err(()),
-                    Ok(value) => assert_eq!(String::from(value.into_string()), String::new()),
+                    Ok(value) => assert_eq!(value.truthy(), false),
                 }
 
                 Ok(())

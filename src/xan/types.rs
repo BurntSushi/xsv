@@ -325,7 +325,7 @@ impl<'a> From<Cow<'a, str>> for DynamicValue {
 //     }
 // }
 
-pub type EvaluationResult = Result<DynamicValue, EvaluationError>;
+pub type EvaluationResult<'a> = Result<Cow<'a, DynamicValue>, EvaluationError>;
 
 pub struct BoundArguments<'a> {
     stack: Vec<Cow<'a, DynamicValue>>,
@@ -366,7 +366,7 @@ impl<'a> BoundArguments<'a> {
     // }
 
     // TODO: error will be incorrect on subsequent pops
-    pub fn pop1(mut self) -> Result<Cow<'a, DynamicValue>, EvaluationError> {
+    pub fn pop1(mut self) -> EvaluationResult<'a> {
         match self.stack.pop() {
             None => Err(EvaluationError::from_invalid_arity(1, 0)),
             Some(value) => {
@@ -379,9 +379,9 @@ impl<'a> BoundArguments<'a> {
         }
     }
 
-    pub fn pop1_str(self) -> Result<Cow<'a, str>, EvaluationError> {
-        self.pop1().map(|value| value.as_str())
-    }
+    // pub fn pop1_str(self) -> Result<Cow<'a, str>, EvaluationError> {
+    //     self.pop1().map(|value| value.as_str())
+    // }
 
     // pub fn pop1_bool(self) -> Result<bool, EvaluationError> {
     //     self.pop1().map(|value| value.into_bool())

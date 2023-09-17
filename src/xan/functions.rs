@@ -1,4 +1,5 @@
 use flate2::read::GzDecoder;
+use std::borrow::Cow;
 use std::cmp::{Ordering, PartialOrd};
 use std::fs::File;
 use std::io::Read;
@@ -11,31 +12,35 @@ use xan::types::{BoundArguments, DynamicValue, EvaluationResult};
 // TODO: do and test variable bindings
 // TODO: parse most likely and cast functions
 // TODO: -p and --ignore-errors
-pub fn call(name: &str, args: BoundArguments) -> EvaluationResult {
-    match name {
-        // "add" => add(args),
-        // "and" => and(args),
-        // "coalesce" => coalesce(args),
-        // "concat" => concat(args),
-        // "count" => count(args),
-        // "eq" => number_compare(args, Ordering::is_eq),
-        // "len" => len(args),
-        // "lower" => lower(args),
-        // "not" => not(args),
-        // "or" => or(args),
-        // "pathjoin" => pathjoin(args),
-        // "read" => read(args),
-        "trim" => trim(args),
-        // "typeof" => type_of(args),
-        // "upper" => upper(args),
-        _ => Err(EvaluationError::UnknownFunction(name.to_string())),
-    }
+pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
+    Ok(Cow::Owned(
+        (match name {
+            // "add" => add(args),
+            // "and" => and(args),
+            // "coalesce" => coalesce(args),
+            // "concat" => concat(args),
+            // "count" => count(args),
+            // "eq" => number_compare(args, Ordering::is_eq),
+            // "len" => len(args),
+            // "lower" => lower(args),
+            // "not" => not(args),
+            // "or" => or(args),
+            // "pathjoin" => pathjoin(args),
+            // "read" => read(args),
+            "trim" => trim(args),
+            // "typeof" => type_of(args),
+            // "upper" => upper(args),
+            _ => return Err(EvaluationError::UnknownFunction(name.to_string())),
+        })
+        .unwrap(),
+    ))
 }
 
 // String transformations
 // TODO: cast to dynamic value in call function? bof, not possible to handle polymorphism
-fn trim(args: BoundArguments) -> EvaluationResult {
-    let string = args.pop1_str()?;
+fn trim(args: BoundArguments) -> Result<DynamicValue, EvaluationResult> {
+    let arg = args.pop1().unwrap();
+    let string = arg.as_str();
     let trimmed = string.trim();
 
     // NOTE: only cloning if actually different
