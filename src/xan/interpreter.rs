@@ -217,15 +217,13 @@ pub fn interpret(
     let mut last_value = DynamicValue::None;
 
     for function_call in pipeline {
-        let res = traverse(function_call, record, &last_value, variables)?;
-        println!(
-            "{:?}",
-            match res {
-                Cow::Borrowed(_) => "borrowed",
-                Cow::Owned(_) => "owned",
-            }
-        );
-        last_value = res.into_owned();
+        let wrapped_value = traverse(function_call, record, &last_value, variables)?;
+
+        if let Cow::Borrowed(_) = wrapped_value {
+            panic!("value should not be borrowed here!")
+        }
+
+        last_value = wrapped_value.into_owned();
     }
 
     Ok(last_value)
