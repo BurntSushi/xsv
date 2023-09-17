@@ -1,41 +1,36 @@
 use std::borrow::Cow;
-use std::collections::BTreeMap;
-use std::rc::{Rc, Weak};
 
 use csv::ByteRecord;
 
 use xan::error::{EvaluationError, PrepareError};
 use xan::functions::call;
 use xan::parser::{parse, Argument, Pipeline};
-use xan::types::{BoundArguments, ColumIndexation, DynamicValue, EvaluationResult};
-
-type Variables = BTreeMap<String, DynamicValue>;
+use xan::types::{BoundArguments, ColumIndexation, DynamicValue, EvaluationResult, Variables};
 
 enum ConcreteArgument {
     Variable(String),
     Column(usize),
-    StringLiteral(String),
-    FloatLiteral(f64),
-    IntegerLiteral(i64),
-    BooleanLiteral(bool),
+    StringLiteral(DynamicValue),
+    FloatLiteral(DynamicValue),
+    IntegerLiteral(DynamicValue),
+    BooleanLiteral(DynamicValue),
     Call(ConcreteFunctionCall),
     Null,
     Underscore,
 }
 
-// TODO: concretize into dynamicvalue already
 impl ConcreteArgument {
     fn bind<'a>(
         &'a self,
         record: &'a ByteRecord,
         last_value: &'a DynamicValue,
-        _variables: &'a Variables,
+        variables: &'a Variables,
     ) -> EvaluationResult {
         Ok(match self {
-            Self::StringLiteral(value) => Cow::Owned(DynamicValue::String(value.clone())),
-            Self::FloatLiteral(value) => Cow::Owned(DynamicValue::Float(*value)),
-            Self::IntegerLiteral(value) => Cow::Owned(DynamicValue::Integer(*value)),
-            Self::BooleanLiteral(value) => Cow::Owned(DynamicValue::Boolean(*value)),
+            Self::StringLiteral(value) => Cow::Borrowed(value),
+            Self::FloatLiteral(value) => Cow::Borrowed(value),
+            Self::IntegerLiteral(value) => Cow::Borrowed(value),
+            Self::BooleanLiteral(value) => Cow::Borrowed(value),
             Self::Underscore => Cow::Borrowed(last_value),
             Self::Null => Cow::Owned(DynamicValue::None),
             Self::Column(index) => match record.get(*index) {
@@ -45,11 +40,10 @@ impl ConcreteArgument {
                     Ok(value) => Cow::Owned(DynamicValue::from(value)),
                 },
             },
-            // Self::Variable(name) => match variables.get(name.as_ref()) {
-            //     Some(value) => *value,
-            //     None => return Err(EvaluationError::UnknownVariable(name.into_owned())),
-            // },
-            Self::Variable(_) => unimplemented!(),
+            Self::Variable(name) => match variables.get::<str>(name) {
+                Some(value) => Cow::Borrowed(value),
+                None => return Err(EvaluationError::UnknownVariable(name.clone())),
+            },
             Self::Call(_) => return Err(EvaluationError::IllegalBinding),
         })
     }
@@ -65,17 +59,17 @@ type ConcretePipeline = Vec<ConcreteFunctionCall>;
 fn concretize_argument(
     argument: Argument,
     headers: &ByteRecord,
-    reserved: &Vec<String>,
+    reserved: &Vec<&str>,
 ) -> Result<ConcreteArgument, PrepareError> {
     Ok(match argument {
         Argument::Underscore => ConcreteArgument::Underscore,
         Argument::Null => ConcreteArgument::Null,
-        Argument::BooleanLiteral(v) => ConcreteArgument::BooleanLiteral(v),
-        Argument::FloatLiteral(v) => ConcreteArgument::FloatLiteral(v),
-        Argument::IntegerLiteral(v) => ConcreteArgument::IntegerLiteral(v),
-        Argument::StringLiteral(v) => ConcreteArgument::StringLiteral(v),
+        Argument::BooleanLiteral(v) => ConcreteArgument::BooleanLiteral(DynamicValue::Boolean(v)),
+        Argument::FloatLiteral(v) => ConcreteArgument::FloatLiteral(DynamicValue::Float(v)),
+        Argument::IntegerLiteral(v) => ConcreteArgument::IntegerLiteral(DynamicValue::Integer(v)),
+        Argument::StringLiteral(v) => ConcreteArgument::StringLiteral(DynamicValue::String(v)),
         Argument::Identifier(name) => {
-            if reserved.contains(&name) {
+            if reserved.contains(&name.as_str()) {
                 ConcreteArgument::Variable(name)
             } else {
                 let indexation = ColumIndexation::ByName(name);
@@ -108,7 +102,7 @@ fn concretize_argument(
 fn concretize_pipeline(
     pipeline: Pipeline,
     headers: &ByteRecord,
-    reserved: &Vec<String>,
+    reserved: &Vec<&str>,
 ) -> Result<ConcretePipeline, PrepareError> {
     let mut concrete_pipeline: ConcretePipeline = Vec::new();
 
@@ -131,7 +125,7 @@ fn concretize_pipeline(
 pub fn prepare(
     code: &str,
     headers: &ByteRecord,
-    reserved: &Vec<String>,
+    reserved: &Vec<&str>,
 ) -> Result<ConcretePipeline, PrepareError> {
     match parse(code) {
         Err(_) => Err(PrepareError::ParseError(code.to_string())),

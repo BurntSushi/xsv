@@ -9,46 +9,34 @@ use xan::error::EvaluationError;
 use xan::types::{BoundArguments, DynamicValue, EvaluationResult};
 
 // TODO: contains, startswith, endswith, comp, str comp, add, sub, lte, deburr, etc.
-// TODO: do and test variable bindings
 // TODO: parse most likely and cast functions
 // TODO: -p and --ignore-errors
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
-    Ok(Cow::Owned(
-        (match name {
-            // "add" => add(args),
-            // "and" => and(args),
-            // "coalesce" => coalesce(args),
-            // "concat" => concat(args),
-            // "count" => count(args),
-            // "eq" => number_compare(args, Ordering::is_eq),
-            // "len" => len(args),
-            // "lower" => lower(args),
-            // "not" => not(args),
-            // "or" => or(args),
-            // "pathjoin" => pathjoin(args),
-            // "read" => read(args),
-            "trim" => trim(args),
-            // "typeof" => type_of(args),
-            // "upper" => upper(args),
-            _ => return Err(EvaluationError::UnknownFunction(name.to_string())),
-        })
-        .unwrap(),
-    ))
+    (match name {
+        // "add" => add(args),
+        // "and" => and(args),
+        // "coalesce" => coalesce(args),
+        // "concat" => concat(args),
+        // "count" => count(args),
+        // "eq" => number_compare(args, Ordering::is_eq),
+        // "len" => len(args),
+        // "lower" => lower(args),
+        // "not" => not(args),
+        // "or" => or(args),
+        // "pathjoin" => pathjoin(args),
+        // "read" => read(args),
+        "trim" => trim(args),
+        // "typeof" => type_of(args),
+        // "upper" => upper(args),
+        _ => Err(EvaluationError::UnknownFunction(name.to_string())),
+    })
+    .map(|value| Cow::Owned(value))
 }
 
 // String transformations
 // TODO: cast to dynamic value in call function? bof, not possible to handle polymorphism
-fn trim(args: BoundArguments) -> Result<DynamicValue, EvaluationResult> {
-    let arg = args.pop1().unwrap();
-    let string = arg.as_str();
-    let trimmed = string.trim();
-
-    // NOTE: only cloning if actually different
-    Ok(if trimmed.len() != string.len() {
-        DynamicValue::from(trimmed)
-    } else {
-        DynamicValue::from(string)
-    })
+fn trim(args: BoundArguments) -> Result<DynamicValue, EvaluationError> {
+    Ok(DynamicValue::from(args.get1_as_str()?.trim()))
 }
 
 // fn lower(args: BoundArguments) -> EvaluationResult {

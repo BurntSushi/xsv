@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::cmp::{Ord, Ordering, PartialEq, PartialOrd};
+use std::collections::BTreeMap;
 use std::convert::{From, Into, TryInto};
 use std::ops::Add;
 
@@ -117,7 +118,6 @@ pub enum DynamicValue {
     None,
 }
 
-// TODO: find a way to avoid cloning also here
 impl DynamicValue {
     pub fn type_of(&self) -> &str {
         match self {
@@ -129,7 +129,6 @@ impl DynamicValue {
         }
     }
 
-    // TODO: rework
     pub fn as_bytes(&self) -> Cow<[u8]> {
         match self {
             Self::String(value) => Cow::Borrowed(value.as_bytes()),
@@ -326,6 +325,7 @@ impl<'a> From<Cow<'a, str>> for DynamicValue {
 // }
 
 pub type EvaluationResult<'a> = Result<Cow<'a, DynamicValue>, EvaluationError>;
+pub type Variables<'a> = BTreeMap<&'a str, DynamicValue>;
 
 pub struct BoundArguments<'a> {
     stack: Vec<Cow<'a, DynamicValue>>,
@@ -344,28 +344,32 @@ impl<'a> BoundArguments<'a> {
         self.stack.push(arg);
     }
 
-    pub fn validate_min_arity(&self, min: usize) -> Result<(), EvaluationError> {
-        if self.len() < min {
-            Err(EvaluationError::from_invalid_min_arity(min, self.len()))
-        } else {
-            Ok(())
-        }
-    }
-
-    // pub fn get1(&mut self) -> EvaluationResult {
-    //     match self.stack.pop() {
-    //         None => Err(EvaluationError::from_invalid_arity(1, 0)),
-    //         Some(value) => {
-    //             if self.len() > 1 {
-    //                 return Err(EvaluationError::from_invalid_arity(1, self.len()));
-    //             }
-
-    //             Ok(value)
-    //         }
+    // pub fn validate_min_arity(&self, min: usize) -> Result<(), EvaluationError> {
+    //     if self.len() < min {
+    //         Err(EvaluationError::from_invalid_min_arity(min, self.len()))
+    //     } else {
+    //         Ok(())
     //     }
     // }
 
-    // TODO: error will be incorrect on subsequent pops
+    pub fn get1(&'a self) -> Result<&'a Cow<'a, DynamicValue>, EvaluationError> {
+        match self.stack.get(0) {
+            None => Err(EvaluationError::from_invalid_arity(1, 0)),
+            Some(value) => {
+                if self.len() > 1 {
+                    return Err(EvaluationError::from_invalid_arity(1, self.len()));
+                }
+
+                Ok(value)
+            }
+        }
+    }
+
+    pub fn get1_as_str(&'a self) -> Result<Cow<'a, str>, EvaluationError> {
+        self.get1().map(|value| value.as_str())
+    }
+
+    // NOTE: error will be incorrect on subsequent pops
     pub fn pop1(mut self) -> EvaluationResult<'a> {
         match self.stack.pop() {
             None => Err(EvaluationError::from_invalid_arity(1, 0)),

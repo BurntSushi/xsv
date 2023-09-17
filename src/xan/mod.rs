@@ -7,4 +7,4 @@ mod utils;
 
 pub use xan::error::{EvaluationError, PrepareError};
 pub use xan::interpreter::{interpret, prepare};
-pub use xan::types::ColumIndexation;
+pub use xan::types::{ColumIndexation, DynamicValue, Variables};

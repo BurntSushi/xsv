@@ -1,10 +1,8 @@
-use std::collections::BTreeMap;
-
 use csv;
 
 use config::{Config, Delimiter};
 use util;
-use xan::{interpret, prepare};
+use xan::{interpret, prepare, DynamicValue, Variables};
 use CliResult;
 
 static USAGE: &'static str = "
@@ -72,17 +70,20 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
     }
 
-    let reserved = Vec::new();
+    let reserved = vec!["index"];
 
     let pipeline = prepare(&args.arg_operations, &headers, &reserved)?;
 
     let mut record = csv::ByteRecord::new();
-    let variables = BTreeMap::new();
+    let mut variables = Variables::new();
+    let mut i = 0;
 
     while rdr.read_byte_record(&mut record)? {
+        variables.insert("index", DynamicValue::Integer(i));
         let value = interpret(&pipeline, &record, &variables)?;
         record.push_field(&value.as_bytes());
         wtr.write_byte_record(&record)?;
+        i += 1;
     }
 
     Ok(wtr.flush()?)
