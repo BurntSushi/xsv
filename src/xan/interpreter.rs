@@ -7,6 +7,7 @@ use xan::functions::call;
 use xan::parser::{parse, Argument, Pipeline};
 use xan::types::{BoundArguments, ColumIndexation, DynamicValue, EvaluationResult, Variables};
 
+// TODO: unfurling the pipeline for the first argument should clone less
 enum ConcreteArgument {
     Variable(String),
     Column(usize),
