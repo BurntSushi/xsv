@@ -111,6 +111,7 @@ impl Add for DynamicNumber {
 
 #[derive(Debug, Clone)]
 pub enum DynamicValue {
+    List(Vec<DynamicValue>),
     String(String),
     Float(f64),
     Integer(i64),
@@ -121,6 +122,7 @@ pub enum DynamicValue {
 impl DynamicValue {
     pub fn type_of(&self) -> &str {
         match self {
+            Self::List(_) => "list",
             Self::String(_) => "string",
             Self::Float(_) => "float",
             Self::Integer(_) => "integer",
@@ -131,6 +133,7 @@ impl DynamicValue {
 
     pub fn as_bytes(&self) -> Cow<[u8]> {
         match self {
+            Self::List(_) => unimplemented!(),
             Self::String(value) => Cow::Borrowed(value.as_bytes()),
             Self::Float(value) => Cow::Owned(value.to_string().into_bytes()),
             Self::Integer(value) => Cow::Owned(value.to_string().into_bytes()),
@@ -147,6 +150,7 @@ impl DynamicValue {
 
     pub fn as_str(&self) -> Cow<str> {
         match self {
+            Self::List(_) => unimplemented!(),
             Self::String(value) => Cow::Borrowed(value),
             Self::Float(value) => Cow::Owned(value.to_string()),
             Self::Integer(value) => Cow::Owned(value.to_string()),
@@ -163,6 +167,7 @@ impl DynamicValue {
 
     pub fn truthy(&self) -> bool {
         match self {
+            Self::List(value) => value.len() > 0,
             Self::String(value) => value.len() > 0,
             Self::Float(value) => value == &0.0,
             Self::Integer(value) => value != &0,

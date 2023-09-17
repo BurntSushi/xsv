@@ -8,6 +8,8 @@ use xan::parser::{parse, Argument, Pipeline};
 use xan::types::{BoundArguments, ColumIndexation, DynamicValue, EvaluationResult, Variables};
 
 // TODO: unfurling the pipeline for the first argument should clone less
+// NOTE: unfurling = cutting sequence until there is an underscore as first step
+// NOTE: then it means renesting the sequence if there is a single underscore reference
 enum ConcreteArgument {
     Variable(String),
     Column(usize),
