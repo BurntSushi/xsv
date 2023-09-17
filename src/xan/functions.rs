@@ -8,6 +8,8 @@ use std::path::PathBuf;
 use xan::error::EvaluationError;
 use xan::types::{BoundArguments, DynamicValue, EvaluationResult};
 
+type FunctionResult = Result<DynamicValue, EvaluationError>;
+
 // TODO: contains, startswith, endswith, comp, str comp, add, sub, lte, deburr, etc.
 // TODO: parse most likely and cast functions
 // TODO: -p and --ignore-errors
@@ -26,7 +28,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         // "pathjoin" => pathjoin(args),
         // "read" => read(args),
         "trim" => trim(args),
-        // "typeof" => type_of(args),
+        "typeof" => type_of(args),
         // "upper" => upper(args),
         _ => Err(EvaluationError::UnknownFunction(name.to_string())),
     })
@@ -35,30 +37,30 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
 
 // String transformations
 // TODO: cast to dynamic value in call function? bof, not possible to handle polymorphism
-fn trim(args: BoundArguments) -> Result<DynamicValue, EvaluationError> {
+fn trim(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(args.get1_as_str()?.trim()))
 }
 
-// fn lower(args: BoundArguments) -> EvaluationResult {
+// fn lower(args: BoundArguments) -> FunctionResult {
 //     Ok(DynamicValue::from(args.pop1_str()?.to_lowercase()))
 // }
 
-// fn upper(args: BoundArguments) -> EvaluationResult {
+// fn upper(args: BoundArguments) -> FunctionResult {
 //     Ok(DynamicValue::from(args.pop1_str()?.to_uppercase()))
 // }
 
-// fn len(args: BoundArguments) -> EvaluationResult {
+// fn len(args: BoundArguments) -> FunctionResult {
 //     Ok(DynamicValue::from(args.pop1_str()?.len()))
 // }
 
 // // Strings
-// fn count(args: BoundArguments) -> EvaluationResult {
+// fn count(args: BoundArguments) -> FunctionResult {
 //     let (string, pattern) = args.pop2_str()?;
 
 //     Ok(DynamicValue::from(string.matches(pattern.as_ref()).count()))
 // }
 
-// fn concat(args: BoundArguments) -> EvaluationResult {
+// fn concat(args: BoundArguments) -> FunctionResult {
 //     let mut result = String::new();
 
 //     for arg in args {
@@ -69,13 +71,13 @@ fn trim(args: BoundArguments) -> Result<DynamicValue, EvaluationError> {
 // }
 
 // // Arithmetics
-// fn add(args: BoundArguments) -> EvaluationResult {
+// fn add(args: BoundArguments) -> FunctionResult {
 //     let (a, b) = args.pop2_number()?;
 //     Ok(DynamicValue::from(a + b))
 // }
 
 // // Utilities
-// fn coalesce(args: BoundArguments) -> EvaluationResult {
+// fn coalesce(args: BoundArguments) -> FunctionResult {
 //     for arg in args {
 //         if arg.truthy() {
 //             return Ok(arg);
@@ -86,22 +88,22 @@ fn trim(args: BoundArguments) -> Result<DynamicValue, EvaluationError> {
 // }
 
 // // Boolean
-// fn not(args: BoundArguments) -> EvaluationResult {
+// fn not(args: BoundArguments) -> FunctionResult {
 //     Ok(DynamicValue::from(!args.pop1_bool()?))
 // }
 
-// fn and(args: BoundArguments) -> EvaluationResult {
+// fn and(args: BoundArguments) -> FunctionResult {
 //     let (a, b) = args.pop2_bool()?;
 //     Ok(DynamicValue::from(a && b))
 // }
 
-// fn or(args: BoundArguments) -> EvaluationResult {
+// fn or(args: BoundArguments) -> FunctionResult {
 //     let (a, b) = args.pop2_bool()?;
 //     Ok(DynamicValue::from(a || b))
 // }
 
 // // Comparison
-// fn number_compare<F>(args: BoundArguments, validate: F) -> EvaluationResult
+// fn number_compare<F>(args: BoundArguments, validate: F) -> FunctionResult
 // where
 //     F: FnOnce(Ordering) -> bool,
 // {
@@ -114,7 +116,7 @@ fn trim(args: BoundArguments) -> Result<DynamicValue, EvaluationError> {
 // }
 
 // // IO
-// fn pathjoin(args: BoundArguments) -> EvaluationResult {
+// fn pathjoin(args: BoundArguments) -> FunctionResult {
 //     args.validate_min_arity(2)?;
 
 //     let mut path = PathBuf::new();
@@ -128,7 +130,7 @@ fn trim(args: BoundArguments) -> Result<DynamicValue, EvaluationError> {
 //     Ok(DynamicValue::from(path))
 // }
 
-// fn read(args: BoundArguments) -> EvaluationResult {
+// fn read(args: BoundArguments) -> FunctionResult {
 //     let path = args.pop1_str()?;
 
 //     // TODO: handle encoding
@@ -151,7 +153,7 @@ fn trim(args: BoundArguments) -> Result<DynamicValue, EvaluationError> {
 //     Ok(DynamicValue::from(buffer))
 // }
 
-// // Introspection
-// fn type_of(args: BoundArguments) -> EvaluationResult {
-//     Ok(DynamicValue::from(args.pop1()?.type_of().to_owned()))
-// }
+// Introspection
+fn type_of(args: BoundArguments) -> FunctionResult {
+    Ok(DynamicValue::from(args.get1()?.type_of()))
+}
