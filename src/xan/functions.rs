@@ -12,13 +12,13 @@ type FunctionResult = Result<DynamicValue, EvaluationError>;
 
 // TODO: contains, startswith, endswith, comp, str comp, add, sub, lte, deburr, etc.
 // TODO: parse most likely and cast functions
-// TODO: -p and --ignore-errors
+// TODO: -p and --ignore-errors or print error or report error
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     (match name {
         "add" => add(args),
         // "and" => and(args),
         // "coalesce" => coalesce(args),
-        // "concat" => concat(args),
+        "concat" => concat(args),
         "count" => count(args),
         // "eq" => number_compare(args, Ordering::is_eq),
         "join" => join(args),
@@ -75,15 +75,15 @@ fn count(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(string.matches(pattern.as_ref()).count()))
 }
 
-// fn concat(args: BoundArguments) -> FunctionResult {
-//     let mut result = String::new();
+fn concat(args: BoundArguments) -> FunctionResult {
+    let mut result = String::new();
 
-//     for arg in args {
-//         result.push_str(&arg.into_str());
-//     }
+    for arg in args.iter() {
+        result.push_str(&arg.try_as_str()?);
+    }
 
-//     Ok(DynamicValue::from(result))
-// }
+    Ok(DynamicValue::from(result))
+}
 
 // Lists
 fn join(args: BoundArguments) -> FunctionResult {

@@ -2,8 +2,6 @@ use std::borrow::Cow;
 
 use csv::ByteRecord;
 
-use crate::cmd::split;
-
 use super::error::{EvaluationError, PrepareError, RunError};
 use super::functions::call;
 use super::parser::{parse, Argument, FunctionCall, Pipeline};
@@ -437,6 +435,14 @@ mod tests {
         assert_eq!(
             eval_code(r#"count(name, "h")"#),
             Ok(DynamicValue::Integer(1))
+        );
+    }
+
+    #[test]
+    fn test_concat() {
+        assert_eq!(
+            eval_code(r#"concat(name, " ", lower(surname))"#),
+            Ok(DynamicValue::from("john smith"))
         );
     }
 }

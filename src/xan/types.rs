@@ -344,11 +344,12 @@ impl TryInto<DynamicNumber> for DynamicValue {
     }
 }
 
-pub type EvaluationResult<'a> = Result<Cow<'a, DynamicValue>, EvaluationError>;
+pub type BoundArgument<'a> = Cow<'a, DynamicValue>;
+pub type EvaluationResult<'a> = Result<BoundArgument<'a>, EvaluationError>;
 pub type Variables<'a> = BTreeMap<&'a str, DynamicValue>;
 
 pub struct BoundArguments<'a> {
-    stack: Vec<Cow<'a, DynamicValue>>,
+    stack: Vec<BoundArgument<'a>>,
 }
 
 impl<'a> BoundArguments<'a> {
@@ -360,7 +361,7 @@ impl<'a> BoundArguments<'a> {
         self.stack.len()
     }
 
-    pub fn push(&mut self, arg: Cow<'a, DynamicValue>) {
+    pub fn push(&mut self, arg: BoundArgument<'a>) {
         self.stack.push(arg);
     }
 
@@ -372,7 +373,7 @@ impl<'a> BoundArguments<'a> {
     //     }
     // }
 
-    pub fn get1(&'a self) -> Result<&'a Cow<'a, DynamicValue>, EvaluationError> {
+    pub fn get1(&'a self) -> Result<&'a BoundArgument, EvaluationError> {
         match self.stack.get(0) {
             None => Err(EvaluationError::from_invalid_arity(1, 0)),
             Some(value) => {
@@ -414,6 +415,23 @@ impl<'a> BoundArguments<'a> {
     pub fn get2_as_numbers(&self) -> Result<(DynamicNumber, DynamicNumber), EvaluationError> {
         let (a, b) = self.get2()?;
 
+        let v: Vec<String> = Vec::new();
+        let i = v.iter();
+
         Ok((a.try_as_number()?, b.try_as_number()?))
+    }
+
+    pub fn iter(&self) -> BoundArgumentsIterator {
+        BoundArgumentsIterator(self.stack.iter())
+    }
+}
+
+pub struct BoundArgumentsIterator<'a>(std::slice::Iter<'a, BoundArgument<'a>>);
+
+impl<'a> Iterator for BoundArgumentsIterator<'a> {
+    type Item = &'a BoundArgument<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
     }
 }
