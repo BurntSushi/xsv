@@ -15,14 +15,14 @@ type FunctionResult = Result<DynamicValue, EvaluationError>;
 // TODO: -p and --ignore-errors
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     (match name {
-        // "add" => add(args),
+        "add" => add(args),
         // "and" => and(args),
         // "coalesce" => coalesce(args),
         // "concat" => concat(args),
         // "count" => count(args),
         // "eq" => number_compare(args, Ordering::is_eq),
         "join" => join(args),
-        // "len" => len(args),
+        "len" => len(args),
         // "lower" => lower(args),
         // "not" => not(args),
         // "or" => or(args),
@@ -60,9 +60,14 @@ fn split(args: BoundArguments) -> FunctionResult {
 //     Ok(DynamicValue::from(args.pop1_str()?.to_uppercase()))
 // }
 
-// fn len(args: BoundArguments) -> FunctionResult {
-//     Ok(DynamicValue::from(args.pop1_str()?.len()))
-// }
+fn len(args: BoundArguments) -> FunctionResult {
+    let arg = args.get1()?;
+
+    Ok(DynamicValue::from(match arg.as_ref() {
+        DynamicValue::List(list) => list.len(),
+        _ => arg.try_as_str()?.len(),
+    }))
+}
 
 // fn count(args: BoundArguments) -> FunctionResult {
 //     let (string, pattern) = args.pop2_str()?;
@@ -96,11 +101,11 @@ fn join(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(string_list.join(&joiner)))
 }
 
-// // Arithmetics
-// fn add(args: BoundArguments) -> FunctionResult {
-//     let (a, b) = args.pop2_number()?;
-//     Ok(DynamicValue::from(a + b))
-// }
+// Arithmetics
+fn add(args: BoundArguments) -> FunctionResult {
+    let (a, b) = args.get2_as_numbers()?;
+    Ok(DynamicValue::from(a + b))
+}
 
 // // Utilities
 // fn coalesce(args: BoundArguments) -> FunctionResult {

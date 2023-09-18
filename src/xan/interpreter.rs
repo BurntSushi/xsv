@@ -2,14 +2,13 @@ use std::borrow::Cow;
 
 use csv::ByteRecord;
 
+use crate::cmd::split;
+
 use super::error::{EvaluationError, PrepareError, RunError};
 use super::functions::call;
 use super::parser::{parse, Argument, FunctionCall, Pipeline};
 use super::types::{BoundArguments, ColumIndexation, DynamicValue, EvaluationResult, Variables};
 
-// TODO: unfurling the pipeline for the first argument should clone less
-// NOTE: unfurling = cutting sequence until there is an underscore as first step
-// NOTE: then it means renesting the sequence if there is a single underscore reference
 #[derive(Debug)]
 enum ConcreteArgument {
     Variable(String),
@@ -128,21 +127,14 @@ fn concretize_pipeline(
 }
 
 // Example: trim(a) | add(a, b) | trim | add(a, b) | len -> add(a, b) | len
-fn filter_irrelevant_pipes(pipeline: Pipeline) -> Pipeline {
-    let mut split_point: Option<usize> = None;
-
-    for i in 0..pipeline.len() {
-        match pipeline.get(i + 1) {
-            None => continue,
-            Some(next_function_call) => {
-                if next_function_call.has_underscore() {
-                    split_point = Some(i);
-                }
-            }
-        }
-    }
-
-    match split_point {
+fn trim_pipeline(pipeline: Pipeline) -> Pipeline {
+    match pipeline
+        .iter()
+        .enumerate()
+        .rev()
+        .find(|(i, function_call)| *i != 0 && !function_call.has_underscore())
+        .map(|r| r.0)
+    {
         None => pipeline,
         Some(index) => pipeline[index..].to_vec(),
     }
@@ -183,7 +175,12 @@ pub fn prepare(
 ) -> Result<ConcretePipeline, PrepareError> {
     match parse(code) {
         Err(_) => Err(PrepareError::ParseError(code.to_string())),
-        Ok(pipeline) => concretize_pipeline(pipeline, headers, reserved),
+        Ok(pipeline) => {
+            let pipeline = trim_pipeline(pipeline);
+            let pipeline = unfurl_pipeline(pipeline);
+
+            concretize_pipeline(pipeline, headers, reserved)
+        }
     }
 }
 
@@ -296,10 +293,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_filter_irrelevant_pipes() {
+    fn test_trim_pipeline() {
         // Should give: add(a, b) | len
         let pipeline = parse("trim(a) | add(a, b) | trim | add(a, b) | len").unwrap();
-        let pipeline = filter_irrelevant_pipes(pipeline);
+        let pipeline = trim_pipeline(pipeline);
 
         assert_eq!(
             pipeline,
@@ -316,7 +313,28 @@ mod tests {
                     args: vec![Argument::Underscore]
                 }
             ]
-        )
+        );
+
+        let pipeline = parse("trim(a) | len | add(b, _)").unwrap();
+        let pipeline = trim_pipeline(pipeline);
+
+        assert_eq!(
+            pipeline,
+            vec![
+                FunctionCall {
+                    name: "trim".to_string(),
+                    args: vec![Argument::Identifier("a".to_string())]
+                },
+                FunctionCall {
+                    name: "len".to_string(),
+                    args: vec![Argument::Underscore]
+                },
+                FunctionCall {
+                    name: "add".to_string(),
+                    args: vec![Argument::Identifier("b".to_string()), Argument::Underscore]
+                }
+            ]
+        );
     }
 
     #[test]
@@ -340,7 +358,7 @@ mod tests {
                     })
                 ]
             }]
-        )
+        );
     }
 
     type TestResult = Result<DynamicValue, RunError>;
@@ -364,13 +382,18 @@ mod tests {
         run(code, &headers, &record, &variables)
     }
 
-    // #[test]
-    // fn test_pipeline_optimization_correctness() {
-    //     assert_eq!(
-    //         eval_code(r#"trim(a) | add(a, b) | trim | add(a, b) | len"#),
-    //         Ok(DynamicValue::Integer(2))
-    //     )
-    // }
+    #[test]
+    fn test_pipeline_optimization_correctness() {
+        assert_eq!(
+            eval_code("trim(a) | add(a, b) | trim | add(a, b) | len"),
+            Ok(DynamicValue::Integer(2))
+        );
+
+        assert_eq!(
+            eval_code("trim(a) | len | add(b, _)"),
+            Ok(DynamicValue::Integer(64))
+        );
+    }
 
     #[test]
     fn test_typeof() {

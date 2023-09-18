@@ -137,18 +137,12 @@ impl DynamicValue {
                 let mut bytes: Vec<u8> = Vec::new();
 
                 for value in list {
-                    let serialized_value = value.serialize_as_bytes(plural_separator);
-                    for byte in serialized_value.iter() {
-                        bytes.push(*byte);
-                    }
-
-                    for byte in plural_separator {
-                        bytes.push(*byte);
-                    }
+                    bytes.extend_from_slice(&value.serialize_as_bytes(plural_separator));
+                    bytes.extend_from_slice(plural_separator);
                 }
 
-                for _ in plural_separator {
-                    bytes.pop();
+                if bytes.len() > 0 {
+                    bytes.truncate(bytes.len() - plural_separator.len());
                 }
 
                 Cow::Owned(bytes)
@@ -206,6 +200,22 @@ impl DynamicValue {
             Self::List(list) => Ok(list),
             _ => Err(EvaluationError::Cast),
         }
+    }
+
+    pub fn try_as_number(&self) -> Result<DynamicNumber, EvaluationError> {
+        Ok(match self {
+            Self::String(string) => match string.parse::<i64>() {
+                Ok(value) => DynamicNumber::Integer(value),
+                Err(_) => match string.parse::<f64>() {
+                    Ok(value) => DynamicNumber::Float(value),
+                    Err(_) => return Err(EvaluationError::Cast),
+                },
+            },
+            Self::Integer(value) => DynamicNumber::Integer(*value),
+            Self::Float(value) => DynamicNumber::Float(*value),
+            Self::Boolean(value) => DynamicNumber::Integer(*value as i64),
+            _ => return Err(EvaluationError::Cast),
+        })
     }
 
     pub fn truthy(&self) -> bool {
@@ -401,50 +411,9 @@ impl<'a> BoundArguments<'a> {
         Ok((a.try_as_str()?, b.try_as_str()?))
     }
 
-    // pub fn pop1_str(self) -> Result<Cow<'a, str>, EvaluationError> {
-    //     self.pop1().map(|value| value.as_str())
-    // }
+    pub fn get2_as_numbers(&self) -> Result<(DynamicNumber, DynamicNumber), EvaluationError> {
+        let (a, b) = self.get2()?;
 
-    // pub fn pop1_bool(self) -> Result<bool, EvaluationError> {
-    //     self.pop1().map(|value| value.into_bool())
-    // }
-
-    // pub fn pop2(mut self) -> Result<(DynamicValue, DynamicValue), EvaluationError> {
-    //     match pop2(&mut self.stack) {
-    //         None => Err(EvaluationError::from_invalid_arity(2, self.len())),
-    //         Some(t) => {
-    //             if self.len() > 2 {
-    //                 return Err(EvaluationError::from_invalid_arity(2, self.len()));
-    //             }
-
-    //             Ok(t)
-    //         }
-    //     }
-    // }
-
-    // pub fn pop2_str(self) -> Result<(Cow<'a, str>, Cow<'a, str>), EvaluationError> {
-    //     self.pop2().map(|(a, b)| (a.into_str(), b.into_str()))
-    // }
-
-    // pub fn pop2_bool(self) -> Result<(bool, bool), EvaluationError> {
-    //     self.pop2().map(|(a, b)| (a.into_bool(), b.into_bool()))
-    // }
-
-    // pub fn pop2_number(self) -> Result<(DynamicNumber, DynamicNumber), EvaluationError> {
-    //     let (a, b) = self.pop2()?;
-
-    //     let a = a.try_into_number()?;
-    //     let b = b.try_into_number()?;
-
-    //     Ok((a, b))
-    // }
+        Ok((a.try_as_number()?, b.try_as_number()?))
+    }
 }
-
-// impl IntoIterator for BoundArguments {
-//     type Item = DynamicValue;
-//     type IntoIter = <Vec<DynamicValue> as IntoIterator>::IntoIter;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         self.stack.into_iter()
-//     }
-// }
