@@ -2,7 +2,7 @@ use csv;
 
 use config::{Config, Delimiter};
 use util;
-use xan::{interpret, prepare, DynamicValue, Variables};
+use xan::{eval, prepare, DynamicValue, Variables};
 use CliResult;
 
 static USAGE: &'static str = "
@@ -33,7 +33,7 @@ Usage:
 Common options:
     -h, --help               Display this message
     -o, --output <file>      Write output to <file> instead of stdout.
-    -n, --no-headers         When set, the first row will not be interpreted
+    -n, --no-headers         When set, the first row will not be evaled
                              as headers.
     -d, --delimiter <arg>    The field delimiter for reading CSV data.
                              Must be a single character. (default: ,)
@@ -80,7 +80,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     while rdr.read_byte_record(&mut record)? {
         variables.insert("index", DynamicValue::Integer(i));
-        let value = interpret(&pipeline, &record, &variables)?;
+        let value = eval(&pipeline, &record, &variables)?;
         record.push_field(&value.as_bytes());
         wtr.write_byte_record(&record)?;
         i += 1;

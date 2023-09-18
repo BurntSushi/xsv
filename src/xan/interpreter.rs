@@ -136,7 +136,7 @@ pub fn prepare(
     }
 }
 
-fn eval_function<'a>(
+fn evaluate_function_call<'a>(
     function_call: &ConcreteFunctionCall,
     record: &ByteRecord,
     last_value: &DynamicValue,
@@ -156,7 +156,7 @@ fn eval_function<'a>(
     call(&function_call.name, bound_args)
 }
 
-fn eval<'a>(
+fn evaluate_expression<'a>(
     arg: &'a ConcreteArgument,
     record: &'a ByteRecord,
     last_value: &'a DynamicValue,
@@ -164,7 +164,7 @@ fn eval<'a>(
 ) -> EvaluationResult<'a> {
     match arg {
         ConcreteArgument::Call(function_call) => {
-            eval_function(function_call, record, last_value, variables)
+            evaluate_function_call(function_call, record, last_value, variables)
         }
         _ => arg.bind(record, last_value, variables),
     }
@@ -185,7 +185,7 @@ fn traverse<'a>(
         }
 
         let condition = &function_call.args[0];
-        let result = eval(condition, record, last_value, variables)?;
+        let result = evaluate_expression(condition, record, last_value, variables)?;
 
         let mut branch: Option<&ConcreteArgument> = None;
 
@@ -197,16 +197,16 @@ fn traverse<'a>(
 
         match branch {
             None => Ok(Cow::Owned(DynamicValue::None)),
-            Some(arg) => eval(arg, record, last_value, variables),
+            Some(arg) => evaluate_expression(arg, record, last_value, variables),
         }
     }
     // Regular call
     else {
-        eval_function(function_call, record, last_value, variables)
+        evaluate_function_call(function_call, record, last_value, variables)
     }
 }
 
-pub fn interpret(
+pub fn eval(
     pipeline: &ConcretePipeline,
     record: &ByteRecord,
     variables: &Variables,
