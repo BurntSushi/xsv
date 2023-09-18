@@ -351,6 +351,7 @@ impl From<xan::EvaluationError> for CliError {
                 format!("cannot open file {}", path)
             }
             xan::EvaluationError::CannotReadFile(path) => format!("cannot read file {}", path),
+            xan::EvaluationError::UnknownFunction(name) => format!("unknown function \"{}\"", name),
             _ => "evaluation error".to_string(),
         })
     }

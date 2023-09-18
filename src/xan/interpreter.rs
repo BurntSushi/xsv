@@ -264,7 +264,7 @@ mod tests {
     }
 
     #[test]
-    fn test_interpret() {
+    fn test_typeof() {
         assert_eq!(eval_code("typeof(name)"), Ok(DynamicValue::from("string")));
     }
 }

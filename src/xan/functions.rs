@@ -27,6 +27,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         // "or" => or(args),
         // "pathjoin" => pathjoin(args),
         // "read" => read(args),
+        "split" => split(args),
         "trim" => trim(args),
         "typeof" => type_of(args),
         // "upper" => upper(args),
@@ -35,10 +36,20 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     .map(|value| Cow::Owned(value))
 }
 
-// String transformations
+// Strings
 // TODO: cast to dynamic value in call function? bof, not possible to handle polymorphism
 fn trim(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(args.get1_as_str()?.trim()))
+}
+
+fn split(args: BoundArguments) -> FunctionResult {
+    let (to_split, pattern) = args.get2_as_str()?;
+    let splitted: Vec<DynamicValue> = to_split
+        .split(&*pattern)
+        .map(|v| DynamicValue::from(v))
+        .collect();
+
+    Ok(DynamicValue::from(splitted))
 }
 
 // fn lower(args: BoundArguments) -> FunctionResult {
@@ -53,7 +64,6 @@ fn trim(args: BoundArguments) -> FunctionResult {
 //     Ok(DynamicValue::from(args.pop1_str()?.len()))
 // }
 
-// // Strings
 // fn count(args: BoundArguments) -> FunctionResult {
 //     let (string, pattern) = args.pop2_str()?;
 
@@ -69,6 +79,8 @@ fn trim(args: BoundArguments) -> FunctionResult {
 
 //     Ok(DynamicValue::from(result))
 // }
+
+// Lists
 
 // // Arithmetics
 // fn add(args: BoundArguments) -> FunctionResult {
