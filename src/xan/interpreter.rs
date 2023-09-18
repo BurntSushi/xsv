@@ -127,14 +127,6 @@ fn concretize_pipeline(
     Ok(concrete_pipeline)
 }
 
-fn has_underscore(function_call: &FunctionCall) -> bool {
-    function_call.args.iter().any(|arg| match arg {
-        Argument::Call(sub_function_call) => has_underscore(sub_function_call),
-        Argument::Underscore => true,
-        _ => false,
-    })
-}
-
 // Example: trim(a) | add(a, b) | trim | add(a, b) | len -> add(a, b) | len
 fn filter_irrelevant_pipes(pipeline: Pipeline) -> Pipeline {
     let mut split_point: Option<usize> = None;
@@ -143,7 +135,7 @@ fn filter_irrelevant_pipes(pipeline: Pipeline) -> Pipeline {
         match pipeline.get(i + 1) {
             None => continue,
             Some(next_function_call) => {
-                if has_underscore(next_function_call) {
+                if next_function_call.has_underscore() {
                     split_point = Some(i);
                 }
             }
@@ -154,6 +146,34 @@ fn filter_irrelevant_pipes(pipeline: Pipeline) -> Pipeline {
         None => pipeline,
         Some(index) => pipeline[index..].to_vec(),
     }
+}
+
+// Example: trim(a) | len | add(b, _) -> add(b, len(trim(a)))
+// NOTE: we apply this as an optimization to avoid too much cloning
+fn unfurl_pipeline(mut pipeline: Pipeline) -> Pipeline {
+    loop {
+        match pipeline.pop() {
+            None => break,
+            Some(mut function_call) => {
+                if function_call.count_underscores() != 1 {
+                    pipeline.push(function_call);
+                    break;
+                }
+                match pipeline.pop() {
+                    Some(previous_function_call) => {
+                        function_call.fill_underscore(&previous_function_call);
+                        pipeline.push(function_call);
+                    }
+                    None => {
+                        pipeline.push(function_call);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    pipeline
 }
 
 pub fn prepare(
@@ -271,12 +291,14 @@ pub fn run(
 
 #[cfg(test)]
 mod tests {
+    use std::vec;
+
     use super::*;
 
     #[test]
     fn test_filter_irrelevant_pipes() {
         // Should give: add(a, b) | len
-        let pipeline = parse(&"trim(a) | add(a, b) | trim | add(a, b) | len").unwrap();
+        let pipeline = parse("trim(a) | add(a, b) | trim | add(a, b) | len").unwrap();
         let pipeline = filter_irrelevant_pipes(pipeline);
 
         assert_eq!(
@@ -294,6 +316,30 @@ mod tests {
                     args: vec![Argument::Underscore]
                 }
             ]
+        )
+    }
+
+    #[test]
+    fn test_unfurl_pipeline() {
+        // Should give: add(b, len(trim(a)))
+        let pipeline = parse("trim(a) | len | add(b, _)").unwrap();
+        let pipeline = unfurl_pipeline(pipeline);
+
+        assert_eq!(
+            pipeline,
+            vec![FunctionCall {
+                name: "add".to_string(),
+                args: vec![
+                    Argument::Identifier("b".to_string()),
+                    Argument::Call(FunctionCall {
+                        name: "len".to_string(),
+                        args: vec![Argument::Call(FunctionCall {
+                            name: "trim".to_string(),
+                            args: vec![Argument::Identifier("a".to_string())]
+                        })]
+                    })
+                ]
+            }]
         )
     }
 
@@ -317,6 +363,14 @@ mod tests {
 
         run(code, &headers, &record, &variables)
     }
+
+    // #[test]
+    // fn test_pipeline_optimization_correctness() {
+    //     assert_eq!(
+    //         eval_code(r#"trim(a) | add(a, b) | trim | add(a, b) | len"#),
+    //         Ok(DynamicValue::Integer(2))
+    //     )
+    // }
 
     #[test]
     fn test_typeof() {

@@ -31,6 +31,41 @@ pub struct FunctionCall {
     pub args: Vec<Argument>,
 }
 
+impl FunctionCall {
+    pub fn has_underscore(&self) -> bool {
+        self.args.iter().any(|arg| match arg {
+            Argument::Call(sub_function_call) => sub_function_call.has_underscore(),
+            Argument::Underscore => true,
+            _ => false,
+        })
+    }
+
+    pub fn count_underscores(&self) -> usize {
+        self.args
+            .iter()
+            .map(|arg| match arg {
+                Argument::Call(sub_function_call) => sub_function_call.count_underscores(),
+                Argument::Underscore => 1,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    pub fn fill_underscore(&mut self, with: &FunctionCall) {
+        for arg in self.args.iter_mut() {
+            match arg {
+                Argument::Call(sub) => {
+                    sub.fill_underscore(with);
+                }
+                Argument::Underscore => {
+                    *arg = Argument::Call(with.clone());
+                }
+                _ => (),
+            }
+        }
+    }
+}
+
 pub type Pipeline = Vec<FunctionCall>;
 
 fn boolean_literal(input: &str) -> IResult<&str, bool> {

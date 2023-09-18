@@ -38,7 +38,6 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
 }
 
 // Strings
-// TODO: cast to dynamic value in call function? bof, not possible to handle polymorphism
 fn trim(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(args.get1_as_str()?.trim()))
 }
