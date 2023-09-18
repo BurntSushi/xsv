@@ -109,7 +109,7 @@ impl Add for DynamicNumber {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DynamicValue {
     List(Vec<DynamicValue>),
     String(String),

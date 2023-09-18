@@ -1,33 +1,34 @@
 use xan::types::ColumIndexation;
-#[derive(Debug)]
+
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum PrepareError {
     ParseError(String),
     ColumnNotFound(ColumIndexation),
 }
-#[derive(Debug)]
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct StrictArityErrorContext {
     pub expected: usize,
     pub got: usize,
 }
-#[derive(Debug)]
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct MinArityErrorContext {
     pub min_expected: usize,
     pub got: usize,
 }
-#[derive(Debug)]
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct RangeArityErrorContext {
     pub min_expected: usize,
     pub max_expected: usize,
     pub got: usize,
 }
-#[derive(Debug)]
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum InvalidArity {
     Strict(StrictArityErrorContext),
     Min(MinArityErrorContext),
     Range(RangeArityErrorContext),
 }
 
-#[derive(Debug)]
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum EvaluationError {
     IllegalBinding,
     InvalidArity(InvalidArity),
@@ -65,4 +66,10 @@ impl EvaluationError {
             got,
         }))
     }
+}
+
+#[cfg_attr(test, derive(Debug, PartialEq))]
+pub enum RunError {
+    Prepare(PrepareError),
+    Evaluation(EvaluationError),
 }

@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use csv::ByteRecord;
 
-use xan::error::{EvaluationError, PrepareError};
+use xan::error::{EvaluationError, PrepareError, RunError};
 use xan::functions::call;
 use xan::parser::{parse, Argument, Pipeline};
 use xan::types::{BoundArguments, ColumIndexation, DynamicValue, EvaluationResult, Variables};
@@ -226,24 +226,45 @@ pub fn eval(
     Ok(last_value)
 }
 
+pub fn run(
+    code: &str,
+    headers: &ByteRecord,
+    record: &ByteRecord,
+    variables: &Variables,
+) -> Result<DynamicValue, RunError> {
+    let reserved = variables.keys().cloned().collect();
+    let pipeline = prepare(code, headers, &reserved).map_err(|error| RunError::Prepare(error))?;
+
+    eval(&pipeline, record, variables).map_err(|error| RunError::Evaluation(error))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    type TestResult = Result<DynamicValue, RunError>;
+
+    fn eval_code(code: &str) -> TestResult {
+        let mut headers = ByteRecord::new();
+        headers.push_field(b"name");
+        headers.push_field(b"surname");
+        headers.push_field(b"a");
+        headers.push_field(b"b");
+
+        let mut record = ByteRecord::new();
+        record.push_field(b"john");
+        record.push_field(b"constantine");
+        record.push_field(b"34");
+        record.push_field(b"62");
+
+        let mut variables = Variables::new();
+        variables.insert(&"index", DynamicValue::Integer(2));
+
+        run(code, &headers, &record, &variables)
+    }
+
     #[test]
-    fn test_interpret() -> Result<(), ()> {
-        match prepare("trim", &ByteRecord::new(), &Vec::new()) {
-            Err(_) => Err(()),
-            Ok(pipeline) => {
-                let variables = Variables::new();
-
-                match interpret(&pipeline, &ByteRecord::new(), &variables) {
-                    Err(_) => return Err(()),
-                    Ok(value) => assert_eq!(value.truthy(), false),
-                }
-
-                Ok(())
-            }
-        }
+    fn test_interpret() {
+        assert_eq!(eval_code("typeof(name)"), Ok(DynamicValue::from("string")));
     }
 }
