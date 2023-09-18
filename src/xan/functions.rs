@@ -21,6 +21,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         // "concat" => concat(args),
         // "count" => count(args),
         // "eq" => number_compare(args, Ordering::is_eq),
+        "join" => join(args),
         // "len" => len(args),
         // "lower" => lower(args),
         // "not" => not(args),
@@ -81,6 +82,20 @@ fn split(args: BoundArguments) -> FunctionResult {
 // }
 
 // Lists
+fn join(args: BoundArguments) -> FunctionResult {
+    let (arg1, arg2) = args.get2()?;
+
+    let list = arg1.try_as_list()?;
+    let joiner = arg2.try_as_str()?;
+
+    let mut string_list: Vec<Cow<str>> = Vec::new();
+
+    for value in list {
+        string_list.push(value.try_as_str()?);
+    }
+
+    Ok(DynamicValue::from(string_list.join(&joiner)))
+}
 
 // // Arithmetics
 // fn add(args: BoundArguments) -> FunctionResult {

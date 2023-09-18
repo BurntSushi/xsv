@@ -267,4 +267,20 @@ mod tests {
     fn test_typeof() {
         assert_eq!(eval_code("typeof(name)"), Ok(DynamicValue::from("string")));
     }
+
+    #[test]
+    fn test_split_join() {
+        assert_eq!(
+            eval_code(r#"split(name, "o")"#),
+            Ok(DynamicValue::List(vec![
+                DynamicValue::from("j"),
+                DynamicValue::from("hn"),
+            ]))
+        );
+
+        assert_eq!(
+            eval_code(r#"split(name, "o") | join(_, "&")"#),
+            Ok(DynamicValue::from("j&hn"))
+        )
+    }
 }

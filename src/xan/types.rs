@@ -131,9 +131,28 @@ impl DynamicValue {
         }
     }
 
-    pub fn as_bytes(&self) -> Cow<[u8]> {
+    pub fn serialize_as_bytes(&self, plural_separator: &[u8]) -> Cow<[u8]> {
         match self {
-            Self::List(_) => unimplemented!(),
+            Self::List(list) => {
+                let mut bytes: Vec<u8> = Vec::new();
+
+                for value in list {
+                    let serialized_value = value.serialize_as_bytes(plural_separator);
+                    for byte in serialized_value.iter() {
+                        bytes.push(*byte);
+                    }
+
+                    for byte in plural_separator {
+                        bytes.push(*byte);
+                    }
+                }
+
+                for _ in plural_separator {
+                    bytes.pop();
+                }
+
+                Cow::Owned(bytes)
+            }
             Self::String(value) => Cow::Borrowed(value.as_bytes()),
             Self::Float(value) => Cow::Owned(value.to_string().into_bytes()),
             Self::Integer(value) => Cow::Owned(value.to_string().into_bytes()),
@@ -148,9 +167,26 @@ impl DynamicValue {
         }
     }
 
-    pub fn as_str(&self) -> Cow<str> {
-        match self {
-            Self::List(_) => unimplemented!(),
+    // pub fn as_bytes(&self) -> Cow<[u8]> {
+    //     match self {
+    //         Self::List(_) => unimplemented!(),
+    //         Self::String(value) => Cow::Borrowed(value.as_bytes()),
+    //         Self::Float(value) => Cow::Owned(value.to_string().into_bytes()),
+    //         Self::Integer(value) => Cow::Owned(value.to_string().into_bytes()),
+    //         Self::Boolean(value) => {
+    //             if *value {
+    //                 Cow::Borrowed(b"true")
+    //             } else {
+    //                 Cow::Borrowed(b"false")
+    //             }
+    //         }
+    //         Self::None => Cow::Borrowed(b""),
+    //     }
+    // }
+
+    pub fn try_as_str(&self) -> Result<Cow<str>, EvaluationError> {
+        Ok(match self {
+            Self::List(_) => return Err(EvaluationError::Cast),
             Self::String(value) => Cow::Borrowed(value),
             Self::Float(value) => Cow::Owned(value.to_string()),
             Self::Integer(value) => Cow::Owned(value.to_string()),
@@ -162,6 +198,13 @@ impl DynamicValue {
                 }
             }
             Self::None => Cow::Owned("".to_string()),
+        })
+    }
+
+    pub fn try_as_list(&self) -> Result<&Vec<DynamicValue>, EvaluationError> {
+        match self {
+            Self::List(list) => Ok(list),
+            _ => Err(EvaluationError::Cast),
         }
     }
 
@@ -349,13 +392,13 @@ impl<'a> BoundArguments<'a> {
     }
 
     pub fn get1_as_str(&'a self) -> Result<Cow<'a, str>, EvaluationError> {
-        self.get1().map(|value| value.as_str())
+        self.get1().and_then(|value| value.try_as_str())
     }
 
     pub fn get2_as_str(&self) -> Result<(Cow<str>, Cow<str>), EvaluationError> {
         let (a, b) = self.get2()?;
 
-        Ok((a.as_str(), b.as_str()))
+        Ok((a.try_as_str()?, b.try_as_str()?))
     }
 
     // pub fn pop1_str(self) -> Result<Cow<'a, str>, EvaluationError> {

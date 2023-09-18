@@ -81,7 +81,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     while rdr.read_byte_record(&mut record)? {
         variables.insert("index", DynamicValue::Integer(i));
         let value = eval(&pipeline, &record, &variables)?;
-        record.push_field(&value.as_bytes());
+        record.push_field(&value.serialize_as_bytes(b"|"));
         wtr.write_byte_record(&record)?;
         i += 1;
     }
