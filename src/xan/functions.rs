@@ -76,13 +76,32 @@ fn count(args: BoundArguments) -> FunctionResult {
 }
 
 fn concat(args: BoundArguments) -> FunctionResult {
-    let mut result = String::new();
+    args.validate_min_arity(1)?;
 
-    for arg in args.iter() {
-        result.push_str(&arg.try_as_str()?);
+    let mut args_iter = args.into_iter();
+    let first = args_iter.next().unwrap();
+
+    match first.as_ref() {
+        DynamicValue::List(list) => {
+            let mut result: Vec<DynamicValue> = list.clone();
+
+            for arg in args_iter {
+                result.push(arg.as_ref().clone());
+            }
+
+            Ok(DynamicValue::List(result))
+        }
+        value => {
+            let mut result = String::new();
+            result.push_str(&value.try_as_str()?);
+
+            for arg in args_iter {
+                result.push_str(&arg.try_as_str()?);
+            }
+
+            Ok(DynamicValue::from(result))
+        }
     }
-
-    Ok(DynamicValue::from(result))
 }
 
 // Lists

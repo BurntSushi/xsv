@@ -365,13 +365,13 @@ impl<'a> BoundArguments<'a> {
         self.stack.push(arg);
     }
 
-    // pub fn validate_min_arity(&self, min: usize) -> Result<(), EvaluationError> {
-    //     if self.len() < min {
-    //         Err(EvaluationError::from_invalid_min_arity(min, self.len()))
-    //     } else {
-    //         Ok(())
-    //     }
-    // }
+    pub fn validate_min_arity(&self, min: usize) -> Result<(), EvaluationError> {
+        if self.len() < min {
+            Err(EvaluationError::from_invalid_min_arity(min, self.len()))
+        } else {
+            Ok(())
+        }
+    }
 
     pub fn get1(&'a self) -> Result<&'a BoundArgument, EvaluationError> {
         match self.stack.get(0) {
@@ -414,16 +414,12 @@ impl<'a> BoundArguments<'a> {
 
     pub fn get2_as_numbers(&self) -> Result<(DynamicNumber, DynamicNumber), EvaluationError> {
         let (a, b) = self.get2()?;
-
-        let v: Vec<String> = Vec::new();
-        let i = v.iter();
-
         Ok((a.try_as_number()?, b.try_as_number()?))
     }
 
-    pub fn iter(&self) -> BoundArgumentsIterator {
-        BoundArgumentsIterator(self.stack.iter())
-    }
+    // pub fn iter(&self) -> BoundArgumentsIterator {
+    //     BoundArgumentsIterator(self.stack.iter())
+    // }
 }
 
 pub struct BoundArgumentsIterator<'a>(std::slice::Iter<'a, BoundArgument<'a>>);
@@ -433,5 +429,24 @@ impl<'a> Iterator for BoundArgumentsIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
+    }
+}
+
+pub struct BoundArgumentsIntoIterator<'a>(std::vec::IntoIter<BoundArgument<'a>>);
+
+impl<'a> Iterator for BoundArgumentsIntoIterator<'a> {
+    type Item = BoundArgument<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+}
+
+impl<'a> IntoIterator for BoundArguments<'a> {
+    type Item = BoundArgument<'a>;
+    type IntoIter = BoundArgumentsIntoIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        BoundArgumentsIntoIterator(self.stack.into_iter())
     }
 }
