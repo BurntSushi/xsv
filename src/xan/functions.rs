@@ -17,7 +17,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     (match name {
         "add" => add(args),
         // "and" => and(args),
-        // "coalesce" => coalesce(args),
+        "coalesce" => coalesce(args),
         "concat" => concat(args),
         "count" => count(args),
         // "eq" => number_compare(args, Ordering::is_eq),
@@ -126,18 +126,18 @@ fn add(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(a + b))
 }
 
-// // Utilities
-// fn coalesce(args: BoundArguments) -> FunctionResult {
-//     for arg in args {
-//         if arg.truthy() {
-//             return Ok(arg);
-//         }
-//     }
+// Utilities
+fn coalesce(args: BoundArguments) -> FunctionResult {
+    for arg in args {
+        if arg.truthy() {
+            return Ok(arg.into_owned());
+        }
+    }
 
-//     Ok(DynamicValue::None)
-// }
+    Ok(DynamicValue::None)
+}
 
-// // Boolean
+// Boolean
 // fn not(args: BoundArguments) -> FunctionResult {
 //     Ok(DynamicValue::from(!args.pop1_bool()?))
 // }
@@ -152,7 +152,7 @@ fn add(args: BoundArguments) -> FunctionResult {
 //     Ok(DynamicValue::from(a || b))
 // }
 
-// // Comparison
+// Comparison
 // fn number_compare<F>(args: BoundArguments, validate: F) -> FunctionResult
 // where
 //     F: FnOnce(Ordering) -> bool,
@@ -165,7 +165,7 @@ fn add(args: BoundArguments) -> FunctionResult {
 //     }))
 // }
 
-// // IO
+// IO
 // fn pathjoin(args: BoundArguments) -> FunctionResult {
 //     args.validate_min_arity(2)?;
 

@@ -445,4 +445,12 @@ mod tests {
             Ok(DynamicValue::from("john smith"))
         );
     }
+
+    #[test]
+    fn test_coalesce() {
+        assert_eq!(
+            eval_code(r#"coalesce(null, false, "test")"#),
+            Ok(DynamicValue::from("test"))
+        );
+    }
 }
