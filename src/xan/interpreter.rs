@@ -235,7 +235,7 @@ mod tests {
         match prepare("trim", &ByteRecord::new(), &Vec::new()) {
             Err(_) => Err(()),
             Ok(pipeline) => {
-                let variables = BTreeMap::new();
+                let variables = Variables::new();
 
                 match interpret(&pipeline, &ByteRecord::new(), &variables) {
                     Err(_) => return Err(()),
