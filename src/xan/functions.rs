@@ -19,11 +19,11 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         // "and" => and(args),
         // "coalesce" => coalesce(args),
         // "concat" => concat(args),
-        // "count" => count(args),
+        "count" => count(args),
         // "eq" => number_compare(args, Ordering::is_eq),
         "join" => join(args),
         "len" => len(args),
-        // "lower" => lower(args),
+        "lower" => lower(args),
         // "not" => not(args),
         // "or" => or(args),
         // "pathjoin" => pathjoin(args),
@@ -31,7 +31,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "split" => split(args),
         "trim" => trim(args),
         "typeof" => type_of(args),
-        // "upper" => upper(args),
+        "upper" => upper(args),
         _ => Err(EvaluationError::UnknownFunction(name.to_string())),
     })
     .map(|value| Cow::Owned(value))
@@ -52,13 +52,13 @@ fn split(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(splitted))
 }
 
-// fn lower(args: BoundArguments) -> FunctionResult {
-//     Ok(DynamicValue::from(args.pop1_str()?.to_lowercase()))
-// }
+fn lower(args: BoundArguments) -> FunctionResult {
+    Ok(DynamicValue::from(args.get1_as_str()?.to_lowercase()))
+}
 
-// fn upper(args: BoundArguments) -> FunctionResult {
-//     Ok(DynamicValue::from(args.pop1_str()?.to_uppercase()))
-// }
+fn upper(args: BoundArguments) -> FunctionResult {
+    Ok(DynamicValue::from(args.get1_as_str()?.to_uppercase()))
+}
 
 fn len(args: BoundArguments) -> FunctionResult {
     let arg = args.get1()?;
@@ -69,11 +69,11 @@ fn len(args: BoundArguments) -> FunctionResult {
     }))
 }
 
-// fn count(args: BoundArguments) -> FunctionResult {
-//     let (string, pattern) = args.pop2_str()?;
+fn count(args: BoundArguments) -> FunctionResult {
+    let (string, pattern) = args.get2_as_str()?;
 
-//     Ok(DynamicValue::from(string.matches(pattern.as_ref()).count()))
-// }
+    Ok(DynamicValue::from(string.matches(pattern.as_ref()).count()))
+}
 
 // fn concat(args: BoundArguments) -> FunctionResult {
 //     let mut result = String::new();

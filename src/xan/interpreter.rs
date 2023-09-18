@@ -372,7 +372,7 @@ mod tests {
 
         let mut record = ByteRecord::new();
         record.push_field(b"john");
-        record.push_field(b"constantine");
+        record.push_field(b"SMITH");
         record.push_field(b"34");
         record.push_field(b"62");
 
@@ -415,5 +415,28 @@ mod tests {
             eval_code(r#"split(name, "o") | join(_, "&")"#),
             Ok(DynamicValue::from("j&hn"))
         )
+    }
+
+    #[test]
+    fn test_add() {
+        assert_eq!(eval_code("add(a, b)"), Ok(DynamicValue::Integer(96)));
+    }
+
+    #[test]
+    fn test_lower() {
+        assert_eq!(eval_code("lower(surname)"), Ok(DynamicValue::from("smith")));
+    }
+
+    #[test]
+    fn test_upper() {
+        assert_eq!(eval_code("upper(name)"), Ok(DynamicValue::from("JOHN")));
+    }
+
+    #[test]
+    fn test_count() {
+        assert_eq!(
+            eval_code(r#"count(name, "h")"#),
+            Ok(DynamicValue::Integer(1))
+        );
     }
 }
