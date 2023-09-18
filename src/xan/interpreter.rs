@@ -2,14 +2,15 @@ use std::borrow::Cow;
 
 use csv::ByteRecord;
 
-use xan::error::{EvaluationError, PrepareError, RunError};
-use xan::functions::call;
-use xan::parser::{parse, Argument, Pipeline};
-use xan::types::{BoundArguments, ColumIndexation, DynamicValue, EvaluationResult, Variables};
+use super::error::{EvaluationError, PrepareError, RunError};
+use super::functions::call;
+use super::parser::{parse, Argument, FunctionCall, Pipeline};
+use super::types::{BoundArguments, ColumIndexation, DynamicValue, EvaluationResult, Variables};
 
 // TODO: unfurling the pipeline for the first argument should clone less
 // NOTE: unfurling = cutting sequence until there is an underscore as first step
 // NOTE: then it means renesting the sequence if there is a single underscore reference
+#[derive(Debug)]
 enum ConcreteArgument {
     Variable(String),
     Column(usize),
@@ -52,6 +53,7 @@ impl ConcreteArgument {
     }
 }
 
+#[derive(Debug)]
 pub struct ConcreteFunctionCall {
     name: String,
     args: Vec<ConcreteArgument>,
@@ -95,7 +97,7 @@ fn concretize_argument(
             }
 
             ConcreteArgument::Call(ConcreteFunctionCall {
-                name: call.name,
+                name: call.name.to_lowercase(),
                 args: concrete_args,
             })
         }
@@ -117,12 +119,41 @@ fn concretize_pipeline(
         }
 
         concrete_pipeline.push(ConcreteFunctionCall {
-            name: function_call.name,
+            name: function_call.name.to_lowercase(),
             args: concrete_arguments,
         });
     }
 
     Ok(concrete_pipeline)
+}
+
+fn has_underscore(function_call: &FunctionCall) -> bool {
+    function_call.args.iter().any(|arg| match arg {
+        Argument::Call(sub_function_call) => has_underscore(sub_function_call),
+        Argument::Underscore => true,
+        _ => false,
+    })
+}
+
+// Example: trim(a) | add(a, b) | trim | add(a, b) | len -> add(a, b) | len
+fn filter_irrelevant_pipes(pipeline: Pipeline) -> Pipeline {
+    let mut split_point: Option<usize> = None;
+
+    for i in 0..pipeline.len() {
+        match pipeline.get(i + 1) {
+            None => continue,
+            Some(next_function_call) => {
+                if has_underscore(next_function_call) {
+                    split_point = Some(i);
+                }
+            }
+        }
+    }
+
+    match split_point {
+        None => pipeline,
+        Some(index) => pipeline[index..].to_vec(),
+    }
 }
 
 pub fn prepare(
@@ -242,6 +273,30 @@ pub fn run(
 mod tests {
     use super::*;
 
+    #[test]
+    fn test_filter_irrelevant_pipes() {
+        // Should give: add(a, b) | len
+        let pipeline = parse(&"trim(a) | add(a, b) | trim | add(a, b) | len").unwrap();
+        let pipeline = filter_irrelevant_pipes(pipeline);
+
+        assert_eq!(
+            pipeline,
+            vec![
+                FunctionCall {
+                    name: "add".to_string(),
+                    args: vec![
+                        Argument::Identifier("a".to_string()),
+                        Argument::Identifier("b".to_string())
+                    ]
+                },
+                FunctionCall {
+                    name: "len".to_string(),
+                    args: vec![Argument::Underscore]
+                }
+            ]
+        )
+    }
+
     type TestResult = Result<DynamicValue, RunError>;
 
     fn eval_code(code: &str) -> TestResult {
@@ -266,6 +321,7 @@ mod tests {
     #[test]
     fn test_typeof() {
         assert_eq!(eval_code("typeof(name)"), Ok(DynamicValue::from("string")));
+        assert_eq!(eval_code("TYPEOF(name)"), Ok(DynamicValue::from("string")));
     }
 
     #[test]

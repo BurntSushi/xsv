@@ -5,8 +5,8 @@ use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 
-use xan::error::EvaluationError;
-use xan::types::{BoundArguments, DynamicValue, EvaluationResult};
+use super::error::EvaluationError;
+use super::types::{BoundArguments, DynamicValue, EvaluationResult};
 
 type FunctionResult = Result<DynamicValue, EvaluationError>;
 

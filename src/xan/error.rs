@@ -1,4 +1,4 @@
-use xan::types::ColumIndexation;
+use super::types::ColumIndexation;
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum PrepareError {

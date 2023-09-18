@@ -12,7 +12,7 @@ use nom::{
 
 use xan::types::ColumIndexation;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Argument {
     Identifier(String),
     Indexation(ColumIndexation),
@@ -25,7 +25,7 @@ pub enum Argument {
     Null,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FunctionCall {
     pub name: String,
     pub args: Vec<Argument>,

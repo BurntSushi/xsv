@@ -6,10 +6,10 @@ use std::ops::Add;
 
 use csv;
 
-use xan::error::EvaluationError;
-use xan::utils::downgrade_float;
+use super::error::EvaluationError;
+use super::utils::downgrade_float;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ColumIndexation {
     ByName(String),
     ByNameAndNth((String, usize)),
