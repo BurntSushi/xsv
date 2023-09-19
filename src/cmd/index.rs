@@ -45,13 +45,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
 
     let pidx = match args.flag_output {
-        None => util::idx_path(&Path::new(&args.arg_input)),
+        None => util::idx_path(Path::new(&args.arg_input)),
         Some(p) => PathBuf::from(&p),
     };
 
     let rconfig = Config::new(&Some(args.arg_input)).delimiter(args.flag_delimiter);
     let mut rdr = rconfig.reader_file()?;
-    let mut wtr = io::BufWriter::new(fs::File::create(&pidx)?);
+    let mut wtr = io::BufWriter::new(fs::File::create(pidx)?);
     RandomAccessSimple::create(&mut rdr, &mut wtr)?;
     Ok(())
 }

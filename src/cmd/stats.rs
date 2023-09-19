@@ -113,12 +113,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
 
     if !args.flag_pretty
-        && (!args.flag_min.is_none()
-            || !args.flag_max.is_none()
-            || !args.flag_nans.is_none()
-            || !args.flag_bins.is_none()
-            || !args.flag_precision.is_none()
-            || !args.flag_screen_size.is_none())
+        && (args.flag_min.is_some()
+            || args.flag_max.is_some()
+            || args.flag_nans.is_some()
+            || args.flag_bins.is_some()
+            || args.flag_precision.is_some()
+            || args.flag_screen_size.is_some())
     {
         return fail!("`--screen-size`, `--precision`, `--bins`, `--nans`, `--max` and `--min` can only be used with `--pretty`");
     }
@@ -139,7 +139,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     if !args.flag_pretty {
         let stats = args.stats_to_records(stats);
         wtr.write_record(&args.stat_headers())?;
-        let fields = headers.iter().zip(stats.into_iter());
+        let fields = headers.iter().zip(stats);
         for (i, (header, stat)) in fields.enumerate() {
             let header = if args.flag_no_headers {
                 i.to_string().into_bytes()
@@ -154,7 +154,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 
     if args.flag_output.is_none() {
-        let fields = headers.iter().zip(stats.into_iter());
+        let fields = headers.iter().zip(stats);
         for (i, (header, stat)) in fields.enumerate() {
             let header = if args.flag_no_headers {
                 i.to_string()
@@ -170,8 +170,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     wtr.write_record(&args.stat_headers())?;
     let fields = headers
         .iter()
-        .zip(stats_record.into_iter())
-        .zip(stats.into_iter())
+        .zip(stats_record)
+        .zip(stats)
         .map(|((x, y), z)| (x, y, z));
     for (i, (header, stat_record, stat)) in fields.enumerate() {
         let header_record = if args.flag_no_headers {
@@ -225,7 +225,7 @@ impl Args {
             });
         }
         drop(send);
-        Ok((headers, merge_all(recv).unwrap_or_else(Vec::new)))
+        Ok((headers, merge_all(recv).unwrap_or_default()))
     }
 
     fn stats_to_records(&self, stats: Vec<Stats>) -> Vec<csv::StringRecord> {
@@ -467,17 +467,17 @@ impl Args {
             j += 1;
         }
         if nb_nans != 0 && nans {
-            lines_done += nb_nans as u64;
-            bar.print_bar("NaNs".to_string(), nb_nans as u64, j);
+            lines_done += nb_nans;
+            bar.print_bar("NaNs".to_string(), nb_nans, j);
             j += 1;
         }
         if nb_nulls != 0 && self.flag_nulls {
-            lines_done += nb_nulls as u64;
-            bar.print_bar("NULLs".to_string(), nb_nulls as u64, j);
+            lines_done += nb_nulls;
+            bar.print_bar("NULLs".to_string(), nb_nulls, j);
         }
 
         let resume = " ".repeat(bar.size_labels + 1)
-            + &"Distribution for ".to_owned()
+            + "Distribution for "
             + &format_number(lines_done)
             + "/"
             + &bar.lines_total_str
@@ -589,9 +589,9 @@ impl Stats {
             },
             TNull => {
                 if self.which.include_nulls {
-                    self.online.as_mut().map(|v| {
+                    if let Some(v) = self.online.as_mut() {
                         v.add_null();
-                    });
+                    }
                 }
                 match self.histogram.as_mut() {
                     None => {}
@@ -604,9 +604,9 @@ impl Stats {
             },
             TFloat | TInteger => {
                 let n = from_bytes::<f64>(sample).unwrap();
-                self.median.as_mut().map(|v| {
+                if let Some(v) = self.median.as_mut() {
                     v.add(n);
-                });
+                }
                 match self.histogram.as_mut() {
                     None => {}
                     Some(h) => {
@@ -692,8 +692,7 @@ impl Stats {
             }
             Some(ref mut v) => {
                 if self.which.mode {
-                    let lossy =
-                        |s: Vec<u8>| -> String { String::from_utf8_lossy(&*s).into_owned() };
+                    let lossy = |s: Vec<u8>| -> String { String::from_utf8_lossy(&s).into_owned() };
                     pieces.push(v.mode().map_or("N/A".to_owned(), lossy));
                 }
                 if self.which.cardinality {
@@ -740,10 +739,10 @@ impl FieldType {
             Err(_) => return TUnknown,
             Ok(s) => s,
         };
-        if let Ok(_) = string.parse::<i64>() {
+        if string.parse::<i64>().is_ok() {
             return TInteger;
         }
-        if let Ok(_) = string.parse::<f64>() {
+        if string.parse::<f64>().is_ok() {
             return TFloat;
         }
         TUnicode

@@ -333,8 +333,8 @@ impl Args {
     ) -> CliResult<(Selection, Selection)> {
         let headers1 = rdr1.byte_headers()?;
         let headers2 = rdr2.byte_headers()?;
-        let select1 = rconf1.selection(&*headers1)?;
-        let select2 = rconf2.selection(&*headers2)?;
+        let select1 = rconf1.selection(headers1)?;
+        let select2 = rconf2.selection(headers2)?;
         if select1.len() != select2.len() {
             return fail!(format!(
                 "Column selections must have the same number of columns, \
@@ -434,7 +434,7 @@ impl<R> fmt::Debug for ValueIndex<R> {
 }
 
 fn get_row_key(sel: &Selection, row: &csv::ByteRecord, casei: bool) -> Vec<ByteString> {
-    sel.select(row).map(|v| transform(&v, casei)).collect()
+    sel.select(row).map(|v| transform(v, casei)).collect()
 }
 
 fn transform(bs: &[u8], casei: bool) -> ByteString {

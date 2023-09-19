@@ -56,7 +56,7 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
-    let pattern = RegexBuilder::new(&*args.arg_regex)
+    let pattern = RegexBuilder::new(&args.arg_regex)
         .case_insensitive(args.flag_ignore_case)
         .build()?;
     let exact_pattern: &[u8] = args.arg_regex.as_bytes();
@@ -100,7 +100,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             m = !m;
         }
 
-        if let Some(_) = args.flag_flag {
+        if args.flag_flag.is_some() {
             record.push_field(if m { b"1" } else { b"0" });
             wtr.write_byte_record(&record)?;
         } else if m {

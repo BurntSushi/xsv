@@ -363,11 +363,11 @@ fn format_number(count: u64) -> String {
 }
 
 fn cut_properly(value: String, size_labels: usize) -> String {
-    let mut value = value.replace("\n", " ");
-    value = value.replace("\r", " ");
-    value = value.replace("\t", " ");
-    value = value.replace("\u{200F}", "");
-    value = value.replace("\u{200E}", "");
+    let mut value = value.replace('\n', " ");
+    value = value.replace('\r', " ");
+    value = value.replace('\t', " ");
+    value = value.replace('\u{200F}', "");
+    value = value.replace('\u{200E}', "");
     let mut value_str_len = UnicodeWidthStr::width(&value[..]);
     if value_str_len >= size_labels {
         let moved_value = value.clone();
@@ -381,7 +381,8 @@ fn cut_properly(value: String, size_labels: usize) -> String {
         }
         value += "…";
     }
-    return value;
+
+    value
 }
 
 struct Bar {
@@ -441,7 +442,7 @@ impl Bar {
     }
 
     fn print_bar(&mut self, value: String, count: u64, j: usize) {
-        let square_chars = vec!["", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"];
+        let square_chars = ["", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"];
 
         let value =
             " ".repeat(self.size_labels - UnicodeWidthStr::width(&value[..])) + &value.to_string();
@@ -458,7 +459,7 @@ impl Bar {
         if remainder % 8 != 0 {
             nb_square += 1;
         }
-        let empty = ".".repeat(self.size_bar_cols - nb_square as usize);
+        let empty = ".".repeat(self.size_bar_cols - nb_square);
 
         let colored_bar_str = if j % 2 == 0 {
             bar_str.dimmed().white()

@@ -121,7 +121,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                     }
                     _ => {
                         if let Some(mut to_flush) = line_buffer {
-                            to_flush.push_field(&counter.to_string().as_bytes());
+                            to_flush.push_field(counter.to_string().as_bytes());
                             wtr.write_byte_record(&to_flush)?;
                             line_buffer = Some(r.clone());
                             counter = 1;
@@ -145,7 +145,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
     }
     if let Some(mut to_flush) = line_buffer {
-        to_flush.push_field(&counter.to_string().as_bytes());
+        to_flush.push_field(counter.to_string().as_bytes());
         wtr.write_byte_record(&to_flush)?;
     }
     Ok(wtr.flush()?)

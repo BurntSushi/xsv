@@ -92,7 +92,7 @@ where
 {
     let mut all_indices = (0..idx.count()).collect::<Vec<_>>();
     let mut rng = ::rand::thread_rng();
-    rng.shuffle(&mut *all_indices);
+    rng.shuffle(&mut all_indices);
 
     let mut sampled = Vec::with_capacity(sample_size as usize);
     for i in all_indices.into_iter().take(sample_size as usize) {

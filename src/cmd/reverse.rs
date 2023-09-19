@@ -49,7 +49,7 @@ struct Args {
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
 
-    let ref mut rconfig = Config::new(&args.arg_input)
+    let rconfig = &mut Config::new(&args.arg_input)
         .delimiter(args.flag_delimiter)
         .no_headers(true);
 
@@ -72,12 +72,12 @@ fn run_with_memory_efficiency(rconfig: &mut Config, args: Args) -> CliResult<()>
         position.clone().byte()
     };
 
-    let reverse_reader = rconfig.io_reader_for_reverse_reading(headers_size as u64);
+    let reverse_reader = rconfig.io_reader_for_reverse_reading(headers_size);
     match reverse_reader {
         Err(_) => {
-            let msg = format!(
-                "can't use provided input : needs to be loaded in the RAM using -m, --in-memory flag"
-            );
+            let msg =
+                "can't use provided input : needs to be loaded in the RAM using -m, --in-memory flag".to_string();
+
             Err(CliError::from(io::Error::new(
                 io::ErrorKind::Unsupported,
                 msg,
@@ -89,20 +89,17 @@ fn run_with_memory_efficiency(rconfig: &mut Config, args: Args) -> CliResult<()>
 
             if !args.flag_no_headers && headers_size > 0 {
                 let headers = config_csv_reader.byte_headers()?;
-                wtr.write_byte_record(&headers)?;
+                wtr.write_byte_record(headers)?;
             }
 
             for r in reverse_csv_reader.byte_records() {
-                match r {
-                    Ok(record) => {
-                        let new_record: Vec<Vec<u8>> = record
-                            .iter()
-                            .rev()
-                            .map(|b| b.iter().rev().map(|c| *c).collect())
-                            .collect();
-                        wtr.write_record(new_record)?;
-                    }
-                    Err(_) => {}
+                if let Ok(record) = r {
+                    let new_record: Vec<Vec<u8>> = record
+                        .iter()
+                        .rev()
+                        .map(|b| b.iter().rev().copied().collect())
+                        .collect();
+                    wtr.write_record(new_record)?;
                 }
             }
 
