@@ -73,7 +73,7 @@ impl Read for ReverseRead {
         let buff_size = buf.len() as u64;
 
         if self.ptr == self.offset {
-            return Ok(0 as usize);
+            return Ok(0);
         }
 
         if self.offset + buff_size > self.ptr {
@@ -84,16 +84,18 @@ impl Read for ReverseRead {
             buf[0..e].reverse();
 
             self.ptr = self.offset;
-            return Ok(e as usize);
+
+            Ok(e)
         } else {
             let new_position = self.ptr - buff_size;
 
-            self.input.seek(SeekFrom::Start(new_position as u64))?;
+            self.input.seek(SeekFrom::Start(new_position))?;
             self.input.read(buf)?;
             buf.reverse();
 
-            self.ptr -= buff_size as u64;
-            return Ok(buff_size as usize);
+            self.ptr -= buff_size;
+
+            Ok(buff_size as usize)
         }
     }
 }
@@ -277,10 +279,10 @@ impl Config {
                     // Some(format!("index file: {}", p.display()))
                 ));
             }
-            (&Some(ref p), &None) => {
+            (Some(p), &None) => {
                 // We generally don't want to report an error here, since we're
                 // passively trying to find an index.
-                let idx_file = match fs::File::open(&util::idx_path(p)) {
+                let idx_file = match fs::File::open(util::idx_path(p)) {
                     // TODO: Maybe we should report an error if the file exists
                     // but is not readable.
                     Err(_) => return Ok(None),
@@ -288,7 +290,7 @@ impl Config {
                 };
                 (fs::File::open(p)?, idx_file)
             }
-            (&Some(ref p), &Some(ref ip)) => (fs::File::open(p)?, fs::File::open(ip)?),
+            (Some(p), Some(ip)) => (fs::File::open(p)?, fs::File::open(ip)?),
         };
         // If the CSV data was last modified after the index file was last
         // modified, then return an error and demand the user regenerate the
@@ -327,19 +329,17 @@ impl Config {
     }
 
     pub fn io_reader_for_random_access(&self) -> io::Result<Box<dyn SeekRead + 'static>> {
-        let msg = format!("can't use provided input because it does not allow for random access (e.g. stdin or piping)");
+        let msg = "can't use provided input because it does not allow for random access (e.g. stdin or piping)".to_string();
         match self.path {
-            None => {
-                return Err(io::Error::new(io::ErrorKind::Unsupported, msg));
-            }
+            None => Err(io::Error::new(io::ErrorKind::Unsupported, msg)),
             Some(ref p) => match fs::File::open(p) {
-                Ok(x) => match x.borrow().seek(SeekFrom::Current(0)) {
-                    Ok(_) => return Ok(Box::new(x)),
-                    Err(_) => return Err(io::Error::new(io::ErrorKind::Unsupported, msg)),
+                Ok(x) => match x.borrow().stream_position() {
+                    Ok(_) => Ok(Box::new(x)),
+                    Err(_) => Err(io::Error::new(io::ErrorKind::Unsupported, msg)),
                 },
                 Err(err) => {
                     let msg = format!("failed to open {}: {}", p.display(), err);
-                    return Err(io::Error::new(io::ErrorKind::NotFound, msg));
+                    Err(io::Error::new(io::ErrorKind::NotFound, msg))
                 }
             },
         }
@@ -349,22 +349,20 @@ impl Config {
         &self,
         offset: u64,
     ) -> io::Result<Box<dyn io::Read + 'static>> {
-        let msg = format!("can't use provided input because it does not allow for random access (e.g. stdin or piping)");
+        let msg = "can't use provided input because it does not allow for random access (e.g. stdin or piping)".to_string();
         match self.path {
-            None => {
-                return Err(io::Error::new(io::ErrorKind::Unsupported, msg));
-            }
+            None => Err(io::Error::new(io::ErrorKind::Unsupported, msg)),
             Some(ref p) => match fs::File::open(p) {
-                Ok(x) => match x.borrow().seek(SeekFrom::Current(0)) {
+                Ok(x) => match x.borrow().stream_position() {
                     Ok(_) => {
                         let filesize = x.metadata()?.len();
-                        return Ok(Box::new(ReverseRead::build(Box::new(x), filesize, offset)));
+                        Ok(Box::new(ReverseRead::build(Box::new(x), filesize, offset)))
                     }
-                    Err(_) => return Err(io::Error::new(io::ErrorKind::Unsupported, msg)),
+                    Err(_) => Err(io::Error::new(io::ErrorKind::Unsupported, msg)),
                 },
                 Err(err) => {
                     let msg = format!("failed to open {}: {}", p.display(), err);
-                    return Err(io::Error::new(io::ErrorKind::NotFound, msg));
+                    Err(io::Error::new(io::ErrorKind::NotFound, msg))
                 }
             },
         }

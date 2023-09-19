@@ -10,23 +10,23 @@ use super::error::EvaluationError;
 use super::utils::downgrade_float;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum ColumIndexation {
-    ByName(String),
-    ByNameAndNth((String, usize)),
-    ByPos(usize),
+pub enum ColumIndexationBy {
+    Name(String),
+    NameAndNth((String, usize)),
+    Pos(usize),
 }
 
-impl ColumIndexation {
+impl ColumIndexationBy {
     pub fn find_column_index(&self, headers: &csv::ByteRecord) -> Option<usize> {
         match self {
-            Self::ByPos(i) => {
+            Self::Pos(i) => {
                 if i >= &headers.len() {
                     None
                 } else {
                     Some(*i)
                 }
             }
-            Self::ByName(name) => {
+            Self::Name(name) => {
                 let name_bytes = name.as_bytes();
 
                 for (i, cell) in headers.iter().enumerate() {
@@ -37,7 +37,7 @@ impl ColumIndexation {
 
                 None
             }
-            Self::ByNameAndNth((name, pos)) => {
+            Self::NameAndNth((name, pos)) => {
                 let mut c = *pos;
 
                 let name_bytes = name.as_bytes();
@@ -141,7 +141,7 @@ impl DynamicValue {
                     bytes.extend_from_slice(plural_separator);
                 }
 
-                if bytes.len() > 0 {
+                if !bytes.is_empty() {
                     bytes.truncate(bytes.len() - plural_separator.len());
                 }
 
@@ -220,8 +220,8 @@ impl DynamicValue {
 
     pub fn truthy(&self) -> bool {
         match self {
-            Self::List(value) => value.len() > 0,
-            Self::String(value) => value.len() > 0,
+            Self::List(value) => !value.is_empty(),
+            Self::String(value) => !value.is_empty(),
             Self::Float(value) => value == &0.0,
             Self::Integer(value) => value != &0,
             Self::Boolean(value) => *value,

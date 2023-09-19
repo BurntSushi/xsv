@@ -329,9 +329,9 @@ impl From<xan::PrepareError> for CliError {
     fn from(err: xan::PrepareError) -> CliError {
         CliError::Other(match err {
             xan::PrepareError::ColumnNotFound(indexation) => match indexation {
-                xan::ColumIndexation::ByName(name) => format!("cannot find column \"{}\"", name),
-                xan::ColumIndexation::ByPos(pos) => format!("column {} out of range", pos),
-                xan::ColumIndexation::ByNameAndNth((name, nth)) => {
+                xan::ColumIndexationBy::Name(name) => format!("cannot find column \"{}\"", name),
+                xan::ColumIndexationBy::Pos(pos) => format!("column {} out of range", pos),
+                xan::ColumIndexationBy::NameAndNth((name, nth)) => {
                     format!("cannot find column (\"{}\", {})", name, nth)
                 }
             },

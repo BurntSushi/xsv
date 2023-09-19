@@ -80,7 +80,7 @@ impl fmt::Debug for SelectColumns {
 impl<'de> Deserialize<'de> for SelectColumns {
     fn deserialize<D: Deserializer<'de>>(d: D) -> Result<SelectColumns, D::Error> {
         let raw = String::deserialize(d)?;
-        SelectColumns::parse(&raw).map_err(|e| D::Error::custom(&e))
+        SelectColumns::parse(&raw).map_err(D::Error::custom)
     }
 }
 
@@ -279,7 +279,7 @@ impl OneSelector {
     fn index(&self, first_record: &csv::ByteRecord, use_names: bool) -> Result<usize, String> {
         match *self {
             OneSelector::Start => Ok(0),
-            OneSelector::End => Ok(if first_record.len() == 0 {
+            OneSelector::End => Ok(if first_record.is_empty() {
                 0
             } else {
                 first_record.len() - 1
@@ -375,7 +375,7 @@ impl Selection {
     }
 
     pub fn normal(&self) -> NormalSelection {
-        let &Selection(ref inds) = self;
+        let Selection(inds) = self;
         if inds.is_empty() {
             return NormalSelection(vec![]);
         }
@@ -414,7 +414,7 @@ pub type _NormalFilterMap<'a, T, I> =
 pub type _NormalGetField<T> = fn(&mut &[bool], (usize, T)) -> Option<Option<T>>;
 
 impl NormalSelection {
-    pub fn select<'a, T, I>(&'a self, row: I) -> _NormalFilterMap<'a, T, I>
+    pub fn select<T, I>(&self, row: I) -> _NormalFilterMap<T, I>
     where
         I: Iterator<Item = T>,
     {

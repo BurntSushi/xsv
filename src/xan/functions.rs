@@ -34,7 +34,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "upper" => upper(args),
         _ => Err(EvaluationError::UnknownFunction(name.to_string())),
     })
-    .map(|value| Cow::Owned(value))
+    .map(Cow::Owned)
 }
 
 // Strings
@@ -44,10 +44,7 @@ fn trim(args: BoundArguments) -> FunctionResult {
 
 fn split(args: BoundArguments) -> FunctionResult {
     let (to_split, pattern) = args.get2_as_str()?;
-    let splitted: Vec<DynamicValue> = to_split
-        .split(&*pattern)
-        .map(|v| DynamicValue::from(v))
-        .collect();
+    let splitted: Vec<DynamicValue> = to_split.split(&*pattern).map(DynamicValue::from).collect();
 
     Ok(DynamicValue::from(splitted))
 }

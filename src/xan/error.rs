@@ -1,9 +1,9 @@
-use super::types::ColumIndexation;
+use super::types::ColumIndexationBy;
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum PrepareError {
     ParseError(String),
-    ColumnNotFound(ColumIndexation),
+    ColumnNotFound(ColumIndexationBy),
 }
 
 #[cfg_attr(test, derive(Debug, PartialEq))]

@@ -75,7 +75,7 @@ stats options:
     --max <arg>            The maximum from which we start to display
                            the histogram. When not set, will take the
                            maximum from the csv file.
-    
+
 
 Common options:
     -h, --help             Display this message
@@ -718,9 +718,13 @@ impl Commute for Stats {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Default)]
 enum FieldType {
     TUnknown,
+    // The default is the most specific type.
+    // Type inference proceeds by assuming the most specific type and then
+    // relaxing the type as counter-examples are found.
+    #[default]
     TNull,
     TUnicode,
     TFloat,
@@ -766,15 +770,6 @@ impl Commute for FieldType {
             (TUnicode, TFloat) | (TFloat, TUnicode) => TUnicode,
             (TUnicode, TInteger) | (TInteger, TUnicode) => TUnicode,
         };
-    }
-}
-
-impl Default for FieldType {
-    // The default is the most specific type.
-    // Type inference proceeds by assuming the most specific type and then
-    // relaxing the type as counter-examples are found.
-    fn default() -> FieldType {
-        TNull
     }
 }
 
@@ -849,7 +844,7 @@ impl Commute for TypedSum {
 
 /// TypedMinMax keeps track of minimum/maximum values for each possible type
 /// where min/max makes sense.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 struct TypedMinMax {
     strings: MinMax<Vec<u8>>,
     str_len: MinMax<usize>,
@@ -867,7 +862,7 @@ impl TypedMinMax {
         match typ {
             TUnicode | TUnknown | TNull => {}
             TFloat => {
-                let n = str::from_utf8(&*sample)
+                let n = str::from_utf8(sample)
                     .ok()
                     .and_then(|s| s.parse::<f64>().ok())
                     .unwrap();
@@ -875,7 +870,7 @@ impl TypedMinMax {
                 self.integers.add(n as i64);
             }
             TInteger => {
-                let n = str::from_utf8(&*sample)
+                let n = str::from_utf8(sample)
                     .ok()
                     .and_then(|s| s.parse::<i64>().ok())
                     .unwrap();
@@ -897,8 +892,8 @@ impl TypedMinMax {
             TNull => None,
             TUnicode | TUnknown => match (self.strings.min(), self.strings.max()) {
                 (Some(min), Some(max)) => {
-                    let min = String::from_utf8_lossy(&**min).to_string();
-                    let max = String::from_utf8_lossy(&**max).to_string();
+                    let min = String::from_utf8_lossy(min).to_string();
+                    let max = String::from_utf8_lossy(max).to_string();
                     Some((min, max))
                 }
                 _ => None,
@@ -911,17 +906,6 @@ impl TypedMinMax {
                 (Some(min), Some(max)) => Some((min.to_string(), max.to_string())),
                 _ => None,
             },
-        }
-    }
-}
-
-impl Default for TypedMinMax {
-    fn default() -> TypedMinMax {
-        TypedMinMax {
-            strings: Default::default(),
-            str_len: Default::default(),
-            integers: Default::default(),
-            floats: Default::default(),
         }
     }
 }
@@ -956,7 +940,8 @@ fn format_number(count: u64) -> String {
         }
         count_str += &count_chars[k].to_string();
     }
-    return count_str;
+
+    count_str
 }
 
 fn format_number_float(count: f64, mut precision: u8, ceil: bool) -> String {
@@ -970,7 +955,7 @@ fn format_number_float(count: f64, mut precision: u8, ceil: bool) -> String {
     let mut count_str = count.abs().to_string();
     let mut count_str_len = count_str.chars().count();
     let mut count_str_int_len = count_str_len;
-    if let Some(idx) = count_str.find(".") {
+    if let Some(idx) = count_str.find('.') {
         count_str_int_len = idx;
     }
     let count_chars: Vec<char> = count_str.chars().collect();
@@ -997,7 +982,8 @@ fn format_number_float(count: f64, mut precision: u8, ceil: bool) -> String {
     if neg {
         count_str = "-".to_string() + &count_str;
     }
-    return count_str;
+
+    count_str
 }
 
 fn ceil_float(value: f64, precision: u8) -> f64 {
@@ -1006,7 +992,8 @@ fn ceil_float(value: f64, precision: u8) -> f64 {
     } else {
         u64::pow(10, precision as u32) as f64
     };
-    return (value * mul).ceil() / mul;
+
+    (value * mul).ceil() / mul
 }
 
 fn floor_float(value: f64, precision: u8) -> f64 {
@@ -1015,7 +1002,8 @@ fn floor_float(value: f64, precision: u8) -> f64 {
     } else {
         u64::pow(10, precision as u32) as f64
     };
-    return (value * mul).floor() / mul;
+
+    (value * mul).floor() / mul
 }
 
 struct Bar {
@@ -1079,7 +1067,7 @@ impl Bar {
     }
 
     fn print_bar(&mut self, value: String, count: u64, j: usize) {
-        let square_chars = vec!["", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"];
+        let square_chars = ["", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"];
 
         let value = " ".repeat(self.size_labels - value.chars().count()) + &value.to_string();
         let mut count_str = format_number(count);
@@ -1095,7 +1083,7 @@ impl Bar {
         if remainder % 8 != 0 {
             nb_square += 1;
         }
-        let empty = ".".repeat(self.size_bar_cols - nb_square as usize);
+        let empty = ".".repeat(self.size_bar_cols - nb_square);
 
         let colored_bar_str = if j % 2 == 0 {
             bar_str.dimmed().white()

@@ -33,9 +33,9 @@ pub fn version() -> String {
     match (maj, min, pat, pre) {
         (Some(maj), Some(min), Some(pat), Some(pre)) => {
             if pre.is_empty() {
-                return format!("{}.{}.{}", maj, min, pat);
+                format!("{}.{}.{}", maj, min, pat)
             } else {
-                return format!("{}.{}.{}-{}", maj, min, pat, pre);
+                format!("{}.{}.{}-{}", maj, min, pat, pre)
             }
         }
         _ => "".to_owned(),
@@ -48,7 +48,7 @@ where
 {
     Docopt::new(usage)
         .and_then(|d| {
-            d.argv(argv.iter().map(|&x| x))
+            d.argv(argv.iter().copied())
                 .version(Some(version()))
                 .deserialize()
         })
@@ -72,7 +72,7 @@ pub fn many_configs(
                 .no_headers(no_headers)
         })
         .collect::<Vec<_>>();
-    errif_greater_one_stdin(&*confs)?;
+    errif_greater_one_stdin(&confs)?;
     Ok(confs)
 }
 
@@ -108,17 +108,17 @@ pub fn last_modified(md: &fs::Metadata) -> u64 {
     FileTime::from_last_modification_time(md).seconds_relative_to_1970()
 }
 
-pub fn condense<'a>(val: Cow<'a, [u8]>, n: Option<usize>) -> Cow<'a, [u8]> {
+pub fn condense(val: Cow<[u8]>, n: Option<usize>) -> Cow<[u8]> {
     match n {
         None => val,
         Some(n) => {
             let mut is_short_utf8 = false;
-            if let Ok(s) = str::from_utf8(&*val) {
+            if let Ok(s) = str::from_utf8(&val) {
                 if n >= s.chars().count() {
                     is_short_utf8 = true;
                 } else {
                     let mut s = s.chars().take(n - 1).collect::<String>();
-                    s.push_str("…");
+                    s.push('…');
                     return Cow::Owned(s.into_bytes());
                 }
             }
@@ -185,11 +185,11 @@ pub fn parse_timezone(tz: Option<String>) -> Result<Tz, String> {
 
 pub fn parse_date(date: &str, tz: Tz, input_fmt: &Option<String>) -> Result<DateTime<Utc>, String> {
     match input_fmt {
-        Some(fmt) => match tz.datetime_from_str(date, &fmt) {
+        Some(fmt) => match tz.datetime_from_str(date, fmt) {
             Ok(time) => Ok(time.with_timezone(&Utc)),
             _ => Err(format!("{} is not a valid format", fmt)),
         },
-        None => match parse_with_timezone(&date, &tz) {
+        None => match parse_with_timezone(date, &tz) {
             Ok(time) => Ok(time),
             _ => Err(format!("Time format could not be inferred for {}", date)),
         },

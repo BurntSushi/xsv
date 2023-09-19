@@ -5,7 +5,7 @@ use csv::ByteRecord;
 use super::error::{EvaluationError, PrepareError, RunError};
 use super::functions::call;
 use super::parser::{parse, Argument, FunctionCall, Pipeline};
-use super::types::{BoundArguments, ColumIndexation, DynamicValue, EvaluationResult, Variables};
+use super::types::{BoundArguments, ColumIndexationBy, DynamicValue, EvaluationResult, Variables};
 
 #[derive(Debug)]
 enum ConcreteArgument {
@@ -74,7 +74,7 @@ fn concretize_argument(
             if reserved.contains(&name.as_str()) {
                 ConcreteArgument::Variable(name)
             } else {
-                let indexation = ColumIndexation::ByName(name);
+                let indexation = ColumIndexationBy::Name(name);
 
                 match indexation.find_column_index(headers) {
                     Some(index) => ConcreteArgument::Column(index),
@@ -226,7 +226,7 @@ fn traverse<'a>(
     if function_call.name == *"if" {
         let arity = function_call.args.len();
 
-        if arity < 2 || arity > 3 {
+        if !(2..=3).contains(&arity) {
             return Err(EvaluationError::from_range_arity(2, 3, arity));
         }
 
@@ -279,9 +279,9 @@ pub fn run(
     variables: &Variables,
 ) -> Result<DynamicValue, RunError> {
     let reserved = variables.keys().cloned().collect();
-    let pipeline = prepare(code, headers, &reserved).map_err(|error| RunError::Prepare(error))?;
+    let pipeline = prepare(code, headers, &reserved).map_err(RunError::Prepare)?;
 
-    eval(&pipeline, record, variables).map_err(|error| RunError::Evaluation(error))
+    eval(&pipeline, record, variables).map_err(RunError::Evaluation)
 }
 
 #[cfg(test)]
@@ -402,7 +402,7 @@ mod tests {
     #[test]
     fn test_split_join() {
         assert_eq!(
-            eval_code(r#"split(name, "o")"#),
+            eval_code("split(name, 'o')"),
             Ok(DynamicValue::List(vec![
                 DynamicValue::from("j"),
                 DynamicValue::from("hn"),
@@ -410,7 +410,7 @@ mod tests {
         );
 
         assert_eq!(
-            eval_code(r#"split(name, "o") | join(_, "&")"#),
+            eval_code("split(name, 'o') | join(_, '&')"),
             Ok(DynamicValue::from("j&hn"))
         )
     }
@@ -432,16 +432,13 @@ mod tests {
 
     #[test]
     fn test_count() {
-        assert_eq!(
-            eval_code(r#"count(name, "h")"#),
-            Ok(DynamicValue::Integer(1))
-        );
+        assert_eq!(eval_code("count(name, 'h')"), Ok(DynamicValue::Integer(1)));
     }
 
     #[test]
     fn test_concat() {
         assert_eq!(
-            eval_code(r#"concat(name, " ", lower(surname))"#),
+            eval_code("concat(name, ' ', lower(surname))"),
             Ok(DynamicValue::from("john smith"))
         );
     }
@@ -449,7 +446,7 @@ mod tests {
     #[test]
     fn test_coalesce() {
         assert_eq!(
-            eval_code(r#"coalesce(null, false, "test")"#),
+            eval_code("coalesce(null, false, 'test')"),
             Ok(DynamicValue::from("test"))
         );
     }
