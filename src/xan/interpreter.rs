@@ -453,4 +453,26 @@ mod tests {
             Ok(DynamicValue::from("test"))
         );
     }
+
+    #[test]
+    fn test_bool() {
+        assert_eq!(eval_code("not(true)"), Ok(DynamicValue::from(false)));
+        assert_eq!(eval_code("and(true, false)"), Ok(DynamicValue::from(false)));
+        assert_eq!(eval_code("or(true, false)"), Ok(DynamicValue::from(true)));
+    }
+
+    #[test]
+    fn test_number_comparison() {
+        assert_eq!(eval_code("eq(3, 4)"), Ok(DynamicValue::Boolean(false)));
+        assert_eq!(eval_code("eq(4, 4)"), Ok(DynamicValue::Boolean(true)));
+        assert_eq!(eval_code("eq(3, '3')"), Ok(DynamicValue::Boolean(true)));
+    }
+
+    #[test]
+    fn test_pathjoin() {
+        assert_eq!(
+            eval_code("pathjoin('one', 'two', 'three')"),
+            Ok(DynamicValue::from("one/two/three"))
+        );
+    }
 }

@@ -406,6 +406,10 @@ impl<'a> BoundArguments<'a> {
         self.get1().and_then(|value| value.try_as_str())
     }
 
+    pub fn get1_as_bool(&'a self) -> Result<bool, EvaluationError> {
+        self.get1().map(|value| value.truthy())
+    }
+
     pub fn get2_as_str(&self) -> Result<(Cow<str>, Cow<str>), EvaluationError> {
         let (a, b) = self.get2()?;
 
@@ -415,6 +419,11 @@ impl<'a> BoundArguments<'a> {
     pub fn get2_as_numbers(&self) -> Result<(DynamicNumber, DynamicNumber), EvaluationError> {
         let (a, b) = self.get2()?;
         Ok((a.try_as_number()?, b.try_as_number()?))
+    }
+
+    pub fn get2_as_bool(&self) -> Result<(bool, bool), EvaluationError> {
+        let (a, b) = self.get2()?;
+        Ok((a.truthy(), b.truthy()))
     }
 
     // pub fn iter(&self) -> BoundArgumentsIterator {
