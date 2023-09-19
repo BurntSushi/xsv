@@ -4,7 +4,7 @@ use config::{Config, Delimiter};
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Concatenates CSV data by column or by row.
 
 When concatenating by column, the columns will be written in the same order as

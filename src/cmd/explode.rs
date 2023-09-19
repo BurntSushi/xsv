@@ -5,7 +5,7 @@ use select::SelectColumns;
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Explodes a row into multiple ones by splitting a column value based on the
 given separator.
 

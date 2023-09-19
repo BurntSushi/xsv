@@ -4,7 +4,7 @@ use config::{Config, Delimiter};
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Formats CSV data with a custom delimiter or CRLF line endings.
 
 Generally, all commands in xsv output CSV data in a default format, which is

@@ -7,7 +7,7 @@ use config::Config;
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Converts a newline-delimited JSON file (.ndjson or .jsonl, typically) into
 a CSV file.
 

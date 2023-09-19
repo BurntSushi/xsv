@@ -6,7 +6,7 @@ use select::SelectColumns;
 use util;
 use CliResult;
 
-static USAGE: &'static str = r#"
+static USAGE: &str = r#"
 Add a column with the language detected in a given CSV column
 
 Usage:

@@ -11,7 +11,7 @@ use index::Indexed;
 use util::{self, FilenameTemplate};
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Splits the given CSV data into chunks.
 
 The files are written to the directory given with the name '{start}.csv',

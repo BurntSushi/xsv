@@ -7,7 +7,7 @@ use select::SelectColumns;
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Pseudonymise the value of the given column by replacing them by an
 incremental identifier.
 

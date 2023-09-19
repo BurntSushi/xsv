@@ -8,7 +8,7 @@ use config::{Config, Delimiter};
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Creates an index of the given CSV data, which can make other operations like
 slicing, splitting and gathering statistics much faster.
 

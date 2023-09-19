@@ -6,7 +6,7 @@ use select::SelectColumns;
 use util;
 use CliResult;
 
-static USAGE: &'static str = r#"
+static USAGE: &str = r#"
 Add a column with the date from a CSV column in a specified format and timezone
 
 Usage:
@@ -16,13 +16,13 @@ Usage:
 datefmt options:
     -c, --new-column <name>   Name of the column to create.
                               Will default to "formatted_date".
-    --infmt <format>          Input date format. See 
-                              https://docs.rs/chrono/latest/chrono/format/strftime/ 
+    --infmt <format>          Input date format. See
+                              https://docs.rs/chrono/latest/chrono/format/strftime/
                               for accepted date formats.
                               If not provided, the format will
                               be infered using dateparser.
-    --outfmt <format>         Output date format. See 
-                              https://docs.rs/chrono/latest/chrono/format/strftime/ 
+    --outfmt <format>         Output date format. See
+                              https://docs.rs/chrono/latest/chrono/format/strftime/
                               for accepted date formats.
                               Will default to ISO 8601/RFC 3339 format.
     --intz <tz>               Timezone of the input column.

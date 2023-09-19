@@ -11,7 +11,7 @@ use select::SelectColumns;
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Execute a bash command once per line in given CSV file.
 
 Deleting all files whose filenames are listed in a column:

@@ -14,7 +14,7 @@ use select::{SelectColumns, Selection};
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Joins two sets of CSV data on the specified columns.
 
 The default join operation is an 'inner' join. This corresponds to the
@@ -312,10 +312,10 @@ impl Args {
         let (sel1, sel2) = self.get_selections(&rconf1, &mut rdr1, &rconf2, &mut rdr2)?;
         Ok(IoState {
             wtr: Config::new(&self.flag_output).writer()?,
-            rdr1: rdr1,
-            sel1: sel1,
-            rdr2: rdr2,
-            sel2: sel2,
+            rdr1,
+            sel1,
+            rdr2,
+            sel2,
             no_headers: rconf1.no_headers,
             casei: self.flag_no_case,
             nulls: self.flag_nulls,

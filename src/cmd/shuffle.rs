@@ -6,7 +6,7 @@ use config::{Config, Delimiter};
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Shuffle the given CSV file. Requires memory proportional to the
 number of rows of the file (approx. 2 u64 per row).
 

@@ -5,7 +5,7 @@ use index::Indexed;
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Returns the rows in the range specified (starting at 0, half-open interval).
 The range does not include headers.
 

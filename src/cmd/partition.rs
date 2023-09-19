@@ -12,7 +12,7 @@ use select::SelectColumns;
 use util::{self, FilenameTemplate};
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Partitions the given CSV data into chunks based on the value of a column
 
 The files are written to the output directory with filenames based on the
@@ -100,7 +100,7 @@ impl Args {
             let key = match self.flag_prefix_length {
                 // We exceed --prefix-length, so ignore the extra bytes.
                 Some(len) if len < column.len() => &column[0..len],
-                _ => &column[..],
+                _ => column,
             };
             let mut entry = writers.entry(key.to_vec());
             let wtr =
@@ -172,7 +172,7 @@ impl WriterGenerator {
     fn unique_value(&mut self, key: &[u8]) -> String {
         // Sanitize our key.
         let utf8 = String::from_utf8_lossy(key);
-        let safe = self.non_word_char.replace_all(&*utf8, "").into_owned();
+        let safe = self.non_word_char.replace_all(&utf8, "").into_owned();
         let base = if safe.is_empty() {
             "empty".to_owned()
         } else {

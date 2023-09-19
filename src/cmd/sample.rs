@@ -8,7 +8,7 @@ use index::Indexed;
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Randomly samples CSV data uniformly using memory proportional to the size of
 the sample.
 

@@ -6,7 +6,7 @@ use CliResult;
 
 use crate::CliError;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Reverses rows of CSV data.
 
 Useful to retrieve the last lines of a large file for instance, or for cases when
@@ -53,11 +53,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .delimiter(args.flag_delimiter)
         .no_headers(true);
 
-    return if args.flag_in_memory {
+    if args.flag_in_memory {
         run_without_memory_efficiency(rconfig, args)
     } else {
         run_with_memory_efficiency(rconfig, args)
-    };
+    }
 }
 
 fn run_with_memory_efficiency(rconfig: &mut Config, args: Args) -> CliResult<()> {

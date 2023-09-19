@@ -5,7 +5,7 @@ use util;
 use xan::{eval, prepare, DynamicValue, Variables};
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 The map command evaluates an expression for each row of the given CSV file and
 output the row with an added column containing the result of beforementioned
 expression.

@@ -7,7 +7,7 @@ use select::SelectColumns;
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Replace occurrences of a pattern across a CSV file.
 
 You can of course match groups using parentheses and use those in
@@ -51,7 +51,7 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
-    let pattern = RegexBuilder::new(&*args.arg_pattern)
+    let pattern = RegexBuilder::new(&args.arg_pattern)
         .case_insensitive(args.flag_ignore_case)
         .build()?;
     let replacement = args.arg_replacement.as_bytes();

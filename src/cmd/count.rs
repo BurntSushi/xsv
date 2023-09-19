@@ -4,7 +4,7 @@ use config::{Config, Delimiter};
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Prints a count of the number of records in the CSV data.
 
 Note that the count will not include the header row (unless --no-headers is

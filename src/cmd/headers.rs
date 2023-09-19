@@ -6,7 +6,7 @@ use config::Delimiter;
 use util;
 use CliResult;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Prints the fields of the first row in the CSV data.
 
 These names can be used in commands like 'select' to refer to columns in the
