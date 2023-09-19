@@ -150,7 +150,7 @@ struct WriterGenerator {
 impl WriterGenerator {
     fn new(template: FilenameTemplate) -> WriterGenerator {
         WriterGenerator {
-            template: template,
+            template,
             counter: 1,
             used: HashSet::new(),
             non_word_char: Regex::new(r"\W").unwrap(),

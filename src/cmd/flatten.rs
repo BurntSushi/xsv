@@ -96,8 +96,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     };
 
     let mut wtr = TabWriter::new(io::stdout());
-    let mut count = 0;
-    for r in rdr.byte_records() {
+    for (count, r) in rdr.byte_records().enumerate() {
         if count != 0 && !separator.is_empty() {
             writeln!(&mut wtr, "{}", separator)?;
         }
@@ -105,7 +104,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             let title = format!("Row n°{}", count);
             writeln!(&mut wtr, "{}", title.white().bold())?;
         }
-        count += 1;
         let r = r?;
         for (i, (header, field)) in headers.iter().zip(&r).enumerate() {
             let remainder = i % 10;
@@ -128,7 +126,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             }
 
             let field = String::from_utf8(
-                (&*util::condense(Cow::Borrowed(&*field), args.flag_condense)).to_vec(),
+                (*util::condense(Cow::Borrowed(&field), args.flag_condense)).to_vec(),
             )
             .unwrap();
             let mut final_field: String = field.clone();
@@ -138,7 +136,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                     UnicodeSegmentation::graphemes(&field[..], true).collect::<Vec<&str>>();
                 let mut i = 0;
                 while i < field_chars.len() {
-                    if field_chars[i].to_string() == "\n" {
+                    if field_chars[i] == "\n" {
                         final_field += &align;
                         i += 1;
                         continue;
@@ -153,11 +151,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                         if i >= field_chars.len() {
                             break;
                         }
-                        if field_chars[i].to_string() == "\n" {
+                        if field_chars[i] == "\n" {
                             i += 1;
                             break;
                         }
-                        temp_field += &field_chars[i].to_string();
+                        temp_field += field_chars[i];
                         i += 1;
                     }
                     final_field += &temp_field;

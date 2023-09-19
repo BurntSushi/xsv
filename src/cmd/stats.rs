@@ -20,7 +20,7 @@ use select::{SelectColumns, Selection};
 use util;
 use CliResult;
 
-use self::FieldType::{TFloat, TInteger, TNull, TUnicode, TUnknown};
+use self::FieldType::{Float, Integer, Null, Unicode, Unknown};
 
 static USAGE: &str = "
 Computes basic statistics on CSV data.
@@ -583,11 +583,11 @@ impl Stats {
         self.minmax.as_mut().map(|v| v.add(sample_type, sample));
         self.mode.as_mut().map(|v| v.add(sample.to_vec()));
         match sample_type {
-            TUnknown => match self.histogram.as_mut() {
+            Unknown => match self.histogram.as_mut() {
                 None => {}
                 Some(h) => h.nb_nans += 1,
             },
-            TNull => {
+            Null => {
                 if self.which.include_nulls {
                     if let Some(v) = self.online.as_mut() {
                         v.add_null();
@@ -598,11 +598,11 @@ impl Stats {
                     Some(h) => h.nb_nulls += 1,
                 }
             }
-            TUnicode => match self.histogram.as_mut() {
+            Unicode => match self.histogram.as_mut() {
                 None => {}
                 Some(h) => h.nb_nans += 1,
             },
-            TFloat | TInteger => {
+            Float | Integer => {
                 let n = from_bytes::<f64>(sample).unwrap();
                 if let Some(v) = self.median.as_mut() {
                     v.add(n);
@@ -719,55 +719,55 @@ impl Commute for Stats {
 
 #[derive(Clone, Copy, PartialEq, Default)]
 enum FieldType {
-    TUnknown,
+    Unknown,
     // The default is the most specific type.
     // Type inference proceeds by assuming the most specific type and then
     // relaxing the type as counter-examples are found.
     #[default]
-    TNull,
-    TUnicode,
-    TFloat,
-    TInteger,
+    Null,
+    Unicode,
+    Float,
+    Integer,
 }
 
 impl FieldType {
     fn from_sample(sample: &[u8]) -> FieldType {
         if sample.is_empty() {
-            return TNull;
+            return Null;
         }
         let string = match str::from_utf8(sample) {
-            Err(_) => return TUnknown,
+            Err(_) => return Unknown,
             Ok(s) => s,
         };
         if string.parse::<i64>().is_ok() {
-            return TInteger;
+            return Integer;
         }
         if string.parse::<f64>().is_ok() {
-            return TFloat;
+            return Float;
         }
-        TUnicode
+        Unicode
     }
 
     fn is_number(&self) -> bool {
-        *self == TFloat || *self == TInteger
+        *self == Float || *self == Integer
     }
 }
 
 impl Commute for FieldType {
     fn merge(&mut self, other: FieldType) {
         *self = match (*self, other) {
-            (TUnicode, TUnicode) => TUnicode,
-            (TFloat, TFloat) => TFloat,
-            (TInteger, TInteger) => TInteger,
+            (Unicode, Unicode) => Unicode,
+            (Float, Float) => Float,
+            (Integer, Integer) => Integer,
             // Null does not impact the type.
-            (TNull, any) | (any, TNull) => any,
+            (Null, any) | (any, Null) => any,
             // There's no way to get around an unknown.
-            (TUnknown, _) | (_, TUnknown) => TUnknown,
+            (Unknown, _) | (_, Unknown) => Unknown,
             // Integers can degrate to floats.
-            (TFloat, TInteger) | (TInteger, TFloat) => TFloat,
+            (Float, Integer) | (Integer, Float) => Float,
             // Numbers can degrade to Unicode strings.
-            (TUnicode, TFloat) | (TFloat, TUnicode) => TUnicode,
-            (TUnicode, TInteger) | (TInteger, TUnicode) => TUnicode,
+            (Unicode, Float) | (Float, Unicode) => Unicode,
+            (Unicode, Integer) | (Integer, Unicode) => Unicode,
         };
     }
 }
@@ -775,11 +775,11 @@ impl Commute for FieldType {
 impl fmt::Display for FieldType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            TUnknown => write!(f, "Unknown"),
-            TNull => write!(f, "NULL"),
-            TUnicode => write!(f, "Unicode"),
-            TFloat => write!(f, "Float"),
-            TInteger => write!(f, "Integer"),
+            Unknown => write!(f, "Unknown"),
+            Null => write!(f, "NULL"),
+            Unicode => write!(f, "Unicode"),
+            Float => write!(f, "Float"),
+            Integer => write!(f, "Integer"),
         }
     }
 }
@@ -799,7 +799,7 @@ impl TypedSum {
             return;
         }
         match typ {
-            TFloat => {
+            Float => {
                 let float: f64 = from_bytes::<f64>(sample).unwrap();
                 match self.float {
                     None => {
@@ -810,7 +810,7 @@ impl TypedSum {
                     }
                 }
             }
-            TInteger => {
+            Integer => {
                 if let Some(ref mut float) = self.float {
                     *float += from_bytes::<f64>(sample).unwrap();
                 } else {
@@ -823,9 +823,9 @@ impl TypedSum {
 
     fn show(&self, typ: FieldType) -> Option<String> {
         match typ {
-            TNull | TUnicode | TUnknown => None,
-            TInteger => Some(self.integer.to_string()),
-            TFloat => Some(self.float.unwrap_or(0.0).to_string()),
+            Null | Unicode | Unknown => None,
+            Integer => Some(self.integer.to_string()),
+            Float => Some(self.float.unwrap_or(0.0).to_string()),
         }
     }
 }
@@ -859,8 +859,8 @@ impl TypedMinMax {
         }
         self.strings.add(sample.to_vec());
         match typ {
-            TUnicode | TUnknown | TNull => {}
-            TFloat => {
+            Unicode | Unknown | Null => {}
+            Float => {
                 let n = str::from_utf8(sample)
                     .ok()
                     .and_then(|s| s.parse::<f64>().ok())
@@ -868,7 +868,7 @@ impl TypedMinMax {
                 self.floats.add(n);
                 self.integers.add(n as i64);
             }
-            TInteger => {
+            Integer => {
                 let n = str::from_utf8(sample)
                     .ok()
                     .and_then(|s| s.parse::<i64>().ok())
@@ -888,8 +888,8 @@ impl TypedMinMax {
 
     fn show(&self, typ: FieldType) -> Option<(String, String)> {
         match typ {
-            TNull => None,
-            TUnicode | TUnknown => match (self.strings.min(), self.strings.max()) {
+            Null => None,
+            Unicode | Unknown => match (self.strings.min(), self.strings.max()) {
                 (Some(min), Some(max)) => {
                     let min = String::from_utf8_lossy(min).to_string();
                     let max = String::from_utf8_lossy(max).to_string();
@@ -897,11 +897,11 @@ impl TypedMinMax {
                 }
                 _ => None,
             },
-            TInteger => match (self.integers.min(), self.integers.max()) {
+            Integer => match (self.integers.min(), self.integers.max()) {
                 (Some(min), Some(max)) => Some((min.to_string(), max.to_string())),
                 _ => None,
             },
-            TFloat => match (self.floats.min(), self.floats.max()) {
+            Float => match (self.floats.min(), self.floats.max()) {
                 (Some(min), Some(max)) => Some((min.to_string(), max.to_string())),
                 _ => None,
             },

@@ -65,7 +65,7 @@ fn infer_headers(value: &Value) -> Option<Vec<Vec<String>>> {
 
     recurse_to_infer_headers(value, &mut headers, Vec::new());
 
-    return Some(headers);
+    Some(headers)
 }
 
 fn get_value_at_path(value: &Value, path: &[String]) -> Option<Value> {

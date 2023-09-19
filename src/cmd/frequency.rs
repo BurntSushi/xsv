@@ -99,7 +99,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
     let rconfig = args.rconfig();
 
-    if !args.flag_pretty && (!args.flag_domain_max.is_none() || !args.flag_screen_size.is_none()) {
+    if !args.flag_pretty && (args.flag_domain_max.is_some() || args.flag_screen_size.is_some()) {
         return fail!("`--bar-max` and `--screen-size` can only be used with `--histogram`");
     }
 
@@ -131,14 +131,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             Err(e) => return fail!(e),
         };
 
-        if !args.flag_output.is_none() {
+        if args.flag_output.is_some() {
             wtr.write_record(vec!["field", "value", "count"])?;
         }
 
-        let head_ftables = headers.into_iter().zip(tables.into_iter());
+        let head_ftables = headers.into_iter().zip(tables);
         for (i, (header, ftab)) in head_ftables.enumerate() {
             let vec_ftables = args_clone.counts(&ftab);
-            if vec_ftables.len() == 0 {
+            if vec_ftables.is_empty() {
                 let error_message = format!(
                     "The histogram for the column \"{}\" is empty.",
                     String::from_utf8(header.to_vec()).unwrap()
@@ -178,7 +178,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 );
                 lines_done += count;
 
-                if !args.flag_output.is_none() {
+                if args.flag_output.is_some() {
                     let count_file = count.to_string();
                     let row = vec![&*header_file, &*value, count_file.as_bytes()];
                     wtr.write_record(row)?;
@@ -192,7 +192,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 nb_categories_total
             };
             let resume = " ".repeat(bar.size_labels + 1)
-                + &"Histogram for ".to_owned()
+                + &"Histogram for "
                 + &format_number(lines_done)
                 + "/"
                 + &bar.lines_total_str
@@ -205,7 +205,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
     } else {
         wtr.write_record(vec!["field", "value", "count"])?;
-        let head_ftables = headers.into_iter().zip(tables.into_iter());
+        let head_ftables = headers.into_iter().zip(tables);
         for (i, (header, ftab)) in head_ftables.enumerate() {
             let header = if rconfig.no_headers {
                 (i + 1).to_string().into_bytes()
@@ -308,10 +308,8 @@ impl Args {
                 let field = trim(field.to_vec());
                 if !field.is_empty() {
                     tabs[i].add(field);
-                } else {
-                    if !self.flag_no_nulls {
-                        tabs[i].add(null.clone());
-                    }
+                } else if !self.flag_no_nulls {
+                    tabs[i].add(null.clone());
                 }
             }
         }
@@ -359,7 +357,8 @@ fn format_number(count: u64) -> String {
         }
         count_str += &count_chars[k].to_string();
     }
-    return count_str;
+
+    count_str
 }
 
 fn cut_properly(value: String, size_labels: usize) -> String {

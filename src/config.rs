@@ -103,8 +103,8 @@ impl Read for ReverseRead {
 impl ReverseRead {
     fn build(input: Box<File>, filesize: u64, offset: u64) -> ReverseRead {
         ReverseRead {
-            input: input,
-            offset: offset,
+            input,
+            offset,
             ptr: filesize,
         }
     }
@@ -145,7 +145,7 @@ impl Config {
             }
         };
         Config {
-            path: path,
+            path,
             idx_path: None,
             select_columns: None,
             delimiter: delim,

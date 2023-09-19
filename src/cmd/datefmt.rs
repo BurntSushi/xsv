@@ -90,14 +90,15 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             if let Some(ref date_format) = args.flag_outfmt {
                 let formatted_date = date
                     .with_timezone(&output_tz)
-                    .format(&date_format)
+                    .format(date_format)
                     .to_string();
+
                 record.push_field(&formatted_date);
             } else {
-                record.push_field(&date.with_timezone(&output_tz).to_string())
+                record.push_field(&date.with_timezone(&output_tz).to_string());
             }
         } else {
-            record.push_field(&"")
+            record.push_field("");
         }
 
         wtr.write_record(&record)?;

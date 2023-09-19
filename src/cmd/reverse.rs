@@ -92,15 +92,14 @@ fn run_with_memory_efficiency(rconfig: &mut Config, args: Args) -> CliResult<()>
                 wtr.write_byte_record(headers)?;
             }
 
-            for r in reverse_csv_reader.byte_records() {
-                if let Ok(record) = r {
-                    let new_record: Vec<Vec<u8>> = record
-                        .iter()
-                        .rev()
-                        .map(|b| b.iter().rev().copied().collect())
-                        .collect();
-                    wtr.write_record(new_record)?;
-                }
+            for record in reverse_csv_reader.byte_records().flatten() {
+                let new_record: Vec<Vec<u8>> = record
+                    .iter()
+                    .rev()
+                    .map(|b| b.iter().rev().copied().collect())
+                    .collect();
+
+                wtr.write_record(new_record)?;
             }
 
             Ok(wtr.flush()?)

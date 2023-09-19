@@ -410,7 +410,7 @@ impl<R: io::Read + io::Seek> ValueIndex<R> {
         let idx = Indexed::open(rdr, io::Cursor::new(row_idx.into_inner()))?;
         Ok(ValueIndex {
             values: val_idx,
-            idx: idx,
+            idx,
             num_rows: rowi,
         })
     }

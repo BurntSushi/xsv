@@ -91,7 +91,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             headers.push_field(column_name.as_bytes());
         } else if args.flag_uuid {
             headers.push_field(b"uuid");
-        } else if let Some(_) = &args.flag_constant {
+        } else if args.flag_constant.is_some() {
             headers.push_field(b"constant");
         } else if copy_operation {
             let current_header = String::from_utf8(headers[copy_index].to_vec())

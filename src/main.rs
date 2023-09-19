@@ -102,7 +102,7 @@ mod select;
 mod util;
 mod xan;
 
-static USAGE: &'static str = concat!(
+static USAGE: &str = concat!(
     "
 Usage:
     xsv <command> [<args>...]

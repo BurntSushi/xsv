@@ -29,7 +29,7 @@ impl<R: io::Read + io::Seek, I: io::Read + io::Seek> Indexed<R, I> {
     /// Opens an index.
     pub fn open(csv_rdr: csv::Reader<R>, idx_rdr: I) -> CliResult<Indexed<R, I>> {
         Ok(Indexed {
-            csv_rdr: csv_rdr,
+            csv_rdr,
             idx: RandomAccessSimple::open(idx_rdr)?,
         })
     }

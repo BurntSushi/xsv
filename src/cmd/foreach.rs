@@ -79,11 +79,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         let current_value = &record[column_index];
 
         let templated_command =
-            template_pattern.replace_all(&args.arg_command.as_bytes(), current_value);
+            template_pattern.replace_all(args.arg_command.as_bytes(), current_value);
 
         let command = OsStr::from_bytes(&templated_command);
 
-        let shell = match env::var("SHELL".to_string()) {
+        let shell = match env::var("SHELL") {
             Ok(val) => val,
             Err(_err) => return fail!("No shell found"),
         };
@@ -134,8 +134,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 }
 
                 while stdout_rdr.read_byte_record(&mut output_record)? {
-                    if let Some(_) = &args.flag_new_column {
-                        output_record.push_field(&current_value);
+                    if args.flag_new_column.is_some() {
+                        output_record.push_field(current_value);
                     }
 
                     wtr.write_byte_record(&output_record)?;
