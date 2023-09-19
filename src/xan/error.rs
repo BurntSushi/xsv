@@ -72,6 +72,7 @@ impl EvaluationError {
     }
 }
 
+#[cfg(test)]
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum RunError {
     Prepare(PrepareError),

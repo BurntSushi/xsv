@@ -2,12 +2,12 @@ use std::borrow::Cow;
 
 use csv::ByteRecord;
 
-use super::error::{EvaluationError, PrepareError, RunError};
+use super::error::{EvaluationError, PrepareError};
 use super::functions::call;
-use super::parser::{parse, Argument, FunctionCall, Pipeline};
+use super::parser::{parse, Argument, Pipeline};
 use super::types::{BoundArguments, ColumIndexationBy, DynamicValue, EvaluationResult, Variables};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum ConcreteArgument {
     Variable(String),
     Column(usize),
@@ -50,7 +50,7 @@ impl ConcreteArgument {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ConcreteFunctionCall {
     name: String,
     args: Vec<ConcreteArgument>,
@@ -272,23 +272,23 @@ pub fn eval(
     Ok(last_value)
 }
 
-pub fn run(
-    code: &str,
-    headers: &ByteRecord,
-    record: &ByteRecord,
-    variables: &Variables,
-) -> Result<DynamicValue, RunError> {
-    let reserved = variables.keys().cloned().collect();
-    let pipeline = prepare(code, headers, &reserved).map_err(RunError::Prepare)?;
-
-    eval(&pipeline, record, variables).map_err(RunError::Evaluation)
-}
-
 #[cfg(test)]
 mod tests {
-    use std::vec;
-
+    use super::super::error::RunError;
+    use super::super::parser::FunctionCall;
     use super::*;
+
+    pub fn run(
+        code: &str,
+        headers: &ByteRecord,
+        record: &ByteRecord,
+        variables: &Variables,
+    ) -> Result<DynamicValue, RunError> {
+        let reserved = variables.keys().cloned().collect();
+        let pipeline = prepare(code, headers, &reserved).map_err(RunError::Prepare)?;
+
+        eval(&pipeline, record, variables).map_err(RunError::Evaluation)
+    }
 
     #[test]
     fn test_trim_pipeline() {

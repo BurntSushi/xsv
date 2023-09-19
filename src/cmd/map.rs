@@ -1,4 +1,5 @@
 use csv;
+use pariter::IteratorExt;
 
 use config::{Config, Delimiter};
 use util;
@@ -30,6 +31,11 @@ Usage:
     xsv map [options] <operations> <column> [<input>]
     xsv map --help
 
+map options:
+    -t, --threads <threads>  Number of threads to use in order to run the
+                             computations in parallel. Only useful if you
+                             perform heavy stuff such as reading files etc.
+
 Common options:
     -h, --help               Display this message
     -o, --output <file>      Write output to <file> instead of stdout.
@@ -47,6 +53,7 @@ struct Args {
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
+    flag_threads: Option<usize>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -73,6 +80,31 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let reserved = vec!["index"];
 
     let pipeline = prepare(&args.arg_operations, &headers, &reserved)?;
+
+    if let Some(threads) = args.flag_threads {
+        rdr.into_byte_records()
+            .enumerate()
+            .parallel_map_custom(
+                |o| o.threads(threads),
+                move |(i, record)| -> CliResult<csv::ByteRecord> {
+                    let mut record = record?;
+                    let mut variables = Variables::new();
+                    variables.insert(&"index", DynamicValue::Integer(i as i64));
+
+                    let value = eval(&pipeline, &record, &variables)?;
+                    record.push_field(&value.serialize_as_bytes(b"|"));
+
+                    Ok(record)
+                },
+            )
+            .try_for_each(|result| -> CliResult<()> {
+                let record = result?;
+                wtr.write_byte_record(&record)?;
+                Ok(())
+            })?;
+
+        return Ok(wtr.flush()?);
+    }
 
     let mut record = csv::ByteRecord::new();
     let mut variables = Variables::new();

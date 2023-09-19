@@ -13,6 +13,7 @@ extern crate flate2;
 extern crate lingua;
 extern crate nom;
 extern crate num_cpus;
+extern crate pariter;
 extern crate rand;
 extern crate regex;
 extern crate serde;
