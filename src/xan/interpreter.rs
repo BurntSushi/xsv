@@ -166,6 +166,7 @@ fn unfurl_pipeline(mut pipeline: Pipeline) -> Pipeline {
     pipeline
 }
 
+// TODO: we could validate function arity at prepare step
 pub fn prepare(
     code: &str,
     headers: &ByteRecord,

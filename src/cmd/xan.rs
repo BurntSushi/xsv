@@ -2,7 +2,7 @@ use csv;
 use pariter::IteratorExt;
 
 use config::{Config, Delimiter};
-use xan::{eval, prepare, DynamicValue, Variables};
+use xan::{eval, prepare, DynamicValue, EvaluationError, Variables};
 use CliResult;
 
 pub enum XanMode {
@@ -14,6 +14,13 @@ impl XanMode {
     fn is_map(&self) -> bool {
         match self {
             Self::Map => true,
+            _ => false,
+        }
+    }
+
+    fn is_filter(&self) -> bool {
+        match self {
+            Self::Filter => true,
             _ => false,
         }
     }
@@ -58,6 +65,37 @@ pub struct XanCmdArgs {
     pub mode: XanMode,
 }
 
+pub fn handle_eval_result(
+    error_policy: &XanErrorPolicy,
+    record: &mut csv::ByteRecord,
+    eval_result: Result<DynamicValue, EvaluationError>,
+) -> CliResult<()> {
+    match eval_result {
+        Ok(value) => {
+            record.push_field(&value.serialize_as_bytes(b"|"));
+
+            if error_policy.will_report() {
+                record.push_field(b"");
+            }
+        }
+        Err(err) => match error_policy {
+            XanErrorPolicy::Ignore => {
+                let value = DynamicValue::None;
+                record.push_field(&value.serialize_as_bytes(b"|"));
+            }
+            XanErrorPolicy::Report => {
+                record.push_field(b"");
+                record.push_field(err.to_string().as_bytes());
+            }
+            XanErrorPolicy::Panic => {
+                Err(err)?;
+            }
+        },
+    };
+
+    Ok(())
+}
+
 pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
     let rconfig = Config::new(&args.input)
         .delimiter(args.delimiter)
@@ -99,19 +137,19 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
             .enumerate()
             .parallel_map_custom(
                 |o| o.threads(threads),
-                move |(i, record)| -> CliResult<csv::ByteRecord> {
-                    let mut record = record?;
+                move |(i, record)| -> CliResult<(csv::ByteRecord, Result<DynamicValue, EvaluationError>)> {
+                    let record = record?;
                     let mut variables = Variables::new();
                     variables.insert(&"index", DynamicValue::Integer(i as i64));
 
-                    let value = eval(&pipeline, &record, &variables)?;
-                    record.push_field(&value.serialize_as_bytes(b"|"));
+                    let eval_result = eval(&pipeline, &record, &variables);
 
-                    Ok(record)
+                    Ok((record, eval_result))
                 },
             )
             .try_for_each(|result| -> CliResult<()> {
-                let record = result?;
+                let (mut record, eval_result) = result?;
+                handle_eval_result(&args.error_policy, &mut record, eval_result)?;
                 wtr.write_byte_record(&record)?;
                 Ok(())
             })?;
@@ -127,29 +165,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
         variables.insert("index", DynamicValue::Integer(i));
 
         let eval_result = eval(&pipeline, &record, &variables);
-
-        match eval_result {
-            Ok(value) => {
-                record.push_field(&value.serialize_as_bytes(b"|"));
-
-                if args.error_policy.will_report() {
-                    record.push_field(b"");
-                }
-            }
-            Err(err) => match args.error_policy {
-                XanErrorPolicy::Ignore => {
-                    let value = DynamicValue::None;
-                    record.push_field(&value.serialize_as_bytes(b"|"));
-                }
-                XanErrorPolicy::Report => {
-                    record.push_field(b"");
-                    record.push_field(err.to_string().as_bytes());
-                }
-                XanErrorPolicy::Panic => {
-                    Err(err)?;
-                }
-            },
-        };
+        handle_eval_result(&args.error_policy, &mut record, eval_result)?;
 
         wtr.write_byte_record(&record)?;
         i += 1;
