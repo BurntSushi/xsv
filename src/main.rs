@@ -66,11 +66,11 @@ macro_rules! command_list {
     datefmt     Formats a recognized date column to a specified format and timezone
     enum        Add a new column enumerating CSV lines
     explode     Explode rows based on some column separator
-    foreach     Loop over a CSV file to execute bash commands
     filter      Only keep some CSV rows based on an evaluated expression
     fixlengths  Makes all records have same length
     flatten     Show one field per line
     fmt         Format CSV output (change field delimiter)
+    foreach     Loop over a CSV file to execute bash commands
     frequency   Show frequency tables
     headers     Show header names
     help        Show this usage message.
@@ -79,7 +79,7 @@ macro_rules! command_list {
     join        Join CSV files
     jsonl       Convert newline-delimited JSON files to CSV
     lang        Add a column with the language detected in a given CSV column
-    map         Create a new column by evaluating an expression on each CSV row.
+    map         Create a new column by evaluating an expression on each CSV row
     partition   Partition CSV data based on a column value
     pseudo      Pseudonymise the values of a column
     sample      Randomly sample CSV data
