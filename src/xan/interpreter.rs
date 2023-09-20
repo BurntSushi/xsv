@@ -410,6 +410,14 @@ mod tests {
         );
 
         assert_eq!(
+            eval_code("split(name, 'o', 1)"),
+            Ok(DynamicValue::List(vec![
+                DynamicValue::from("j"),
+                DynamicValue::from("hn"),
+            ]))
+        );
+
+        assert_eq!(
             eval_code("split(name, 'o') | join(_, '&')"),
             Ok(DynamicValue::from("j&hn"))
         )
@@ -470,6 +478,15 @@ mod tests {
         assert_eq!(
             eval_code("pathjoin('one', 'two', 'three')"),
             Ok(DynamicValue::from("one/two/three"))
+        );
+    }
+
+    #[test]
+    fn test_first() {
+        assert_eq!(eval_code("first(name)"), Ok(DynamicValue::from("j")));
+        assert_eq!(
+            eval_code("first(split(name, 'h', 1))"),
+            Ok(DynamicValue::from("jo"))
         );
     }
 }

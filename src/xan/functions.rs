@@ -11,7 +11,7 @@ use super::types::{BoundArguments, DynamicValue, EvaluationResult};
 type FunctionResult = Result<DynamicValue, EvaluationError>;
 
 // TODO: contains, startswith, endswith, comp, str comp, add, sub, lte, deburr, const
-// TODO: parse most likely and cast functions
+// TODO: parse most likely and cast functions, slice
 // TODO: --ignore-errors or print error or report error
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     (match name {
@@ -21,6 +21,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "concat" => concat(args),
         "count" => count(args),
         "eq" => number_compare(args, Ordering::is_eq),
+        "first" => first(args),
         "join" => join(args),
         "len" => len(args),
         "lower" => lower(args),
@@ -43,8 +44,21 @@ fn trim(args: BoundArguments) -> FunctionResult {
 }
 
 fn split(args: BoundArguments) -> FunctionResult {
-    let (to_split, pattern) = args.get2_as_str()?;
-    let splitted: Vec<DynamicValue> = to_split.split(&*pattern).map(DynamicValue::from).collect();
+    args.validate_min_max_arity(2, 3)?;
+    let args = args.getn_opt(3);
+
+    let to_split = args[0].unwrap().try_as_str()?;
+    let pattern = args[1].unwrap().try_as_str()?;
+    let count = args[2];
+
+    let splitted: Vec<DynamicValue> = if let Some(c) = count {
+        to_split
+            .splitn(c.try_as_usize()? + 1, &*pattern)
+            .map(DynamicValue::from)
+            .collect()
+    } else {
+        to_split.split(&*pattern).map(DynamicValue::from).collect()
+    };
 
     Ok(DynamicValue::from(splitted))
 }
@@ -101,7 +115,20 @@ fn concat(args: BoundArguments) -> FunctionResult {
     }
 }
 
-// Lists
+// Lists & Sequences
+fn first(args: BoundArguments) -> FunctionResult {
+    let arg = args.get1()?;
+
+    Ok(match arg.as_ref() {
+        DynamicValue::String(value) => DynamicValue::from(value.chars().next()),
+        DynamicValue::List(list) => match list.first() {
+            None => DynamicValue::None,
+            Some(value) => value.clone(),
+        },
+        _ => return Err(EvaluationError::Cast),
+    })
+}
+
 fn join(args: BoundArguments) -> FunctionResult {
     let (arg1, arg2) = args.get2()?;
 

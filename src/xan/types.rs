@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::cmp::{Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::BTreeMap;
-use std::convert::{From, TryInto};
+use std::convert::From;
 use std::ops::Add;
 
 use csv;
@@ -218,6 +218,34 @@ impl DynamicValue {
         })
     }
 
+    pub fn try_as_usize(&self) -> Result<usize, EvaluationError> {
+        Ok(match self {
+            Self::String(string) => match string.parse::<usize>() {
+                Err(_) => return Err(EvaluationError::Cast),
+                Ok(value) => value,
+            },
+            Self::Float(value) => match downgrade_float(*value) {
+                Some(safe_downgraded_value) => {
+                    if safe_downgraded_value >= 0 {
+                        safe_downgraded_value as usize
+                    } else {
+                        return Err(EvaluationError::Cast);
+                    }
+                }
+                None => return Err(EvaluationError::Cast),
+            },
+            Self::Integer(value) => {
+                if value >= &0 {
+                    (*value) as usize
+                } else {
+                    return Err(EvaluationError::Cast);
+                }
+            }
+            Self::Boolean(value) => (*value) as usize,
+            _ => return Err(EvaluationError::Cast),
+        })
+    }
+
     pub fn truthy(&self) -> bool {
         match self {
             Self::List(value) => !value.is_empty(),
@@ -248,6 +276,12 @@ impl From<String> for DynamicValue {
     }
 }
 
+impl From<char> for DynamicValue {
+    fn from(value: char) -> Self {
+        DynamicValue::String(value.to_string())
+    }
+}
+
 impl From<Vec<DynamicValue>> for DynamicValue {
     fn from(value: Vec<DynamicValue>) -> Self {
         DynamicValue::List(value)
@@ -275,74 +309,86 @@ impl From<DynamicNumber> for DynamicValue {
     }
 }
 
-impl TryInto<i64> for DynamicValue {
-    type Error = EvaluationError;
-
-    fn try_into(self) -> Result<i64, Self::Error> {
-        Ok(match self {
-            Self::String(string) => match string.parse::<i64>() {
-                Err(_) => match string.parse::<f64>() {
-                    Err(_) => return Err(EvaluationError::Cast),
-                    Ok(value) => match downgrade_float(value) {
-                        Some(safe_downgraded_value) => safe_downgraded_value,
-                        None => return Err(EvaluationError::Cast),
-                    },
-                },
-                Ok(value) => value,
-            },
-            Self::Float(value) => match downgrade_float(value) {
-                Some(safe_downgraded_value) => safe_downgraded_value,
-                None => return Err(EvaluationError::Cast),
-            },
-            Self::Integer(value) => value,
-            Self::Boolean(value) => value as i64,
-            _ => return Err(EvaluationError::Cast),
-        })
+impl<T> From<Option<T>> for DynamicValue
+where
+    T: Into<DynamicValue>,
+{
+    fn from(option: Option<T>) -> Self {
+        match option {
+            None => DynamicValue::None,
+            Some(value) => value.into(),
+        }
     }
 }
 
-impl TryInto<f64> for DynamicValue {
-    type Error = EvaluationError;
+// impl TryInto<i64> for DynamicValue {
+//     type Error = EvaluationError;
 
-    fn try_into(self) -> Result<f64, Self::Error> {
-        Ok(match self {
-            Self::String(string) => match string.parse::<f64>() {
-                Err(_) => return Err(EvaluationError::Cast),
-                Ok(value) => value,
-            },
-            Self::Float(value) => value,
-            Self::Integer(value) => value as f64,
-            Self::Boolean(value) => {
-                if value {
-                    1.0
-                } else {
-                    0.0
-                }
-            }
-            _ => return Err(EvaluationError::Cast),
-        })
-    }
-}
+//     fn try_into(self) -> Result<i64, Self::Error> {
+//         Ok(match self {
+//             Self::String(string) => match string.parse::<i64>() {
+//                 Err(_) => match string.parse::<f64>() {
+//                     Err(_) => return Err(EvaluationError::Cast),
+//                     Ok(value) => match downgrade_float(value) {
+//                         Some(safe_downgraded_value) => safe_downgraded_value,
+//                         None => return Err(EvaluationError::Cast),
+//                     },
+//                 },
+//                 Ok(value) => value,
+//             },
+//             Self::Float(value) => match downgrade_float(value) {
+//                 Some(safe_downgraded_value) => safe_downgraded_value,
+//                 None => return Err(EvaluationError::Cast),
+//             },
+//             Self::Integer(value) => value,
+//             Self::Boolean(value) => value as i64,
+//             _ => return Err(EvaluationError::Cast),
+//         })
+//     }
+// }
 
-impl TryInto<DynamicNumber> for DynamicValue {
-    type Error = EvaluationError;
+// impl TryInto<f64> for DynamicValue {
+//     type Error = EvaluationError;
 
-    fn try_into(self) -> Result<DynamicNumber, Self::Error> {
-        Ok(match self {
-            Self::String(string) => match string.parse::<i64>() {
-                Ok(value) => DynamicNumber::Integer(value),
-                Err(_) => match string.parse::<f64>() {
-                    Ok(value) => DynamicNumber::Float(value),
-                    Err(_) => return Err(EvaluationError::Cast),
-                },
-            },
-            Self::Integer(value) => DynamicNumber::Integer(value),
-            Self::Float(value) => DynamicNumber::Float(value),
-            Self::Boolean(value) => DynamicNumber::Integer(value as i64),
-            _ => return Err(EvaluationError::Cast),
-        })
-    }
-}
+//     fn try_into(self) -> Result<f64, Self::Error> {
+//         Ok(match self {
+//             Self::String(string) => match string.parse::<f64>() {
+//                 Err(_) => return Err(EvaluationError::Cast),
+//                 Ok(value) => value,
+//             },
+//             Self::Float(value) => value,
+//             Self::Integer(value) => value as f64,
+//             Self::Boolean(value) => {
+//                 if value {
+//                     1.0
+//                 } else {
+//                     0.0
+//                 }
+//             }
+//             _ => return Err(EvaluationError::Cast),
+//         })
+//     }
+// }
+
+// impl TryInto<DynamicNumber> for DynamicValue {
+//     type Error = EvaluationError;
+
+//     fn try_into(self) -> Result<DynamicNumber, Self::Error> {
+//         Ok(match self {
+//             Self::String(string) => match string.parse::<i64>() {
+//                 Ok(value) => DynamicNumber::Integer(value),
+//                 Err(_) => match string.parse::<f64>() {
+//                     Ok(value) => DynamicNumber::Float(value),
+//                     Err(_) => return Err(EvaluationError::Cast),
+//                 },
+//             },
+//             Self::Integer(value) => DynamicNumber::Integer(value),
+//             Self::Float(value) => DynamicNumber::Float(value),
+//             Self::Boolean(value) => DynamicNumber::Integer(value as i64),
+//             _ => return Err(EvaluationError::Cast),
+//         })
+//     }
+// }
 
 pub type BoundArgument<'a> = Cow<'a, DynamicValue>;
 pub type EvaluationResult<'a> = Result<BoundArgument<'a>, EvaluationError>;
@@ -371,6 +417,24 @@ impl<'a> BoundArguments<'a> {
         } else {
             Ok(())
         }
+    }
+
+    pub fn validate_min_max_arity(&self, min: usize, max: usize) -> Result<(), EvaluationError> {
+        if self.len() < min || self.len() > max {
+            Err(EvaluationError::from_range_arity(min, max, self.len()))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn getn_opt(&'a self, n: usize) -> Vec<Option<&'a BoundArgument>> {
+        let mut selection: Vec<Option<&BoundArgument>> = Vec::new();
+
+        for i in 0..n {
+            selection.push(self.stack.get(i));
+        }
+
+        selection
     }
 
     pub fn get1(&'a self) -> Result<&'a BoundArgument, EvaluationError> {
