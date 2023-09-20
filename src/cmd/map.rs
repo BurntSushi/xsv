@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use cmd::xan::{run_xan_cmd, XanCmdArgs, XanErrorPolicy, XanMode};
 use config::Delimiter;
 use util;
@@ -36,6 +38,7 @@ map options:
                                  - "panic": exit on first error
                                  - "report": add a column containing error
                                  - "ignore": coerce result for row to null
+                                 - "log": print error to stderr
                                [default: panic].
     -E, --error-column <name>  Name of the column containing errors if
                                "-e/--errors" is set to "report".
@@ -74,7 +77,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         no_headers: args.flag_no_headers,
         delimiter: args.flag_delimiter,
         threads: args.flag_threads,
-        error_policy: XanErrorPolicy::from(args.flag_errors),
+        error_policy: XanErrorPolicy::try_from(args.flag_errors)?,
         error_column_name: args.flag_error_column,
         mode: XanMode::Map,
     };
