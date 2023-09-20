@@ -23,6 +23,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "eq" => number_compare(args, Ordering::is_eq),
         "first" => first(args),
         "join" => join(args),
+        "last" => last(args),
         "len" => len(args),
         "lower" => lower(args),
         "not" => not(args),
@@ -122,6 +123,19 @@ fn first(args: BoundArguments) -> FunctionResult {
     Ok(match arg.as_ref() {
         DynamicValue::String(value) => DynamicValue::from(value.chars().next()),
         DynamicValue::List(list) => match list.first() {
+            None => DynamicValue::None,
+            Some(value) => value.clone(),
+        },
+        _ => return Err(EvaluationError::Cast),
+    })
+}
+
+fn last(args: BoundArguments) -> FunctionResult {
+    let arg = args.get1()?;
+
+    Ok(match arg.as_ref() {
+        DynamicValue::String(value) => DynamicValue::from(value.chars().rev().next()),
+        DynamicValue::List(list) => match list.last() {
             None => DynamicValue::None,
             Some(value) => value.clone(),
         },

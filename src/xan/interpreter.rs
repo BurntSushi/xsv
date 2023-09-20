@@ -489,4 +489,13 @@ mod tests {
             Ok(DynamicValue::from("jo"))
         );
     }
+
+    #[test]
+    fn test_last() {
+        assert_eq!(eval_code("last(name)"), Ok(DynamicValue::from("n")));
+        assert_eq!(
+            eval_code("last(split(name, 'o', 1))"),
+            Ok(DynamicValue::from("hn"))
+        );
+    }
 }
