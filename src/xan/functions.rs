@@ -167,7 +167,7 @@ fn add(args: BoundArguments) -> FunctionResult {
 // Utilities
 fn coalesce(args: BoundArguments) -> FunctionResult {
     for arg in args {
-        if arg.truthy() {
+        if arg.is_truthy() {
             return Ok(arg.into_owned());
         }
     }

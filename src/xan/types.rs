@@ -246,7 +246,7 @@ impl DynamicValue {
         })
     }
 
-    pub fn truthy(&self) -> bool {
+    pub fn is_truthy(&self) -> bool {
         match self {
             Self::List(value) => !value.is_empty(),
             Self::String(value) => !value.is_empty(),
@@ -471,7 +471,7 @@ impl<'a> BoundArguments<'a> {
     }
 
     pub fn get1_as_bool(&'a self) -> Result<bool, EvaluationError> {
-        self.get1().map(|value| value.truthy())
+        self.get1().map(|value| value.is_truthy())
     }
 
     pub fn get2_as_str(&self) -> Result<(Cow<str>, Cow<str>), EvaluationError> {
@@ -487,7 +487,7 @@ impl<'a> BoundArguments<'a> {
 
     pub fn get2_as_bool(&self) -> Result<(bool, bool), EvaluationError> {
         let (a, b) = self.get2()?;
-        Ok((a.truthy(), b.truthy()))
+        Ok((a.is_truthy(), b.is_truthy()))
     }
 
     // pub fn iter(&self) -> BoundArgumentsIterator {

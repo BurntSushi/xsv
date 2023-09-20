@@ -235,7 +235,7 @@ fn traverse<'a>(
 
         let mut branch: Option<&ConcreteArgument> = None;
 
-        if result.truthy() {
+        if result.is_truthy() {
             branch = Some(&function_call.args[1]);
         } else if arity == 3 {
             branch = Some(&function_call.args[2]);
