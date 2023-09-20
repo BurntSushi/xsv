@@ -328,33 +328,13 @@ impl From<regex::Error> for CliError {
 
 impl From<xan::PrepareError> for CliError {
     fn from(err: xan::PrepareError) -> CliError {
-        CliError::Other(match err {
-            xan::PrepareError::ColumnNotFound(indexation) => match indexation {
-                xan::ColumIndexationBy::Name(name) => format!("cannot find column \"{}\"", name),
-                xan::ColumIndexationBy::Pos(pos) => format!("column {} out of range", pos),
-                xan::ColumIndexationBy::NameAndNth((name, nth)) => {
-                    format!("cannot find column (\"{}\", {})", name, nth)
-                }
-            },
-            xan::PrepareError::ParseError(_) => {
-                "code is invalid and cannot be parsed correctly".to_string()
-            }
-        })
+        CliError::Other(err.to_string())
     }
 }
 
 impl From<xan::EvaluationError> for CliError {
     fn from(err: xan::EvaluationError) -> CliError {
-        CliError::Other(match err {
-            xan::EvaluationError::InvalidPath => "invalid path".to_string(),
-            xan::EvaluationError::InvalidArity(_) => "invalid arity".to_string(),
-            xan::EvaluationError::CannotOpenFile(path) => {
-                format!("cannot open file {}", path)
-            }
-            xan::EvaluationError::CannotReadFile(path) => format!("cannot read file {}", path),
-            xan::EvaluationError::UnknownFunction(name) => format!("unknown function \"{}\"", name),
-            _ => "evaluation error".to_string(),
-        })
+        CliError::Other(err.to_string())
     }
 }
 

@@ -1,9 +1,26 @@
+use std::fmt::Display;
+
 use super::types::ColumIndexationBy;
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum PrepareError {
     ParseError(String),
     ColumnNotFound(ColumIndexationBy),
+}
+
+impl Display for PrepareError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::ColumnNotFound(indexation) => match indexation {
+                ColumIndexationBy::Name(name) => write!(f, "cannot find column \"{}\"", name),
+                ColumIndexationBy::Pos(pos) => write!(f, "column {} out of range", pos),
+                ColumIndexationBy::NameAndNth((name, nth)) => {
+                    write!(f, "cannot find column (\"{}\", {})", name, nth)
+                }
+            },
+            Self::ParseError(_) => write!(f, "could not parse expression"),
+        }
+    }
 }
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
@@ -69,6 +86,23 @@ impl EvaluationError {
             max_expected,
             got,
         }))
+    }
+}
+
+impl Display for EvaluationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidPath => write!(f, "invalid posix path"),
+            Self::InvalidArity(arity) => match arity {
+                _ => write!(f, "invalid arity"),
+            },
+            Self::CannotOpenFile(path) => {
+                write!(f, "cannot open file {}", path)
+            }
+            Self::CannotReadFile(path) => write!(f, "cannot read file {}", path),
+            Self::UnknownFunction(name) => write!(f, "unknown function \"{}\"", name),
+            _ => write!(f, "evaluation error"),
+        }
     }
 }
 
