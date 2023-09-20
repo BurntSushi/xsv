@@ -1,48 +1,42 @@
-use std::convert::TryFrom;
-
 use cmd::xan::{run_xan_cmd, XanCmdArgs, XanErrorPolicy, XanMode};
 use config::Delimiter;
 use util;
 use CliResult;
 
 static USAGE: &str = r#"
-The map command evaluates an expression for each row of the given CSV file and
-output the row with an added column containing the result of beforementioned
-expression.
+The filter command evaluates an expression for each row of the given CSV file and
+only output the row with if the result of beforementioned expression is truthy.
 
 For instance, given the following CSV file:
 
-a,b
-1,4
-5,2
+a
+1
+2
+3
 
 The following command:
 
-$ xsv map 'add(a, b)' c
+$ xsv filter 'lt(a, 1)'
 
 Will produce the following result:
 
-a,b,c
-1,4,5
-5,2,7
+a
+2
+3
 
 Usage:
-    xsv map [options] <expression> <column> [<input>]
-    xsv map --help
+    xsv filter [options] <expression> [<input>]
+    xsv filter --help
 
-map options:
+filter options:
     -t, --threads <threads>    Number of threads to use in order to run the
                                computations in parallel. Only useful if you
                                perform heavy stuff such as reading files etc.
     -e, --errors <policy>      What to do with evaluation errors. One of:
                                  - "panic": exit on first error
-                                 - "report": add a column containing error
                                  - "ignore": coerce result for row to null
                                  - "log": print error to stderr
                                [default: panic].
-    -E, --error-column <name>  Name of the column containing errors if
-                               "-e/--errors" is set to "report".
-                               [default: xsv_error].
 
 Common options:
     -h, --help               Display this message
@@ -55,7 +49,6 @@ Common options:
 
 #[derive(Deserialize)]
 struct Args {
-    arg_column: String,
     arg_expression: String,
     arg_input: Option<String>,
     flag_output: Option<String>,
@@ -63,23 +56,22 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
     flag_threads: Option<usize>,
     flag_errors: String,
-    flag_error_column: String,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
 
     let xan_args = XanCmdArgs {
-        new_column: Some(args.arg_column),
+        new_column: None,
         map_expr: args.arg_expression,
         input: args.arg_input,
         output: args.flag_output,
         no_headers: args.flag_no_headers,
         delimiter: args.flag_delimiter,
         threads: args.flag_threads,
-        error_policy: XanErrorPolicy::try_from(args.flag_errors)?,
-        error_column_name: Some(args.flag_error_column),
-        mode: XanMode::Map,
+        error_policy: XanErrorPolicy::from_restricted(&args.flag_errors)?,
+        error_column_name: None,
+        mode: XanMode::Filter,
     };
 
     run_xan_cmd(xan_args)

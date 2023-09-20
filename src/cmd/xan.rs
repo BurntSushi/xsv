@@ -43,6 +43,20 @@ impl XanErrorPolicy {
             _ => false,
         }
     }
+
+    pub fn from_restricted(value: &str) -> Result<Self, CliError> {
+        Ok(match value {
+            "panic" => Self::Panic,
+            "ignore" => Self::Ignore,
+            "log" => Self::Log,
+            _ => {
+                return Err(CliError::Other(format!(
+                    "unknown error policy \"{}\"",
+                    value
+                )))
+            }
+        })
+    }
 }
 
 impl TryFrom<String> for XanErrorPolicy {
@@ -65,7 +79,7 @@ impl TryFrom<String> for XanErrorPolicy {
 }
 
 pub struct XanCmdArgs {
-    pub column: String,
+    pub new_column: Option<String>,
     pub map_expr: String,
     pub input: Option<String>,
     pub output: Option<String>,
@@ -73,43 +87,65 @@ pub struct XanCmdArgs {
     pub delimiter: Option<Delimiter>,
     pub threads: Option<usize>,
     pub error_policy: XanErrorPolicy,
-    pub error_column_name: String,
+    pub error_column_name: Option<String>,
     pub mode: XanMode,
 }
 
-pub fn handle_eval_result(
+pub fn handle_eval_result<W: std::io::Write>(
+    args: &XanCmdArgs,
     index: usize,
-    error_policy: &XanErrorPolicy,
     record: &mut csv::ByteRecord,
     eval_result: Result<DynamicValue, EvaluationError>,
+    writer: &mut csv::Writer<W>,
 ) -> CliResult<()> {
+    let mut should_write_row = true;
+
     match eval_result {
         Ok(value) => {
-            record.push_field(&value.serialize_as_bytes(b"|"));
+            if args.mode.is_filter() {
+                if value.is_falsey() {
+                    should_write_row = false;
+                }
+            } else {
+                record.push_field(&value.serialize_as_bytes(b"|"));
 
-            if error_policy.will_report() {
-                record.push_field(b"");
+                if args.error_policy.will_report() {
+                    record.push_field(b"");
+                }
             }
         }
-        Err(err) => match error_policy {
+        Err(err) => match args.error_policy {
             XanErrorPolicy::Ignore => {
-                let value = DynamicValue::None;
-                record.push_field(&value.serialize_as_bytes(b"|"));
+                if args.mode.is_map() {
+                    let value = DynamicValue::None;
+                    record.push_field(&value.serialize_as_bytes(b"|"));
+                }
             }
             XanErrorPolicy::Report => {
+                if args.mode.is_filter() {
+                    unreachable!();
+                }
+
                 record.push_field(b"");
                 record.push_field(err.to_string().as_bytes());
             }
             XanErrorPolicy::Log => {
                 eprintln!("Row n°{}: {}", index + 1, err.to_string());
-                let value = DynamicValue::None;
-                record.push_field(&value.serialize_as_bytes(b"|"));
+
+                if args.mode.is_map() {
+                    let value = DynamicValue::None;
+                    record.push_field(&value.serialize_as_bytes(b"|"));
+                }
             }
             XanErrorPolicy::Panic => {
                 Err(err)?;
             }
         },
     };
+
+    if should_write_row {
+        writer.write_byte_record(record)?;
+    }
 
     Ok(())
 }
@@ -128,21 +164,19 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
         headers = rdr.byte_headers()?.clone();
 
         if !headers.is_empty() {
-            let mut should_write_headers = false;
-
             if args.mode.is_map() {
-                headers.push_field(args.column.as_bytes());
-                should_write_headers = true;
+                if let Some(new_column) = &args.new_column {
+                    headers.push_field(new_column.as_bytes());
+                }
             }
 
             if args.error_policy.will_report() {
-                headers.push_field(args.error_column_name.as_bytes());
-                should_write_headers = true;
+                if let Some(error_column_name) = &args.error_column_name {
+                    headers.push_field(error_column_name.as_bytes());
+                }
             }
 
-            if should_write_headers {
-                wtr.write_byte_record(&headers)?;
-            }
+            wtr.write_byte_record(&headers)?;
         }
     }
 
@@ -171,8 +205,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
             )
             .try_for_each(|result| -> CliResult<()> {
                 let (i, mut record, eval_result) = result?;
-                handle_eval_result(i, &args.error_policy, &mut record, eval_result)?;
-                wtr.write_byte_record(&record)?;
+                handle_eval_result(&args, i, &mut record, eval_result, &mut wtr)?;
                 Ok(())
             })?;
 
@@ -187,9 +220,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
         variables.insert("index", DynamicValue::Integer(i as i64));
 
         let eval_result = eval(&pipeline, &record, &variables);
-        handle_eval_result(i, &args.error_policy, &mut record, eval_result)?;
-
-        wtr.write_byte_record(&record)?;
+        handle_eval_result(&args, i, &mut record, eval_result, &mut wtr)?;
         i += 1;
     }
 

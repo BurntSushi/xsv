@@ -67,6 +67,7 @@ macro_rules! command_list {
     enum        Add a new column enumerating CSV lines
     explode     Explode rows based on some column separator
     foreach     Loop over a CSV file to execute bash commands
+    filter      Only keep some CSV rows based on an evaluated expression
     fixlengths  Makes all records have same length
     flatten     Show one field per line
     fmt         Format CSV output (change field delimiter)
@@ -78,7 +79,7 @@ macro_rules! command_list {
     join        Join CSV files
     jsonl       Convert newline-delimited JSON files to CSV
     lang        Add a column with the language detected in a given CSV column
-    map         Create a new column by applying transformations.
+    map         Create a new column by evaluating an expression on each CSV row.
     partition   Partition CSV data based on a column value
     pseudo      Pseudonymise the values of a column
     sample      Randomly sample CSV data
@@ -179,6 +180,7 @@ enum Command {
     Enum,
     Explode,
     ForEach,
+    Filter,
     FixLengths,
     Flatten,
     Fmt,
@@ -226,6 +228,7 @@ impl Command {
             Command::Enum => cmd::enumerate::run(argv),
             Command::Explode => cmd::explode::run(argv),
             Command::ForEach => cmd::foreach::run(argv),
+            Command::Filter => cmd::filter::run(argv),
             Command::FixLengths => cmd::fixlengths::run(argv),
             Command::Flatten => cmd::flatten::run(argv),
             Command::Fmt => cmd::fmt::run(argv),

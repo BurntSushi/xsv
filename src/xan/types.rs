@@ -256,6 +256,10 @@ impl DynamicValue {
             Self::None => false,
         }
     }
+
+    pub fn is_falsey(&self) -> bool {
+        !self.is_truthy()
+    }
 }
 
 impl From<&str> for DynamicValue {
