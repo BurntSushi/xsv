@@ -63,6 +63,7 @@ pub enum EvaluationError {
     CannotReadFile(String),
     CannotCompare,
     Cast,
+    Custom(String),
 }
 
 impl EvaluationError {
@@ -101,6 +102,7 @@ impl Display for EvaluationError {
             }
             Self::CannotReadFile(path) => write!(f, "cannot read file {}", path),
             Self::UnknownFunction(name) => write!(f, "unknown function \"{}\"", name),
+            Self::Custom(msg) => write!(f, "{}", msg),
             _ => write!(f, "evaluation error"),
         }
     }

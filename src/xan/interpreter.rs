@@ -472,6 +472,12 @@ mod tests {
         assert_eq!(eval_code("eq(3, 4)"), Ok(DynamicValue::Boolean(false)));
         assert_eq!(eval_code("eq(4, 4)"), Ok(DynamicValue::Boolean(true)));
         assert_eq!(eval_code("eq(3, '3')"), Ok(DynamicValue::Boolean(true)));
+
+        assert_eq!(eval_code("neq(3, 2)"), Ok(DynamicValue::Boolean(true)));
+        assert_eq!(eval_code("lt(3, 2)"), Ok(DynamicValue::Boolean(false)));
+        assert_eq!(eval_code("lte(3, 2)"), Ok(DynamicValue::Boolean(false)));
+        assert_eq!(eval_code("gt(3, 2)"), Ok(DynamicValue::Boolean(true)));
+        assert_eq!(eval_code("gte(3, 2)"), Ok(DynamicValue::Boolean(true)));
     }
 
     #[test]

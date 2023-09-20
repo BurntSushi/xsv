@@ -10,7 +10,7 @@ use super::types::{BoundArguments, DynamicValue, EvaluationResult};
 
 type FunctionResult = Result<DynamicValue, EvaluationError>;
 
-// TODO: contains, startswith, endswith, comp, str comp, err, add, sub, lte, deburr, const
+// TODO: contains, startswith, endswith, str comp, sub, deburr
 // TODO: parse most likely and cast functions, slice
 // TODO: --ignore-errors or print error or report error
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
@@ -21,11 +21,17 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "concat" => concat(args),
         "count" => count(args),
         "eq" => number_compare(args, Ordering::is_eq),
+        "err" => err(args),
         "first" => first(args),
+        "gt" => number_compare(args, Ordering::is_gt),
+        "gte" => number_compare(args, Ordering::is_ge),
         "join" => join(args),
         "last" => last(args),
         "len" => len(args),
+        "lt" => number_compare(args, Ordering::is_lt),
+        "lte" => number_compare(args, Ordering::is_le),
         "lower" => lower(args),
+        "neq" => number_compare(args, Ordering::is_ne),
         "not" => not(args),
         "or" => or(args),
         "pathjoin" => pathjoin(args),
@@ -34,6 +40,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "trim" => trim(args),
         "typeof" => type_of(args),
         "upper" => upper(args),
+        "val" => val(args),
         _ => Err(EvaluationError::UnknownFunction(name.to_string())),
     })
     .map(Cow::Owned)
@@ -244,4 +251,17 @@ fn read(args: BoundArguments) -> FunctionResult {
 // Introspection
 fn type_of(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(args.get1()?.type_of()))
+}
+
+// Utils
+fn err(args: BoundArguments) -> FunctionResult {
+    let arg = args.get1_as_str()?;
+
+    Err(EvaluationError::Custom(arg.to_string()))
+}
+
+fn val(args: BoundArguments) -> FunctionResult {
+    let arg = args.get1()?;
+
+    Ok(arg.as_ref().clone())
 }
