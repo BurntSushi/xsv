@@ -10,8 +10,9 @@ use super::types::{BoundArguments, DynamicValue, EvaluationResult};
 
 type FunctionResult = Result<DynamicValue, EvaluationError>;
 
-// TODO: in list, startswith, endswith, str comp, sub, deburr
+// TODO: in list, startswith, endswith, str comp, sub, deburr, empty, not empty
 // TODO: parse most likely and cast functions, slice, encoding
+// TODO: figure out str_eq etc.
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     (match name {
         "add" => add(args),

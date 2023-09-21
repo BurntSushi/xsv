@@ -189,7 +189,7 @@ fn evaluate_function_call<'a>(
     last_value: &DynamicValue,
     variables: &Variables,
 ) -> EvaluationResult<'a> {
-    let mut bound_args = BoundArguments::new();
+    let mut bound_args = BoundArguments::with_capacity(function_call.args.len());
 
     for arg in function_call.args.iter() {
         match arg {

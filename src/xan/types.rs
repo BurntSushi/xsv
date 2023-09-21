@@ -403,8 +403,10 @@ pub struct BoundArguments<'a> {
 }
 
 impl<'a> BoundArguments<'a> {
-    pub fn new() -> Self {
-        Self { stack: Vec::new() }
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            stack: Vec::with_capacity(capacity),
+        }
     }
 
     pub fn len(&self) -> usize {
