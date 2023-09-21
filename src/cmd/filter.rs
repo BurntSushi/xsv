@@ -24,9 +24,12 @@ a
 2
 3
 
+If you want to list available functions, use the --functions flag.
+
 Usage:
     xsv filter [options] <expression> [<input>]
     xsv filter --help
+    xsv filter --functions
 
 filter options:
     -t, --threads <threads>    Number of threads to use in order to run the
@@ -52,6 +55,7 @@ struct Args {
     arg_expression: String,
     arg_input: Option<String>,
     flag_output: Option<String>,
+    flag_functions: bool,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
     flag_threads: Option<usize>,
@@ -62,6 +66,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
 
     let xan_args = XanCmdArgs {
+        print_help: args.flag_functions,
         new_column: None,
         map_expr: args.arg_expression,
         input: args.arg_input,

@@ -26,8 +26,11 @@ a,b,c
 1,4,5
 5,2,7
 
+If you want to list available functions, use the --functions flag.
+
 Usage:
     xsv map [options] <expression> <column> [<input>]
+    xsv map --functions
     xsv map --help
 
 map options:
@@ -59,6 +62,7 @@ struct Args {
     arg_expression: String,
     arg_input: Option<String>,
     flag_output: Option<String>,
+    flag_functions: bool,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
     flag_threads: Option<usize>,
@@ -70,6 +74,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
 
     let xan_args = XanCmdArgs {
+        print_help: args.flag_functions,
         new_column: Some(args.arg_column),
         map_expr: args.arg_expression,
         input: args.arg_input,

@@ -8,6 +8,143 @@ use xan::{eval, prepare, DynamicValue, EvaluationError, Variables};
 use CliError;
 use CliResult;
 
+macro_rules! function_list {
+    () => {
+        "
+Available functions:
+
+    - add(x, y) -> number
+        Add two numbers.
+
+    - and(a, b) -> bool
+        Perform boolean AND operation.
+
+    - coalesce(*args) -> T
+        Return first truthy value.
+
+    - concat(string, *strings) -> string
+        Concatenate given strings into a single one.
+
+    - in(seq, subseq) -> bool
+        Find if subseq can be found in seq.
+
+    - count(seq, pattern) -> int
+        Count number of times pattern appear in seq.
+
+    - eq(x, y) -> bool
+        Test numerical equality.
+
+    - endswith(string, pattern) -> bool
+        Test if string ends with pattern.
+
+    - err(msg) -> error
+        Make the expression return a custom error.
+
+    - first(seq) -> T
+        Get first element of sequence.
+
+    - get(seq, index) -> T
+        Get nth element of sequence (can use negative indexing).
+
+    - gt(x, y) -> bool
+        Test numerical x > y.
+
+    - gte(x, y) -> bool
+        Test numerical x >= y.
+
+    - join(seq, sep) -> string
+        Join sequence by separator.
+
+    - if(cond, then, else?) -> T
+        Evaluate condition and switch to correct branch.
+
+    - last(seq) -> T
+        Get last element of sequence.
+
+    - len(seq) -> int
+        Get length of sequence.
+
+    - lt(x, y)
+        Test numerical x < y.
+
+    - lte(x, y)
+        Test numerical x > y.
+
+    - lower(string) -> string
+        Lowercase string.
+
+    - mul(x, y) -> number
+        Multiply x & y.
+
+    - neq(x, y) -> bool
+        Test numerical x != y.
+
+    - nin(seq, subseq) -> bool
+        Find if subseq cannot be found in seq.
+
+    - not(a) -> bool
+        Perform boolean NOT operation.
+
+    - or(a, b) -> bool
+        Perform boolean OR operation.
+
+    - pathjoin(string, *strings) -> string
+        Join multiple paths correctly.
+
+    - read(path) -> string
+        Read file at path.
+
+    - slice(seq, start, end?) -> seq
+        Return slice of sequence.
+
+    - split(string, sep, max?) -> list
+        Split a string by separator.
+
+    - startswith(string, pattern) -> bool
+        Test if string starts with pattern.
+
+    - sub(x, y) -> number
+        Subtract x & y.
+
+    - s_eq(s1, s2) -> bool
+        Test sequence equality.
+
+    - s_gt(s1, s2) -> bool
+        Test sequence s1 > s2.
+
+    - s_gte(s1, s2) -> bool
+        Test sequence s1 >= s2.
+
+    - s_lt(s1, s2) -> bool
+        Test sequence s1 < s2.
+
+    - s_gte(s1, s2) -> bool
+        Test sequence s1 <= s2.
+
+    - s_neq(s1, s2) -> bool
+        Test sequence s1 != s2.
+
+    - trim(string) -> string
+        Trim string of leading & trailing whitespace.
+
+    - typeof(value) -> string
+        Return type of value.
+
+    - unidecode(string) -> string
+        Convert string to ascii as well as possible.
+
+    - upper(string) -> string
+        Uppercase string.
+
+    - uuid() -> string
+        Return a uuid v4.
+
+    - val(value) -> T
+        Return a value as-is. Useful to return constants.
+"
+    };
+}
+
 pub enum XanMode {
     Map,
     Filter,
@@ -79,6 +216,7 @@ impl TryFrom<String> for XanErrorPolicy {
 }
 
 pub struct XanCmdArgs {
+    pub print_help: bool,
     pub new_column: Option<String>,
     pub map_expr: String,
     pub input: Option<String>,
@@ -151,6 +289,11 @@ pub fn handle_eval_result<W: std::io::Write>(
 }
 
 pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
+    if args.print_help {
+        println!(function_list!());
+        return Ok(());
+    }
+
     let rconfig = Config::new(&args.input)
         .delimiter(args.delimiter)
         .no_headers(args.no_headers);
