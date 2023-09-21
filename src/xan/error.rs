@@ -103,7 +103,13 @@ impl Display for EvaluationError {
             Self::CannotReadFile(path) => write!(f, "cannot read file {}", path),
             Self::UnknownFunction(name) => write!(f, "unknown function \"{}\"", name),
             Self::Custom(msg) => write!(f, "{}", msg),
-            _ => write!(f, "evaluation error"),
+            Self::IllegalBinding => write!(f, "illegal binding"),
+            Self::Cast => write!(f, "casting error"),
+            Self::ColumnOutOfRange(idx) => write!(f, "column \"{}\" is out of range", idx),
+            Self::UnknownVariable(name) => write!(f, "unknown variable \"{}\"", name),
+            Self::NotImplemented => write!(f, "not implemented"),
+            Self::CannotCompare => write!(f, "invalid comparison between mixed arguments"),
+            Self::UnicodeDecodeError => write!(f, "unicode decode error"),
         }
     }
 }
