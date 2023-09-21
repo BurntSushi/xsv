@@ -196,7 +196,7 @@ fn evaluate_function_call<'a>(
 ) -> EvaluationResult<'a> {
     let mut bound_args = BoundArguments::with_capacity(function_call.args.len());
 
-    for arg in function_call.args.iter() {
+    for (i, arg) in function_call.args.iter().enumerate() {
         match arg {
             ConcreteArgument::Call(sub_function_call) => {
                 bound_args.push(traverse(sub_function_call, record, last_value, variables)?);
@@ -204,6 +204,7 @@ fn evaluate_function_call<'a>(
             _ => bound_args.push(arg.bind(record, last_value, variables).map_err(|err| {
                 EvaluationError::Binding(SpecifiedBindingError {
                     function_name: function_call.name.to_string(),
+                    arg_index: Some(i),
                     reason: err,
                 })
             })?),
@@ -226,6 +227,7 @@ fn evaluate_expression<'a>(
         _ => arg.bind(record, last_value, variables).map_err(|err| {
             EvaluationError::Binding(SpecifiedBindingError {
                 function_name: "<expr>".to_string(),
+                arg_index: None,
                 reason: err,
             })
         }),

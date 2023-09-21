@@ -52,17 +52,26 @@ pub enum InvalidArity {
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub struct SpecifiedBindingError {
     pub function_name: String,
+    pub arg_index: Option<usize>,
     pub reason: BindingError,
 }
 
 impl Display for SpecifiedBindingError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "error when binding args for \"{}\": {}",
-            self.function_name,
-            self.reason.to_string()
-        )
+        match self.arg_index {
+            Some(i) => write!(
+                f,
+                "error when binding arg n°{} for \"{}\": {}",
+                i + 1,
+                self.function_name,
+                self.reason.to_string()
+            ),
+            None => write!(
+                f,
+                "error when binding expression: {}",
+                self.reason.to_string()
+            ),
+        }
     }
 }
 
