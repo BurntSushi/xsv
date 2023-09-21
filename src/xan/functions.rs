@@ -38,6 +38,8 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "pathjoin" => pathjoin(args),
         "read" => read(args),
         "split" => split(args),
+        "str_eq" => sequence_compare(args, Ordering::is_eq),
+        "str_neq" => sequence_compare(args, Ordering::is_ne),
         "trim" => trim(args),
         "typeof" => type_of(args),
         "upper" => upper(args),
@@ -230,6 +232,19 @@ where
     F: FnOnce(Ordering) -> bool,
 {
     let (a, b) = args.get2_as_numbers()?;
+
+    Ok(DynamicValue::from(match a.partial_cmp(&b) {
+        Some(ordering) => validate(ordering),
+        None => false,
+    }))
+}
+
+fn sequence_compare<F>(args: BoundArguments, validate: F) -> FunctionResult
+where
+    F: FnOnce(Ordering) -> bool,
+{
+    // TODO: deal with lists
+    let (a, b) = args.get2_as_str()?;
 
     Ok(DynamicValue::from(match a.partial_cmp(&b) {
         Some(ordering) => validate(ordering),
