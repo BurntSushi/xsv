@@ -3,19 +3,21 @@ use std::borrow::Cow;
 use std::cmp::{Ordering, PartialOrd};
 use std::fs::File;
 use std::io::Read;
+use std::ops::{Add, Mul, Sub};
 use std::path::PathBuf;
 
 use super::error::EvaluationError;
-use super::types::{BoundArguments, DynamicValue, EvaluationResult};
+use super::types::{BoundArguments, DynamicNumber, DynamicValue, EvaluationResult};
 
 type FunctionResult = Result<DynamicValue, EvaluationError>;
 
 // TODO: deal with list in sequence_compare & contains
-// TODO: in list, sub, deburr, empty, not empty
+// TODO: in list, deburr, empty, not empty
+// TODO: division must take integer vs. float into account
 // TODO: parse most likely and cast functions, slice, encoding
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     (match name {
-        "add" => add(args),
+        "add" => arithmetic_op(args, Add::add),
         "and" => and(args),
         "coalesce" => coalesce(args),
         "concat" => concat(args),
@@ -33,6 +35,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "lt" => number_compare(args, Ordering::is_lt),
         "lte" => number_compare(args, Ordering::is_le),
         "lower" => lower(args),
+        "mul" => arithmetic_op(args, Mul::mul),
         "neq" => number_compare(args, Ordering::is_ne),
         "nin" => not_contains(args),
         "not" => not(args),
@@ -41,6 +44,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "read" => read(args),
         "split" => split(args),
         "startswith" => startswith(args),
+        "sub" => arithmetic_op(args, Sub::sub),
         "s_eq" => sequence_compare(args, Ordering::is_eq),
         "s_gt" => sequence_compare(args, Ordering::is_gt),
         "s_gte" => sequence_compare(args, Ordering::is_ge),
@@ -214,9 +218,12 @@ fn not_contains(args: BoundArguments) -> FunctionResult {
 }
 
 // Arithmetics
-fn add(args: BoundArguments) -> FunctionResult {
+fn arithmetic_op<F>(args: BoundArguments, op: F) -> FunctionResult
+where
+    F: FnOnce(DynamicNumber, DynamicNumber) -> DynamicNumber,
+{
     let (a, b) = args.get2_as_numbers()?;
-    Ok(DynamicValue::from(a + b))
+    Ok(DynamicValue::from(op(a, b)))
 }
 
 // Utilities

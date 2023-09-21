@@ -425,8 +425,11 @@ mod tests {
     }
 
     #[test]
-    fn test_add() {
-        assert_eq!(eval_code("add(a, b)"), Ok(DynamicValue::Integer(96)));
+    fn test_arithmetics() {
+        assert_eq!(eval_code("add(1, 2)"), Ok(DynamicValue::Integer(3)));
+        assert_eq!(eval_code("sub(1, 2)"), Ok(DynamicValue::Integer(-1)));
+        assert_eq!(eval_code("mul(1, 2)"), Ok(DynamicValue::Integer(2)));
+        assert_eq!(eval_code("mul(3, 1.5)"), Ok(DynamicValue::Float(4.5)));
     }
 
     #[test]

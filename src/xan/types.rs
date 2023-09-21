@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::cmp::{Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::BTreeMap;
 use std::convert::From;
-use std::ops::Add;
+use std::ops::{Add, Mul, Sub};
 
 use csv;
 
@@ -92,20 +92,44 @@ impl PartialOrd for DynamicNumber {
     }
 }
 
+fn apply_op<F1, F2>(a: DynamicNumber, b: DynamicNumber, op_int: F1, op_float: F2) -> DynamicNumber
+where
+    F1: FnOnce(i64, i64) -> i64,
+    F2: FnOnce(f64, f64) -> f64,
+{
+    match a {
+        DynamicNumber::Integer(a) => match b {
+            DynamicNumber::Integer(b) => DynamicNumber::Integer(op_int(a, b)),
+            DynamicNumber::Float(b) => DynamicNumber::Float(op_float(a as f64, b)),
+        },
+        DynamicNumber::Float(a) => match b {
+            DynamicNumber::Integer(b) => DynamicNumber::Float(op_float(a, b as f64)),
+            DynamicNumber::Float(b) => DynamicNumber::Float(op_float(a, b)),
+        },
+    }
+}
+
 impl Add for DynamicNumber {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        match self {
-            Self::Integer(a) => match rhs {
-                Self::Integer(b) => Self::Integer(a + b),
-                Self::Float(b) => Self::Float((a as f64) + b),
-            },
-            Self::Float(a) => match rhs {
-                Self::Integer(b) => Self::Float(a + (b as f64)),
-                Self::Float(b) => Self::Float(a + b),
-            },
-        }
+        apply_op(self, rhs, Add::<i64>::add, Add::<f64>::add)
+    }
+}
+
+impl Sub for DynamicNumber {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        apply_op(self, rhs, Sub::<i64>::sub, Sub::<f64>::sub)
+    }
+}
+
+impl Mul for DynamicNumber {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        apply_op(self, rhs, Mul::<i64>::mul, Mul::<f64>::mul)
     }
 }
 
