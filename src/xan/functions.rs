@@ -10,7 +10,7 @@ use super::types::{BoundArguments, DynamicValue, EvaluationResult};
 
 type FunctionResult = Result<DynamicValue, EvaluationError>;
 
-// TODO: contains list, startswith, endswith, str comp, sub, deburr
+// TODO: in list, startswith, endswith, str comp, sub, deburr
 // TODO: parse most likely and cast functions, slice, encoding
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     (match name {
@@ -18,7 +18,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "and" => and(args),
         "coalesce" => coalesce(args),
         "concat" => concat(args),
-        "contains" => contains(args),
+        "in" => contains(args),
         "count" => count(args),
         "eq" => number_compare(args, Ordering::is_eq),
         "err" => err(args),
@@ -32,6 +32,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "lte" => number_compare(args, Ordering::is_le),
         "lower" => lower(args),
         "neq" => number_compare(args, Ordering::is_ne),
+        "nin" => not_contains(args),
         "not" => not(args),
         "or" => or(args),
         "pathjoin" => pathjoin(args),
@@ -173,6 +174,19 @@ fn contains(args: BoundArguments) -> FunctionResult {
             let pattern = arg2.try_as_str()?;
 
             DynamicValue::from(text.contains(&*pattern))
+        }
+        _ => unimplemented!(),
+    })
+}
+
+fn not_contains(args: BoundArguments) -> FunctionResult {
+    let (arg1, arg2) = args.get2()?;
+
+    Ok(match arg1.as_ref() {
+        DynamicValue::String(text) => {
+            let pattern = arg2.try_as_str()?;
+
+            DynamicValue::from(!text.contains(&*pattern))
         }
         _ => unimplemented!(),
     })
