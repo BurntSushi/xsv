@@ -1,4 +1,3 @@
-use flate2::read::GzDecoder;
 use std::borrow::Cow;
 use std::cmp::{Ordering, PartialOrd};
 use std::fs::File;
@@ -6,15 +5,19 @@ use std::io::Read;
 use std::ops::{Add, Mul, Sub};
 use std::path::PathBuf;
 
+use flate2::read::GzDecoder;
+use unidecode::unidecode;
+
 use super::error::EvaluationError;
 use super::types::{BoundArguments, DynamicNumber, DynamicValue, EvaluationResult};
 
 type FunctionResult = Result<DynamicValue, EvaluationError>;
 
 // TODO: deal with list in sequence_compare & contains
-// TODO: in list, deburr, empty, not empty
+// TODO: in list, empty, not empty
 // TODO: division must take integer vs. float into account
-// TODO: parse most likely and cast functions, slice, encoding
+// TODO: slice, encoding
+// TODO: random, stats etc.
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     (match name {
         "add" => arithmetic_op(args, Add::add),
@@ -53,6 +56,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "s_neq" => sequence_compare(args, Ordering::is_ne),
         "trim" => trim(args),
         "typeof" => type_of(args),
+        "unidecode" => apply_unidecode(args),
         "upper" => upper(args),
         "val" => val(args),
         _ => Err(EvaluationError::UnknownFunction(name.to_string())),
@@ -147,6 +151,12 @@ fn concat(args: BoundArguments) -> FunctionResult {
             Ok(DynamicValue::from(result))
         }
     }
+}
+
+fn apply_unidecode(args: BoundArguments) -> FunctionResult {
+    let arg = args.get1_as_str()?;
+
+    Ok(DynamicValue::from(unidecode(&arg)))
 }
 
 // Lists & Sequences

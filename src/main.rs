@@ -27,6 +27,7 @@ extern crate textwrap;
 extern crate threadpool;
 extern crate unicode_segmentation;
 extern crate unicode_width;
+extern crate unidecode;
 extern crate uuid;
 
 use std::borrow::ToOwned;
