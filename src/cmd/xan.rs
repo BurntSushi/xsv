@@ -159,11 +159,14 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
     let mut wtr = Config::new(&args.output).writer()?;
 
     let mut headers = csv::ByteRecord::new();
+    let mut must_write_headers = false;
 
     if !args.no_headers {
         headers = rdr.byte_headers()?.clone();
 
         if !headers.is_empty() {
+            must_write_headers = true;
+
             if args.mode.is_map() {
                 if let Some(new_column) = &args.new_column {
                     headers.push_field(new_column.as_bytes());
@@ -175,14 +178,16 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
                     headers.push_field(error_column_name.as_bytes());
                 }
             }
-
-            wtr.write_byte_record(&headers)?;
         }
     }
 
     let reserved = vec!["index"];
 
     let pipeline = prepare(&args.map_expr, &headers, &reserved)?;
+
+    if must_write_headers {
+        wtr.write_byte_record(&headers)?;
+    }
 
     if let Some(threads) = args.threads {
         rdr.into_byte_records()

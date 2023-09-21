@@ -2,10 +2,15 @@ use std::borrow::Cow;
 
 use csv::ByteRecord;
 
-use super::error::{EvaluationError, PrepareError};
+use super::error::{
+    BindingError, CallError, EvaluationError, PrepareError, SpecifiedBindingError,
+    SpecifiedCallError,
+};
 use super::functions::call;
 use super::parser::{parse, Argument, Pipeline};
-use super::types::{BoundArguments, ColumIndexationBy, DynamicValue, EvaluationResult, Variables};
+use super::types::{
+    BoundArgument, BoundArguments, ColumIndexationBy, DynamicValue, EvaluationResult, Variables,
+};
 
 #[derive(Debug, Clone)]
 enum ConcreteArgument {
@@ -26,7 +31,7 @@ impl ConcreteArgument {
         record: &'a ByteRecord,
         last_value: &'a DynamicValue,
         variables: &'a Variables,
-    ) -> EvaluationResult {
+    ) -> Result<BoundArgument<'a>, BindingError> {
         Ok(match self {
             Self::StringLiteral(value) => Cow::Borrowed(value),
             Self::FloatLiteral(value) => Cow::Borrowed(value),
@@ -35,17 +40,17 @@ impl ConcreteArgument {
             Self::Underscore => Cow::Borrowed(last_value),
             Self::Null => Cow::Owned(DynamicValue::None),
             Self::Column(index) => match record.get(*index) {
-                None => return Err(EvaluationError::ColumnOutOfRange(*index)),
+                None => return Err(BindingError::ColumnOutOfRange(*index)),
                 Some(cell) => match std::str::from_utf8(cell) {
-                    Err(_) => return Err(EvaluationError::UnicodeDecodeError),
+                    Err(_) => return Err(BindingError::UnicodeDecodeError),
                     Ok(value) => Cow::Owned(DynamicValue::from(value)),
                 },
             },
             Self::Variable(name) => match variables.get::<str>(name) {
                 Some(value) => Cow::Borrowed(value),
-                None => return Err(EvaluationError::UnknownVariable(name.clone())),
+                None => return Err(BindingError::UnknownVariable(name.clone())),
             },
-            Self::Call(_) => return Err(EvaluationError::IllegalBinding),
+            Self::Call(_) => return Err(BindingError::IllegalBinding),
         })
     }
 }
@@ -196,11 +201,16 @@ fn evaluate_function_call<'a>(
             ConcreteArgument::Call(sub_function_call) => {
                 bound_args.push(traverse(sub_function_call, record, last_value, variables)?);
             }
-            _ => bound_args.push(arg.bind(record, last_value, variables)?),
+            _ => bound_args.push(arg.bind(record, last_value, variables).map_err(|err| {
+                EvaluationError::Binding(SpecifiedBindingError {
+                    function_name: function_call.name.to_string(),
+                    reason: err,
+                })
+            })?),
         }
     }
 
-    call(&function_call.name, bound_args)
+    call(&function_call.name, bound_args).map_err(|err| EvaluationError::Call(err))
 }
 
 fn evaluate_expression<'a>(
@@ -213,7 +223,12 @@ fn evaluate_expression<'a>(
         ConcreteArgument::Call(function_call) => {
             evaluate_function_call(function_call, record, last_value, variables)
         }
-        _ => arg.bind(record, last_value, variables),
+        _ => arg.bind(record, last_value, variables).map_err(|err| {
+            EvaluationError::Binding(SpecifiedBindingError {
+                function_name: "<expr>".to_string(),
+                reason: err,
+            })
+        }),
     }
 }
 
@@ -228,7 +243,10 @@ fn traverse<'a>(
         let arity = function_call.args.len();
 
         if !(2..=3).contains(&arity) {
-            return Err(EvaluationError::from_range_arity(2, 3, arity));
+            return Err(EvaluationError::Call(SpecifiedCallError {
+                function_name: "if".to_string(),
+                reason: CallError::from_range_arity(2, 3, arity),
+            }));
         }
 
         let condition = &function_call.args[0];

@@ -18,7 +18,7 @@ impl Display for PrepareError {
                     write!(f, "cannot find column (\"{}\", {})", name, nth)
                 }
             },
-            Self::ParseError(_) => write!(f, "could not parse expression"),
+            Self::ParseError(expr) => write!(f, "could not parse expression: {}", expr),
         }
     }
 }
@@ -50,15 +50,64 @@ pub enum InvalidArity {
 }
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
-pub enum EvaluationError {
+pub struct SpecifiedBindingError {
+    pub function_name: String,
+    pub reason: BindingError,
+}
+
+impl Display for SpecifiedBindingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "error when binding args for \"{}\": {}",
+            self.function_name,
+            self.reason.to_string()
+        )
+    }
+}
+
+#[cfg_attr(test, derive(Debug, PartialEq))]
+pub enum BindingError {
     IllegalBinding,
-    InvalidArity(InvalidArity),
     ColumnOutOfRange(usize),
+    UnicodeDecodeError,
     UnknownVariable(String),
+}
+
+impl Display for BindingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::IllegalBinding => write!(f, "illegal binding"),
+            Self::ColumnOutOfRange(idx) => write!(f, "column \"{}\" is out of range", idx),
+            Self::UnknownVariable(name) => write!(f, "unknown variable \"{}\"", name),
+            Self::UnicodeDecodeError => write!(f, "unicode decode error"),
+        }
+    }
+}
+
+#[cfg_attr(test, derive(Debug, PartialEq))]
+pub struct SpecifiedCallError {
+    pub function_name: String,
+    pub reason: CallError,
+}
+
+impl Display for SpecifiedCallError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "error when calling function \"{}\": {}",
+            self.function_name,
+            self.reason.to_string()
+        )
+    }
+}
+
+#[cfg_attr(test, derive(Debug, PartialEq))]
+pub enum CallError {
+    InvalidArity(InvalidArity),
     UnknownFunction(String),
     InvalidPath,
     NotImplemented,
-    UnicodeDecodeError,
     CannotOpenFile(String),
     CannotReadFile(String),
     CannotCompare,
@@ -66,7 +115,7 @@ pub enum EvaluationError {
     Custom(String),
 }
 
-impl EvaluationError {
+impl CallError {
     pub fn from_invalid_arity(expected: usize, got: usize) -> Self {
         Self::InvalidArity(InvalidArity::Strict(StrictArityErrorContext {
             expected,
@@ -90,7 +139,7 @@ impl EvaluationError {
     }
 }
 
-impl Display for EvaluationError {
+impl Display for CallError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidPath => write!(f, "invalid posix path"),
@@ -101,15 +150,26 @@ impl Display for EvaluationError {
                 write!(f, "cannot open file {}", path)
             }
             Self::CannotReadFile(path) => write!(f, "cannot read file {}", path),
-            Self::UnknownFunction(name) => write!(f, "unknown function \"{}\"", name),
+            Self::UnknownFunction(_) => write!(f, "unknown function"),
             Self::Custom(msg) => write!(f, "{}", msg),
-            Self::IllegalBinding => write!(f, "illegal binding"),
             Self::Cast => write!(f, "casting error"),
-            Self::ColumnOutOfRange(idx) => write!(f, "column \"{}\" is out of range", idx),
-            Self::UnknownVariable(name) => write!(f, "unknown variable \"{}\"", name),
             Self::NotImplemented => write!(f, "not implemented"),
             Self::CannotCompare => write!(f, "invalid comparison between mixed arguments"),
-            Self::UnicodeDecodeError => write!(f, "unicode decode error"),
+        }
+    }
+}
+
+#[cfg_attr(test, derive(Debug, PartialEq))]
+pub enum EvaluationError {
+    Binding(SpecifiedBindingError),
+    Call(SpecifiedCallError),
+}
+
+impl Display for EvaluationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Binding(err) => err.fmt(f),
+            Self::Call(err) => err.fmt(f),
         }
     }
 }

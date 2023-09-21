@@ -6,7 +6,7 @@ use std::ops::{Add, Mul, Sub};
 
 use csv;
 
-use super::error::EvaluationError;
+use super::error::{CallError, EvaluationError};
 use super::utils::downgrade_float;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -185,9 +185,9 @@ impl DynamicValue {
         }
     }
 
-    pub fn try_as_str(&self) -> Result<Cow<str>, EvaluationError> {
+    pub fn try_as_str(&self) -> Result<Cow<str>, CallError> {
         Ok(match self {
-            Self::List(_) => return Err(EvaluationError::Cast),
+            Self::List(_) => return Err(CallError::Cast),
             Self::String(value) => Cow::Borrowed(value),
             Self::Float(value) => Cow::Owned(value.to_string()),
             Self::Integer(value) => Cow::Owned(value.to_string()),
@@ -202,33 +202,33 @@ impl DynamicValue {
         })
     }
 
-    pub fn try_as_list(&self) -> Result<&Vec<DynamicValue>, EvaluationError> {
+    pub fn try_as_list(&self) -> Result<&Vec<DynamicValue>, CallError> {
         match self {
             Self::List(list) => Ok(list),
-            _ => Err(EvaluationError::Cast),
+            _ => Err(CallError::Cast),
         }
     }
 
-    pub fn try_as_number(&self) -> Result<DynamicNumber, EvaluationError> {
+    pub fn try_as_number(&self) -> Result<DynamicNumber, CallError> {
         Ok(match self {
             Self::String(string) => match string.parse::<i64>() {
                 Ok(value) => DynamicNumber::Integer(value),
                 Err(_) => match string.parse::<f64>() {
                     Ok(value) => DynamicNumber::Float(value),
-                    Err(_) => return Err(EvaluationError::Cast),
+                    Err(_) => return Err(CallError::Cast),
                 },
             },
             Self::Integer(value) => DynamicNumber::Integer(*value),
             Self::Float(value) => DynamicNumber::Float(*value),
             Self::Boolean(value) => DynamicNumber::Integer(*value as i64),
-            _ => return Err(EvaluationError::Cast),
+            _ => return Err(CallError::Cast),
         })
     }
 
-    pub fn try_as_usize(&self) -> Result<usize, EvaluationError> {
+    pub fn try_as_usize(&self) -> Result<usize, CallError> {
         Ok(match self {
             Self::String(string) => match string.parse::<usize>() {
-                Err(_) => return Err(EvaluationError::Cast),
+                Err(_) => return Err(CallError::Cast),
                 Ok(value) => value,
             },
             Self::Float(value) => match downgrade_float(*value) {
@@ -236,36 +236,36 @@ impl DynamicValue {
                     if safe_downgraded_value >= 0 {
                         safe_downgraded_value as usize
                     } else {
-                        return Err(EvaluationError::Cast);
+                        return Err(CallError::Cast);
                     }
                 }
-                None => return Err(EvaluationError::Cast),
+                None => return Err(CallError::Cast),
             },
             Self::Integer(value) => {
                 if value >= &0 {
                     (*value) as usize
                 } else {
-                    return Err(EvaluationError::Cast);
+                    return Err(CallError::Cast);
                 }
             }
             Self::Boolean(value) => (*value) as usize,
-            _ => return Err(EvaluationError::Cast),
+            _ => return Err(CallError::Cast),
         })
     }
 
-    pub fn try_as_i64(&self) -> Result<i64, EvaluationError> {
+    pub fn try_as_i64(&self) -> Result<i64, CallError> {
         Ok(match self {
             Self::String(string) => match string.parse::<i64>() {
-                Err(_) => return Err(EvaluationError::Cast),
+                Err(_) => return Err(CallError::Cast),
                 Ok(value) => value,
             },
             Self::Float(value) => match downgrade_float(*value) {
                 Some(safe_downgraded_value) => safe_downgraded_value,
-                None => return Err(EvaluationError::Cast),
+                None => return Err(CallError::Cast),
             },
             Self::Integer(value) => *value,
             Self::Boolean(value) => (*value) as i64,
-            _ => return Err(EvaluationError::Cast),
+            _ => return Err(CallError::Cast),
         })
     }
 
@@ -371,25 +371,25 @@ impl<'a> BoundArguments<'a> {
         self.stack.push(arg);
     }
 
-    pub fn validate_arity(&self, expected: usize) -> Result<(), EvaluationError> {
+    pub fn validate_arity(&self, expected: usize) -> Result<(), CallError> {
         if self.len() != expected {
-            Err(EvaluationError::from_invalid_arity(expected, self.len()))
+            Err(CallError::from_invalid_arity(expected, self.len()))
         } else {
             Ok(())
         }
     }
 
-    pub fn validate_min_arity(&self, min: usize) -> Result<(), EvaluationError> {
+    pub fn validate_min_arity(&self, min: usize) -> Result<(), CallError> {
         if self.len() < min {
-            Err(EvaluationError::from_invalid_min_arity(min, self.len()))
+            Err(CallError::from_invalid_min_arity(min, self.len()))
         } else {
             Ok(())
         }
     }
 
-    pub fn validate_min_max_arity(&self, min: usize, max: usize) -> Result<(), EvaluationError> {
+    pub fn validate_min_max_arity(&self, min: usize, max: usize) -> Result<(), CallError> {
         if self.len() < min || self.len() > max {
-            Err(EvaluationError::from_range_arity(min, max, self.len()))
+            Err(CallError::from_range_arity(min, max, self.len()))
         } else {
             Ok(())
         }
@@ -405,12 +405,12 @@ impl<'a> BoundArguments<'a> {
         selection
     }
 
-    pub fn get1(&'a self) -> Result<&'a BoundArgument, EvaluationError> {
+    pub fn get1(&'a self) -> Result<&'a BoundArgument, CallError> {
         match self.stack.get(0) {
-            None => Err(EvaluationError::from_invalid_arity(1, 0)),
+            None => Err(CallError::from_invalid_arity(1, 0)),
             Some(value) => {
                 if self.len() > 1 {
-                    return Err(EvaluationError::from_invalid_arity(1, self.len()));
+                    return Err(CallError::from_invalid_arity(1, self.len()));
                 }
 
                 Ok(value)
@@ -418,14 +418,14 @@ impl<'a> BoundArguments<'a> {
         }
     }
 
-    pub fn get2(&self) -> Result<(&Cow<DynamicValue>, &Cow<DynamicValue>), EvaluationError> {
+    pub fn get2(&self) -> Result<(&Cow<DynamicValue>, &Cow<DynamicValue>), CallError> {
         match self.stack.get(0) {
-            None => Err(EvaluationError::from_invalid_arity(2, 0)),
+            None => Err(CallError::from_invalid_arity(2, 0)),
             Some(a) => match self.stack.get(1) {
-                None => Err(EvaluationError::from_invalid_arity(2, 1)),
+                None => Err(CallError::from_invalid_arity(2, 1)),
                 Some(b) => {
                     if self.len() > 2 {
-                        return Err(EvaluationError::from_invalid_arity(2, self.len()));
+                        return Err(CallError::from_invalid_arity(2, self.len()));
                     }
 
                     Ok((a, b))
@@ -434,26 +434,26 @@ impl<'a> BoundArguments<'a> {
         }
     }
 
-    pub fn get1_as_str(&'a self) -> Result<Cow<'a, str>, EvaluationError> {
+    pub fn get1_as_str(&'a self) -> Result<Cow<'a, str>, CallError> {
         self.get1().and_then(|value| value.try_as_str())
     }
 
-    pub fn get1_as_bool(&'a self) -> Result<bool, EvaluationError> {
+    pub fn get1_as_bool(&'a self) -> Result<bool, CallError> {
         self.get1().map(|value| value.is_truthy())
     }
 
-    pub fn get2_as_str(&self) -> Result<(Cow<str>, Cow<str>), EvaluationError> {
+    pub fn get2_as_str(&self) -> Result<(Cow<str>, Cow<str>), CallError> {
         let (a, b) = self.get2()?;
 
         Ok((a.try_as_str()?, b.try_as_str()?))
     }
 
-    pub fn get2_as_numbers(&self) -> Result<(DynamicNumber, DynamicNumber), EvaluationError> {
+    pub fn get2_as_numbers(&self) -> Result<(DynamicNumber, DynamicNumber), CallError> {
         let (a, b) = self.get2()?;
         Ok((a.try_as_number()?, b.try_as_number()?))
     }
 
-    pub fn get2_as_bool(&self) -> Result<(bool, bool), EvaluationError> {
+    pub fn get2_as_bool(&self) -> Result<(bool, bool), CallError> {
         let (a, b) = self.get2()?;
         Ok((a.is_truthy(), b.is_truthy()))
     }
