@@ -153,7 +153,21 @@ impl Display for CallError {
         match self {
             Self::InvalidPath => write!(f, "invalid posix path"),
             Self::InvalidArity(arity) => match arity {
-                _ => write!(f, "invalid arity"),
+                InvalidArity::Min(context) => write!(
+                    f,
+                    "expected at least {} arguments but got {}",
+                    context.min_expected, context.got
+                ),
+                InvalidArity::Strict(context) => write!(
+                    f,
+                    "expected {} arguments but got {}",
+                    context.expected, context.got
+                ),
+                InvalidArity::Range(context) => write!(
+                    f,
+                    "expected between {} and {} arguments but got {}",
+                    context.min_expected, context.max_expected, context.got
+                ),
             },
             Self::CannotOpenFile(path) => {
                 write!(f, "cannot open file {}", path)

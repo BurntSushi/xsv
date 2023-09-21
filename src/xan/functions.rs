@@ -20,7 +20,7 @@ type FunctionResult = Result<DynamicValue, CallError>;
 // TODO: slice, encoding, replace, regexes etc.
 // TODO: we could also have ranges of columns and vec map etc.
 // TODO: random, stats etc.
-// TODO: contextualize between callerror and binderror, specialize cast
+// TODO: better casts
 pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, SpecifiedCallError> {
     Ok(match name {
         "add" => arithmetic_op(args, Add::add),
