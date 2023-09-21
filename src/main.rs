@@ -9,6 +9,7 @@ extern crate dateparser;
 extern crate docopt;
 extern crate filetime;
 extern crate flate2;
+extern crate glob;
 #[cfg(feature = "lang")]
 extern crate lingua;
 extern crate nom;
@@ -72,6 +73,7 @@ macro_rules! command_list {
     fmt         Format CSV output (change field delimiter)
     foreach     Loop over a CSV file to execute bash commands
     frequency   Show frequency tables
+    glob        Create a CSV file with paths matching a glob pattern
     headers     Show header names
     help        Show this usage message.
     index       Create CSV index for faster access
@@ -184,6 +186,7 @@ enum Command {
     Flatten,
     Fmt,
     Frequency,
+    Glob,
     Headers,
     Help,
     Index,
@@ -231,6 +234,7 @@ impl Command {
             Command::Flatten => cmd::flatten::run(argv),
             Command::Fmt => cmd::fmt::run(argv),
             Command::Frequency => cmd::frequency::run(argv),
+            Command::Glob => cmd::glob::run(argv),
             Command::Headers => cmd::headers::run(argv),
             Command::Help => {
                 wout!("{}", USAGE);
@@ -335,6 +339,18 @@ impl From<xan::PrepareError> for CliError {
 
 impl From<xan::EvaluationError> for CliError {
     fn from(err: xan::EvaluationError) -> CliError {
+        CliError::Other(err.to_string())
+    }
+}
+
+impl From<glob::GlobError> for CliError {
+    fn from(err: glob::GlobError) -> Self {
+        CliError::Other(err.to_string())
+    }
+}
+
+impl From<glob::PatternError> for CliError {
+    fn from(err: glob::PatternError) -> Self {
         CliError::Other(err.to_string())
     }
 }

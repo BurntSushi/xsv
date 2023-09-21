@@ -46,6 +46,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv flatten --pretty`
 * `xsv foreach`
 * `xsv frequency --pretty`
+* `xsv glob`
 * `xsv join --prefix-left/--prefix-right`
 * `xsv jsonl`
 * `xsv lang`
@@ -77,6 +78,7 @@ given separator.
 * **foreach** - Loop over a CSV file to execute bash commands.
 * **frequency** - Build frequency tables of each column in CSV data. (Uses
   parallelism to go faster if an index is present.)
+* **glob** - Create a CSV file with paths matching a glob pattern.
 * **headers** - Show the headers of CSV data. Or show the intersection of all
   headers between many CSV files.
 * **index** - Create an index for a CSV file. This is very quick and provides

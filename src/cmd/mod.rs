@@ -9,6 +9,7 @@ pub mod flatten;
 pub mod fmt;
 pub mod foreach;
 pub mod frequency;
+pub mod glob;
 pub mod headers;
 pub mod index;
 pub mod input;
