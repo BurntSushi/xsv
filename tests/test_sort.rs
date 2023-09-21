@@ -303,6 +303,41 @@ fn sort_unstable() {
     assert_eq!(got, expected);
 }
 
+#[test]
+fn sort_parallel() {
+    let wrk = Workdir::new("sort_parallel");
+    wrk.create(
+        "in.csv",
+        vec![svec!["n"], svec!["2"], svec!["1"], svec!["3"]],
+    );
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--parallel").arg("-N").arg("in.csv");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![svec!["n"], svec!["1"], svec!["2"], svec!["3"]];
+    assert_eq!(got, expected);
+}
+
+#[test]
+fn sort_parallel_unstable() {
+    let wrk = Workdir::new("sort_parallel_unstable");
+    wrk.create(
+        "in.csv",
+        vec![svec!["n"], svec!["2"], svec!["1"], svec!["3"]],
+    );
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--parallel")
+        .arg("--unstable")
+        .arg("-N")
+        .arg("in.csv");
+
+    let got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
+    let expected = vec![svec!["n"], svec!["1"], svec!["2"], svec!["3"]];
+    assert_eq!(got, expected);
+}
+
 /// Order `a` and `b` lexicographically using `Ord`
 pub fn iter_cmp<A, L, R>(mut a: L, mut b: R) -> cmp::Ordering
 where

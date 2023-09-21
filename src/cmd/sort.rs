@@ -1,5 +1,7 @@
 use std::cmp;
 
+use rayon::slice::ParallelSliceMut;
+
 use config::{Config, Delimiter};
 use csv;
 use select::SelectColumns;
@@ -53,7 +55,8 @@ sort options:
                            Needs a column name. Can only be used with '--uniq'.
     -u, --uniq             When set, identical consecutive lines will be dropped
                            to keep only one line per sorted value.
-    --unstable             Unstable sort. Can improve performance.
+    -U, --unstable         Unstable sort. Can improve performance.
+    -p, --parallel         Whether to use parallelism to improve performance.
 
 Common options:
     -h, --help             Display this message
@@ -78,6 +81,7 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
     flag_uniq: bool,
     flag_unstable: bool,
+    flag_parallel: bool,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -103,9 +107,17 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut all = rdr.byte_records().collect::<Result<Vec<_>, _>>()?;
 
     if args.flag_unstable {
-        sort_by!(all, sort_unstable_by, sel, numeric, reverse);
+        if args.flag_parallel {
+            sort_by!(all, par_sort_unstable_by, sel, numeric, reverse);
+        } else {
+            sort_by!(all, sort_unstable_by, sel, numeric, reverse);
+        }
     } else {
-        sort_by!(all, sort_by, sel, numeric, reverse);
+        if args.flag_parallel {
+            sort_by!(all, par_sort_by, sel, numeric, reverse);
+        } else {
+            sort_by!(all, sort_by, sel, numeric, reverse);
+        }
     }
 
     let mut wtr = Config::new(&args.flag_output).writer()?;

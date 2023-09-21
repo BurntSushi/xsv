@@ -17,6 +17,7 @@ extern crate nom;
 extern crate num_cpus;
 extern crate pariter;
 extern crate rand;
+extern crate rayon;
 extern crate regex;
 extern crate serde;
 #[macro_use]
