@@ -9,6 +9,33 @@ use CliResult;
 
 use self::Number::{Float, Int};
 
+macro_rules! sort_by {
+    ($target:ident, $fn:ident, $sel:ident, $numeric:ident, $reverse:ident) => {
+        match ($numeric, $reverse) {
+            (false, false) => $target.$fn(|r1, r2| {
+                let a = $sel.select(r1);
+                let b = $sel.select(r2);
+                iter_cmp(a, b)
+            }),
+            (true, false) => $target.$fn(|r1, r2| {
+                let a = $sel.select(r1);
+                let b = $sel.select(r2);
+                iter_cmp_num(a, b)
+            }),
+            (false, true) => $target.$fn(|r1, r2| {
+                let a = $sel.select(r1);
+                let b = $sel.select(r2);
+                iter_cmp(b, a)
+            }),
+            (true, true) => $target.$fn(|r1, r2| {
+                let a = $sel.select(r1);
+                let b = $sel.select(r2);
+                iter_cmp_num(b, a)
+            }),
+        }
+    };
+}
+
 static USAGE: &str = "
 Sorts CSV data lexicographically.
 
@@ -26,6 +53,7 @@ sort options:
                            Needs a column name. Can only be used with '--uniq'.
     -u, --uniq             When set, identical consecutive lines will be dropped
                            to keep only one line per sorted value.
+    --unstable             Unstable sort. Can improve performance.
 
 Common options:
     -h, --help             Display this message
@@ -49,6 +77,7 @@ struct Args {
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
     flag_uniq: bool,
+    flag_unstable: bool,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -72,27 +101,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let sel = rconfig.selection(&headers)?;
 
     let mut all = rdr.byte_records().collect::<Result<Vec<_>, _>>()?;
-    match (numeric, reverse) {
-        (false, false) => all.sort_by(|r1, r2| {
-            let a = sel.select(r1);
-            let b = sel.select(r2);
-            iter_cmp(a, b)
-        }),
-        (true, false) => all.sort_by(|r1, r2| {
-            let a = sel.select(r1);
-            let b = sel.select(r2);
-            iter_cmp_num(a, b)
-        }),
-        (false, true) => all.sort_by(|r1, r2| {
-            let a = sel.select(r1);
-            let b = sel.select(r2);
-            iter_cmp(b, a)
-        }),
-        (true, true) => all.sort_by(|r1, r2| {
-            let a = sel.select(r1);
-            let b = sel.select(r2);
-            iter_cmp_num(b, a)
-        }),
+
+    if args.flag_unstable {
+        sort_by!(all, sort_unstable_by, sel, numeric, reverse);
+    } else {
+        sort_by!(all, sort_by, sel, numeric, reverse);
     }
 
     let mut wtr = Config::new(&args.flag_output).writer()?;
