@@ -17,9 +17,10 @@ type FunctionResult = Result<DynamicValue, EvaluationError>;
 // TODO: deal with list in sequence_compare & contains
 // TODO: in list, empty, not empty
 // TODO: division must take integer vs. float into account
-// TODO: slice, encoding
+// TODO: slice, encoding, replace, regexes etc.
 // TODO: we could also have ranges of columns and vec map etc.
 // TODO: random, stats etc.
+// TODO: contextualize between callerror and binderror, specialize cast
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     (match name {
         "add" => arithmetic_op(args, Add::add),
@@ -32,6 +33,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "endswith" => endswith(args),
         "err" => err(args),
         "first" => first(args),
+        "get" => get(args),
         "gt" => number_compare(args, Ordering::is_gt),
         "gte" => number_compare(args, Ordering::is_ge),
         "join" => join(args),
@@ -189,6 +191,61 @@ fn last(args: BoundArguments) -> FunctionResult {
     })
 }
 
+fn get(args: BoundArguments) -> FunctionResult {
+    let (target, index) = args.get2()?;
+    let mut index = index.try_as_i64()?;
+
+    Ok(match target.as_ref() {
+        DynamicValue::String(value) => {
+            if index < 0 {
+                index = value.len() as i64 - index;
+            }
+
+            if index < 0 {
+                DynamicValue::None
+            } else {
+                DynamicValue::from(value.chars().nth(index as usize))
+            }
+        }
+        DynamicValue::List(list) => {
+            if index < 0 {
+                index = list.len() as i64 - index;
+            }
+
+            if index < 0 {
+                DynamicValue::None
+            } else {
+                match list.get(index as usize) {
+                    None => DynamicValue::None,
+                    Some(value) => value.clone(),
+                }
+            }
+        }
+        _ => return Err(EvaluationError::Cast),
+    })
+}
+
+// fn slice(args: BoundArguments) -> FunctionResult {
+//     args.validate_min_max_arity(2, 3)?;
+
+//     let args = args.getn_opt(3);
+
+//     let target = args[0].unwrap();
+
+//     match target.as_ref() {
+//         DynamicValue::String(string) => {
+//             // let lo = args[1].unwrap().try_as_i64()?;
+//             // let hi = args[2].unwrap().try_as_i64()?;
+
+//             // let new_string = string[lo..hi];
+
+//             Ok(DynamicValue::None)
+//         }
+//         DynamicValue::List(_) => Err(EvaluationError::NotImplemented),
+//         _ => Err(EvaluationError::Cast),
+//     }
+// }
+
 fn join(args: BoundArguments) -> FunctionResult {
     let (arg1, arg2) = args.get2()?;
 
@@ -207,27 +264,29 @@ fn join(args: BoundArguments) -> FunctionResult {
 fn contains(args: BoundArguments) -> FunctionResult {
     let (arg1, arg2) = args.get2()?;
 
-    Ok(match arg1.as_ref() {
+    match arg1.as_ref() {
         DynamicValue::String(text) => {
             let pattern = arg2.try_as_str()?;
 
-            DynamicValue::from(text.contains(&*pattern))
+            Ok(DynamicValue::from(text.contains(&*pattern)))
         }
-        _ => unimplemented!(),
-    })
+        DynamicValue::List(_) => Err(EvaluationError::NotImplemented),
+        _ => Err(EvaluationError::Cast),
+    }
 }
 
 fn not_contains(args: BoundArguments) -> FunctionResult {
     let (arg1, arg2) = args.get2()?;
 
-    Ok(match arg1.as_ref() {
+    match arg1.as_ref() {
         DynamicValue::String(text) => {
             let pattern = arg2.try_as_str()?;
 
-            DynamicValue::from(!text.contains(&*pattern))
+            Ok(DynamicValue::from(!text.contains(&*pattern)))
         }
-        _ => unimplemented!(),
-    })
+        DynamicValue::List(_) => Err(EvaluationError::NotImplemented),
+        _ => Err(EvaluationError::Cast),
+    }
 }
 
 // Arithmetics

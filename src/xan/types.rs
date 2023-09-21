@@ -185,23 +185,6 @@ impl DynamicValue {
         }
     }
 
-    // pub fn as_bytes(&self) -> Cow<[u8]> {
-    //     match self {
-    //         Self::List(_) => unimplemented!(),
-    //         Self::String(value) => Cow::Borrowed(value.as_bytes()),
-    //         Self::Float(value) => Cow::Owned(value.to_string().into_bytes()),
-    //         Self::Integer(value) => Cow::Owned(value.to_string().into_bytes()),
-    //         Self::Boolean(value) => {
-    //             if *value {
-    //                 Cow::Borrowed(b"true")
-    //             } else {
-    //                 Cow::Borrowed(b"false")
-    //             }
-    //         }
-    //         Self::None => Cow::Borrowed(b""),
-    //     }
-    // }
-
     pub fn try_as_str(&self) -> Result<Cow<str>, EvaluationError> {
         Ok(match self {
             Self::List(_) => return Err(EvaluationError::Cast),
@@ -266,6 +249,22 @@ impl DynamicValue {
                 }
             }
             Self::Boolean(value) => (*value) as usize,
+            _ => return Err(EvaluationError::Cast),
+        })
+    }
+
+    pub fn try_as_i64(&self) -> Result<i64, EvaluationError> {
+        Ok(match self {
+            Self::String(string) => match string.parse::<i64>() {
+                Err(_) => return Err(EvaluationError::Cast),
+                Ok(value) => value,
+            },
+            Self::Float(value) => match downgrade_float(*value) {
+                Some(safe_downgraded_value) => safe_downgraded_value,
+                None => return Err(EvaluationError::Cast),
+            },
+            Self::Integer(value) => *value,
+            Self::Boolean(value) => (*value) as i64,
             _ => return Err(EvaluationError::Cast),
         })
     }
@@ -348,75 +347,6 @@ where
         }
     }
 }
-
-// impl TryInto<i64> for DynamicValue {
-//     type Error = EvaluationError;
-
-//     fn try_into(self) -> Result<i64, Self::Error> {
-//         Ok(match self {
-//             Self::String(string) => match string.parse::<i64>() {
-//                 Err(_) => match string.parse::<f64>() {
-//                     Err(_) => return Err(EvaluationError::Cast),
-//                     Ok(value) => match downgrade_float(value) {
-//                         Some(safe_downgraded_value) => safe_downgraded_value,
-//                         None => return Err(EvaluationError::Cast),
-//                     },
-//                 },
-//                 Ok(value) => value,
-//             },
-//             Self::Float(value) => match downgrade_float(value) {
-//                 Some(safe_downgraded_value) => safe_downgraded_value,
-//                 None => return Err(EvaluationError::Cast),
-//             },
-//             Self::Integer(value) => value,
-//             Self::Boolean(value) => value as i64,
-//             _ => return Err(EvaluationError::Cast),
-//         })
-//     }
-// }
-
-// impl TryInto<f64> for DynamicValue {
-//     type Error = EvaluationError;
-
-//     fn try_into(self) -> Result<f64, Self::Error> {
-//         Ok(match self {
-//             Self::String(string) => match string.parse::<f64>() {
-//                 Err(_) => return Err(EvaluationError::Cast),
-//                 Ok(value) => value,
-//             },
-//             Self::Float(value) => value,
-//             Self::Integer(value) => value as f64,
-//             Self::Boolean(value) => {
-//                 if value {
-//                     1.0
-//                 } else {
-//                     0.0
-//                 }
-//             }
-//             _ => return Err(EvaluationError::Cast),
-//         })
-//     }
-// }
-
-// impl TryInto<DynamicNumber> for DynamicValue {
-//     type Error = EvaluationError;
-
-//     fn try_into(self) -> Result<DynamicNumber, Self::Error> {
-//         Ok(match self {
-//             Self::String(string) => match string.parse::<i64>() {
-//                 Ok(value) => DynamicNumber::Integer(value),
-//                 Err(_) => match string.parse::<f64>() {
-//                     Ok(value) => DynamicNumber::Float(value),
-//                     Err(_) => return Err(EvaluationError::Cast),
-//                 },
-//             },
-//             Self::Integer(value) => DynamicNumber::Integer(value),
-//             Self::Float(value) => DynamicNumber::Float(value),
-//             Self::Boolean(value) => DynamicNumber::Integer(value as i64),
-//             _ => return Err(EvaluationError::Cast),
-//         })
-//     }
-// }
 
 pub type BoundArgument<'a> = Cow<'a, DynamicValue>;
 pub type EvaluationResult<'a> = Result<BoundArgument<'a>, EvaluationError>;
