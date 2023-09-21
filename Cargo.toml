@@ -38,6 +38,7 @@ opt-level = 3
 
 [dependencies]
 byteorder = "1"
+calamine = "0.22.0"
 chrono = "0.4.23"
 chrono-tz = "0.6"
 colored = "2.0.0"

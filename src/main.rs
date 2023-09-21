@@ -1,4 +1,5 @@
 extern crate byteorder;
+extern crate calamine;
 extern crate chrono;
 extern crate chrono_tz;
 extern crate colored;
@@ -95,6 +96,7 @@ macro_rules! command_list {
     split       Split CSV data into many files
     stats       Compute basic statistics
     table       Align CSV data into columns
+    xls         Convert Excel/OpenOffice spreadsheets to CSV
 "
     };
 }
@@ -208,6 +210,7 @@ enum Command {
     Split,
     Stats,
     Table,
+    Xls,
 }
 
 impl Command {
@@ -264,6 +267,7 @@ impl Command {
             Command::Split => cmd::split::run(argv),
             Command::Stats => cmd::stats::run(argv),
             Command::Table => cmd::table::run(argv),
+            Command::Xls => cmd::xls::run(argv),
         }
     }
 }

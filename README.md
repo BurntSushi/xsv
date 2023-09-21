@@ -59,6 +59,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv shuffle`
 * `xsv sort -u`
 * `xsv stats --pretty`
+* `xsv xls`
 
 ### Available commands
 
@@ -108,6 +109,7 @@ given separator.
   (i.e., mean, standard deviation, median, range, etc.)
 * **table** - Show aligned output of any CSV data using
   [elastic tabstops](https://github.com/BurntSushi/tabwriter).
+* **xls** - Convert Excel/OpenOffice spreadsheets to CSV.
 
 
 ### A whirlwind tour
