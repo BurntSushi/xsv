@@ -20,7 +20,6 @@ type FunctionResult = Result<DynamicValue, CallError>;
 // TODO: slice, encoding, replace, regexes etc.
 // TODO: we could also have ranges of columns and vec map etc.
 // TODO: random, stats etc.
-// TODO: better casts
 pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, SpecifiedCallError> {
     Ok(match name {
         "add" => arithmetic_op(args, Add::add),
@@ -180,7 +179,12 @@ fn first(args: BoundArguments) -> FunctionResult {
             None => DynamicValue::None,
             Some(value) => value.clone(),
         },
-        _ => return Err(CallError::Cast),
+        value => {
+            return Err(CallError::Cast((
+                value.type_of().to_string(),
+                "sequence".to_string(),
+            )))
+        }
     })
 }
 
@@ -193,7 +197,12 @@ fn last(args: BoundArguments) -> FunctionResult {
             None => DynamicValue::None,
             Some(value) => value.clone(),
         },
-        _ => return Err(CallError::Cast),
+        value => {
+            return Err(CallError::Cast((
+                value.type_of().to_string(),
+                "sequence".to_string(),
+            )))
+        }
     })
 }
 
@@ -227,7 +236,12 @@ fn get(args: BoundArguments) -> FunctionResult {
                 }
             }
         }
-        _ => return Err(CallError::Cast),
+        value => {
+            return Err(CallError::Cast((
+                value.type_of().to_string(),
+                "sequence".to_string(),
+            )))
+        }
     })
 }
 
@@ -276,8 +290,13 @@ fn contains(args: BoundArguments) -> FunctionResult {
 
             Ok(DynamicValue::from(text.contains(&*pattern)))
         }
-        DynamicValue::List(_) => Err(CallError::NotImplemented),
-        _ => Err(CallError::Cast),
+        DynamicValue::List(_) => Err(CallError::NotImplemented("list".to_string())),
+        value => {
+            return Err(CallError::Cast((
+                value.type_of().to_string(),
+                "sequence".to_string(),
+            )))
+        }
     }
 }
 
@@ -290,8 +309,13 @@ fn not_contains(args: BoundArguments) -> FunctionResult {
 
             Ok(DynamicValue::from(!text.contains(&*pattern)))
         }
-        DynamicValue::List(_) => Err(CallError::NotImplemented),
-        _ => Err(CallError::Cast),
+        DynamicValue::List(_) => Err(CallError::NotImplemented("list".to_string())),
+        value => {
+            return Err(CallError::Cast((
+                value.type_of().to_string(),
+                "sequence".to_string(),
+            )))
+        }
     }
 }
 

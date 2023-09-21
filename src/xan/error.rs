@@ -116,11 +116,10 @@ pub enum CallError {
     InvalidArity(InvalidArity),
     UnknownFunction(String),
     InvalidPath,
-    NotImplemented,
+    NotImplemented(String),
     CannotOpenFile(String),
     CannotReadFile(String),
-    CannotCompare,
-    Cast,
+    Cast((String, String)),
     Custom(String),
 }
 
@@ -175,9 +174,14 @@ impl Display for CallError {
             Self::CannotReadFile(path) => write!(f, "cannot read file {}", path),
             Self::UnknownFunction(_) => write!(f, "unknown function"),
             Self::Custom(msg) => write!(f, "{}", msg),
-            Self::Cast => write!(f, "casting error"),
-            Self::NotImplemented => write!(f, "not implemented"),
-            Self::CannotCompare => write!(f, "invalid comparison between mixed arguments"),
+            Self::Cast((from_type, to_type)) => write!(
+                f,
+                "cannot safely cast from type \"{}\" to type \"{}\"",
+                from_type, to_type
+            ),
+            Self::NotImplemented(t) => {
+                write!(f, "not implemented for values of type \"{}\" as of yet", t)
+            }
         }
     }
 }
