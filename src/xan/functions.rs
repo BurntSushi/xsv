@@ -7,6 +7,7 @@ use std::path::PathBuf;
 
 use flate2::read::GzDecoder;
 use unidecode::unidecode;
+use uuid::Uuid;
 
 use super::error::EvaluationError;
 use super::types::{BoundArguments, DynamicNumber, DynamicValue, EvaluationResult};
@@ -58,6 +59,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "typeof" => type_of(args),
         "unidecode" => apply_unidecode(args),
         "upper" => upper(args),
+        "uuid" => uuid(args),
         "val" => val(args),
         _ => Err(EvaluationError::UnknownFunction(name.to_string())),
     })
@@ -329,6 +331,18 @@ fn read(args: BoundArguments) -> FunctionResult {
 // Introspection
 fn type_of(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(args.get1()?.type_of()))
+}
+
+// Random
+fn uuid(args: BoundArguments) -> FunctionResult {
+    args.validate_arity(0)?;
+
+    let id = Uuid::new_v4()
+        .to_hyphenated()
+        .encode_lower(&mut Uuid::encode_buffer())
+        .to_string();
+
+    Ok(DynamicValue::from(id))
 }
 
 // Utils

@@ -441,6 +441,14 @@ impl<'a> BoundArguments<'a> {
         self.stack.push(arg);
     }
 
+    pub fn validate_arity(&self, expected: usize) -> Result<(), EvaluationError> {
+        if self.len() != expected {
+            Err(EvaluationError::from_invalid_arity(expected, self.len()))
+        } else {
+            Ok(())
+        }
+    }
+
     pub fn validate_min_arity(&self, min: usize) -> Result<(), EvaluationError> {
         if self.len() < min {
             Err(EvaluationError::from_invalid_min_arity(min, self.len()))
