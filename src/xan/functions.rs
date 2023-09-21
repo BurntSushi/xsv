@@ -18,6 +18,7 @@ type FunctionResult = Result<DynamicValue, EvaluationError>;
 // TODO: in list, empty, not empty
 // TODO: division must take integer vs. float into account
 // TODO: slice, encoding
+// TODO: we could also have ranges of columns and vec map etc.
 // TODO: random, stats etc.
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     (match name {
