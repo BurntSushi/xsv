@@ -528,4 +528,13 @@ mod tests {
             Ok(DynamicValue::from("hn"))
         );
     }
+
+    #[test]
+    fn test_slice() {
+        assert_eq!(eval_code("slice('abcde', 2)"), Ok(DynamicValue::from("ab")));
+        assert_eq!(
+            eval_code("slice('abcde', -2)"),
+            Ok(DynamicValue::from("de"))
+        );
+    }
 }

@@ -48,6 +48,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, S
         "or" => or(args),
         "pathjoin" => pathjoin(args),
         "read" => read(args),
+        "slice" => slice(args),
         "split" => split(args),
         "startswith" => startswith(args),
         "sub" => arithmetic_op(args, Sub::sub),
@@ -213,7 +214,7 @@ fn get(args: BoundArguments) -> FunctionResult {
     Ok(match target.as_ref() {
         DynamicValue::String(value) => {
             if index < 0 {
-                index = value.len() as i64 - index;
+                index = value.len() as i64 + index;
             }
 
             if index < 0 {
@@ -224,7 +225,7 @@ fn get(args: BoundArguments) -> FunctionResult {
         }
         DynamicValue::List(list) => {
             if index < 0 {
-                index = list.len() as i64 - index;
+                index = list.len() as i64 + index;
             }
 
             if index < 0 {
@@ -245,26 +246,46 @@ fn get(args: BoundArguments) -> FunctionResult {
     })
 }
 
-// fn slice(args: BoundArguments) -> FunctionResult {
-//     args.validate_min_max_arity(2, 3)?;
+fn slice(args: BoundArguments) -> FunctionResult {
+    args.validate_min_max_arity(2, 3)?;
 
-//     let args = args.getn_opt(3);
+    let args = args.getn_opt(3);
 
-//     let target = args[0].unwrap();
+    let target = args[0].unwrap();
 
-//     match target.as_ref() {
-//         DynamicValue::String(string) => {
-//             // let lo = args[1].unwrap().try_as_i64()?;
-//             // let hi = args[2].unwrap().try_as_i64()?;
+    match target.as_ref() {
+        DynamicValue::String(string) => {
+            let mut lo = args[1].unwrap().try_as_i64()?;
+            let ub = args[2];
 
-//             // let new_string = string[lo..hi];
+            Ok(match ub {
+                None => {
+                    if lo < 0 {
+                        lo = string.len() as i64 + lo;
 
-//             Ok(DynamicValue::None)
-//         }
-//         DynamicValue::List(_) => Err(CallError::NotImplemented),
-//         _ => Err(CallError::Cast),
-//     }
-// }
+                        if lo < 0 {
+                            DynamicValue::from("")
+                        } else {
+                            DynamicValue::from(String::from(
+                                string.chars().skip(lo as usize).collect::<String>(),
+                            ))
+                        }
+                    } else {
+                        DynamicValue::from(string.chars().take(lo as usize).collect::<String>())
+                    }
+                }
+                Some(hi) => DynamicValue::None,
+            })
+        }
+        DynamicValue::List(_) => Err(CallError::NotImplemented("list".to_string())),
+        value => {
+            return Err(CallError::Cast((
+                value.type_of().to_string(),
+                "sequence".to_string(),
+            )))
+        }
+    }
+}
 
 fn join(args: BoundArguments) -> FunctionResult {
     let (arg1, arg2) = args.get2()?;
