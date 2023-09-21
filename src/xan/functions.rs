@@ -10,9 +10,9 @@ use super::types::{BoundArguments, DynamicValue, EvaluationResult};
 
 type FunctionResult = Result<DynamicValue, EvaluationError>;
 
-// TODO: in list, startswith, endswith, str comp, sub, deburr, empty, not empty
+// TODO: deal with list in sequence_compare & contains
+// TODO: in list, sub, deburr, empty, not empty
 // TODO: parse most likely and cast functions, slice, encoding
-// TODO: figure out str_eq etc.
 pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
     (match name {
         "add" => add(args),
@@ -22,6 +22,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "in" => contains(args),
         "count" => count(args),
         "eq" => number_compare(args, Ordering::is_eq),
+        "endswith" => endswith(args),
         "err" => err(args),
         "first" => first(args),
         "gt" => number_compare(args, Ordering::is_gt),
@@ -39,8 +40,13 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> EvaluationResult<'a> {
         "pathjoin" => pathjoin(args),
         "read" => read(args),
         "split" => split(args),
-        "str_eq" => sequence_compare(args, Ordering::is_eq),
-        "str_neq" => sequence_compare(args, Ordering::is_ne),
+        "startswith" => startswith(args),
+        "s_eq" => sequence_compare(args, Ordering::is_eq),
+        "s_gt" => sequence_compare(args, Ordering::is_gt),
+        "s_gte" => sequence_compare(args, Ordering::is_ge),
+        "s_lt" => sequence_compare(args, Ordering::is_lt),
+        "s_lte" => sequence_compare(args, Ordering::is_le),
+        "s_neq" => sequence_compare(args, Ordering::is_ne),
         "trim" => trim(args),
         "typeof" => type_of(args),
         "upper" => upper(args),
@@ -96,6 +102,18 @@ fn count(args: BoundArguments) -> FunctionResult {
     let (string, pattern) = args.get2_as_str()?;
 
     Ok(DynamicValue::from(string.matches(pattern.as_ref()).count()))
+}
+
+fn startswith(args: BoundArguments) -> FunctionResult {
+    let (string, pattern) = args.get2_as_str()?;
+
+    Ok(DynamicValue::from(string.starts_with(&*pattern)))
+}
+
+fn endswith(args: BoundArguments) -> FunctionResult {
+    let (string, pattern) = args.get2_as_str()?;
+
+    Ok(DynamicValue::from(string.ends_with(&*pattern)))
 }
 
 fn concat(args: BoundArguments) -> FunctionResult {
