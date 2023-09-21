@@ -531,10 +531,39 @@ mod tests {
 
     #[test]
     fn test_slice() {
-        assert_eq!(eval_code("slice('abcde', 2)"), Ok(DynamicValue::from("ab")));
+        assert_eq!(
+            eval_code("slice('abcde', 2)"),
+            Ok(DynamicValue::from("cde"))
+        );
         assert_eq!(
             eval_code("slice('abcde', -2)"),
             Ok(DynamicValue::from("de"))
+        );
+        assert_eq!(
+            eval_code("slice('abcde', -1, 3)"),
+            Ok(DynamicValue::from(""))
+        );
+        assert_eq!(
+            eval_code("slice('abcde', -1, -3)"),
+            Ok(DynamicValue::from(""))
+        );
+        assert_eq!(
+            eval_code("slice('abcde', 1, 3)"),
+            Ok(DynamicValue::from("bc"))
+        );
+        assert_eq!(
+            eval_code("slice('abcde', 1, -2)"),
+            Ok(DynamicValue::from("bc"))
+        );
+        assert_eq!(eval_code("slice('abcde', 5)"), Ok(DynamicValue::from("")));
+        assert_eq!(eval_code("slice('abcde', 10)"), Ok(DynamicValue::from("")));
+        assert_eq!(
+            eval_code("slice('abcde', -10)"),
+            Ok(DynamicValue::from("abcde"))
+        );
+        assert_eq!(
+            eval_code("slice('abcde', 10, -20)"),
+            Ok(DynamicValue::from(""))
         );
     }
 }

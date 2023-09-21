@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::cmp::max;
 use std::cmp::{Ordering, PartialOrd};
 use std::fs::File;
 use std::io::Read;
@@ -256,26 +257,38 @@ fn slice(args: BoundArguments) -> FunctionResult {
     match target.as_ref() {
         DynamicValue::String(string) => {
             let mut lo = args[1].unwrap().try_as_i64()?;
-            let ub = args[2];
+            let opt_hi = args[2];
 
-            Ok(match ub {
+            let chars = string.chars();
+
+            let substring: String = match opt_hi {
                 None => {
                     if lo < 0 {
-                        lo = string.len() as i64 + lo;
+                        let l = string.chars().count();
+                        lo = max(0, l as i64 + lo);
 
-                        if lo < 0 {
-                            DynamicValue::from("")
-                        } else {
-                            DynamicValue::from(String::from(
-                                string.chars().skip(lo as usize).collect::<String>(),
-                            ))
-                        }
+                        chars.skip(lo as usize).collect()
                     } else {
-                        DynamicValue::from(string.chars().take(lo as usize).collect::<String>())
+                        chars.skip(lo as usize).collect()
                     }
                 }
-                Some(hi) => DynamicValue::None,
-            })
+                Some(hi_value) => {
+                    let mut hi = hi_value.try_as_i64()?;
+
+                    if lo < 0 {
+                        "".to_string()
+                    } else {
+                        if hi < 0 {
+                            let l = string.chars().count();
+                            hi = max(0, l as i64 + hi);
+                        }
+
+                        chars.skip(lo as usize).take((hi - lo) as usize).collect()
+                    }
+                }
+            };
+
+            Ok(DynamicValue::from(substring))
         }
         DynamicValue::List(_) => Err(CallError::NotImplemented("list".to_string())),
         value => {
