@@ -15,6 +15,7 @@ pub mod index;
 pub mod input;
 pub mod join;
 pub mod jsonl;
+pub mod kway;
 #[cfg(feature = "lang")]
 pub mod lang;
 pub mod map;

@@ -82,6 +82,7 @@ macro_rules! command_list {
     input       Read CSV data with special quoting rules
     join        Join CSV files
     jsonl       Convert newline-delimited JSON files to CSV
+    kway        Merge multiple similar already sorted CSV files
     lang        Add a column with the language detected in a given CSV column
     map         Create a new column by evaluating an expression on each CSV row
     partition   Partition CSV data based on a column value
@@ -196,6 +197,7 @@ enum Command {
     Input,
     Join,
     Jsonl,
+    Kway,
     Lang,
     Map,
     Partition,
@@ -248,6 +250,7 @@ impl Command {
             Command::Input => cmd::input::run(argv),
             Command::Join => cmd::join::run(argv),
             Command::Jsonl => cmd::jsonl::run(argv),
+            Command::Kway => cmd::kway::run(argv),
             #[cfg(feature = "lang")]
             Command::Lang => cmd::lang::run(argv),
             #[cfg(not(feature = "lang"))]

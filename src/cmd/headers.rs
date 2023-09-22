@@ -41,7 +41,7 @@ struct Args {
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
-    let configs = util::many_configs(&args.arg_input, args.flag_delimiter, true)?;
+    let configs = util::many_configs(&args.arg_input, args.flag_delimiter, true, None)?;
 
     let num_inputs = configs.len();
     let mut headers: Vec<Vec<u8>> = vec![];

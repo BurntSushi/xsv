@@ -17,6 +17,7 @@ use rand::{SeedableRng, StdRng};
 use serde::de::{Deserialize, DeserializeOwned, Deserializer, Error};
 
 use config::{Config, Delimiter};
+use select::SelectColumns;
 use CliResult;
 
 pub fn num_cpus() -> usize {
@@ -59,6 +60,7 @@ pub fn many_configs(
     inps: &[String],
     delim: Option<Delimiter>,
     no_headers: bool,
+    select: Option<&SelectColumns>,
 ) -> Result<Vec<Config>, String> {
     let mut inps = inps.to_vec();
     if inps.is_empty() {
@@ -67,9 +69,15 @@ pub fn many_configs(
     let confs = inps
         .into_iter()
         .map(|p| {
-            Config::new(&Some(p))
+            let mut conf = Config::new(&Some(p))
                 .delimiter(delim)
-                .no_headers(no_headers)
+                .no_headers(no_headers);
+
+            if let Some(sel) = select {
+                conf = conf.select(sel.clone());
+            }
+
+            conf
         })
         .collect::<Vec<_>>();
     errif_greater_one_stdin(&confs)?;

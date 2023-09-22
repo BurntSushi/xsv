@@ -49,6 +49,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv glob`
 * `xsv join --prefix-left/--prefix-right`
 * `xsv jsonl`
+* `xsv kway`
 * `xsv lang`
 * `xsv map`
 * `xsv pseudo`
@@ -88,6 +89,7 @@ given separator.
 * **jsonl** - Convert newline-delimited JSON to CSV.
 * **join** - Inner, outer and cross joins. Uses a simple hash index to make it
   fast.
+* **kway** - Merge multiple similar already sorted CSV files.
 * **lang**, *optional* - Add a column with the language detected in a given CSV column.
 * **map** - Create a new column by evaluating an expression on each CSV row.
 * **partition** - Partition CSV data based on a column value.
