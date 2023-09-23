@@ -5,9 +5,25 @@ use std::convert::From;
 use std::ops::{Add, Mul, Sub};
 
 use csv;
+use regex::Regex as BaseRegex;
 
 use super::error::{CallError, EvaluationError};
 use super::utils::downgrade_float;
+
+#[derive(Debug, Clone)]
+pub struct Regex(BaseRegex);
+
+impl Regex {
+    fn as_str(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl PartialEq for Regex {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ColumIndexationBy {
@@ -149,6 +165,7 @@ pub enum DynamicValue {
     Float(f64),
     Integer(i64),
     Boolean(bool),
+    Regex(Regex),
     None,
 }
 
@@ -160,6 +177,7 @@ impl DynamicValue {
             Self::Float(_) => "float",
             Self::Integer(_) => "integer",
             Self::Boolean(_) => "boolean",
+            Self::Regex(_) => "regex",
             Self::None => "none",
         }
     }
@@ -190,6 +208,7 @@ impl DynamicValue {
                     Cow::Borrowed(b"false")
                 }
             }
+            Self::Regex(pattern) => Cow::Borrowed(pattern.as_str().as_bytes()),
             Self::None => Cow::Borrowed(b""),
         }
     }
@@ -209,6 +228,7 @@ impl DynamicValue {
                     Cow::Owned("false".to_string())
                 }
             }
+            Self::Regex(pattern) => Cow::Borrowed(pattern.as_str()),
             Self::None => Cow::Owned("".to_string()),
         })
     }
@@ -336,6 +356,7 @@ impl DynamicValue {
             Self::Float(value) => value == &0.0,
             Self::Integer(value) => value != &0,
             Self::Boolean(value) => *value,
+            Self::Regex(pattern) => !pattern.as_str().is_empty(),
             Self::None => false,
         }
     }
@@ -366,6 +387,12 @@ impl From<String> for DynamicValue {
 impl From<char> for DynamicValue {
     fn from(value: char) -> Self {
         DynamicValue::String(value.to_string())
+    }
+}
+
+impl From<Regex> for DynamicValue {
+    fn from(value: Regex) -> Self {
+        DynamicValue::Regex(value)
     }
 }
 

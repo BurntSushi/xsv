@@ -20,6 +20,7 @@ pub enum Argument {
     FloatLiteral(f64),
     IntegerLiteral(i64),
     BooleanLiteral(bool),
+    RegexLiteral(String),
     Call(FunctionCall),
     Underscore,
     Null,
@@ -266,6 +267,7 @@ fn argument(input: &str) -> IResult<&str, Argument> {
             Argument::IntegerLiteral(value)
         }),
         map(float_literal, Argument::FloatLiteral),
+        map(regex_literal, Argument::RegexLiteral),
         map(string_literal, Argument::StringLiteral),
         map(underscore, |_| Argument::Underscore),
     ))(input)
@@ -430,6 +432,10 @@ mod tests {
         assert_eq!(
             argument("\"test\""),
             Ok(("", Argument::StringLiteral(String::from("test"))))
+        );
+        assert_eq!(
+            argument("/test/, name"),
+            Ok((", name", Argument::RegexLiteral(String::from("test"))))
         );
     }
 

@@ -91,6 +91,7 @@ fn concretize_argument(
             Some(index) => ConcreteArgument::Column(index),
             None => return Err(PrepareError::ColumnNotFound(indexation)),
         },
+        Argument::RegexLiteral(_) => unimplemented!(),
         Argument::Call(call) => {
             let mut concrete_args = Vec::new();
 
