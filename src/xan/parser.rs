@@ -15,6 +15,7 @@ use xan::types::ColumIndexationBy;
 #[derive(Debug, PartialEq, Clone)]
 pub enum Argument {
     Identifier(String),
+    // SpecialIdentifier(String),
     Indexation(ColumIndexationBy),
     StringLiteral(String),
     FloatLiteral(f64),
@@ -90,6 +91,16 @@ fn inner_identifier(input: &str) -> IResult<&str, &str> {
         alpha1,
         many0(alt((alphanumeric1, tag("_"), tag("-"), tag(" ")))),
     ))(input)
+}
+
+fn inner_special_identifier(input: &str) -> IResult<&str, &str> {
+    preceded(
+        char('$'),
+        recognize(pair(
+            alpha1,
+            many0(alt((alphanumeric1, tag("_"), tag("-"), tag(" ")))),
+        )),
+    )(input)
 }
 
 fn outer_identifier(input: &str) -> IResult<&str, &str> {
@@ -206,13 +217,26 @@ fn string_literal(input: &str) -> IResult<&str, String> {
 }
 
 fn regex_literal(input: &str) -> IResult<&str, String> {
-    delimited(
-        char('/'),
-        fold_many0(regex_character_literal, String::new, |mut string, c| {
-            string.push(c);
-            string
-        }),
-        char('/'),
+    map(
+        pair(
+            delimited(
+                char('/'),
+                fold_many0(regex_character_literal, String::new, |mut string, c| {
+                    string.push(c);
+                    string
+                }),
+                char('/'),
+            ),
+            opt(tag("i")),
+        ),
+        |(pattern, i)| match i {
+            None => pattern,
+            Some(_) => {
+                let mut case_insensitive_pattern = String::from("(?i)");
+                case_insensitive_pattern.push_str(&pattern);
+                case_insensitive_pattern
+            }
+        },
     )(input)
 }
 
@@ -382,6 +406,8 @@ mod tests {
         );
 
         assert_eq!(regex_literal(r#"/\//, ok"#), Ok((", ok", "/".to_string())));
+
+        assert_eq!(regex_literal("/test/i"), Ok(("", "(?i)test".to_string())));
     }
 
     #[test]
@@ -395,6 +421,10 @@ mod tests {
         assert_eq!(
             inner_identifier("PREFIXES AS URL, test"),
             Ok((", test", "PREFIXES AS URL"))
+        );
+        assert_eq!(
+            inner_special_identifier("$index, ok"),
+            Ok((", ok", "index"))
         );
     }
 

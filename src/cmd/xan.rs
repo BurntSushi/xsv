@@ -47,6 +47,9 @@ available functions):
   . Regex literals:
         'match(name, /john/)'
 
+  . Case-insensitive regex literals:
+        'match(name, /john/i)'
+
   . Accessing current row index:
         'add(index, 1)'
 

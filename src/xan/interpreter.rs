@@ -613,5 +613,9 @@ mod tests {
             eval_code("match('hello', /l{3}/)"),
             Ok(DynamicValue::from(false))
         );
+        assert_eq!(
+            eval_code("match('hello', /L{2}/i)"),
+            Ok(DynamicValue::from(true))
+        );
     }
 }
