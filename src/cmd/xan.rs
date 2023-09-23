@@ -86,93 +86,37 @@ Misc notes:
 macro_rules! xan_function_list {
     () => {
         "
-Available functions (use --cheatsheet for a reminder of how the
-scripting language works):
+# Available functions
+
+(use --cheatsheet for a reminder of how the scripting language works)
+
+## Arithmetics
 
     - abs(x) -> number
         Return absolute value of number.
 
-    - abspath(string) -> string
-        Return absolute & canonicalized path.
-
     - add(x, y) -> number
         Add two numbers.
-
-    - and(a, b) -> bool
-        Perform boolean AND operation.
-
-    - coalesce(*args) -> T
-        Return first truthy value.
-
-    - concat(string, *strings) -> string
-        Concatenate given strings into a single one.
-
-    - contains(seq, subseq) -> bool
-        Find if subseq can be found in seq.
-
-    - count(seq, pattern) -> int
-        Count number of times pattern appear in seq.
 
     - div(x, y) -> number
         Divide two numbers.
 
-    - eq(x, y) -> bool
-        Test numerical equality.
-
-    - endswith(string, pattern) -> bool
-        Test if string ends with pattern.
-
-    - err(msg) -> error
-        Make the expression return a custom error.
-
-    - first(seq) -> T
-        Get first element of sequence.
-
-    - get(seq, index) -> T
-        Get nth element of sequence (can use negative indexing).
-
-    - gt(x, y) -> bool
-        Test numerical x > y.
-
-    - gte(x, y) -> bool
-        Test numerical x >= y.
-
     - idiv(x, y) -> number
         Integer division of two numbers.
-
-    - join(seq, sep) -> string
-        Join sequence by separator.
-
-    - if(cond, then, else?) -> T
-        Evaluate condition and switch to correct branch.
-
-    - last(seq) -> T
-        Get last element of sequence.
-
-    - len(seq) -> int
-        Get length of sequence.
-
-    - lt(x, y)
-        Test numerical x < y.
-
-    - lte(x, y)
-        Test numerical x > y.
-
-    - ltrim(string, pattern?) -> string
-        Trim string of leading whitespace or
-        provided characters.
-
-    - lower(string) -> string
-        Lowercase string.
-
-    - match(string, regex) -> bool
-        Return whether regex pattern matches string.
 
     - mul(x, y) -> number
         Multiply x & y.
 
-    - neq(x, y) -> bool
-        Test numerical x != y.
+    - sub(x, y) -> number
+        Subtract x & y.
+
+## Boolean operations & branching
+
+    - and(a, b) -> bool
+        Perform boolean AND operation.
+
+    - if(cond, then, else?) -> T
+        Evaluate condition and switch to correct branch.
 
     - not(a) -> bool
         Perform boolean NOT operation.
@@ -180,29 +124,25 @@ scripting language works):
     - or(a, b) -> bool
         Perform boolean OR operation.
 
-    - pathjoin(string, *strings) -> string
-        Join multiple paths correctly.
+## Comparison
 
-    - read(path, encoding?, errors?) -> string
-        Read file at path. Default encoding is \"utf-8\".
-        Default error handling policy is \"replace\", and can be
-        one of \"replace\", \"ignore\" or \"strict\".
+    - eq(x, y) -> bool
+        Test numerical equality.
 
-    - rtrim(string, pattern?) -> string
-        Trim string of trailing whitespace or
-        provided characters.
+    - gt(x, y) -> bool
+        Test numerical x > y.
 
-    - slice(seq, start, end?) -> seq
-        Return slice of sequence.
+    - gte(x, y) -> bool
+        Test numerical x >= y.
 
-    - split(string, sep, max?) -> list
-        Split a string by separator.
+    - lt(x, y)
+        Test numerical x < y.
 
-    - startswith(string, pattern) -> bool
-        Test if string starts with pattern.
+    - lte(x, y)
+        Test numerical x > y.
 
-    - sub(x, y) -> number
-        Subtract x & y.
+    - neq(x, y) -> bool
+        Test numerical x != y.
 
     - s_eq(s1, s2) -> bool
         Test sequence equality.
@@ -222,12 +162,61 @@ scripting language works):
     - s_neq(s1, s2) -> bool
         Test sequence s1 != s2.
 
+## String & sequence helpers
+
+    - concat(string, *strings) -> string
+        Concatenate given strings into a single one.
+
+    - contains(seq, subseq) -> bool
+        Find if subseq can be found in seq.
+
+    - count(seq, pattern) -> int
+        Count number of times pattern appear in seq.
+
+    - endswith(string, pattern) -> bool
+        Test if string ends with pattern.
+
+    - first(seq) -> T
+        Get first element of sequence.
+
+    - get(seq, index) -> T
+        Get nth element of sequence (can use negative indexing).
+
+    - join(seq, sep) -> string
+        Join sequence by separator.
+
+    - last(seq) -> T
+        Get last element of sequence.
+
+    - len(seq) -> int
+        Get length of sequence.
+
+    - ltrim(string, pattern?) -> string
+        Trim string of leading whitespace or
+        provided characters.
+
+    - lower(string) -> string
+        Lowercase string.
+
+    - match(string, regex) -> bool
+        Return whether regex pattern matches string.
+
+    - rtrim(string, pattern?) -> string
+        Trim string of trailing whitespace or
+        provided characters.
+
+    - slice(seq, start, end?) -> seq
+        Return slice of sequence.
+
+    - split(string, sep, max?) -> list
+        Split a string by separator.
+
+    - startswith(string, pattern) -> bool
+        Test if string starts with pattern.
+
     - trim(string, pattern?) -> string
         Trim string of leading & trailing whitespace or
         provided characters.
-
-    - typeof(value) -> string
-        Return type of value.
 
     - unidecode(string) -> string
         Convert string to ascii as well as possible.
@@ -235,11 +224,38 @@ scripting language works):
     - upper(string) -> string
         Uppercase string.
 
-    - uuid() -> string
-        Return a uuid v4.
+## Utils
+
+    - coalesce(*args) -> T
+        Return first truthy value.
+
+    - err(msg) -> error
+        Make the expression return a custom error.
+
+    - typeof(value) -> string
+        Return type of value.
 
     - val(value) -> T
         Return a value as-is. Useful to return constants.
+
+## IO & path wrangling
+
+    - abspath(string) -> string
+        Return absolute & canonicalized path.
+
+    - pathjoin(string, *strings) -> string
+        Join multiple paths correctly.
+
+    - read(path, encoding?, errors?) -> string
+        Read file at path. Default encoding is \"utf-8\".
+        Default error handling policy is \"replace\", and can be
+        one of \"replace\", \"ignore\" or \"strict\".
+
+## Random
+
+    - uuid() -> string
+        Return a uuid v4.
+
 "
     };
 }
