@@ -13,6 +13,9 @@ macro_rules! function_list {
         "
 Available functions:
 
+    - abs(x) -> number
+        Return absolute value of number.
+
     - add(x, y) -> number
         Add two numbers.
 

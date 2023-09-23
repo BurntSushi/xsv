@@ -62,6 +62,15 @@ pub enum DynamicNumber {
     Integer(i64),
 }
 
+impl DynamicNumber {
+    pub fn abs(&self) -> DynamicNumber {
+        match self {
+            Self::Float(n) => Self::Float(n.abs()),
+            Self::Integer(n) => Self::Integer(n.abs()),
+        }
+    }
+}
+
 impl PartialEq for DynamicNumber {
     fn eq(&self, other: &Self) -> bool {
         match self {
@@ -378,6 +387,12 @@ impl From<usize> for DynamicValue {
     }
 }
 
+impl From<f64> for DynamicValue {
+    fn from(value: f64) -> Self {
+        DynamicValue::Float(value)
+    }
+}
+
 impl From<DynamicNumber> for DynamicValue {
     fn from(value: DynamicNumber) -> Self {
         match value {
@@ -495,6 +510,10 @@ impl<'a> BoundArguments<'a> {
 
     pub fn get1_as_bool(&'a self) -> Result<bool, CallError> {
         self.get1().map(|value| value.is_truthy())
+    }
+
+    pub fn get1_as_number(&'a self) -> Result<DynamicNumber, CallError> {
+        self.get1().and_then(|value| value.try_as_number())
     }
 
     pub fn get2_as_str(&self) -> Result<(Cow<str>, Cow<str>), CallError> {

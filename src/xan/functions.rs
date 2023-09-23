@@ -24,6 +24,7 @@ type FunctionResult = Result<DynamicValue, CallError>;
 // TODO: random, stats etc.
 pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, SpecifiedCallError> {
     Ok(match name {
+        "abs" => abs(args),
         "add" => arithmetic_op(args, Add::add),
         "and" => and(args),
         "coalesce" => coalesce(args),
@@ -384,6 +385,10 @@ where
 {
     let (a, b) = args.get2_as_numbers()?;
     Ok(DynamicValue::from(op(a, b)))
+}
+
+fn abs(args: BoundArguments) -> FunctionResult {
+    Ok(DynamicValue::from(args.get1_as_number()?.abs()))
 }
 
 // Utilities

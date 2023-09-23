@@ -589,4 +589,10 @@ mod tests {
             Ok(DynamicValue::from("tes"))
         );
     }
+
+    #[test]
+    fn test_abs() {
+        assert_eq!(eval_code("abs(-5)"), Ok(DynamicValue::Integer(5)));
+        assert_eq!(eval_code("abs(-5.0)"), Ok(DynamicValue::Float(5.0)));
+    }
 }
