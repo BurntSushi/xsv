@@ -14,11 +14,14 @@ macro_rules! xan_cheatsheet {
 xsv script language cheatsheet (use --functions for comprehensive list of
 available functions):
 
-  . Index a column by identifier:
+  . Indexing a column by name:
         'trim(col)'
 
-  . Indexing column with characters forbidden in identifies (e.g. spaces):
-        'trim(row[\"Name of film\"])'
+  . Indexing a column by name even with spaces:
+        'trim(Name of film)'
+
+  . Indexing column with characters forbidden in identifies (e.g. commas):
+        'trim(row[\"Name, of film\"])'
 
   . Indexing column by index (0-based):
         'trim(row[2])'
@@ -28,6 +31,12 @@ available functions):
 
   . Integer literals:
         'add(1, count)'
+
+  . Boolean literals (true or false):
+        'coalesce(count, true)'
+
+  . Null literals:
+        'coalesce(null, count)'
 
   . Float literals:
         'mul(0.5, count)'
