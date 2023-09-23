@@ -446,6 +446,10 @@ impl<'a> BoundArguments<'a> {
         }
     }
 
+    pub fn get(&'a self, i: usize) -> Option<&'a BoundArgument> {
+        self.stack.get(i)
+    }
+
     pub fn getn_opt(&'a self, n: usize) -> Vec<Option<&'a BoundArgument>> {
         let mut selection: Vec<Option<&BoundArgument>> = Vec::new();
 

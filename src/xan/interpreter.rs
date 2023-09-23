@@ -566,4 +566,27 @@ mod tests {
             Ok(DynamicValue::from(""))
         );
     }
+
+    #[test]
+    fn test_trim() {
+        assert_eq!(eval_code("trim(' test ')"), Ok(DynamicValue::from("test")));
+        assert_eq!(
+            eval_code("ltrim(' test ')"),
+            Ok(DynamicValue::from("test "))
+        );
+        assert_eq!(
+            eval_code("rtrim(' test ')"),
+            Ok(DynamicValue::from(" test"))
+        );
+
+        assert_eq!(eval_code("trim('test', 't')"), Ok(DynamicValue::from("es")));
+        assert_eq!(
+            eval_code("ltrim('test', 't')"),
+            Ok(DynamicValue::from("est"))
+        );
+        assert_eq!(
+            eval_code("rtrim('test', 't')"),
+            Ok(DynamicValue::from("tes"))
+        );
+    }
 }

@@ -41,6 +41,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, S
         "len" => len(args),
         "lt" => number_compare(args, Ordering::is_lt),
         "lte" => number_compare(args, Ordering::is_le),
+        "ltrim" => ltrim(args),
         "lower" => lower(args),
         "mul" => arithmetic_op(args, Mul::mul),
         "neq" => number_compare(args, Ordering::is_ne),
@@ -48,6 +49,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, S
         "or" => or(args),
         "pathjoin" => pathjoin(args),
         "read" => read(args),
+        "rtrim" => rtrim(args),
         "slice" => slice(args),
         "split" => split(args),
         "startswith" => startswith(args),
@@ -77,7 +79,48 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, S
 
 // Strings
 fn trim(args: BoundArguments) -> FunctionResult {
-    Ok(DynamicValue::from(args.get1_as_str()?.trim()))
+    args.validate_min_max_arity(1, 2)?;
+
+    let string = args.get(0).unwrap().try_as_str()?;
+    let arg2 = args.get(1);
+
+    Ok(match arg2 {
+        None => DynamicValue::from(string.trim()),
+        Some(arg) => {
+            let pattern = arg.try_as_str()?.chars().collect::<Vec<char>>();
+            DynamicValue::from(string.trim_matches(|c| pattern.contains(&c)))
+        }
+    })
+}
+
+fn ltrim(args: BoundArguments) -> FunctionResult {
+    args.validate_min_max_arity(1, 2)?;
+
+    let string = args.get(0).unwrap().try_as_str()?;
+    let arg2 = args.get(1);
+
+    Ok(match arg2 {
+        None => DynamicValue::from(string.trim_start()),
+        Some(arg) => {
+            let pattern = arg.try_as_str()?.chars().collect::<Vec<char>>();
+            DynamicValue::from(string.trim_start_matches(|c| pattern.contains(&c)))
+        }
+    })
+}
+
+fn rtrim(args: BoundArguments) -> FunctionResult {
+    args.validate_min_max_arity(1, 2)?;
+
+    let string = args.get(0).unwrap().try_as_str()?;
+    let arg2 = args.get(1);
+
+    Ok(match arg2 {
+        None => DynamicValue::from(string.trim_end()),
+        Some(arg) => {
+            let pattern = arg.try_as_str()?.chars().collect::<Vec<char>>();
+            DynamicValue::from(string.trim_end_matches(|c| pattern.contains(&c)))
+        }
+    })
 }
 
 fn split(args: BoundArguments) -> FunctionResult {

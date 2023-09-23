@@ -70,6 +70,10 @@ Available functions:
     - lte(x, y)
         Test numerical x > y.
 
+    - ltrim(string, pattern?) -> string
+        Trim string of leading whitespace or
+        provided characters.
+
     - lower(string) -> string
         Lowercase string.
 
@@ -90,6 +94,10 @@ Available functions:
 
     - read(path) -> string
         Read file at path.
+
+    - rtrim(string, pattern?) -> string
+        Trim string of trailing whitespace or
+        provided characters.
 
     - slice(seq, start, end?) -> seq
         Return slice of sequence.
@@ -121,8 +129,9 @@ Available functions:
     - s_neq(s1, s2) -> bool
         Test sequence s1 != s2.
 
-    - trim(string) -> string
-        Trim string of leading & trailing whitespace.
+    - trim(string, pattern?) -> string
+        Trim string of leading & trailing whitespace or
+        provided characters.
 
     - typeof(value) -> string
         Return type of value.
