@@ -92,6 +92,9 @@ scripting language works):
     - abs(x) -> number
         Return absolute value of number.
 
+    - abspath(string) -> string
+        Return absolute & canonicalized path.
+
     - add(x, y) -> number
         Add two numbers.
 

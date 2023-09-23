@@ -16,7 +16,7 @@ use super::types::{BoundArgument, BoundArguments, DynamicNumber, DynamicValue};
 
 type FunctionResult = Result<DynamicValue, CallError>;
 
-// TODO: case insensitive regexes and dollar for variables
+// TODO: count should be able to take regex
 // TODO: deal with list in sequence_compare & contains
 // TODO: in list, empty, not empty
 // TODO: division must take integer vs. float into account
@@ -26,6 +26,7 @@ type FunctionResult = Result<DynamicValue, CallError>;
 pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, SpecifiedCallError> {
     Ok(match name {
         "abs" => abs(args),
+        "abspath" => abspath(args),
         "add" => arithmetic_op(args, Add::add),
         "and" => and(args),
         "coalesce" => coalesce(args),
@@ -454,6 +455,16 @@ where
 }
 
 // IO
+fn abspath(args: BoundArguments) -> FunctionResult {
+    let arg = args.get1_as_str()?;
+    let mut path = PathBuf::new();
+    path.push(arg.as_ref());
+    let path = path.canonicalize().unwrap();
+    let path = String::from(path.to_str().ok_or(CallError::InvalidPath)?);
+
+    Ok(DynamicValue::from(path))
+}
+
 fn pathjoin(args: BoundArguments) -> FunctionResult {
     args.validate_min_arity(2)?;
 
