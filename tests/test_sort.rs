@@ -338,6 +338,98 @@ fn sort_parallel_unstable() {
     assert_eq!(got, expected);
 }
 
+#[test]
+fn sort_check() {
+    let wrk = Workdir::new("sort_check");
+    wrk.create(
+        "in.csv",
+        vec![svec!["n"], svec!["2"], svec!["1"], svec!["3"]],
+    );
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--check").arg("in.csv");
+    wrk.assert_err(&mut cmd);
+
+    wrk.create(
+        "in.csv",
+        vec![svec!["n"], svec!["1"], svec!["2"], svec!["3"]],
+    );
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--check").arg("in.csv");
+    wrk.assert_success(&mut cmd);
+}
+
+#[test]
+fn sort_check_reverse() {
+    let wrk = Workdir::new("sort_check");
+    wrk.create(
+        "in.csv",
+        vec![svec!["n"], svec!["2"], svec!["1"], svec!["3"]],
+    );
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--check").arg("-R").arg("in.csv");
+    wrk.assert_err(&mut cmd);
+
+    wrk.create(
+        "in.csv",
+        vec![svec!["n"], svec!["3"], svec!["2"], svec!["1"]],
+    );
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--check").arg("-R").arg("in.csv");
+    wrk.assert_success(&mut cmd);
+}
+
+#[test]
+fn sort_check_numeric() {
+    let wrk = Workdir::new("sort_check");
+    wrk.create(
+        "in.csv",
+        vec![svec!["n"], svec!["1.0"], svec!["1"], svec!["-5"]],
+    );
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--check").arg("in.csv");
+    wrk.assert_err(&mut cmd);
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--check").arg("-N").arg("in.csv");
+    wrk.assert_err(&mut cmd);
+
+    wrk.create(
+        "in.csv",
+        vec![svec!["n"], svec!["-5"], svec!["1"], svec!["1.0"]],
+    );
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--check").arg("-N").arg("in.csv");
+    wrk.assert_success(&mut cmd);
+}
+
+#[test]
+fn sort_check_numeric_reverse() {
+    let wrk = Workdir::new("sort_check");
+    wrk.create(
+        "in.csv",
+        vec![svec!["n"], svec!["-5"], svec!["1"], svec!["1.0"]],
+    );
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--check").arg("-N").arg("-R").arg("in.csv");
+    wrk.assert_err(&mut cmd);
+
+    wrk.create(
+        "in.csv",
+        vec![svec!["n"], svec!["1"], svec!["1.0"], svec!["-5"]],
+    );
+
+    let mut cmd = wrk.command("sort");
+    cmd.arg("--check").arg("-N").arg("-R").arg("in.csv");
+    wrk.assert_success(&mut cmd);
+}
+
 /// Order `a` and `b` lexicographically using `Ord`
 pub fn iter_cmp<A, L, R>(mut a: L, mut b: R) -> cmp::Ordering
 where

@@ -149,6 +149,25 @@ impl Workdir {
         }
     }
 
+    pub fn assert_success(&self, cmd: &mut process::Command) {
+        let o = cmd.output().unwrap();
+        if !o.status.success() {
+            panic!(
+                "\n\n===== {:?} =====\n\
+                    command failed but expected success!\
+                    \n\ncwd: {}\
+                    \n\nstatus: {}\
+                    \n\nstdout: {}\n\nstderr: {}\
+                    \n\n=====\n",
+                cmd,
+                self.dir.display(),
+                o.status,
+                String::from_utf8_lossy(&o.stdout),
+                String::from_utf8_lossy(&o.stderr)
+            );
+        }
+    }
+
     pub fn from_str<T: FromStr>(&self, name: &Path) -> T {
         let mut o = String::new();
         fs::File::open(name)

@@ -1,5 +1,6 @@
 use std::cmp;
 
+use nom::AsBytes;
 use rayon::slice::ParallelSliceMut;
 
 use config::{Config, Delimiter};
@@ -47,6 +48,7 @@ Usage:
     xsv sort [options] [<input>]
 
 sort options:
+    --check                Verify whether the file is already sorted.
     -s, --select <arg>     Select a subset of columns to sort.
                            See 'xsv select --help' for the format details.
     -N, --numeric          Compare according to string numerical value
@@ -72,6 +74,7 @@ Common options:
 #[derive(Deserialize)]
 struct Args {
     arg_input: Option<String>,
+    flag_check: bool,
     flag_select: SelectColumns,
     flag_numeric: bool,
     flag_reverse: bool,
@@ -92,7 +95,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .delimiter(args.flag_delimiter)
         .no_headers(args.flag_no_headers)
         .select(args.flag_select);
-
     let count = &args.flag_count;
 
     if !count.is_none() && !args.flag_uniq {
@@ -103,6 +105,51 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut headers = rdr.byte_headers()?.clone();
     let sel = rconfig.selection(&headers)?;
+
+    if args.flag_check {
+        let mut record = csv::ByteRecord::new();
+
+        let mut last: Option<Vec<Vec<u8>>> = None;
+
+        while rdr.read_byte_record(&mut record)? {
+            let current_sel = sel
+                .select(&record)
+                .map(|part| part.to_vec())
+                .collect::<Vec<_>>();
+
+            match last {
+                None => {
+                    last = Some(current_sel);
+                }
+                Some(ref last_sel) => {
+                    let ordering = match (args.flag_reverse, args.flag_numeric) {
+                        (false, false) => iter_cmp(current_sel.iter(), last_sel.iter()),
+                        (true, false) => iter_cmp(last_sel.iter(), current_sel.iter()),
+                        (false, true) => iter_cmp_num(
+                            current_sel.iter().map(|r| r.as_bytes()),
+                            last_sel.iter().map(|r| r.as_bytes()),
+                        ),
+                        (true, true) => iter_cmp_num(
+                            last_sel.iter().map(|r| r.as_bytes()),
+                            current_sel.iter().map(|r| r.as_bytes()),
+                        ),
+                    };
+
+                    match ordering {
+                        cmp::Ordering::Less => {
+                            return fail!("file is not sorted!");
+                        }
+                        cmp::Ordering::Equal => continue,
+                        _ => last = Some(current_sel),
+                    }
+                }
+            };
+        }
+
+        println!("file is correctly sorted!");
+
+        return Ok(());
+    }
 
     let mut all = rdr.byte_records().collect::<Result<Vec<_>, _>>()?;
 
