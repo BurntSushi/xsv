@@ -25,7 +25,7 @@ Available functions:
     - concat(string, *strings) -> string
         Concatenate given strings into a single one.
 
-    - in(seq, subseq) -> bool
+    - contains(seq, subseq) -> bool
         Find if subseq can be found in seq.
 
     - count(seq, pattern) -> int
@@ -78,9 +78,6 @@ Available functions:
 
     - neq(x, y) -> bool
         Test numerical x != y.
-
-    - nin(seq, subseq) -> bool
-        Find if subseq cannot be found in seq.
 
     - not(a) -> bool
         Perform boolean NOT operation.

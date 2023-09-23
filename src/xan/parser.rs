@@ -1,10 +1,10 @@
 // En tant que chef, je m'engage à ce que nous ne nous fassions pas *tous* tuer.
 use nom::{
     branch::alt,
-    bytes::complete::{escaped, tag},
-    character::complete::{alpha1, alphanumeric1, anychar, char, digit1, none_of, one_of, space0},
+    bytes::complete::tag,
+    character::complete::{alpha1, alphanumeric1, anychar, char, digit1, none_of, space0},
     combinator::{all_consuming, map, map_res, not, opt, recognize, value},
-    multi::{fold_many0, fold_many1, many0, separated_list0},
+    multi::{fold_many0, many0, separated_list0},
     number::complete::double,
     sequence::{delimited, pair, preceded, terminated, tuple},
     IResult,

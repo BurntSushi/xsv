@@ -27,7 +27,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, S
         "and" => and(args),
         "coalesce" => coalesce(args),
         "concat" => concat(args),
-        "in" => contains(args),
+        "contains" => contains(args),
         "count" => count(args),
         "eq" => number_compare(args, Ordering::is_eq),
         "endswith" => endswith(args),
@@ -44,7 +44,6 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, S
         "lower" => lower(args),
         "mul" => arithmetic_op(args, Mul::mul),
         "neq" => number_compare(args, Ordering::is_ne),
-        "nin" => not_contains(args),
         "not" => not(args),
         "or" => or(args),
         "pathjoin" => pathjoin(args),
@@ -323,25 +322,6 @@ fn contains(args: BoundArguments) -> FunctionResult {
             let pattern = arg2.try_as_str()?;
 
             Ok(DynamicValue::from(text.contains(&*pattern)))
-        }
-        DynamicValue::List(_) => Err(CallError::NotImplemented("list".to_string())),
-        value => {
-            return Err(CallError::Cast((
-                value.type_of().to_string(),
-                "sequence".to_string(),
-            )))
-        }
-    }
-}
-
-fn not_contains(args: BoundArguments) -> FunctionResult {
-    let (arg1, arg2) = args.get2()?;
-
-    match arg1.as_ref() {
-        DynamicValue::String(text) => {
-            let pattern = arg2.try_as_str()?;
-
-            Ok(DynamicValue::from(!text.contains(&*pattern)))
         }
         DynamicValue::List(_) => Err(CallError::NotImplemented("list".to_string())),
         value => {
