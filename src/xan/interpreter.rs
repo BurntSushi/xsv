@@ -452,6 +452,9 @@ mod tests {
         assert_eq!(eval_code("sub(1, 2)"), Ok(DynamicValue::Integer(-1)));
         assert_eq!(eval_code("mul(1, 2)"), Ok(DynamicValue::Integer(2)));
         assert_eq!(eval_code("mul(3, 1.5)"), Ok(DynamicValue::Float(4.5)));
+        assert_eq!(eval_code("div(3, 2)"), Ok(DynamicValue::Float(1.5)));
+        assert_eq!(eval_code("idiv(4.5, 2)"), Ok(DynamicValue::Integer(2)));
+        assert_eq!(eval_code("idiv(-4.5, 2)"), Ok(DynamicValue::Integer(-3)));
     }
 
     #[test]

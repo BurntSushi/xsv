@@ -113,6 +113,9 @@ scripting language works):
     - count(seq, pattern) -> int
         Count number of times pattern appear in seq.
 
+    - div(x, y) -> number
+        Divide two numbers.
+
     - eq(x, y) -> bool
         Test numerical equality.
 
@@ -133,6 +136,9 @@ scripting language works):
 
     - gte(x, y) -> bool
         Test numerical x >= y.
+
+    - idiv(x, y) -> number
+        Integer division of two numbers.
 
     - join(seq, sep) -> string
         Join sequence by separator.

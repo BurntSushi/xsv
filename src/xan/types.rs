@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::cmp::{Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::BTreeMap;
 use std::convert::From;
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Div, Mul, Sub};
 
 use csv;
 use regex;
@@ -93,6 +93,21 @@ impl DynamicNumber {
             Self::Integer(n) => Self::Integer(n.abs()),
         }
     }
+
+    pub fn idiv(self, rhs: DynamicNumber) -> DynamicNumber {
+        let div = match self {
+            DynamicNumber::Integer(a) => match rhs {
+                DynamicNumber::Integer(b) => a as f64 / b as f64,
+                DynamicNumber::Float(b) => a as f64 / b,
+            },
+            DynamicNumber::Float(a) => match rhs {
+                DynamicNumber::Integer(b) => a / b as f64,
+                DynamicNumber::Float(b) => a / b,
+            },
+        };
+
+        DynamicNumber::Integer(div.floor() as i64)
+    }
 }
 
 impl PartialEq for DynamicNumber {
@@ -125,17 +140,22 @@ impl PartialOrd for DynamicNumber {
     }
 }
 
-fn apply_op<F1, F2>(a: DynamicNumber, b: DynamicNumber, op_int: F1, op_float: F2) -> DynamicNumber
+fn apply_op<F1, F2>(
+    lhs: DynamicNumber,
+    rhs: DynamicNumber,
+    op_int: F1,
+    op_float: F2,
+) -> DynamicNumber
 where
     F1: FnOnce(i64, i64) -> i64,
     F2: FnOnce(f64, f64) -> f64,
 {
-    match a {
-        DynamicNumber::Integer(a) => match b {
+    match lhs {
+        DynamicNumber::Integer(a) => match rhs {
             DynamicNumber::Integer(b) => DynamicNumber::Integer(op_int(a, b)),
             DynamicNumber::Float(b) => DynamicNumber::Float(op_float(a as f64, b)),
         },
-        DynamicNumber::Float(a) => match b {
+        DynamicNumber::Float(a) => match rhs {
             DynamicNumber::Integer(b) => DynamicNumber::Float(op_float(a, b as f64)),
             DynamicNumber::Float(b) => DynamicNumber::Float(op_float(a, b)),
         },
@@ -163,6 +183,23 @@ impl Mul for DynamicNumber {
 
     fn mul(self, rhs: Self) -> Self::Output {
         apply_op(self, rhs, Mul::<i64>::mul, Mul::<f64>::mul)
+    }
+}
+
+impl Div for DynamicNumber {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        DynamicNumber::Float(match self {
+            DynamicNumber::Integer(a) => match rhs {
+                DynamicNumber::Integer(b) => a as f64 / b as f64,
+                DynamicNumber::Float(b) => a as f64 / b,
+            },
+            DynamicNumber::Float(a) => match rhs {
+                DynamicNumber::Integer(b) => a / b as f64,
+                DynamicNumber::Float(b) => a / b,
+            },
+        })
     }
 }
 

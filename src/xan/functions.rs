@@ -3,7 +3,7 @@ use std::cmp::max;
 use std::cmp::{Ordering, PartialOrd};
 use std::fs::File;
 use std::io::Read;
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Div, Mul, Sub};
 use std::path::PathBuf;
 
 use encoding::{label::encoding_from_whatwg_label, DecoderTrap};
@@ -19,7 +19,6 @@ type FunctionResult = Result<DynamicValue, CallError>;
 // TODO: count should be able to take regex
 // TODO: deal with list in sequence_compare & contains
 // TODO: in list, empty, not empty
-// TODO: division must take integer vs. float into account
 // TODO: replace
 // TODO: we could also have ranges of columns and vec map etc.
 // TODO: random, stats etc.
@@ -33,6 +32,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, S
         "concat" => concat(args),
         "contains" => contains(args),
         "count" => count(args),
+        "div" => arithmetic_op(args, Div::div),
         "eq" => number_compare(args, Ordering::is_eq),
         "endswith" => endswith(args),
         "err" => err(args),
@@ -40,6 +40,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, S
         "get" => get(args),
         "gt" => number_compare(args, Ordering::is_gt),
         "gte" => number_compare(args, Ordering::is_ge),
+        "idiv" => arithmetic_op(args, DynamicNumber::idiv),
         "join" => join(args),
         "last" => last(args),
         "len" => len(args),
