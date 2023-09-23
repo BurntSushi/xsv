@@ -19,7 +19,6 @@ type FunctionResult = Result<DynamicValue, CallError>;
 // TODO: count should be able to take regex
 // TODO: deal with list in sequence_compare & contains
 // TODO: in list, empty, not empty
-// TODO: replace
 // TODO: we could also have ranges of columns and vec map etc.
 // TODO: random, stats etc.
 pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, SpecifiedCallError> {
@@ -55,6 +54,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, S
         "or" => or(args),
         "pathjoin" => pathjoin(args),
         "read" => read(args),
+        "replace" => replace(args),
         "rtrim" => rtrim(args),
         "slice" => slice(args),
         "split" => split(args),
@@ -388,6 +388,27 @@ fn contains(args: BoundArguments) -> FunctionResult {
             )))
         }
     }
+}
+
+fn replace(args: BoundArguments) -> FunctionResult {
+    let (arg1, arg2, arg3) = args.get3()?;
+
+    let string = arg1.try_as_str()?;
+    let replacement = arg3.try_as_str()?;
+
+    let replaced = match arg2.try_as_regex() {
+        Ok(regex) => regex
+            .inner()
+            .replace_all(&*string, replacement)
+            .into_owned(),
+        Err(_) => {
+            let pattern = arg2.try_as_str()?;
+
+            string.replace(&*pattern, &*replacement)
+        }
+    };
+
+    Ok(DynamicValue::from(replaced))
 }
 
 // Arithmetics

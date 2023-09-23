@@ -201,6 +201,9 @@ macro_rules! xan_function_list {
     - match(string, regex) -> bool
         Return whether regex pattern matches string.
 
+    - replace(string, pattern, replacement) -> string
+        Replace pattern in string. Can use a regex.
+
     - rtrim(string, pattern?) -> string
         Trim string of trailing whitespace or
         provided characters.

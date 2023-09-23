@@ -22,6 +22,10 @@ impl Regex {
         self.0.as_str()
     }
 
+    pub fn inner(&self) -> &regex::Regex {
+        &self.0
+    }
+
     pub fn is_match(&self, haystack: &str) -> bool {
         self.0.is_match(haystack)
     }
@@ -582,6 +586,27 @@ impl<'a> BoundArguments<'a> {
 
                     Ok((a, b))
                 }
+            },
+        }
+    }
+
+    pub fn get3(
+        &self,
+    ) -> Result<(&Cow<DynamicValue>, &Cow<DynamicValue>, &Cow<DynamicValue>), CallError> {
+        match self.stack.get(0) {
+            None => Err(CallError::from_invalid_arity(3, 0)),
+            Some(a) => match self.stack.get(1) {
+                None => Err(CallError::from_invalid_arity(3, 1)),
+                Some(b) => match self.stack.get(2) {
+                    None => Err(CallError::from_invalid_arity(3, 2)),
+                    Some(c) => {
+                        if self.len() > 3 {
+                            return Err(CallError::from_invalid_arity(3, self.len()));
+                        }
+
+                        Ok((a, b, c))
+                    }
+                },
             },
         }
     }

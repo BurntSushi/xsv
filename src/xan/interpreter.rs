@@ -616,4 +616,20 @@ mod tests {
             Ok(DynamicValue::from(true))
         );
     }
+
+    #[test]
+    fn test_replace() {
+        assert_eq!(
+            eval_code("replace('hello', 'l', 't')"),
+            Ok(DynamicValue::from("hetto"))
+        );
+        assert_eq!(
+            eval_code("replace('hello', /l+O/i, 't')"),
+            Ok(DynamicValue::from("het"))
+        );
+        assert_eq!(
+            eval_code("replace('hello', /(he)llo/i, '$1')"),
+            Ok(DynamicValue::from("he"))
+        );
+    }
 }
