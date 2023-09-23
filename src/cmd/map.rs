@@ -26,10 +26,14 @@ a,b,c
 1,4,5
 5,2,7
 
+For a quick review of the capabilities of the script language, use
+the --cheatsheet flag.
+
 If you want to list available functions, use the --functions flag.
 
 Usage:
     xsv map [options] <expression> <column> [<input>]
+    xsv map --cheatsheet
     xsv map --functions
     xsv map --help
 
@@ -63,6 +67,7 @@ struct Args {
     arg_input: Option<String>,
     flag_output: Option<String>,
     flag_functions: bool,
+    flag_cheatsheet: bool,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
     flag_threads: Option<usize>,
@@ -74,7 +79,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
 
     let xan_args = XanCmdArgs {
-        print_help: args.flag_functions,
+        print_cheatsheet: args.flag_cheatsheet,
+        print_functions: args.flag_functions,
         new_column: Some(args.arg_column),
         map_expr: args.arg_expression,
         input: args.arg_input,

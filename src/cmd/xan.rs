@@ -8,10 +8,77 @@ use xan::{eval, prepare, DynamicValue, EvaluationError, Variables};
 use CliError;
 use CliResult;
 
-macro_rules! function_list {
+macro_rules! xan_cheatsheet {
     () => {
         "
-Available functions:
+xsv script language cheatsheet (use --functions for comprehensive list of
+available functions):
+
+  . Index a column by identifier:
+        'trim(col)'
+
+  . Indexing column with characters forbidden in identifies (e.g. spaces):
+        'trim(row[\"Name of film\"])'
+
+  . Indexing column by index (0-based):
+        'trim(row[2])'
+
+  . Indexing a column by name and 0-based nth (for duplicate headers):
+        'trim(row[\"col\"], 1)'
+
+  . Integer literals:
+        'add(1, count)'
+
+  . Float literals:
+        'mul(0.5, count)'
+
+  . String literals (can use single or double quotes):
+        'concat(name, \"-\", surname)'
+
+  . Regex literals:
+        'match(name, /john/)'
+
+  . Accessing current row index:
+        'add(index, 1)'
+
+  . Indexing column literally named \"index\" to avoid conflict:
+        'trim(row[\"index\"])'
+
+  . Nesting function calls:
+        'add(sub(col1, col2), mul(col3, col4))'
+
+  . Piping (underscore \"_\" becomes a reference to previous result):
+        'trim(name) | lower(_) | add(count, len(_))'
+
+        is the same as:
+
+        'add(count, len(lower(trim(name))))'
+
+  . Piping shorthand for unary functions:
+        'trim(name) | lower'
+
+        is the same as:
+
+        'trim(name) | lower(_)'
+
+   . Basic branching (also consider using the \"coalesce\" function for simple cases):
+        'if(lt(count, 4), trim(name), trim(surname))'
+
+Misc notes:
+
+  . This is a minimal interpreted language with dynamic typing,
+    which means functions will usually cast values around to
+    make them fit expectations. Use the `typeof` function if
+    you feel lost.
+"
+    };
+}
+
+macro_rules! xan_function_list {
+    () => {
+        "
+Available functions (use --cheatsheet for a reminder of how the
+scripting language works):
 
     - abs(x) -> number
         Return absolute value of number.
@@ -230,7 +297,8 @@ impl TryFrom<String> for XanErrorPolicy {
 }
 
 pub struct XanCmdArgs {
-    pub print_help: bool,
+    pub print_cheatsheet: bool,
+    pub print_functions: bool,
     pub new_column: Option<String>,
     pub map_expr: String,
     pub input: Option<String>,
@@ -303,8 +371,13 @@ pub fn handle_eval_result<W: std::io::Write>(
 }
 
 pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
-    if args.print_help {
-        println!(function_list!());
+    if args.print_cheatsheet {
+        println!(xan_cheatsheet!());
+        return Ok(());
+    }
+
+    if args.print_functions {
+        println!(xan_function_list!());
         return Ok(());
     }
 

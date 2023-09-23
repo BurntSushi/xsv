@@ -16,10 +16,11 @@ use super::types::{BoundArgument, BoundArguments, DynamicNumber, DynamicValue};
 
 type FunctionResult = Result<DynamicValue, CallError>;
 
+// TODO: case insensitive regexes and dollar for variables
 // TODO: deal with list in sequence_compare & contains
 // TODO: in list, empty, not empty
 // TODO: division must take integer vs. float into account
-// TODO: slice, encoding, replace, regexes etc.
+// TODO: replace
 // TODO: we could also have ranges of columns and vec map etc.
 // TODO: random, stats etc.
 pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, SpecifiedCallError> {
