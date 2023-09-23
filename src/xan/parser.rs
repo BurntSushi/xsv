@@ -1,10 +1,10 @@
 // En tant que chef, je m'engage à ce que nous ne nous fassions pas *tous* tuer.
 use nom::{
     branch::alt,
-    bytes::complete::tag,
-    character::complete::{alpha1, alphanumeric1, anychar, char, digit1, none_of, space0},
+    bytes::complete::{escaped, tag},
+    character::complete::{alpha1, alphanumeric1, anychar, char, digit1, none_of, one_of, space0},
     combinator::{all_consuming, map, map_res, not, opt, recognize, value},
-    multi::{fold_many0, many0, separated_list0},
+    multi::{fold_many0, fold_many1, many0, separated_list0},
     number::complete::double,
     sequence::{delimited, pair, preceded, terminated, tuple},
     IResult,
@@ -125,6 +125,17 @@ fn unescape(c: char, delimiter: char) -> Result<char, ()> {
     })
 }
 
+fn unescape_regex(c: char) -> Result<char, ()> {
+    if c == '/' {
+        return Ok(c);
+    }
+
+    Ok(match c {
+        '\\' | '/' => c,
+        _ => return Err(()),
+    })
+}
+
 fn double_quote_string_character_literal(input: &str) -> IResult<&str, char> {
     let (input, c) = none_of("\"")(input)?;
 
@@ -159,6 +170,22 @@ fn single_quote_string_character_literal(input: &str) -> IResult<&str, char> {
     }
 }
 
+fn regex_character_literal(input: &str) -> IResult<&str, char> {
+    let (input, c) = none_of("/")(input)?;
+
+    if c == '\\' {
+        let (input2, c2) = anychar(input)?;
+
+        if c2 == '/' {
+            Ok((input2, c2))
+        } else {
+            Ok((input, c))
+        }
+    } else {
+        Ok((input, c))
+    }
+}
+
 fn string_literal(input: &str) -> IResult<&str, String> {
     alt((
         delimited(
@@ -186,6 +213,17 @@ fn string_literal(input: &str) -> IResult<&str, String> {
             char('\''),
         ),
     ))(input)
+}
+
+fn regex_literal(input: &str) -> IResult<&str, String> {
+    delimited(
+        char('/'),
+        fold_many0(regex_character_literal, String::new, |mut string, c| {
+            string.push(c);
+            string
+        }),
+        char('/'),
+    )(input)
 }
 
 fn argument_separator(input: &str) -> IResult<&str, ()> {
@@ -311,6 +349,8 @@ mod tests {
 
     #[test]
     fn test_string_literal() {
+        assert_eq!(string_literal("\"\", 45"), Ok((", 45", String::from(""))));
+        assert_eq!(string_literal("'', 45"), Ok((", 45", String::from(""))));
         assert_eq!(
             string_literal(r#""hello", 45"#),
             Ok((", 45", String::from("hello")))
@@ -331,6 +371,26 @@ mod tests {
             string_literal(r#"'hello \'world\'', 45"#),
             Ok((", 45", String::from("hello 'world'")))
         );
+    }
+
+    #[test]
+    fn test_regex_literal() {
+        assert_eq!(
+            regex_literal(r#"/test/, ok"#),
+            Ok((", ok", "test".to_string()))
+        );
+
+        assert_eq!(
+            regex_literal(r#"/\nok[a]./, ok"#),
+            Ok((", ok", "\\nok[a].".to_string()))
+        );
+
+        assert_eq!(
+            regex_literal(r#"/\r/, ok"#),
+            Ok((", ok", "\\r".to_string()))
+        );
+
+        assert_eq!(regex_literal(r#"/\//, ok"#), Ok((", ok", "/".to_string())));
     }
 
     #[test]
