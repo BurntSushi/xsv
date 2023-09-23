@@ -69,7 +69,6 @@ type ConcretePipeline = Vec<ConcreteFunctionCall>;
 fn concretize_argument(
     argument: Argument,
     headers: &ByteRecord,
-    reserved: &Vec<&str>,
 ) -> Result<ConcreteArgument, PrepareError> {
     Ok(match argument {
         Argument::Underscore => ConcreteArgument::Underscore,
@@ -79,17 +78,14 @@ fn concretize_argument(
         Argument::IntegerLiteral(v) => ConcreteArgument::IntegerLiteral(DynamicValue::Integer(v)),
         Argument::StringLiteral(v) => ConcreteArgument::StringLiteral(DynamicValue::String(v)),
         Argument::Identifier(name) => {
-            if reserved.contains(&name.as_str()) {
-                ConcreteArgument::Variable(name)
-            } else {
-                let indexation = ColumIndexationBy::Name(name);
+            let indexation = ColumIndexationBy::Name(name);
 
-                match indexation.find_column_index(headers) {
-                    Some(index) => ConcreteArgument::Column(index),
-                    None => return Err(PrepareError::ColumnNotFound(indexation)),
-                }
+            match indexation.find_column_index(headers) {
+                Some(index) => ConcreteArgument::Column(index),
+                None => return Err(PrepareError::ColumnNotFound(indexation)),
             }
         }
+        Argument::SpecialIdentifier(name) => ConcreteArgument::Variable(name),
         Argument::Indexation(indexation) => match indexation.find_column_index(headers) {
             Some(index) => ConcreteArgument::Column(index),
             None => return Err(PrepareError::ColumnNotFound(indexation)),
@@ -102,7 +98,7 @@ fn concretize_argument(
             let mut concrete_args = Vec::new();
 
             for arg in call.args {
-                concrete_args.push(concretize_argument(arg, headers, reserved)?);
+                concrete_args.push(concretize_argument(arg, headers)?);
             }
 
             ConcreteArgument::Call(ConcreteFunctionCall {
@@ -116,7 +112,6 @@ fn concretize_argument(
 fn concretize_pipeline(
     pipeline: Pipeline,
     headers: &ByteRecord,
-    reserved: &Vec<&str>,
 ) -> Result<ConcretePipeline, PrepareError> {
     let mut concrete_pipeline: ConcretePipeline = Vec::new();
 
@@ -124,7 +119,7 @@ fn concretize_pipeline(
         let mut concrete_arguments: Vec<ConcreteArgument> = Vec::new();
 
         for argument in function_call.args {
-            concrete_arguments.push(concretize_argument(argument, headers, reserved)?);
+            concrete_arguments.push(concretize_argument(argument, headers)?);
         }
 
         concrete_pipeline.push(ConcreteFunctionCall {
@@ -179,18 +174,14 @@ fn unfurl_pipeline(mut pipeline: Pipeline) -> Pipeline {
 }
 
 // TODO: we could validate function arity at prepare step
-pub fn prepare(
-    code: &str,
-    headers: &ByteRecord,
-    reserved: &Vec<&str>,
-) -> Result<ConcretePipeline, PrepareError> {
+pub fn prepare(code: &str, headers: &ByteRecord) -> Result<ConcretePipeline, PrepareError> {
     match parse(code) {
         Err(_) => Err(PrepareError::ParseError(code.to_string())),
         Ok(pipeline) => {
             let pipeline = trim_pipeline(pipeline);
             let pipeline = unfurl_pipeline(pipeline);
 
-            concretize_pipeline(pipeline, headers, reserved)
+            concretize_pipeline(pipeline, headers)
         }
     }
 }
@@ -312,8 +303,7 @@ mod tests {
         record: &ByteRecord,
         variables: &Variables,
     ) -> Result<DynamicValue, RunError> {
-        let reserved = variables.keys().cloned().collect();
-        let pipeline = prepare(code, headers, &reserved).map_err(RunError::Prepare)?;
+        let pipeline = prepare(code, headers).map_err(RunError::Prepare)?;
 
         eval(&pipeline, record, variables).map_err(RunError::Evaluation)
     }
@@ -419,6 +409,11 @@ mod tests {
             eval_code("trim(a) | len | add(b, _)"),
             Ok(DynamicValue::Integer(64))
         );
+    }
+
+    #[test]
+    fn test_variable_binding() {
+        assert_eq!(eval_code("add(%index, 2)"), Ok(DynamicValue::from(4)));
     }
 
     #[test]

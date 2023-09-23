@@ -51,10 +51,7 @@ available functions):
         'match(name, /john/i)'
 
   . Accessing current row index:
-        'add(index, 1)'
-
-  . Indexing column literally named \"index\" to avoid conflict:
-        'trim(row[\"index\"])'
+        'add(%index, 1)'
 
   . Nesting function calls:
         'add(sub(col1, col2), mul(col3, col4))'
@@ -423,9 +420,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
         }
     }
 
-    let reserved = vec!["index"];
-
-    let pipeline = prepare(&args.map_expr, &headers, &reserved)?;
+    let pipeline = prepare(&args.map_expr, &headers)?;
 
     if must_write_headers {
         wtr.write_byte_record(&headers)?;

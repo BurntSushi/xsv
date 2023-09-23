@@ -15,7 +15,7 @@ use xan::types::ColumIndexationBy;
 #[derive(Debug, PartialEq, Clone)]
 pub enum Argument {
     Identifier(String),
-    // SpecialIdentifier(String),
+    SpecialIdentifier(String),
     Indexation(ColumIndexationBy),
     StringLiteral(String),
     FloatLiteral(f64),
@@ -95,7 +95,7 @@ fn inner_identifier(input: &str) -> IResult<&str, &str> {
 
 fn inner_special_identifier(input: &str) -> IResult<&str, &str> {
     preceded(
-        char('$'),
+        char('%'),
         recognize(pair(
             alpha1,
             many0(alt((alphanumeric1, tag("_"), tag("-"), tag(" ")))),
@@ -273,6 +273,9 @@ fn argument(input: &str) -> IResult<&str, Argument> {
         map(boolean_literal, Argument::BooleanLiteral),
         map(null, |_| Argument::Null),
         map(indexation, Argument::Indexation),
+        map(inner_special_identifier, |name| {
+            Argument::SpecialIdentifier(String::from(name))
+        }),
         map(inner_identifier, |name| {
             Argument::Identifier(String::from(name))
         }),
@@ -423,7 +426,7 @@ mod tests {
             Ok((", test", "PREFIXES AS URL"))
         );
         assert_eq!(
-            inner_special_identifier("$index, ok"),
+            inner_special_identifier("%index, ok"),
             Ok((", ok", "index"))
         );
     }
