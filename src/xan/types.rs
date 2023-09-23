@@ -5,17 +5,25 @@ use std::convert::From;
 use std::ops::{Add, Mul, Sub};
 
 use csv;
-use regex::Regex as BaseRegex;
+use regex;
 
 use super::error::{CallError, EvaluationError};
 use super::utils::downgrade_float;
 
 #[derive(Debug, Clone)]
-pub struct Regex(BaseRegex);
+pub struct Regex(regex::Regex);
 
 impl Regex {
+    pub fn new(pattern: &str) -> Result<Self, regex::Error> {
+        Ok(Regex(regex::Regex::new(pattern)?))
+    }
+
     fn as_str(&self) -> &str {
-        self.as_str()
+        self.0.as_str()
+    }
+
+    pub fn is_match(&self, haystack: &str) -> bool {
+        self.0.is_match(haystack)
     }
 }
 
@@ -231,6 +239,16 @@ impl DynamicValue {
             Self::Regex(pattern) => Cow::Borrowed(pattern.as_str()),
             Self::None => Cow::Owned("".to_string()),
         })
+    }
+
+    pub fn try_as_regex(&self) -> Result<&Regex, CallError> {
+        match self {
+            Self::Regex(regex) => Ok(regex),
+            value => Err(CallError::Cast((
+                value.type_of().to_string(),
+                "regex".to_string(),
+            ))),
+        }
     }
 
     pub fn try_as_list(&self) -> Result<&Vec<DynamicValue>, CallError> {

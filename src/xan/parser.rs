@@ -126,17 +126,6 @@ fn unescape(c: char, delimiter: char) -> Result<char, ()> {
     })
 }
 
-fn unescape_regex(c: char) -> Result<char, ()> {
-    if c == '/' {
-        return Ok(c);
-    }
-
-    Ok(match c {
-        '\\' | '/' => c,
-        _ => return Err(()),
-    })
-}
-
 fn double_quote_string_character_literal(input: &str) -> IResult<&str, char> {
     let (input, c) = none_of("\"")(input)?;
 

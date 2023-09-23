@@ -9,7 +9,8 @@ use super::error::{
 use super::functions::call;
 use super::parser::{parse, Argument, Pipeline};
 use super::types::{
-    BoundArgument, BoundArguments, ColumIndexationBy, DynamicValue, EvaluationResult, Variables,
+    BoundArgument, BoundArguments, ColumIndexationBy, DynamicValue, EvaluationResult, Regex,
+    Variables,
 };
 
 #[derive(Debug, Clone)]
@@ -20,6 +21,7 @@ enum ConcreteArgument {
     FloatLiteral(DynamicValue),
     IntegerLiteral(DynamicValue),
     BooleanLiteral(DynamicValue),
+    RegexLiteral(DynamicValue),
     Call(ConcreteFunctionCall),
     Null,
     Underscore,
@@ -50,6 +52,7 @@ impl ConcreteArgument {
                 Some(value) => Cow::Borrowed(value),
                 None => return Err(BindingError::UnknownVariable(name.clone())),
             },
+            Self::RegexLiteral(value) => Cow::Borrowed(value),
             Self::Call(_) => return Err(BindingError::IllegalBinding),
         })
     }
@@ -91,7 +94,10 @@ fn concretize_argument(
             Some(index) => ConcreteArgument::Column(index),
             None => return Err(PrepareError::ColumnNotFound(indexation)),
         },
-        Argument::RegexLiteral(_) => unimplemented!(),
+        Argument::RegexLiteral(pattern) => match Regex::new(&pattern) {
+            Ok(regex) => ConcreteArgument::RegexLiteral(DynamicValue::Regex(regex)),
+            Err(_) => return Err(PrepareError::InvalidRegex(pattern)),
+        },
         Argument::Call(call) => {
             let mut concrete_args = Vec::new();
 
@@ -595,5 +601,17 @@ mod tests {
     fn test_abs() {
         assert_eq!(eval_code("abs(-5)"), Ok(DynamicValue::Integer(5)));
         assert_eq!(eval_code("abs(-5.0)"), Ok(DynamicValue::Float(5.0)));
+    }
+
+    #[test]
+    fn test_match() {
+        assert_eq!(
+            eval_code("match('hello', /l{2}/)"),
+            Ok(DynamicValue::from(true))
+        );
+        assert_eq!(
+            eval_code("match('hello', /l{3}/)"),
+            Ok(DynamicValue::from(false))
+        );
     }
 }

@@ -45,6 +45,7 @@ pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, S
         "lte" => number_compare(args, Ordering::is_le),
         "ltrim" => ltrim(args),
         "lower" => lower(args),
+        "match" => is_match(args),
         "mul" => arithmetic_op(args, Mul::mul),
         "neq" => number_compare(args, Ordering::is_ne),
         "not" => not(args),
@@ -178,6 +179,14 @@ fn endswith(args: BoundArguments) -> FunctionResult {
     let (string, pattern) = args.get2_as_str()?;
 
     Ok(DynamicValue::from(string.ends_with(&*pattern)))
+}
+
+fn is_match(args: BoundArguments) -> FunctionResult {
+    let (arg1, arg2) = args.get2()?;
+    let string = arg1.try_as_str()?;
+    let regex = arg2.try_as_regex()?;
+
+    Ok(DynamicValue::from(regex.is_match(&string)))
 }
 
 fn concat(args: BoundArguments) -> FunctionResult {

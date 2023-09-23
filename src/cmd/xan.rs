@@ -80,6 +80,9 @@ Available functions:
     - lower(string) -> string
         Lowercase string.
 
+    - match(string, regex) -> bool
+        Return whether regex pattern matches string.
+
     - mul(x, y) -> number
         Multiply x & y.
 

@@ -6,6 +6,7 @@ use super::types::ColumIndexationBy;
 pub enum PrepareError {
     ParseError(String),
     ColumnNotFound(ColumIndexationBy),
+    InvalidRegex(String),
 }
 
 impl Display for PrepareError {
@@ -19,6 +20,7 @@ impl Display for PrepareError {
                 }
             },
             Self::ParseError(expr) => write!(f, "could not parse expression: {}", expr),
+            Self::InvalidRegex(pattern) => write!(f, "invalid regex {}", pattern),
         }
     }
 }
