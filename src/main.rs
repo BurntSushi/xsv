@@ -8,6 +8,7 @@ extern crate csv;
 extern crate csv_index;
 extern crate dateparser;
 extern crate docopt;
+extern crate encoding;
 extern crate filetime;
 extern crate flate2;
 extern crate glob;

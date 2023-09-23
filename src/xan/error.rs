@@ -121,6 +121,9 @@ pub enum CallError {
     CannotReadFile(String),
     Cast((String, String)),
     Custom(String),
+    UnsupportedEncoding(String),
+    UnsupportedDecoderTrap(String),
+    DecodeError,
 }
 
 impl CallError {
@@ -182,6 +185,15 @@ impl Display for CallError {
             Self::NotImplemented(t) => {
                 write!(f, "not implemented for values of type \"{}\" as of yet", t)
             }
+            Self::UnsupportedEncoding(name) => write!(f, "unsupported encoding \"{}\"", name),
+            Self::UnsupportedDecoderTrap(name) => {
+                write!(
+                    f,
+                    "unsupported encoder trap \"{}\". Must be one of strict, replace, ignore.",
+                    name
+                )
+            }
+            Self::DecodeError => write!(f, "could not decode"),
         }
     }
 }

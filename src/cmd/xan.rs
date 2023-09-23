@@ -92,8 +92,10 @@ Available functions:
     - pathjoin(string, *strings) -> string
         Join multiple paths correctly.
 
-    - read(path) -> string
-        Read file at path.
+    - read(path, encoding?, errors?) -> string
+        Read file at path. Default encoding is \"utf-8\".
+        Default error handling policy is \"replace\", and can be
+        one of \"replace\", \"ignore\" or \"strict\".
 
     - rtrim(string, pattern?) -> string
         Trim string of trailing whitespace or
@@ -282,7 +284,7 @@ pub fn handle_eval_result<W: std::io::Write>(
                 }
             }
             XanErrorPolicy::Panic => {
-                Err(err)?;
+                Err(format!("Row n°{}: {}", index + 1, err.to_string()))?;
             }
         },
     };

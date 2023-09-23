@@ -6,6 +6,7 @@ use std::io::Read;
 use std::ops::{Add, Mul, Sub};
 use std::path::PathBuf;
 
+use encoding::{label::encoding_from_whatwg_label, DecoderTrap};
 use flate2::read::GzDecoder;
 use unidecode::unidecode;
 use uuid::Uuid;
@@ -452,8 +453,19 @@ fn pathjoin(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(path))
 }
 
+fn decoder_trap_from_str(name: &str) -> Result<DecoderTrap, CallError> {
+    Ok(match name {
+        "strict" => DecoderTrap::Strict,
+        "replace" => DecoderTrap::Replace,
+        "ignore" => DecoderTrap::Ignore,
+        _ => return Err(CallError::UnsupportedDecoderTrap(name.to_string())),
+    })
+}
+
 fn read(args: BoundArguments) -> FunctionResult {
-    let path = args.get1_as_str()?;
+    args.validate_min_max_arity(1, 3)?;
+
+    let path = args.get(0).unwrap().try_as_str()?;
 
     // TODO: handle encoding
     let mut file = match File::open(path.as_ref()) {
@@ -461,18 +473,50 @@ fn read(args: BoundArguments) -> FunctionResult {
         Ok(f) => f,
     };
 
-    let mut buffer = String::new();
+    let contents = match args.get(1) {
+        Some(encoding_value) => {
+            let encoding_name = encoding_value.try_as_str()?.replace("_", "-");
+            let encoding = encoding_from_whatwg_label(&encoding_name);
+            let encoding = encoding
+                .ok_or_else(|| CallError::UnsupportedEncoding(encoding_name.to_string()))?;
 
-    if path.ends_with(".gz") {
-        let mut gz = GzDecoder::new(file);
-        gz.read_to_string(&mut buffer)
-            .map_err(|_| CallError::CannotReadFile(path.into_owned()))?;
-    } else {
-        file.read_to_string(&mut buffer)
-            .map_err(|_| CallError::CannotReadFile(path.into_owned()))?;
-    }
+            let decoder_trap = match args.get(2) {
+                Some(trap) => decoder_trap_from_str(&trap.try_as_str()?)?,
+                None => DecoderTrap::Replace,
+            };
 
-    Ok(DynamicValue::from(buffer))
+            let mut buffer: Vec<u8> = Vec::new();
+
+            if path.ends_with(".gz") {
+                let mut gz = GzDecoder::new(file);
+                gz.read_to_end(&mut buffer)
+                    .map_err(|_| CallError::CannotReadFile(path.into_owned()))?;
+            } else {
+                file.read_to_end(&mut buffer)
+                    .map_err(|_| CallError::CannotReadFile(path.into_owned()))?;
+            }
+
+            encoding
+                .decode(&buffer, decoder_trap)
+                .map_err(|_| CallError::DecodeError)?
+        }
+        None => {
+            let mut buffer = String::new();
+
+            if path.ends_with(".gz") {
+                let mut gz = GzDecoder::new(file);
+                gz.read_to_string(&mut buffer)
+                    .map_err(|_| CallError::CannotReadFile(path.into_owned()))?;
+            } else {
+                file.read_to_string(&mut buffer)
+                    .map_err(|_| CallError::CannotReadFile(path.into_owned()))?;
+            }
+
+            buffer
+        }
+    };
+
+    Ok(DynamicValue::from(contents))
 }
 
 // Introspection
