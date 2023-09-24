@@ -142,7 +142,7 @@ impl SeriesStats {
     pub fn width(&self) -> Option<f64> {
         match self.extent {
             None => None,
-            Some(extent) => Some(extent.1 - extent.0),
+            Some(extent) => Some((extent.1 - extent.0).abs()),
         }
     }
 }
@@ -228,10 +228,13 @@ impl Series {
             Some(w) => w,
         };
 
-        let mut lower_bound = stats.min().unwrap();
+        let min = stats.min().unwrap();
+        let cell_width = width / count as f64;
+
+        let mut lower_bound = min;
 
         for _ in 0..count {
-            let upper_bound = lower_bound + width / count as f64;
+            let upper_bound = lower_bound + cell_width;
 
             bins.push(Bin {
                 lower_bound,
@@ -243,7 +246,13 @@ impl Series {
         }
 
         for n in self.numbers.iter() {
-            let bin_index = ((n / width).floor() as usize) % count;
+            let mut bin_index = ((n - min) / cell_width).floor() as usize;
+
+            // Exception to include max in last bin
+            if bin_index == bins.len() {
+                bin_index -= 1;
+            }
+
             bins[bin_index].count += 1;
         }
 
