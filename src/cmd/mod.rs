@@ -1,4 +1,5 @@
 pub mod behead;
+pub mod bins;
 pub mod cat;
 pub mod count;
 pub mod datefmt;

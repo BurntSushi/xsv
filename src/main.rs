@@ -66,6 +66,7 @@ macro_rules! command_list {
     () => {
         "
     behead      Drop header from CSV file
+    bins        Dispatch numeric columns into bins
     cat         Concatenate by row or column
     count       Count records
     datefmt     Formats a recognized date column to a specified format and timezone
@@ -181,6 +182,7 @@ Please choose one of the following commands:",
 #[serde(rename_all = "lowercase")]
 enum Command {
     Behead,
+    Bins,
     Cat,
     Count,
     Datefmt,
@@ -231,6 +233,7 @@ impl Command {
         }
         match self {
             Command::Behead => cmd::behead::run(argv),
+            Command::Bins => cmd::bins::run(argv),
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),
             Command::Datefmt => cmd::datefmt::run(argv),

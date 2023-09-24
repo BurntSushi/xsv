@@ -40,6 +40,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 <strong id="new-features">New Features</strong>
 
 * `xsv behead`
+* `xsv bins`
 * `xsv datefmt`
 * `xsv explode`
 * `xsv filter`
@@ -65,6 +66,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 ### Available commands
 
 * **behead** - Drop headers from CSV file.
+* **bins** - Dispatch numeric columns into bins.
 * **cat** - Concatenate CSV files by row or by column.
 * **count** - Count the rows in a CSV file. (Instantaneous with an index.)
 * **datefmt** - Add a column with the date from a CSV column in a specified format and timezone.
