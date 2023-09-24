@@ -16,6 +16,11 @@ bins options:
     -s, --select <arg>     Select a subset of columns to compute bins
                            for. See 'xsv select --help' for the format
                            details.
+    --bins <number>        Number of bins. Will default to ceil(sqrt(n)).
+    --min <min>            Hardcoded min value.
+    --max <max>            Hardcoded max value.
+    --nulls                Include nulls count in output.
+    --nans                 Include nans count in outpit.
 
 Common options:
     -h, --help             Display this message
@@ -26,6 +31,8 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
+// TODO: normalize, scale etc.
+
 #[derive(Deserialize)]
 struct Args {
     arg_input: Option<String>,
@@ -33,6 +40,11 @@ struct Args {
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
     flag_output: Option<String>,
+    flag_nulls: bool,
+    flag_nans: bool,
+    flag_bins: Option<usize>,
+    flag_min: Option<f64>,
+    flag_max: Option<f64>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -45,7 +57,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = conf.reader()?;
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
-    let headers = rdr.byte_headers()?;
+    let headers = rdr.byte_headers()?.clone();
     let sel = conf.selection(&headers)?;
 
     let mut all_series: Vec<Series> = sel.iter().map(|i| Series::new(*i)).collect();
@@ -59,9 +71,87 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
     }
 
-    println!("{:?}", all_series);
+    wtr.write_record(vec![
+        "field",
+        "value",
+        "lower_bound",
+        "upper_bound",
+        "count",
+    ])?;
+
+    for series in all_series {
+        match series.bins(args.flag_bins) {
+            None => continue,
+            Some(bins) => {
+                for bin in bins {
+                    wtr.write_record(vec![
+                        &headers[series.column],
+                        format!(">= {}, < {}", bin.lower_bound, bin.upper_bound).as_bytes(),
+                        bin.lower_bound.to_string().as_bytes(),
+                        bin.upper_bound.to_string().as_bytes(),
+                        bin.count.to_string().as_bytes(),
+                    ])?;
+                }
+            }
+        }
+
+        if args.flag_nans && series.nans > 0 {
+            wtr.write_record(vec![
+                &headers[series.column],
+                b"NaN",
+                b"",
+                b"",
+                series.nans.to_string().as_bytes(),
+            ])?;
+        }
+
+        if args.flag_nulls && series.nulls > 0 {
+            wtr.write_record(vec![
+                &headers[series.column],
+                b"NULL",
+                b"",
+                b"",
+                series.nulls.to_string().as_bytes(),
+            ])?;
+        }
+    }
 
     Ok(wtr.flush()?)
+}
+
+#[derive(Debug)]
+struct SeriesStats {
+    extent: Option<(f64, f64)>,
+}
+
+impl SeriesStats {
+    pub fn min(&self) -> Option<f64> {
+        match self.extent {
+            None => None,
+            Some(extent) => Some(extent.0),
+        }
+    }
+
+    pub fn max(&self) -> Option<f64> {
+        match self.extent {
+            None => None,
+            Some(extent) => Some(extent.1),
+        }
+    }
+
+    pub fn width(&self) -> Option<f64> {
+        match self.extent {
+            None => None,
+            Some(extent) => Some(extent.1 - extent.0),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Bin {
+    lower_bound: f64,
+    upper_bound: f64,
+    count: usize,
 }
 
 #[derive(Debug)]
@@ -102,5 +192,61 @@ impl Series {
                 self.nans += 1;
             }
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.numbers.len()
+    }
+
+    pub fn stats(&self) -> SeriesStats {
+        let mut extent: Option<(f64, f64)> = None;
+
+        for n in self.numbers.iter() {
+            let n = *n;
+
+            extent = match extent {
+                None => Some((n, n)),
+                Some(m) => Some((f64::min(n, m.0), f64::max(n, m.1))),
+            };
+        }
+
+        SeriesStats { extent }
+    }
+
+    pub fn naive_optimal_bin_count(&self) -> usize {
+        (self.len() as f64).sqrt().ceil() as usize
+    }
+
+    pub fn bins(&self, count: Option<usize>) -> Option<Vec<Bin>> {
+        let stats = self.stats();
+        let count = count.unwrap_or(self.naive_optimal_bin_count());
+
+        let mut bins: Vec<Bin> = Vec::with_capacity(count);
+
+        let width = match stats.width() {
+            None => return None,
+            Some(w) => w,
+        };
+
+        let mut lower_bound = stats.min().unwrap();
+
+        for _ in 0..count {
+            let upper_bound = lower_bound + width / count as f64;
+
+            bins.push(Bin {
+                lower_bound,
+                upper_bound,
+                count: 0,
+            });
+
+            lower_bound = upper_bound;
+        }
+
+        for n in self.numbers.iter() {
+            let bin_index = ((n / width).floor() as usize) % count;
+            bins[bin_index].count += 1;
+        }
+
+        Some(bins)
     }
 }
