@@ -22,13 +22,16 @@ Usage:
     xsv hist --help
 
 hist options:
-    --field <col>         Name of the field column. I.e. the one containing
-                          the represented column name (remember this command can
+    --field <name>        Name of the field column. I.e. the one containing
+                          the represented value (remember this command can
                           print several histograms). [default: field].
-    --label <col>         Name of the label column. I.e. the one containing the
+    --label <name>        Name of the label column. I.e. the one containing the
                           label for a single bar of the histogram. [default: value].
-    --value <col>         Name of the count column. I.e. the one containing the value
+    --value <name>        Name of the count column. I.e. the one containing the value
                           for each bar. [default: count].
+    --cols <num>          Width of the graph in terminal columns, i.e. characters.
+                          Defaults to using all your terminal's width or 80 if
+                          terminal's size cannot be found (i.e. when piping to file).
 
 
 Common options:
@@ -62,6 +65,7 @@ struct Args {
     flag_field: String,
     flag_label: String,
     flag_value: String,
+    flag_cols: Option<usize>,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -96,9 +100,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .separator(',')
         .unwrap();
 
-    let cols: usize = match termsize::get() {
-        None => 80,
-        Some(size) => size.cols as usize,
+    let cols: usize = match args.flag_cols {
+        None => match termsize::get() {
+            None => 80,
+            Some(size) => size.cols as usize,
+        },
+        Some(c) => c,
     };
 
     for histogram in histograms.iter() {
