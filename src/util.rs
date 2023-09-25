@@ -370,6 +370,32 @@ pub fn unicode_aware_rpad_with_ellipsis<'a>(
     unicode_aware_rpad(&unicode_aware_ellipsis(string, width), width, padding).into_owned()
 }
 
+pub fn unicode_aware_wrap(string: &str, max_width: usize) -> Vec<String> {
+    let mut wrapped: Vec<String> = Vec::new();
+    let mut current_string = String::new();
+    let mut current_width: usize = 0;
+
+    for grapheme in string.graphemes(true) {
+        let width = grapheme.width();
+        current_width += width;
+
+        if current_width > max_width {
+            wrapped.push(current_string);
+            current_width = width;
+            current_string = String::new();
+            current_string.push_str(grapheme);
+        } else {
+            current_string.push_str(grapheme);
+        }
+    }
+
+    if !current_string.is_empty() {
+        wrapped.push(current_string);
+    }
+
+    wrapped
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
