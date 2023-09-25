@@ -13,7 +13,7 @@ use csv;
 use dateparser::parse_with_timezone;
 use docopt::Docopt;
 use num_cpus;
-use numfmt::Formatter;
+use numfmt::{Formatter, Precision};
 use rand::{SeedableRng, StdRng};
 use serde::de::{Deserialize, DeserializeOwned, Deserializer, Error};
 use unicode_segmentation::UnicodeSegmentation;
@@ -294,6 +294,13 @@ pub fn acquire_rng(seed: Option<usize>) -> StdRng {
             SeedableRng::from_seed(buf)
         }
     }
+}
+
+pub fn acquire_number_formatter() -> Formatter {
+    Formatter::new()
+        .precision(Precision::Significance(5))
+        .separator(',')
+        .unwrap()
 }
 
 pub fn pretty_print_float(f: &mut Formatter, x: f64) -> String {

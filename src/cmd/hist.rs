@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use colored::Colorize;
 use csv;
-use numfmt::{Formatter, Precision};
+use numfmt::Formatter;
 use termsize;
 use unicode_width::UnicodeWidthStr;
 
@@ -14,7 +14,7 @@ static USAGE: &str = "
 Prints a horizontal histogram for the given CSV file with each line
 representing a bar in the resulting graph.
 
-This command is very useful in conjunction with the `frequency` or `bins`
+This command is very useful when used in conjunction with the `frequency` or `bins`
 command.
 
 Usage:
@@ -32,7 +32,10 @@ hist options:
     --cols <num>          Width of the graph in terminal columns, i.e. characters.
                           Defaults to using all your terminal's width or 80 if
                           terminal's size cannot be found (i.e. when piping to file).
-
+    --domain-max <type>   If \"max\" max bar length will be scaled to the
+                          max bar value. If \"sum\", max bar length will be scaled to
+                          the sum of bar values (i.e. sum of bar lengths will be 100%).
+                          [default: max]
 
 Common options:
     -h, --help             Display this message
@@ -66,6 +69,7 @@ struct Args {
     flag_label: String,
     flag_value: String,
     flag_cols: Option<usize>,
+    flag_domain_max: String,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -95,10 +99,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         histograms.add(field, label, value);
     }
 
-    let mut formatter = Formatter::new()
-        .precision(Precision::Significance(5))
-        .separator(',')
-        .unwrap();
+    let mut formatter = util::acquire_number_formatter();
 
     let cols: usize = match args.flag_cols {
         None => match termsize::get() {
@@ -111,17 +112,29 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     for histogram in histograms.iter() {
         let sum = histogram.sum();
 
-        println!(
-            "\nHistogram for field {} (aggregating {}):\n",
-            histogram.field.green(),
-            util::pretty_print_float(&mut formatter, sum).cyan()
-        );
-
         if histogram.len() == 0 {
             continue;
         }
 
+        let domain_max = match args.flag_domain_max.as_str() {
+            "max" => histogram.max().unwrap(),
+            "sum" => histogram.sum(),
+            _ => return fail!("unknown --domain-max. Should be one of \"sum\", \"max\"."),
+        };
+
+        println!(
+            "\nHistogram for field {} (counting {}, max: {}):\n",
+            histogram.field.green(),
+            util::pretty_print_float(&mut formatter, sum).cyan(),
+            util::pretty_print_float(&mut formatter, histogram.max().unwrap()).cyan()
+        );
+
         let pct_cols: usize = 8;
+
+        if cols < 30 {
+            return fail!("You did not provide enough --cols to print anything!");
+        }
+
         let remaining_cols = cols - pct_cols;
         let count_cols = usize::min(
             (remaining_cols as f64 * 0.2).floor() as usize,
@@ -133,39 +146,34 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         );
         let bar_cols = remaining_cols - count_cols - label_cols - 4;
 
-        match histogram.domain() {
-            None => continue,
-            Some(domain) => {
-                let mut odd = false;
+        let mut odd = false;
 
-                for bar in histogram.bars() {
-                    let bar_width =
-                        from_domain_to_range(bar.value, (0.0, domain.1), (0.0, bar_cols as f64));
+        for bar in histogram.bars() {
+            let bar_width =
+                from_domain_to_range(bar.value, (0.0, domain_max), (0.0, bar_cols as f64));
 
-                    let mut bar_as_chars =
-                        util::unicode_aware_rpad(&create_bar(bar_width), bar_cols, " ").clear();
+            let mut bar_as_chars =
+                util::unicode_aware_rpad(&create_bar(bar_width), bar_cols, " ").clear();
 
-                    if odd {
-                        bar_as_chars = bar_as_chars.dimmed();
-                        odd = false;
-                    } else {
-                        odd = true;
-                    }
-
-                    println!(
-                        "{} |{} {}|{}|",
-                        util::unicode_aware_rpad_with_ellipsis(&bar.label, label_cols, " "),
-                        util::unicode_aware_rpad_with_ellipsis(
-                            &util::pretty_print_float(&mut formatter, bar.value),
-                            count_cols,
-                            " "
-                        )
-                        .cyan(),
-                        format!("{:>6.2}%", bar.value / sum * 100.0).purple(),
-                        bar_as_chars
-                    );
-                }
+            if odd {
+                bar_as_chars = bar_as_chars.dimmed();
+                odd = false;
+            } else {
+                odd = true;
             }
+
+            println!(
+                "{} |{} {}|{}|",
+                util::unicode_aware_rpad_with_ellipsis(&bar.label, label_cols, " "),
+                util::unicode_aware_rpad_with_ellipsis(
+                    &util::pretty_print_float(&mut formatter, bar.value),
+                    count_cols,
+                    " "
+                )
+                .cyan(),
+                format!("{:>6.2}%", bar.value / sum * 100.0).purple(),
+                bar_as_chars
+            );
         }
     }
 
@@ -211,30 +219,23 @@ struct Histogram {
 }
 
 impl Histogram {
-    fn new(field: String) -> Self {
-        Histogram {
-            field,
-            bars: Vec::new(),
-        }
-    }
-
     fn len(&self) -> usize {
         self.bars.len()
     }
 
-    fn domain(&self) -> Option<(f64, f64)> {
-        let mut domain: Option<(f64, f64)> = None;
+    fn max(&self) -> Option<f64> {
+        let mut max: Option<f64> = None;
 
         for bar in self.bars.iter() {
             let n = bar.value;
 
-            domain = match domain {
-                None => Some((n, n)),
-                Some(m) => Some((f64::min(n, m.0), f64::max(n, m.1))),
+            max = match max {
+                None => Some(n),
+                Some(m) => Some(f64::max(n, m)),
             };
         }
 
-        domain
+        max
     }
 
     fn sum(&self) -> f64 {

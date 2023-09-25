@@ -248,7 +248,7 @@ impl Args {
             .into_iter()
             .map(|(bs, c)| {
                 if b"" == &**bs {
-                    (b"(NULL)"[..].to_vec(), c)
+                    (b"<NULL>"[..].to_vec(), c)
                 } else {
                     (bs.clone(), c)
                 }

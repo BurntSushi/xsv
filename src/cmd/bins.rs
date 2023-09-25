@@ -1,5 +1,4 @@
 use csv;
-use numfmt::{Formatter, Precision};
 
 use config::{Config, Delimiter};
 use select::SelectColumns;
@@ -78,10 +77,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         "count",
     ])?;
 
-    let mut formatter = Formatter::new()
-        .precision(Precision::Significance(5))
-        .separator(',')
-        .unwrap();
+    let mut formatter = util::acquire_number_formatter();
 
     for series in all_series {
         match series.bins(args.flag_bins) {
@@ -112,7 +108,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         if !args.flag_no_extraneous && series.nans > 0 {
             wtr.write_record(vec![
                 &headers[series.column],
-                b"NaN",
+                b"<NaN>",
                 b"",
                 b"",
                 series.nans.to_string().as_bytes(),
@@ -122,7 +118,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         if !args.flag_no_extraneous && series.nulls > 0 {
             wtr.write_record(vec![
                 &headers[series.column],
-                b"NULL",
+                b"<NULL>",
                 b"",
                 b"",
                 series.nulls.to_string().as_bytes(),
@@ -143,13 +139,6 @@ impl SeriesStats {
         match self.extent {
             None => None,
             Some(extent) => Some(extent.0),
-        }
-    }
-
-    pub fn max(&self) -> Option<f64> {
-        match self.extent {
-            None => None,
-            Some(extent) => Some(extent.1),
         }
     }
 
