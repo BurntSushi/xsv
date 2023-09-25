@@ -10,6 +10,8 @@ use config::{Config, Delimiter};
 use util;
 use CliResult;
 
+// TODO: log scales etc.
+
 static USAGE: &str = "
 Print a horizontal histogram for the given CSV file with each line
 representing a bar in the resulting graph.
@@ -160,9 +162,15 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 odd = true;
             }
 
+            let label = util::unicode_aware_rpad_with_ellipsis(&bar.label, label_cols, " ");
+            let label = match bar.label.as_str() {
+                "<REST>" | "<NULL>" | "<NaN>" => label.dimmed(),
+                _ => label.normal(),
+            };
+
             println!(
                 "{} |{} {}|{}|",
-                util::unicode_aware_rpad_with_ellipsis(&bar.label, label_cols, " "),
+                label,
                 util::unicode_aware_rpad_with_ellipsis(
                     &util::pretty_print_float(&mut formatter, bar.value),
                     count_cols,

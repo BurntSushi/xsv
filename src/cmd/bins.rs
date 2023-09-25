@@ -30,7 +30,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-// TODO: normalize, scale etc., pad the labels
+// TODO: normalize as percentages, better integer support
 
 #[derive(Deserialize)]
 struct Args {
@@ -65,7 +65,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     while rdr.read_byte_record(&mut record)? {
         for (cell, series) in sel.select(&record).zip(all_series.iter_mut()) {
             let cell = std::str::from_utf8(cell).unwrap();
-            series.add(cell);
+            series.add(cell, &args.flag_min, &args.flag_max);
         }
     }
 
@@ -80,7 +80,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut formatter = util::acquire_number_formatter();
 
     for series in all_series {
-        match series.bins(args.flag_bins) {
+        match series.bins(args.flag_bins, &args.flag_min, &args.flag_max) {
             None => continue,
             Some(bins) => {
                 let mut bins_iter = bins.iter().peekable();
@@ -124,6 +124,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 series.nulls.to_string().as_bytes(),
             ])?;
         }
+
+        if !args.flag_no_extra && series.out_of_bounds > 0 {
+            wtr.write_record(vec![
+                &headers[series.column],
+                b"<REST>",
+                b"",
+                b"",
+                series.out_of_bounds.to_string().as_bytes(),
+            ])?;
+        }
     }
 
     Ok(wtr.flush()?)
@@ -142,10 +152,10 @@ impl SeriesStats {
         }
     }
 
-    pub fn width(&self) -> Option<f64> {
+    pub fn max(&self) -> Option<f64> {
         match self.extent {
             None => None,
-            Some(extent) => Some((extent.1 - extent.0).abs()),
+            Some(extent) => Some(extent.1),
         }
     }
 }
@@ -164,6 +174,7 @@ struct Series {
     count: usize,
     nans: usize,
     nulls: usize,
+    out_of_bounds: usize,
 }
 
 impl Series {
@@ -174,10 +185,11 @@ impl Series {
             count: 0,
             nans: 0,
             nulls: 0,
+            out_of_bounds: 0,
         }
     }
 
-    pub fn add(&mut self, cell: &str) {
+    pub fn add(&mut self, cell: &str, min: &Option<f64>, max: &Option<f64>) {
         self.count += 1;
 
         let cell = cell.trim();
@@ -189,6 +201,18 @@ impl Series {
 
         match cell.parse::<f64>() {
             Ok(float) => {
+                if let Some(m) = min {
+                    if float < *m {
+                        self.out_of_bounds += 1;
+                        return;
+                    }
+                } else if let Some(m) = max {
+                    if float > *m {
+                        self.out_of_bounds += 1;
+                        return;
+                    }
+                }
+
                 self.numbers.push(float);
             }
             Err(_) => {
@@ -220,18 +244,24 @@ impl Series {
         (self.len() as f64).sqrt().ceil() as usize
     }
 
-    pub fn bins(&self, count: Option<usize>) -> Option<Vec<Bin>> {
+    pub fn bins(
+        &self,
+        count: Option<usize>,
+        min: &Option<f64>,
+        max: &Option<f64>,
+    ) -> Option<Vec<Bin>> {
+        if self.len() < 1 {
+            return None;
+        }
+
         let stats = self.stats();
         let count = count.unwrap_or(self.naive_optimal_bin_count());
 
         let mut bins: Vec<Bin> = Vec::with_capacity(count);
 
-        let width = match stats.width() {
-            None => return None,
-            Some(w) => w,
-        };
-
-        let min = stats.min().unwrap();
+        let min = min.unwrap_or_else(|| stats.min().unwrap());
+        let max = max.unwrap_or_else(|| stats.max().unwrap());
+        let width = (max - min).abs();
         let cell_width = width / count as f64;
 
         let mut lower_bound = min;
