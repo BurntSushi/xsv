@@ -11,7 +11,7 @@ use util;
 use CliResult;
 
 static USAGE: &str = "
-Prints a horizontal histogram for the given CSV file with each line
+Print a horizontal histogram for the given CSV file with each line
 representing a bar in the resulting graph.
 
 This command is very useful when used in conjunction with the `frequency` or `bins`
@@ -22,20 +22,20 @@ Usage:
     xsv hist --help
 
 hist options:
-    --field <name>        Name of the field column. I.e. the one containing
-                          the represented value (remember this command can
-                          print several histograms). [default: field].
-    --label <name>        Name of the label column. I.e. the one containing the
-                          label for a single bar of the histogram. [default: value].
-    --value <name>        Name of the count column. I.e. the one containing the value
-                          for each bar. [default: count].
-    --cols <num>          Width of the graph in terminal columns, i.e. characters.
-                          Defaults to using all your terminal's width or 80 if
-                          terminal's size cannot be found (i.e. when piping to file).
-    --domain-max <type>   If \"max\" max bar length will be scaled to the
-                          max bar value. If \"sum\", max bar length will be scaled to
-                          the sum of bar values (i.e. sum of bar lengths will be 100%).
-                          [default: max]
+    --field <name>           Name of the field column. I.e. the one containing
+                             the represented value (remember this command can
+                             print several histograms). [default: field].
+    --label <name>           Name of the label column. I.e. the one containing the
+                             label for a single bar of the histogram. [default: value].
+    --value <name>           Name of the count column. I.e. the one containing the value
+                             for each bar. [default: count].
+    --cols <num>             Width of the graph in terminal columns, i.e. characters.
+                             Defaults to using all your terminal's width or 80 if
+                             terminal's size cannot be found (i.e. when piping to file).
+    -m, --domain-max <type>  If \"max\" max bar length will be scaled to the
+                             max bar value. If \"sum\", max bar length will be scaled to
+                             the sum of bar values (i.e. sum of bar lengths will be 100%).
+                             [default: max]
 
 Common options:
     -h, --help             Display this message
@@ -44,8 +44,6 @@ Common options:
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. (default: ,)
 ";
-
-// TODO: range max = sum of value
 
 fn find_column_index(headers: &csv::ByteRecord, name: &str) -> Result<usize, String> {
     let index = headers
