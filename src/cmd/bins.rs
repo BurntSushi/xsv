@@ -83,10 +83,17 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         match series.bins(args.flag_bins) {
             None => continue,
             Some(bins) => {
-                for bin in bins {
+                let mut bins_iter = bins.iter().peekable();
+
+                while let Some(bin) = bins_iter.next() {
+                    let label_format = match bins_iter.peek() {
+                        None => format!(">= {}, <= {}", bin.lower_bound, bin.upper_bound),
+                        Some(_) => format!(">= {}, < {}", bin.lower_bound, bin.upper_bound),
+                    };
+
                     wtr.write_record(vec![
                         &headers[series.column],
-                        format!(">= {}, < {}", bin.lower_bound, bin.upper_bound).as_bytes(),
+                        label_format.as_bytes(),
                         bin.lower_bound.to_string().as_bytes(),
                         bin.upper_bound.to_string().as_bytes(),
                         bin.count.to_string().as_bytes(),
