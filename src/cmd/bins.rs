@@ -1,6 +1,7 @@
 use csv;
 
 use config::{Config, Delimiter};
+use rayon::slice::ParallelSliceMut;
 use select::SelectColumns;
 use util;
 use CliResult;
@@ -16,7 +17,8 @@ bins options:
     -s, --select <arg>     Select a subset of columns to compute bins
                            for. See 'xsv select --help' for the format
                            details.
-    --bins <number>        Number of bins. Will default to ceil(sqrt(n)).
+    --bins <number>        Number of bins. Will default to using Freedman-Diaconis.
+                           rule.
     --min <min>            Override min value.
     --max <max>            Override max value.
     --no-extra             Don't include, nulls, nans and out-of-bounds counts.
@@ -29,8 +31,6 @@ Common options:
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. (default: ,)
 ";
-
-// TODO: normalize as percentages, better integer support
 
 #[derive(Deserialize)]
 struct Args {
@@ -79,15 +79,20 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut formatter = util::acquire_number_formatter();
 
-    for series in all_series {
+    for series in all_series.iter_mut() {
         match series.bins(args.flag_bins, &args.flag_min, &args.flag_max) {
             None => continue,
             Some(bins) => {
                 let mut bins_iter = bins.iter().peekable();
 
                 while let Some(bin) = bins_iter.next() {
-                    let lower_bound = util::pretty_print_float(&mut formatter, bin.lower_bound);
-                    let upper_bound = util::pretty_print_float(&mut formatter, bin.upper_bound);
+                    let (lower_bound, upper_bound) = match series.data_type {
+                        DataType::Float => (bin.lower_bound, bin.upper_bound),
+                        DataType::Integer => (bin.lower_bound.ceil(), bin.upper_bound.ceil()),
+                    };
+
+                    let lower_bound = util::pretty_print_float(&mut formatter, lower_bound);
+                    let upper_bound = util::pretty_print_float(&mut formatter, upper_bound);
 
                     let label_format = match bins_iter.peek() {
                         None => format!(">= {} <= {}", lower_bound, upper_bound),
@@ -139,6 +144,17 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     Ok(wtr.flush()?)
 }
 
+fn compute_iqr(numbers: &Vec<f64>) -> Option<f64> {
+    if numbers.len() < 4 {
+        None
+    } else {
+        let q1 = (numbers.len() as f64 * 0.25).floor() as usize;
+        let q3 = (numbers.len() as f64 * 0.75).floor() as usize;
+
+        Some(numbers[q3] - numbers[q1])
+    }
+}
+
 #[derive(Debug)]
 struct SeriesStats {
     extent: Option<(f64, f64)>,
@@ -168,6 +184,12 @@ struct Bin {
 }
 
 #[derive(Debug)]
+enum DataType {
+    Integer,
+    Float,
+}
+
+#[derive(Debug)]
 struct Series {
     column: usize,
     numbers: Vec<f64>,
@@ -175,6 +197,7 @@ struct Series {
     nans: usize,
     nulls: usize,
     out_of_bounds: usize,
+    data_type: DataType,
 }
 
 impl Series {
@@ -186,6 +209,7 @@ impl Series {
             nans: 0,
             nulls: 0,
             out_of_bounds: 0,
+            data_type: DataType::Integer,
         }
     }
 
@@ -211,6 +235,10 @@ impl Series {
                         self.out_of_bounds += 1;
                         return;
                     }
+                }
+
+                if float.fract() != 0.0 {
+                    self.data_type = DataType::Float;
                 }
 
                 self.numbers.push(float);
@@ -244,8 +272,26 @@ impl Series {
         (self.len() as f64).sqrt().ceil() as usize
     }
 
+    pub fn freedman_diaconis(&mut self, width: f64) -> Option<usize> {
+        self.numbers.par_sort_unstable_by(|a, b| a.total_cmp(b));
+
+        compute_iqr(&self.numbers).map(|iqr| {
+            let bin_width = 2.0 * (iqr / (self.numbers.len() as f64).cbrt());
+
+            (width / bin_width).ceil() as usize
+        })
+    }
+
+    pub fn optimal_bin_count(&mut self, width: f64) -> usize {
+        usize::max(
+            2,
+            self.freedman_diaconis(width)
+                .unwrap_or_else(|| self.naive_optimal_bin_count()),
+        )
+    }
+
     pub fn bins(
-        &self,
+        &mut self,
         count: Option<usize>,
         min: &Option<f64>,
         max: &Option<f64>,
@@ -255,19 +301,20 @@ impl Series {
         }
 
         let stats = self.stats();
-        let count = count.unwrap_or(self.naive_optimal_bin_count());
-
-        let mut bins: Vec<Bin> = Vec::with_capacity(count);
 
         let min = min.unwrap_or_else(|| stats.min().unwrap());
         let max = max.unwrap_or_else(|| stats.max().unwrap());
         let width = (max - min).abs();
+
+        let count = count.unwrap_or_else(|| self.optimal_bin_count(width));
+        let mut bins: Vec<Bin> = Vec::with_capacity(count);
+
         let cell_width = width / count as f64;
 
         let mut lower_bound = min;
 
         for _ in 0..count {
-            let upper_bound = lower_bound + cell_width;
+            let upper_bound = f64::min(lower_bound + cell_width, max);
 
             bins.push(Bin {
                 lower_bound,
