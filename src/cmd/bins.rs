@@ -25,13 +25,13 @@ bins options:
 Common options:
     -h, --help             Display this message
     -o, --output <file>    Write output to <file> instead of stdout.
-    -n, --no-headers       When set, the first row will not be included in
-                           the count.
+    -n, --no-headers       When set, the file will be considered as having no
+                           headers.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
                            Must be a single character. (default: ,)
 ";
 
-// TODO: normalize, scale etc.
+// TODO: normalize, scale etc., pad the labels
 
 #[derive(Deserialize)]
 struct Args {
@@ -78,17 +78,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         "count",
     ])?;
 
-    let mut formatter = Formatter::new().precision(Precision::Significance(5));
-
-    let mut format_number = |x: f64| -> String {
-        let mut string = formatter.fmt2(x).to_string();
-
-        if string.ends_with(".0") {
-            string.truncate(string.len() - 2);
-        }
-
-        string
-    };
+    let mut formatter = Formatter::new()
+        .precision(Precision::Significance(5))
+        .separator(',')
+        .unwrap();
 
     for series in all_series {
         match series.bins(args.flag_bins) {
@@ -97,12 +90,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 let mut bins_iter = bins.iter().peekable();
 
                 while let Some(bin) = bins_iter.next() {
-                    let lower_bound = format_number(bin.lower_bound);
-                    let upper_bound = format_number(bin.upper_bound);
+                    let lower_bound = util::pretty_print_float(&mut formatter, bin.lower_bound);
+                    let upper_bound = util::pretty_print_float(&mut formatter, bin.upper_bound);
 
                     let label_format = match bins_iter.peek() {
-                        None => format!(">= {}, <= {}", lower_bound, upper_bound),
-                        Some(_) => format!(">= {}, < {}", lower_bound, upper_bound),
+                        None => format!(">= {} <= {}", lower_bound, upper_bound),
+                        Some(_) => format!(">= {} < {}", lower_bound, upper_bound),
                     };
 
                     wtr.write_record(vec![

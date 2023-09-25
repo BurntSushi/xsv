@@ -13,8 +13,11 @@ use csv;
 use dateparser::parse_with_timezone;
 use docopt::Docopt;
 use num_cpus;
+use numfmt::Formatter;
 use rand::{SeedableRng, StdRng};
 use serde::de::{Deserialize, DeserializeOwned, Deserializer, Error};
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 use config::{Config, Delimiter};
 use select::SelectColumns;
@@ -290,5 +293,85 @@ pub fn acquire_rng(seed: Option<usize>) -> StdRng {
             LittleEndian::write_u64(&mut buf, seed as u64);
             SeedableRng::from_seed(buf)
         }
+    }
+}
+
+pub fn pretty_print_float(f: &mut Formatter, x: f64) -> String {
+    let mut string = f.fmt2(x).to_string();
+
+    if string.ends_with(".0") {
+        string.truncate(string.len() - 2);
+    }
+
+    string
+}
+
+pub fn unicode_aware_ellipsis(string: &str, max_width: usize) -> String {
+    // Replacing some nasty stuff that can break representation
+    let mut string = string.replace('\n', " ");
+    string = string.replace('\r', " ");
+    string = string.replace('\t', " ");
+    string = string.replace('\u{200F}', "");
+    string = string.replace('\u{200E}', "");
+
+    let mut width: usize = 0;
+    let graphemes = string.graphemes(true).collect::<Vec<_>>();
+    let graphemes_count = graphemes.len();
+
+    let mut take: usize = 0;
+
+    for grapheme in graphemes.iter() {
+        width = width + grapheme.width();
+
+        if width <= max_width {
+            take += 1;
+            continue;
+        }
+
+        break;
+    }
+
+    let mut parts = graphemes.into_iter().take(take).collect::<Vec<&str>>();
+
+    if graphemes_count > parts.len() {
+        parts.pop();
+        parts.push("…");
+    }
+
+    parts.into_iter().collect::<String>()
+}
+
+pub fn unicode_aware_rpad<'a>(string: &'a str, width: usize, padding: &str) -> Cow<'a, str> {
+    let string_width = string.width();
+
+    if string_width >= width {
+        return Cow::Borrowed(string);
+    }
+
+    let mut padded = String::new();
+    padded.push_str(string);
+    padded.push_str(&padding.repeat(width - string_width));
+
+    Cow::Owned(padded)
+}
+
+pub fn unicode_aware_rpad_with_ellipsis<'a>(
+    string: &'a str,
+    width: usize,
+    padding: &str,
+) -> String {
+    unicode_aware_rpad(&unicode_aware_ellipsis(string, width), width, padding).into_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_unicode_aware_ellipsis() {
+        assert_eq!(unicode_aware_ellipsis("abcde", 10), "abcde".to_string());
+        assert_eq!(unicode_aware_ellipsis("abcde", 5), "abcde".to_string());
+        assert_eq!(unicode_aware_ellipsis("abcde", 4), "abc…".to_string());
+        assert_eq!(unicode_aware_ellipsis("abcde", 3), "ab…".to_string());
     }
 }

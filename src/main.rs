@@ -81,6 +81,7 @@ macro_rules! command_list {
     glob        Create a CSV file with paths matching a glob pattern
     headers     Show header names
     help        Show this usage message.
+    hist        Print a histogram with rows of CSV file as bars
     index       Create CSV index for faster access
     input       Read CSV data with special quoting rules
     join        Join CSV files
@@ -197,6 +198,7 @@ enum Command {
     Glob,
     Headers,
     Help,
+    Hist,
     Index,
     Input,
     Join,
@@ -251,6 +253,7 @@ impl Command {
                 wout!("{}", USAGE);
                 Ok(())
             }
+            Command::Hist => cmd::hist::run(argv),
             Command::Index => cmd::index::run(argv),
             Command::Input => cmd::input::run(argv),
             Command::Join => cmd::join::run(argv),
