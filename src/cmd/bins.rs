@@ -20,8 +20,7 @@ bins options:
     --bins <number>        Number of bins. Will default to ceil(sqrt(n)).
     --min <min>            Hardcoded min value.
     --max <max>            Hardcoded max value.
-    --nulls                Include nulls count in output.
-    --nans                 Include nans count in outpit.
+    --no-extraneous        Don't include, nulls, nans and out-of-bounds counts.
 
 Common options:
     -h, --help             Display this message
@@ -41,8 +40,7 @@ struct Args {
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
     flag_output: Option<String>,
-    flag_nulls: bool,
-    flag_nans: bool,
+    flag_no_extraneous: bool,
     flag_bins: Option<usize>,
     flag_min: Option<f64>,
     flag_max: Option<f64>,
@@ -118,7 +116,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             }
         }
 
-        if args.flag_nans && series.nans > 0 {
+        if !args.flag_no_extraneous && series.nans > 0 {
             wtr.write_record(vec![
                 &headers[series.column],
                 b"NaN",
@@ -128,7 +126,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             ])?;
         }
 
-        if args.flag_nulls && series.nulls > 0 {
+        if !args.flag_no_extraneous && series.nulls > 0 {
             wtr.write_record(vec![
                 &headers[series.column],
                 b"NULL",
