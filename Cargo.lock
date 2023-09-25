@@ -421,6 +421,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dtoa"
+version = "1.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcbb2bf8e87535c23f7a8a321e364ce21462d0ff10cb6407820e8e96dfff6653"
+
+[[package]]
 name = "either"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1626,6 +1632,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "numfmt"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db7467e47de9fb6ea5b3f47dc34c1cf0b86359f072a46f6278119544cdbd0021"
+dependencies = [
+ "dtoa",
+ "itoa",
+]
+
+[[package]]
 name = "numtoa"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2301,6 +2317,7 @@ dependencies = [
  "log",
  "nom",
  "num_cpus",
+ "numfmt",
  "pariter",
  "quickcheck",
  "rand 0.5.6",

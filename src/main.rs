@@ -16,6 +16,7 @@ extern crate glob;
 extern crate lingua;
 extern crate nom;
 extern crate num_cpus;
+extern crate numfmt;
 extern crate pariter;
 extern crate rand;
 extern crate rayon;

@@ -1,4 +1,5 @@
 use csv;
+use numfmt::{Formatter, Precision};
 
 use config::{Config, Delimiter};
 use select::SelectColumns;
@@ -79,6 +80,18 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         "count",
     ])?;
 
+    let mut formatter = Formatter::new().precision(Precision::Significance(5));
+
+    let mut format_number = |x: f64| -> String {
+        let mut string = formatter.fmt2(x).to_string();
+
+        if string.ends_with(".0") {
+            string.truncate(string.len() - 2);
+        }
+
+        string
+    };
+
     for series in all_series {
         match series.bins(args.flag_bins) {
             None => continue,
@@ -86,9 +99,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 let mut bins_iter = bins.iter().peekable();
 
                 while let Some(bin) = bins_iter.next() {
+                    let lower_bound = format_number(bin.lower_bound);
+                    let upper_bound = format_number(bin.upper_bound);
+
                     let label_format = match bins_iter.peek() {
-                        None => format!(">= {}, <= {}", bin.lower_bound, bin.upper_bound),
-                        Some(_) => format!(">= {}, < {}", bin.lower_bound, bin.upper_bound),
+                        None => format!(">= {}, <= {}", lower_bound, upper_bound),
+                        Some(_) => format!(">= {}, < {}", lower_bound, upper_bound),
                     };
 
                     wtr.write_record(vec![
