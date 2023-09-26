@@ -1,6 +1,7 @@
 use csv;
 
 use config::{Config, Delimiter};
+use nom::combinator::fail;
 use select::SelectColumns;
 use util;
 use CliResult;
@@ -21,6 +22,9 @@ name,colors
 John,blue
 John,yellow
 Mary,red
+
+Note that given file needs to be UTF-8 encoded if given separator is more than
+one byte long.
 
 Usage:
     xsv explode [options] <column> <separator> [<input>]
@@ -61,6 +65,18 @@ pub fn replace_column_value(
         .collect()
 }
 
+pub fn replace_column_value_bytes(
+    record: &csv::ByteRecord,
+    column_index: usize,
+    new_value: &[u8],
+) -> csv::ByteRecord {
+    record
+        .into_iter()
+        .enumerate()
+        .map(|(i, v)| if i == column_index { new_value } else { v })
+        .collect()
+}
+
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
     let rconfig = Config::new(&args.arg_input)
@@ -85,12 +101,28 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         wtr.write_record(&headers)?;
     }
 
-    let mut record = csv::StringRecord::new();
+    let sep = args.arg_separator;
+    let sep_is_single_byte = sep.len() == 1;
 
-    while rdr.read_record(&mut record)? {
-        for val in record[column_index].split(&args.arg_separator) {
-            let new_record = replace_column_value(&record, column_index, &val.to_owned());
-            wtr.write_record(&new_record)?;
+    if sep_is_single_byte {
+        let sep = &sep.as_bytes()[0];
+
+        let mut record = csv::ByteRecord::new();
+
+        while rdr.read_byte_record(&mut record)? {
+            for val in record[column_index].split(|b| b == sep) {
+                let new_record = replace_column_value_bytes(&record, column_index, &val);
+                wtr.write_record(&new_record)?;
+            }
+        }
+    } else {
+        let mut record = csv::StringRecord::new();
+
+        while rdr.read_record(&mut record)? {
+            for val in record[column_index].split(&sep) {
+                let new_record = replace_column_value(&record, column_index, &val.to_owned());
+                wtr.write_record(&new_record)?;
+            }
         }
     }
 
