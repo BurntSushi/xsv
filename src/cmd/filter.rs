@@ -16,7 +16,7 @@ a
 
 The following command:
 
-$ xsv filter 'lt(a, 1)'
+    $ xsv filter 'lt(a, 1)'
 
 Will produce the following result:
 

@@ -10,6 +10,11 @@ static USAGE: &str = "
 Preview CSV data in the terminal in a human-friendly way with aligned columns,
 shiny colors & all.
 
+When using the -e/--expand flag, pipe into \"less -SR\" if you need to page the
+result, and use -C/--force-colors not to lose the colors:
+
+    $ xsv view -eC file.csv | less -SR
+
 Usage:
     xsv view [options] [<input>]
     xsv view --help
@@ -72,7 +77,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     // TODO: divider should be based on number of columns in CSV file, and last
     // column should be filled with remaining budget
-    let width_max = if args.flag_expand { 120 } else { cols / 2 };
+    let width_max = if args.flag_expand {
+        ((cols as f64) * 0.75) as usize
+    } else {
+        cols / 2
+    };
 
     let mut all_records_buffered = false;
 
@@ -132,14 +141,18 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut col_budget = cols - 4;
     let mut columns_fitting_in_budget: usize = 0;
 
-    let additional_chars_per_cell = 3; // NOTE: taking into account pipes, etc. for the frames
+    if args.flag_expand {
+        columns_fitting_in_budget = column_widths.len();
+    } else {
+        let additional_chars_per_cell = 3; // NOTE: taking into account pipes, etc. for the frames
 
-    for column_width in column_widths.iter() {
-        if column_width + additional_chars_per_cell > col_budget {
-            break;
+        for column_width in column_widths.iter() {
+            if column_width + additional_chars_per_cell > col_budget {
+                break;
+            }
+            col_budget -= column_width + additional_chars_per_cell;
+            columns_fitting_in_budget += 1;
         }
-        col_budget -= column_width + additional_chars_per_cell;
-        columns_fitting_in_budget += 1;
     }
 
     let all_columns_shown = columns_fitting_in_budget == column_widths.len();
@@ -148,8 +161,19 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     // TODO: deal better when everything can be shown on screen
     // TODO: print some useful info on top & bottom regarding columns, rows etc.
 
+    let hr_cols: usize = if args.flag_expand {
+        column_widths
+            .iter()
+            .take(columns_fitting_in_budget)
+            .sum::<usize>()
+            + (columns_fitting_in_budget - 1) * 3
+            + if all_columns_shown { 0 } else { 4 }
+    } else {
+        cols
+    };
+
     let print_horizontal_ruler = || {
-        println!("{}", "-".repeat(cols));
+        println!("{}", "-".repeat(hr_cols));
     };
 
     let print_row = |row: Vec<colored::ColoredString>| {

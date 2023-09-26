@@ -14,7 +14,10 @@ can be changed with the --separator flag.
 There is also a condensed view (-c or --condense) that will shorten the
 contents of each field to provide a summary view.
 
-Pipe into \"less -r\" if you need to page the result.
+Pipe into \"less -r\" if you need to page the result, and use \"-C, --force-colors\"
+not to lose the colors:
+
+    $ xsv flatten -C file.csv | less -r
 
 Usage:
     xsv flatten [options] [<input>]

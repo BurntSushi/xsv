@@ -18,7 +18,7 @@ a,b
 
 The following command:
 
-$ xsv map 'add(a, b)' c
+    $ xsv map 'add(a, b)' c
 
 Will produce the following result:
 
