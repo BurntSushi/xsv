@@ -30,6 +30,7 @@ view options:
                            handle them.
     -l, --limit <number>   Maximum of lines of files to read into memory. Set
                            to <=0 to disable a limit. [default: 100].
+    -R, --rainbow          Alternating colors for columns, rather than color by value type.
     -e, --expand           Expand the table so that in can be easily piped to
                            a pager such as \"less\", with no with constraints.
 
@@ -49,6 +50,7 @@ struct Args {
     flag_no_headers: bool,
     flag_force_colors: bool,
     flag_limit: isize,
+    flag_rainbow: bool,
     flag_expand: bool,
 }
 
@@ -149,19 +151,15 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             } else {
                 format!(
                     "{}/{}",
-                    pretty_displayed_headers_len.cyan().dimmed(),
+                    pretty_displayed_headers_len.cyan(),
                     pretty_headers_len.cyan(),
                 )
             },
-            if pretty_displayed_headers_len.len() > 1 {
-                "s"
-            } else {
-                ""
-            },
+            if headers.len() > 2 { "s" } else { "" },
             if all_records_buffered {
                 format!("{} rows", pretty_records_len.cyan())
             } else {
-                format!("{} first rows", pretty_records_len.cyan().dimmed())
+                format!("{} first rows", pretty_records_len.cyan())
             },
             match &args.arg_input {
                 Some(filename) => filename,
@@ -241,7 +239,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
                 let allowed_width = column_widths[i];
 
-                let colorizer = util::colorizer_by_type(cell);
+                let colorizer = if args.flag_rainbow {
+                    util::colorizer_by_rainbow(i)
+                } else {
+                    util::colorizer_by_type(cell)
+                };
+
                 let cell = util::unicode_aware_rpad_with_ellipsis(cell, allowed_width, " ");
 
                 if i == 0 {
