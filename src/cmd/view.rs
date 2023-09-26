@@ -133,8 +133,43 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let all_columns_shown = columns_fitting_in_budget == column_widths.len();
 
-    // TODO: deal better when everything can be shown on screen
-    // TODO: print some useful info on top & bottom regarding columns, rows etc.
+    let mut formatter = util::acquire_number_formatter();
+
+    let mut print_info = || {
+        let pretty_records_len = util::pretty_print_float(&mut formatter, records.len() as f64);
+        let pretty_headers_len =
+            util::pretty_print_float(&mut formatter, (headers.len() - 1) as f64);
+        let pretty_displayed_headers_len =
+            util::pretty_print_float(&mut formatter, (columns_fitting_in_budget - 1) as f64);
+
+        println!(
+            "Displaying {} col{} from {} of {}",
+            if all_columns_shown {
+                format!("{}", pretty_headers_len.cyan())
+            } else {
+                format!(
+                    "{}/{}",
+                    pretty_displayed_headers_len.cyan().dimmed(),
+                    pretty_headers_len.cyan(),
+                )
+            },
+            if pretty_displayed_headers_len.len() > 1 {
+                "s"
+            } else {
+                ""
+            },
+            if all_records_buffered {
+                format!("{} rows", pretty_records_len.cyan())
+            } else {
+                format!("{} first rows", pretty_records_len.cyan().dimmed())
+            },
+            match &args.arg_input {
+                Some(filename) => filename,
+                None => "<stdin>",
+            }
+            .dimmed()
+        )
+    };
 
     let hr_cols: usize = if args.flag_expand {
         column_widths
@@ -189,9 +224,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         print_horizontal_ruler();
     };
 
+    println!();
+    print_info();
     print_headers();
 
-    for record in records.into_iter() {
+    for record in records.iter() {
         let row: Vec<colored::ColoredString> = record
             .iter()
             .take(columns_fitting_in_budget)
@@ -233,6 +270,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 
     print_headers();
+    print_info();
+    println!();
 
     Ok(())
 }
@@ -268,6 +307,7 @@ fn find_best_column_widths(
 
     let mut attempts: Vec<(usize, usize, Vec<usize>)> = Vec::new();
 
+    // TODO: this code can be greatly optimized and early break
     for divider in 1..=max_column_widths.len() {
         let mut widths = adjust_column_widths(max_column_widths, cols / divider);
 
