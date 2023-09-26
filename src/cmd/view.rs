@@ -59,7 +59,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut rdr = rconfig.reader()?;
 
-    let potential_headers = rdr.headers()?.clone();
+    let potential_headers = prepend(rdr.headers()?, "⁂");
     let mut headers: Vec<String> = Vec::new();
 
     for (i, header) in potential_headers.iter().enumerate() {
@@ -77,15 +77,15 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let records = if args.flag_limit > 0 {
         let limit = args.flag_limit as usize;
 
-        let mut r_iter = rdr.into_records();
+        let mut r_iter = rdr.into_records().enumerate();
 
         let mut records: Vec<csv::StringRecord> = Vec::new();
 
         loop {
             match r_iter.next() {
                 None => break,
-                Some(record) => {
-                    records.push(record?);
+                Some((i, record)) => {
+                    records.push(prepend(&record?, &i.to_string()));
 
                     if records.len() == limit {
                         break;
@@ -145,7 +145,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     // TODO: expand
     // TODO: deal better when everything can be shown on screen
     // TODO: print some useful info on top & bottom regarding columns, rows etc.
-    // TODO: add an index column on the left
 
     let print_horizontal_ruler = || {
         println!("{}", "-".repeat(cols));
@@ -174,7 +173,15 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             .iter()
             .take(columns_fitting_in_budget)
             .enumerate()
-            .map(|(i, h)| util::unicode_aware_rpad_with_ellipsis(h, column_widths[i], " ").bold())
+            .map(|(i, h)| {
+                let cell = util::unicode_aware_rpad_with_ellipsis(h, column_widths[i], " ");
+
+                if i == 0 {
+                    cell.dimmed()
+                } else {
+                    cell.bold()
+                }
+            })
             .collect();
 
         print_row(headers_row);
@@ -199,7 +206,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 let colorizer = util::colorizer_by_type(cell);
                 let cell = util::unicode_aware_rpad_with_ellipsis(cell, allowed_width, " ");
 
-                util::colorize(&colorizer, &cell)
+                if i == 0 {
+                    cell.dimmed()
+                } else {
+                    util::colorize(&colorizer, &cell)
+                }
             })
             .collect();
 
@@ -223,4 +234,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     print_headers();
 
     Ok(())
+}
+
+fn prepend(record: &csv::StringRecord, item: &str) -> csv::StringRecord {
+    let mut new_record = csv::StringRecord::new();
+    new_record.push_field(item);
+    new_record.extend(record);
+
+    new_record
 }
