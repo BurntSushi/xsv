@@ -6,6 +6,9 @@ use unicode_width::UnicodeWidthStr;
 use util;
 use CliResult;
 
+const TRAILING_COLS: usize = 4;
+const PER_CELL_PADDING_COLS: usize = 3;
+
 static USAGE: &str = "
 Preview CSV data in the terminal in a human-friendly way with aligned columns,
 shiny colors & all.
@@ -75,14 +78,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         headers.push(header);
     }
 
-    // TODO: divider should be based on number of columns in CSV file, and last
-    // column should be filled with remaining budget
-    let width_max = if args.flag_expand {
-        ((cols as f64) * 0.75) as usize
-    } else {
-        cols / 2
-    };
-
     let mut all_records_buffered = false;
 
     let records = if args.flag_limit > 0 {
@@ -133,30 +128,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         })
         .collect();
 
-    let column_widths: Vec<usize> = max_column_widths
-        .iter()
-        .map(|m| usize::min(*m, width_max))
-        .collect();
-
-    let trailing_cols = 4;
-    let per_cell_padding_cols = 3;
-
-    let mut col_budget = cols - trailing_cols;
-    let mut columns_fitting_in_budget: usize = 0;
-
-    if args.flag_expand {
-        columns_fitting_in_budget = column_widths.len();
-    } else {
-        let additional_chars_per_cell = per_cell_padding_cols; // NOTE: taking into account pipes, etc. for the frames
-
-        for column_width in column_widths.iter() {
-            if column_width + additional_chars_per_cell > col_budget {
-                break;
-            }
-            col_budget -= column_width + additional_chars_per_cell;
-            columns_fitting_in_budget += 1;
-        }
-    }
+    let (columns_fitting_in_budget, column_widths) =
+        find_best_column_widths(cols, &max_column_widths, args.flag_expand);
 
     let all_columns_shown = columns_fitting_in_budget == column_widths.len();
 
@@ -168,8 +141,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             .iter()
             .take(columns_fitting_in_budget)
             .sum::<usize>()
-            + (columns_fitting_in_budget - 1) * per_cell_padding_cols
-            + if all_columns_shown { 0 } else { trailing_cols }
+            + (columns_fitting_in_budget - 1) * PER_CELL_PADDING_COLS
+            + if all_columns_shown { 0 } else { TRAILING_COLS }
     } else {
         cols
     };
@@ -270,4 +243,57 @@ fn prepend(record: &csv::StringRecord, item: &str) -> csv::StringRecord {
     new_record.extend(record);
 
     new_record
+}
+
+fn adjust_column_widths(widths: &Vec<usize>, max_width: usize) -> Vec<usize> {
+    widths.iter().map(|m| usize::min(*m, max_width)).collect()
+}
+
+// NOTE: greedy way to find best ratio for columns
+// We basically test a range of dividers based on the number of columns in the
+// CSV file and we try to find the organization optimizing the number of columns
+// fitting perfectly, then the number of columns displayed.
+fn find_best_column_widths(
+    cols: usize,
+    max_column_widths: &Vec<usize>,
+    expand: bool,
+) -> (usize, Vec<usize>) {
+    if expand {
+        // NOTE: we keep max column size to 3/4 of current screen
+        return (
+            max_column_widths.len(),
+            adjust_column_widths(max_column_widths, ((cols as f64) * 0.75) as usize),
+        );
+    }
+
+    let mut attempts: Vec<(usize, usize, Vec<usize>)> = Vec::new();
+
+    for divider in 1..=max_column_widths.len() {
+        let mut widths = adjust_column_widths(max_column_widths, cols / divider);
+
+        let mut col_budget = cols - TRAILING_COLS;
+        let mut columns_fitting_in_budget: usize = 0;
+
+        for column_width in widths.iter_mut() {
+            if *column_width + PER_CELL_PADDING_COLS > col_budget {
+                *column_width = col_budget;
+                columns_fitting_in_budget += 1;
+                break;
+            }
+            col_budget -= *column_width + PER_CELL_PADDING_COLS;
+            columns_fitting_in_budget += 1;
+        }
+
+        let columns_fitting_perfectly = widths
+            .iter()
+            .zip(max_column_widths.iter())
+            .filter(|(a, b)| a == b)
+            .count();
+
+        attempts.push((columns_fitting_perfectly, columns_fitting_in_budget, widths));
+    }
+
+    let best_attempt = attempts.into_iter().max().unwrap();
+
+    (best_attempt.1, best_attempt.2)
 }
