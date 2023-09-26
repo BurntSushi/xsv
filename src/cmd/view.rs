@@ -330,6 +330,7 @@ fn find_best_column_widths(
         let columns_fitting_perfectly = widths
             .iter()
             .zip(max_column_widths.iter())
+            .take(columns_fitting_in_budget)
             .filter(|(a, b)| a == b)
             .count();
 
