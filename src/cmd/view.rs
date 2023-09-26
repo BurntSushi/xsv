@@ -70,11 +70,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         headers.push(header);
     }
 
-    let width_max = if args.flag_expand {
-        120
-    } else {
-        cols / if headers.len() <= 2 { 2 } else { 3 }
-    };
+    let width_max = if args.flag_expand { 120 } else { cols / 2 };
 
     let mut all_records_buffered = false;
 
@@ -131,7 +127,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .map(|m| usize::min(*m, width_max))
         .collect();
 
-    let mut col_budget = cols - 2;
+    let mut col_budget = cols - 4;
     let mut columns_fitting_in_budget: usize = 0;
 
     let additional_chars_per_cell = 5; // NOTE: taking into account pipes, etc. for the frames
@@ -150,55 +146,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     // TODO: deal better when everything can be shown on screen
     // TODO: print some useful info on top & bottom regarding columns, rows etc.
     // TODO: add an index column on the left
-    // TODO: print empty row when something remain
-    // TODO: create function to print a row we are repeating ourselves very much
 
     let print_horizontal_ruler = || {
         println!("{}", "-".repeat(cols));
     };
 
-    let print_headers = || {
-        print_horizontal_ruler();
-
-        for (i, header) in headers.iter().take(columns_fitting_in_budget).enumerate() {
+    let print_row = |row: Vec<colored::ColoredString>| {
+        for (i, cell) in row.iter().enumerate() {
             if i != 0 {
                 print!(" | ");
             }
-
-            let allowed_width = column_widths[i];
-
-            print!(
-                "{}",
-                util::unicode_aware_rpad_with_ellipsis(header, allowed_width, " ").bold()
-            );
-        }
-
-        if !all_columns_shown {
-            print!(" | …");
-        }
-
-        print!("\n");
-        print_horizontal_ruler();
-    };
-
-    print_headers();
-
-    for record in records.into_iter() {
-        for (i, cell) in record.iter().take(columns_fitting_in_budget).enumerate() {
-            if i != 0 {
-                print!(" | ");
-            }
-
-            let cell = match cell.trim() {
-                "" => "<empty>",
-                _ => cell,
-            };
-
-            let allowed_width = column_widths[i];
-
-            let colorizer = util::colorizer_by_type(cell);
-            let cell = util::unicode_aware_rpad_with_ellipsis(cell, allowed_width, " ");
-            let cell = util::colorize(&colorizer, &cell);
 
             print!("{}", cell);
         }
@@ -208,27 +165,59 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
 
         print!("\n");
+    };
+
+    let print_headers = || {
+        print_horizontal_ruler();
+
+        let headers_row: Vec<colored::ColoredString> = headers
+            .iter()
+            .take(columns_fitting_in_budget)
+            .enumerate()
+            .map(|(i, h)| util::unicode_aware_rpad_with_ellipsis(h, column_widths[i], " ").bold())
+            .collect();
+
+        print_row(headers_row);
+        print_horizontal_ruler();
+    };
+
+    print_headers();
+
+    for record in records.into_iter() {
+        let row: Vec<colored::ColoredString> = record
+            .iter()
+            .take(columns_fitting_in_budget)
+            .enumerate()
+            .map(|(i, cell)| {
+                let cell = match cell.trim() {
+                    "" => "<empty>",
+                    _ => cell,
+                };
+
+                let allowed_width = column_widths[i];
+
+                let colorizer = util::colorizer_by_type(cell);
+                let cell = util::unicode_aware_rpad_with_ellipsis(cell, allowed_width, " ");
+
+                util::colorize(&colorizer, &cell)
+            })
+            .collect();
+
+        print_row(row);
     }
 
     if !all_records_buffered {
-        for (i, _) in headers.iter().take(columns_fitting_in_budget).enumerate() {
-            if i != 0 {
-                print!(" | ");
-            }
+        let row: Vec<colored::ColoredString> = headers
+            .iter()
+            .take(columns_fitting_in_budget)
+            .enumerate()
+            .map(|(i, _)| {
+                let allowed_width = column_widths[i];
+                util::unicode_aware_rpad_with_ellipsis("…", allowed_width, " ").normal()
+            })
+            .collect();
 
-            let allowed_width = column_widths[i];
-
-            print!(
-                "{}",
-                util::unicode_aware_rpad_with_ellipsis("…", allowed_width, " ").bold()
-            );
-        }
-
-        if !all_columns_shown {
-            print!(" | …");
-        }
-
-        print!("\n");
+        print_row(row);
     }
 
     print_headers();
