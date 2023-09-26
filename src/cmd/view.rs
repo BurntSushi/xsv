@@ -70,6 +70,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         headers.push(header);
     }
 
+    // TODO: divider should be based on number of columns in CSV file, and last
+    // column should be filled with remaining budget
     let width_max = if args.flag_expand { 120 } else { cols / 2 };
 
     let mut all_records_buffered = false;
@@ -130,7 +132,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut col_budget = cols - 4;
     let mut columns_fitting_in_budget: usize = 0;
 
-    let additional_chars_per_cell = 5; // NOTE: taking into account pipes, etc. for the frames
+    let additional_chars_per_cell = 3; // NOTE: taking into account pipes, etc. for the frames
 
     for column_width in column_widths.iter() {
         if column_width + additional_chars_per_cell > col_budget {
