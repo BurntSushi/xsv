@@ -1,3 +1,4 @@
+use colored;
 use colored::Colorize;
 use config::{Config, Delimiter};
 use unicode_width::UnicodeWidthStr;
@@ -24,6 +25,8 @@ flatten options:
                            Defaults to using all your terminal's width or 80 if
                            terminal's size cannot be found (i.e. when piping to file).
     -R, --rainbow          Alternating colors for cells, rather than color by value type.
+    -C, --force-colors     Force colors even if output is not supposed to be able to
+                           handle them.
 
 Common options:
     -h, --help             Display this message
@@ -34,8 +37,6 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-// TODO: force colors
-
 #[derive(Deserialize)]
 struct Args {
     arg_input: Option<String>,
@@ -43,6 +44,7 @@ struct Args {
     flag_wrap: bool,
     flag_cols: Option<usize>,
     flag_rainbow: bool,
+    flag_force_colors: bool,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
 }
@@ -53,6 +55,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .delimiter(args.flag_delimiter)
         .no_headers(args.flag_no_headers);
     let mut rdr = rconfig.reader()?;
+
+    if args.flag_force_colors {
+        colored::control::set_override(true);
+    }
 
     let cols = util::acquire_term_cols(&args.flag_cols);
 

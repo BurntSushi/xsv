@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use colored;
 use colored::Colorize;
 use csv;
 use numfmt::Formatter;
@@ -37,6 +38,8 @@ hist options:
                              max bar value. If \"sum\", max bar length will be scaled to
                              the sum of bar values (i.e. sum of bar lengths will be 100%).
                              [default: max]
+    -C, --force-colors       Force colors even if output is not supposed to be able to
+                             handle them.
 
 Common options:
     -h, --help             Display this message
@@ -68,6 +71,7 @@ struct Args {
     flag_label: String,
     flag_value: String,
     flag_cols: Option<usize>,
+    flag_force_colors: bool,
     flag_domain_max: String,
 }
 
@@ -76,6 +80,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let conf = Config::new(&args.arg_input)
         .delimiter(args.flag_delimiter)
         .no_headers(args.flag_no_headers);
+
+    if args.flag_force_colors {
+        colored::control::set_override(true);
+    }
 
     let mut rdr = conf.reader()?;
     let headers = rdr.byte_headers()?;
