@@ -120,33 +120,6 @@ pub fn last_modified(md: &fs::Metadata) -> u64 {
     FileTime::from_last_modification_time(md).seconds_relative_to_1970()
 }
 
-pub fn condense(val: Cow<[u8]>, n: Option<usize>) -> Cow<[u8]> {
-    match n {
-        None => val,
-        Some(n) => {
-            let mut is_short_utf8 = false;
-            if let Ok(s) = str::from_utf8(&val) {
-                if n >= s.chars().count() {
-                    is_short_utf8 = true;
-                } else {
-                    let mut s = s.chars().take(n - 1).collect::<String>();
-                    s.push('…');
-                    return Cow::Owned(s.into_bytes());
-                }
-            }
-            if is_short_utf8 || n >= (*val).len() {
-                // already short enough
-                val
-            } else {
-                // This is a non-Unicode string, so we just trim on bytes.
-                let mut s = val[0..n].to_vec();
-                s.extend(b"\xE2".iter().cloned());
-                Cow::Owned(s)
-            }
-        }
-    }
-}
-
 pub fn idx_path(csv_path: &Path) -> PathBuf {
     let mut p = csv_path
         .to_path_buf()

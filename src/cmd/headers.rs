@@ -28,7 +28,7 @@ headers options:
 Common options:
     -h, --help             Display this message
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. (default: ,)
+                           Must be a single character. [default: ,]
 ";
 
 #[derive(Deserialize)]

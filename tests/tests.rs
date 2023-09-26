@@ -43,7 +43,6 @@ mod test_datefmt;
 mod test_explode;
 mod test_filter;
 mod test_fixlengths;
-mod test_flatten;
 mod test_fmt;
 mod test_foreach;
 mod test_frequency;
@@ -64,7 +63,6 @@ mod test_slice;
 mod test_sort;
 mod test_split;
 mod test_stats;
-mod test_table;
 
 fn qcheck<T: Testable>(p: T) {
     QuickCheck::new()

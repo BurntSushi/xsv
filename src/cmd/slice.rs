@@ -37,7 +37,7 @@ Common options:
                            as headers. Otherwise, the first row will always
                            appear in the output as the header row.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. (default: ,)
+                           Must be a single character. [default: ,]
 ";
 
 #[derive(Deserialize)]

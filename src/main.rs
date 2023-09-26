@@ -101,7 +101,7 @@ macro_rules! command_list {
     sort        Sort CSV data
     split       Split CSV data into many files
     stats       Compute basic statistics
-    table       Align CSV data into columns
+    view        Preview a CSV file in a human-friendly way
     xls         Convert Excel/OpenOffice spreadsheets to CSV
 "
     };
@@ -218,7 +218,7 @@ enum Command {
     Sort,
     Split,
     Stats,
-    Table,
+    View,
     Xls,
 }
 
@@ -278,7 +278,7 @@ impl Command {
             Command::Sort => cmd::sort::run(argv),
             Command::Split => cmd::split::run(argv),
             Command::Stats => cmd::stats::run(argv),
-            Command::Table => cmd::table::run(argv),
+            Command::View => cmd::view::run(argv),
             Command::Xls => cmd::xls::run(argv),
         }
     }

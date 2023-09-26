@@ -62,6 +62,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv shuffle`
 * `xsv sort -u`
 * `xsv stats --pretty`
+* `xsv view`
 * `xsv xls`
 
 ### Available commands
@@ -112,8 +113,7 @@ given separator.
 * **split** - Split one CSV file into many CSV files of N chunks.
 * **stats** - Show basic types and statistics of each column in the CSV file.
   (i.e., mean, standard deviation, median, range, etc.)
-* **table** - Show aligned output of any CSV data using
-  [elastic tabstops](https://github.com/BurntSushi/tabwriter).
+* **view** - Preview a CSV file in a human-friendly way.
 * **xls** - Convert Excel/OpenOffice spreadsheets to CSV.
 
 
@@ -140,7 +140,7 @@ The next thing you might want to do is get an overview of the kind of data that
 appears in each column. The `stats` command will do this for you:
 
 ```bash
-$ xsv stats worldcitiespop.csv --everything | xsv table
+$ xsv stats worldcitiespop.csv --all | xsv view
 field       type     min            max            min_length  max_length  mean          stddev         median     mode         cardinality
 Country     Unicode  ad             zw             2           2                                                   cn           234
 City        Unicode   bab el ahmar  Þykkvibaer     1           91                                                  san jose     2351892
@@ -151,16 +151,14 @@ Latitude    Float    -54.933333     82.483333      1           12          27.18
 Longitude   Float    -179.983333    180            1           14          37.08886      63.22301       35.28      23.8         1167162
 ```
 
-The `xsv table` command takes any CSV data and formats it into aligned columns
-using [elastic tabstops](https://github.com/BurntSushi/tabwriter). You'll
-notice that it even gets alignment right with respect to Unicode characters.
+The `xsv view` command takes any CSV data and formats it into aligned columns.
 
 So, this command takes about 12 seconds to run on my machine, but we can speed
 it up by creating an index and re-running the command:
 
 ```bash
 $ xsv index worldcitiespop.csv
-$ xsv stats worldcitiespop.csv --everything | xsv table
+$ xsv stats worldcitiespop.csv --all | xsv view
 ...
 ```
 
@@ -178,7 +176,7 @@ be parsed. For example, let's say you wanted to grab the last 10 records:
 ```bash
 $ xsv count worldcitiespop.csv
 3173958
-$ xsv slice worldcitiespop.csv -s 3173948 | xsv table
+$ xsv slice worldcitiespop.csv -s 3173948 | xsv view
 Country  City               AccentCity         Region  Population  Latitude     Longitude
 zw       zibalonkwe         Zibalonkwe         06                  -19.8333333  27.4666667
 zw       zibunkululu        Zibunkululu        06                  -19.6666667  27.6166667
@@ -203,7 +201,7 @@ population. So let's take a look at 10 random rows:
 ```bash
 $ xsv select Country,AccentCity,Population worldcitiespop.csv \
   | xsv sample 10 \
-  | xsv table
+  | xsv view
 Country  AccentCity       Population
 cn       Guankoushang
 za       Klipdrift
@@ -271,7 +269,7 @@ shows rows with a population count:
 $ xsv search -s Population '[0-9]' worldcitiespop.csv \
   | xsv select Country,AccentCity,Population \
   | xsv sample 10 \
-  | xsv table
+  | xsv view
 Country  AccentCity       Population
 es       Barañáin         22264
 es       Puerto Real      36946
@@ -294,7 +292,7 @@ curl -LO https://gist.githubusercontent.com/anonymous/063cb470e56e64e98cf1/raw/9
 $ xsv headers countrynames.csv
 1   Abbrev
 2   Country
-$ xsv join --no-case  Country sample.csv Abbrev countrynames.csv | xsv table
+$ xsv join --no-case  Country sample.csv Abbrev countrynames.csv | xsv view
 Country  AccentCity       Population  Abbrev  Country
 es       Barañáin         22264       ES      Spain
 es       Puerto Real      36946       ES      Spain
@@ -315,7 +313,7 @@ select` command:
 ```bash
 $ xsv join --no-case  Country sample.csv Abbrev countrynames.csv \
   | xsv select 'Country[1],AccentCity,Population' \
-  | xsv table
+  | xsv view
 Country                                                                              AccentCity       Population
 Spain                                                                                Barañáin         22264
 Spain                                                                                Puerto Real      36946
@@ -336,7 +334,7 @@ joins in `xsv` are fast.
 $ xsv join --no-case Abbrev countrynames.csv Country worldcitiespop.csv \
   | xsv select '!Abbrev,Country[1]' \
   > worldcitiespop_countrynames.csv
-$ xsv sample 10 worldcitiespop_countrynames.csv | xsv table
+$ xsv sample 10 worldcitiespop_countrynames.csv | xsv view
 Country                      City                   AccentCity             Region  Population  Latitude    Longitude
 Sri Lanka                    miriswatte             Miriswatte             36                  7.2333333   79.9
 Romania                      livezile               Livezile               26      1985        44.512222   22.863333

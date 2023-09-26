@@ -34,7 +34,7 @@ Common options:
                            as headers. (i.e., They are not searched, analyzed,
                            sliced, etc.)
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. (default: ,)
+                           Must be a single character. [default: ,]
 ";
 
 #[derive(Deserialize)]

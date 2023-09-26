@@ -36,7 +36,7 @@ frequency options:
                            select' into 'xsv frequency' will disable the use
                            of indexing.
     -l, --limit <arg>      Limit the frequency table to the N most common
-                           items. Set to '0' to disable a limit. It is combined
+                           items. Set to <=0 to disable a limit. It is combined
                            with -t/--threshold.
                            [default: 10]
     -t, --threshold <arg>  If set, won't return items having a count less than
@@ -60,7 +60,7 @@ Common options:
                            column will be 1-based indices instead of header
                            names.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. (default: ,)
+                           Must be a single character. [default: ,]
 ";
 
 #[derive(Clone, Deserialize)]

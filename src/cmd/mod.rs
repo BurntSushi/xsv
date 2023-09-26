@@ -33,6 +33,6 @@ pub mod slice;
 pub mod sort;
 pub mod split;
 pub mod stats;
-pub mod table;
+pub mod view;
 mod xan;
 pub mod xls;

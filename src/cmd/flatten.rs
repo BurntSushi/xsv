@@ -14,6 +14,8 @@ can be changed with the --separator flag.
 There is also a condensed view (-c or --condense) that will shorten the
 contents of each field to provide a summary view.
 
+Pipe into \"less -r\" if you need to page the result.
+
 Usage:
     xsv flatten [options] [<input>]
 
@@ -34,7 +36,7 @@ Common options:
                            as headers. When set, the name of each field
                            will be its index.
     -d, --delimiter <arg>  The field delimiter for reading CSV data.
-                           Must be a single character. (default: ,)
+                           Must be a single character. [default: ,]
 ";
 
 #[derive(Deserialize)]
