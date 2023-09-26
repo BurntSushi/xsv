@@ -305,15 +305,21 @@ pub enum ColorOrStyles {
 pub fn colorizer_by_type(string: &str) -> ColorOrStyles {
     match string.parse::<f64>() {
         Ok(_) => ColorOrStyles::Color(Color::Red),
-        Err(_) => match string {
-            "true" | "TRUE" | "True" | "false" | "FALSE" | "False" | "yes" | "no" => {
-                ColorOrStyles::Color(Color::Cyan)
+        Err(_) => {
+            if string.starts_with("http://") || string.starts_with("https://") {
+                ColorOrStyles::Color(Color::Blue)
+            } else {
+                match string {
+                    "true" | "TRUE" | "True" | "false" | "FALSE" | "False" | "yes" | "no" => {
+                        ColorOrStyles::Color(Color::Cyan)
+                    }
+                    "null" | "na" | "NA" | "None" | "n/a" | "N/A" | "<empty>" => {
+                        ColorOrStyles::Styles(Styles::Dimmed)
+                    }
+                    _ => ColorOrStyles::Color(Color::Green),
+                }
             }
-            "null" | "na" | "NA" | "None" | "n/a" | "N/A" | "<empty>" => {
-                ColorOrStyles::Styles(Styles::Dimmed)
-            }
-            _ => ColorOrStyles::Color(Color::Green),
-        },
+        }
     }
 }
 

@@ -1,4 +1,5 @@
 use colored::{self, Colorize};
+use csv;
 
 use config::{Config, Delimiter};
 use unicode_width::UnicodeWidthStr;
@@ -69,23 +70,39 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         headers.push(header);
     }
 
+    let width_max = if args.flag_expand {
+        120
+    } else {
+        cols / if headers.len() <= 2 { 2 } else { 3 }
+    };
+
     let mut all_records_buffered = false;
 
     let records = if args.flag_limit > 0 {
         let limit = args.flag_limit as usize;
 
-        let mut r = rdr
-            .into_records()
-            .take(limit + 1)
-            .collect::<Result<Vec<_>, _>>()?;
+        let mut r_iter = rdr.into_records();
 
-        if r.len() == limit {
-            all_records_buffered = true;
-        } else {
-            r.pop();
+        let mut records: Vec<csv::StringRecord> = Vec::new();
+
+        loop {
+            match r_iter.next() {
+                None => break,
+                Some(record) => {
+                    records.push(record?);
+
+                    if records.len() == limit {
+                        break;
+                    }
+                }
+            };
         }
 
-        r
+        if r_iter.next().is_none() {
+            all_records_buffered = true;
+        }
+
+        records
     } else {
         all_records_buffered = true;
         rdr.into_records().collect::<Result<Vec<_>, _>>()?
@@ -97,31 +114,44 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .map(|(i, h)| {
             usize::max(
                 h.width(),
-                records.iter().map(|c| c[i].width()).max().unwrap_or(0),
+                records
+                    .iter()
+                    .map(|c| match c[i].width() {
+                        0 => 7, // NOTE: taking <empty> into account
+                        v => v,
+                    })
+                    .max()
+                    .unwrap_or(0),
             )
         })
         .collect();
 
     let column_widths: Vec<usize> = max_column_widths
         .iter()
-        .map(|m| usize::min(*m, cols / 3))
+        .map(|m| usize::min(*m, width_max))
         .collect();
 
     let mut col_budget = cols - 2;
     let mut columns_fitting_in_budget: usize = 0;
 
+    let additional_chars_per_cell = 5; // NOTE: taking into account pipes, etc. for the frames
+
     for column_width in column_widths.iter() {
-        if column_width > &col_budget {
+        if column_width + additional_chars_per_cell > col_budget {
             break;
         }
-        col_budget -= column_width + 3;
+        col_budget -= column_width + additional_chars_per_cell;
         columns_fitting_in_budget += 1;
     }
 
     let all_columns_shown = columns_fitting_in_budget == column_widths.len();
 
+    // TODO: expand
+    // TODO: deal better when everything can be shown on screen
     // TODO: print some useful info on top & bottom regarding columns, rows etc.
     // TODO: add an index column on the left
+    // TODO: print empty row when something remain
+    // TODO: create function to print a row we are repeating ourselves very much
 
     let print_horizontal_ruler = || {
         println!("{}", "-".repeat(cols));
@@ -144,7 +174,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
 
         if !all_columns_shown {
-            print!(" …");
+            print!(" | …");
         }
 
         print!("\n");
@@ -159,6 +189,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 print!(" | ");
             }
 
+            let cell = match cell.trim() {
+                "" => "<empty>",
+                _ => cell,
+            };
+
             let allowed_width = column_widths[i];
 
             let colorizer = util::colorizer_by_type(cell);
@@ -169,13 +204,32 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
 
         if !all_columns_shown {
-            print!(" …");
+            print!(" | …");
         }
 
         print!("\n");
     }
 
-    if !all_records_buffered {}
+    if !all_records_buffered {
+        for (i, _) in headers.iter().take(columns_fitting_in_budget).enumerate() {
+            if i != 0 {
+                print!(" | ");
+            }
+
+            let allowed_width = column_widths[i];
+
+            print!(
+                "{}",
+                util::unicode_aware_rpad_with_ellipsis("…", allowed_width, " ").bold()
+            );
+        }
+
+        if !all_columns_shown {
+            print!(" | …");
+        }
+
+        print!("\n");
+    }
 
     print_headers();
 
