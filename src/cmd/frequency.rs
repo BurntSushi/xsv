@@ -36,8 +36,11 @@ frequency options:
                            select' into 'xsv frequency' will disable the use
                            of indexing.
     -l, --limit <arg>      Limit the frequency table to the N most common
-                           items. Set to '0' to disable a limit.
+                           items. Set to '0' to disable a limit. It is combined
+                           with -t/--threshold.
                            [default: 10]
+    -t, --threshold <arg>  If set, won't return items having a count less than
+                           this given threshold. It is combined with -l/--limit.
     -a, --asc              Sort the frequency tables in ascending order by
                            count. The default is descending order.
     --no-extra             Don't include null & remaining counts.
@@ -65,6 +68,7 @@ struct Args {
     arg_input: Option<String>,
     flag_select: SelectColumns,
     flag_limit: usize,
+    flag_threshold: Option<u64>,
     flag_asc: bool,
     flag_no_extra: bool,
     flag_jobs: usize,
@@ -141,16 +145,20 @@ impl Args {
         if self.flag_limit > 0 {
             counts = counts.into_iter().take(self.flag_limit).collect();
         }
-        counts
-            .into_iter()
-            .map(|(bs, c)| {
-                if b"" == &**bs {
-                    (b"<NULL>"[..].to_vec(), c)
-                } else {
-                    (bs.clone(), c)
-                }
-            })
-            .collect()
+        let counts = counts.into_iter().map(|(bs, c)| {
+            if b"" == &**bs {
+                (b"<NULL>"[..].to_vec(), c)
+            } else {
+                (bs.clone(), c)
+            }
+        });
+
+        if let Some(t) = self.flag_threshold {
+            let counts = counts.filter(|(_, c)| *c >= t);
+            return counts.collect();
+        }
+
+        counts.collect()
     }
 
     fn sequential_ftables(&self) -> CliResult<(Headers, FTables, u64)> {
