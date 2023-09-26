@@ -434,13 +434,7 @@ pub fn unicode_aware_wrap(string: &str, max_width: usize, indent: usize) -> Stri
         let width = grapheme.width();
         current_width += width;
 
-        let upper_bound = if lines.is_empty() {
-            max_width
-        } else {
-            max_width - indent
-        };
-
-        if current_width > upper_bound {
+        if current_width > max_width {
             lines.push(current_string);
             current_width = width;
             current_string = String::new();
