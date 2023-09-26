@@ -9,6 +9,10 @@ use CliResult;
 static USAGE: &str = "
 Discretize selection of columns containing continuous data into bins.
 
+The bins table is formatted as CSV data:
+
+    field,value,lower_bound,upper_bound,count
+
 Usage:
     xsv bins [options] [<input>]
     xsv bins --help
