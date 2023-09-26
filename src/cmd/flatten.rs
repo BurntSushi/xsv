@@ -1,6 +1,5 @@
 use colored::Colorize;
 use config::{Config, Delimiter};
-use nom::combinator::fail;
 use unicode_width::UnicodeWidthStr;
 use util;
 use CliResult;
@@ -24,6 +23,7 @@ flatten options:
     --cols <num>           Width of the graph in terminal columns, i.e. characters.
                            Defaults to using all your terminal's width or 80 if
                            terminal's size cannot be found (i.e. when piping to file).
+    -R, --rainbow          Alternating colors for cells, rather than color by value type.
 
 Common options:
     -h, --help             Display this message
@@ -34,7 +34,7 @@ Common options:
                            Must be a single character. (default: ,)
 ";
 
-// TODO: rainbow colors, wrap
+// TODO: force colors
 
 #[derive(Deserialize)]
 struct Args {
@@ -42,6 +42,7 @@ struct Args {
     flag_condense: bool,
     flag_wrap: bool,
     flag_cols: Option<usize>,
+    flag_rainbow: bool,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
 }
@@ -86,23 +87,27 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         println!("{}", format!("Row n°{}", record_index).bold());
         println!("{}", "-".repeat(cols));
 
-        for (header, cell) in headers.iter().zip(record.iter()) {
+        for (i, (header, cell)) in headers.iter().zip(record.iter()).enumerate() {
             let cell = match cell.trim() {
                 "" => "<empty>",
                 _ => cell,
             };
 
-            let cell_colorizer = util::colorize_by_type(cell);
+            let cell_colorizer = if args.flag_rainbow {
+                util::colorizer_by_rainbow(i)
+            } else {
+                util::colorizer_by_type(cell)
+            };
 
             let cell = if args.flag_condense {
-                util::unicode_aware_rpad_with_ellipsis(cell, max_value_width, " ")
+                util::unicode_aware_rpad_with_ellipsis(&cell, max_value_width, " ")
             } else if args.flag_wrap {
-                util::unicode_aware_wrap(cell, max_value_width, max_header_width + 1)
+                util::unicode_aware_wrap(&cell, max_value_width, max_header_width + 1)
             } else {
                 cell.to_string()
             };
 
-            let cell = cell_colorizer(&cell);
+            let cell = util::colorize(&cell_colorizer, &cell);
 
             println!(
                 "{}{}",

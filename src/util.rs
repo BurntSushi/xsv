@@ -9,7 +9,7 @@ use std::time;
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, TimeZone, Utc};
 use chrono_tz::Tz;
-use colored::{ColoredString, Colorize};
+use colored::{Color, ColoredString, Colorize, Styles};
 use csv;
 use dateparser::parse_with_timezone;
 use docopt::Docopt;
@@ -324,13 +324,46 @@ pub fn pretty_print_float(f: &mut Formatter, x: f64) -> String {
     string
 }
 
-pub fn colorize_by_type<'a, 'b>(string: &'a str) -> impl FnOnce(&'b str) -> ColoredString {
+pub enum ColorOrStyles {
+    Color(Color),
+    Styles(Styles),
+}
+
+pub fn colorizer_by_type(string: &str) -> ColorOrStyles {
     match string.parse::<f64>() {
-        Ok(_) => Colorize::red,
+        Ok(_) => ColorOrStyles::Color(Color::Red),
         Err(_) => match string {
-            "true" | "TRUE" | "True" | "false" | "FALSE" | "False" | "yes" | "no" => Colorize::cyan,
-            "null" | "na" | "NA" | "None" | "n/a" | "N/A" | "<empty>" => Colorize::dimmed,
-            _ => Colorize::green,
+            "true" | "TRUE" | "True" | "false" | "FALSE" | "False" | "yes" | "no" => {
+                ColorOrStyles::Color(Color::Cyan)
+            }
+            "null" | "na" | "NA" | "None" | "n/a" | "N/A" | "<empty>" => {
+                ColorOrStyles::Styles(Styles::Dimmed)
+            }
+            _ => ColorOrStyles::Color(Color::Green),
+        },
+    }
+}
+
+pub fn colorizer_by_rainbow(index: usize) -> ColorOrStyles {
+    let index = index % 6;
+
+    match index {
+        0 => ColorOrStyles::Color(Color::Red),
+        1 => ColorOrStyles::Color(Color::Green),
+        2 => ColorOrStyles::Color(Color::Yellow),
+        3 => ColorOrStyles::Color(Color::Blue),
+        4 => ColorOrStyles::Color(Color::Magenta),
+        5 => ColorOrStyles::Color(Color::Cyan),
+        _ => unreachable!(),
+    }
+}
+
+pub fn colorize(color_or_style: &ColorOrStyles, string: &str) -> ColoredString {
+    match color_or_style {
+        ColorOrStyles::Color(color) => string.color(*color),
+        ColorOrStyles::Styles(styles) => match styles {
+            Styles::Dimmed => string.dimmed(),
+            _ => unimplemented!(),
         },
     }
 }
