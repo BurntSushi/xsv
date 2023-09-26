@@ -1,5 +1,6 @@
 use colored::Colorize;
 use config::{Config, Delimiter};
+use nom::combinator::fail;
 use unicode_width::UnicodeWidthStr;
 use util;
 use CliResult;
@@ -19,6 +20,7 @@ Usage:
 flatten options:
     -c, --condense         Don't wrap cell values on new lines but truncate them
                            with ellipsis instead.
+    -w, --wrap             Wrap cell values all while minding the header's indent.
     --cols <num>           Width of the graph in terminal columns, i.e. characters.
                            Defaults to using all your terminal's width or 80 if
                            terminal's size cannot be found (i.e. when piping to file).
@@ -38,6 +40,7 @@ Common options:
 struct Args {
     arg_input: Option<String>,
     flag_condense: bool,
+    flag_wrap: bool,
     flag_cols: Option<usize>,
     flag_no_headers: bool,
     flag_delimiter: Option<Delimiter>,
@@ -69,8 +72,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .max()
         .ok_or("file is empty")?;
 
+    if cols < max_header_width + 2 {
+        return fail!("not enough cols provided to safely print data!");
+    }
+
     let mut record = csv::StringRecord::new();
     let mut record_index: usize = 0;
+
+    let max_value_width = cols - max_header_width - 1;
 
     while rdr.read_record(&mut record)? {
         println!("{}", "-".repeat(cols));
@@ -86,7 +95,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             let cell_colorizer = util::colorize_by_type(cell);
 
             let cell = if args.flag_condense {
-                util::unicode_aware_rpad_with_ellipsis(cell, cols - max_header_width - 1, " ")
+                util::unicode_aware_rpad_with_ellipsis(cell, max_value_width, " ")
+            } else if args.flag_wrap {
+                util::unicode_aware_wrap(cell, max_value_width, max_header_width + 1)
             } else {
                 cell.to_string()
             };

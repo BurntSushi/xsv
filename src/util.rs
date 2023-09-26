@@ -392,8 +392,8 @@ pub fn unicode_aware_rpad_with_ellipsis<'a>(
     unicode_aware_rpad(&unicode_aware_ellipsis(string, width), width, padding).into_owned()
 }
 
-pub fn unicode_aware_wrap(string: &str, max_width: usize) -> Vec<String> {
-    let mut wrapped: Vec<String> = Vec::new();
+pub fn unicode_aware_wrap(string: &str, max_width: usize, indent: usize) -> String {
+    let mut lines: Vec<String> = Vec::new();
     let mut current_string = String::new();
     let mut current_width: usize = 0;
 
@@ -401,8 +401,14 @@ pub fn unicode_aware_wrap(string: &str, max_width: usize) -> Vec<String> {
         let width = grapheme.width();
         current_width += width;
 
-        if current_width > max_width {
-            wrapped.push(current_string);
+        let upper_bound = if lines.is_empty() {
+            max_width
+        } else {
+            max_width - indent
+        };
+
+        if current_width > upper_bound {
+            lines.push(current_string);
             current_width = width;
             current_string = String::new();
             current_string.push_str(grapheme);
@@ -412,7 +418,21 @@ pub fn unicode_aware_wrap(string: &str, max_width: usize) -> Vec<String> {
     }
 
     if !current_string.is_empty() {
-        wrapped.push(current_string);
+        lines.push(current_string);
+    }
+
+    let mut wrapped = String::new();
+    let mut lines_iter = lines.into_iter();
+
+    match lines_iter.next() {
+        None => return wrapped,
+        Some(line) => wrapped.push_str(&line),
+    }
+
+    for line in lines_iter {
+        wrapped.push('\n');
+        wrapped.push_str(&" ".repeat(indent));
+        wrapped.push_str(&line);
     }
 
     wrapped
