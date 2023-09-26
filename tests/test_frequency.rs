@@ -49,9 +49,9 @@ fn frequency_no_headers() {
 }
 
 #[test]
-fn frequency_no_nulls() {
-    let (wrk, mut cmd) = setup("frequency_no_nulls");
-    cmd.arg("--no-nulls")
+fn frequency_no_extra() {
+    let (wrk, mut cmd) = setup("frequency_no_extra");
+    cmd.arg("--no-extra")
         .args(["--limit", "0"])
         .args(["--select", "h1"]);
 
@@ -86,7 +86,7 @@ fn frequency_nulls() {
 #[test]
 fn frequency_limit() {
     let (wrk, mut cmd) = setup("frequency_limit");
-    cmd.args(["--limit", "1"]);
+    cmd.args(["--limit", "1"]).arg("--no-extra");
 
     let mut got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     got.sort();
@@ -103,7 +103,8 @@ fn frequency_asc() {
     let (wrk, mut cmd) = setup("frequency_asc");
     cmd.args(["--limit", "1"])
         .args(["--select", "h2"])
-        .arg("--asc");
+        .arg("--asc")
+        .arg("--no-extra");
 
     let mut got: Vec<Vec<String>> = wrk.read_stdout(&mut cmd);
     got.sort();

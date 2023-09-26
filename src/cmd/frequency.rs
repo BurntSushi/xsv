@@ -40,7 +40,7 @@ frequency options:
                            [default: 10]
     -a, --asc              Sort the frequency tables in ascending order by
                            count. The default is descending order.
-    --no-nulls             Don't include NULLs in the frequency table.
+    --no-extra             Don't include null & remaining counts.
     -j, --jobs <arg>       The number of jobs to run in parallel.
                            This works better when the given CSV data has
                            an index already created. Note that a file handle
@@ -66,7 +66,7 @@ struct Args {
     flag_select: SelectColumns,
     flag_limit: usize,
     flag_asc: bool,
-    flag_no_nulls: bool,
+    flag_no_extra: bool,
     flag_jobs: usize,
     flag_output: Option<String>,
     flag_no_headers: bool,
@@ -99,14 +99,24 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         } else {
             header.to_vec()
         };
+
+        let mut seen_count: usize = 0;
+
         for (value, count) in args_clone.counts(&ftab).into_iter() {
+            seen_count += 1;
             let count = count.to_string();
             let row = vec![&*header, &*value, count.as_bytes()];
             wtr.write_record(row)?;
         }
+
+        let remaining = ftab.len() - seen_count;
+
+        if !args.flag_no_extra && remaining > 0 {
+            wtr.write_record(vec![&*header, b"<REST>", remaining.to_string().as_bytes()])?;
+        }
     }
 
-    Ok(())
+    Ok(wtr.flush()?)
 }
 
 type ByteString = Vec<u8>;
@@ -195,7 +205,7 @@ impl Args {
                 let field = trim(field.to_vec());
                 if !field.is_empty() {
                     tabs[i].add(field);
-                } else if !self.flag_no_nulls {
+                } else if !self.flag_no_extra {
                     tabs[i].add(null.clone());
                 }
             }
