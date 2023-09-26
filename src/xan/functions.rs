@@ -250,7 +250,7 @@ fn last(args: BoundArguments) -> FunctionResult {
     let arg = args.get1()?;
 
     Ok(match arg.as_ref() {
-        DynamicValue::String(value) => DynamicValue::from(value.chars().rev().next()),
+        DynamicValue::String(value) => DynamicValue::from(value.chars().next_back()),
         DynamicValue::List(list) => match list.last() {
             None => DynamicValue::None,
             Some(value) => value.clone(),

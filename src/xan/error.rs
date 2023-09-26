@@ -66,13 +66,9 @@ impl Display for SpecifiedBindingError {
                 "error when binding arg n°{} for \"{}\": {}",
                 i + 1,
                 self.function_name,
-                self.reason.to_string()
+                self.reason
             ),
-            None => write!(
-                f,
-                "error when binding expression: {}",
-                self.reason.to_string()
-            ),
+            None => write!(f, "error when binding expression: {}", self.reason),
         }
     }
 }
@@ -107,8 +103,7 @@ impl Display for SpecifiedCallError {
         write!(
             f,
             "error when calling function \"{}\": {}",
-            self.function_name,
-            self.reason.to_string()
+            self.function_name, self.reason
         )
     }
 }

@@ -387,7 +387,7 @@ pub fn handle_eval_result<W: std::io::Write>(
                 record.push_field(err.to_string().as_bytes());
             }
             XanErrorPolicy::Log => {
-                eprintln!("Row n°{}: {}", index + 1, err.to_string());
+                eprintln!("Row n°{}: {}", index + 1, err);
 
                 if args.mode.is_map() {
                     let value = DynamicValue::None;
@@ -395,7 +395,7 @@ pub fn handle_eval_result<W: std::io::Write>(
                 }
             }
             XanErrorPolicy::Panic => {
-                Err(format!("Row n°{}: {}", index + 1, err.to_string()))?;
+                Err(format!("Row n°{}: {}", index + 1, err))?;
             }
         },
     };
@@ -466,7 +466,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
                 )> {
                     let record = record?;
                     let mut variables = Variables::new();
-                    variables.insert(&"index", DynamicValue::Integer(i as i64));
+                    variables.insert("index", DynamicValue::Integer(i as i64));
 
                     let eval_result = eval(&pipeline, &record, &variables);
 

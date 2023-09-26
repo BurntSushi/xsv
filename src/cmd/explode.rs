@@ -1,7 +1,6 @@
 use csv;
 
 use config::{Config, Delimiter};
-use nom::combinator::fail;
 use select::SelectColumns;
 use util;
 use CliResult;

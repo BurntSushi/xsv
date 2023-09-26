@@ -362,7 +362,7 @@ pub fn unicode_aware_ellipsis(string: &str, max_width: usize) -> String {
     let mut take: usize = 0;
 
     for grapheme in graphemes.iter() {
-        width = width + grapheme.width();
+        width += grapheme.width();
 
         if width <= max_width {
             take += 1;
@@ -396,11 +396,7 @@ pub fn unicode_aware_rpad<'a>(string: &'a str, width: usize, padding: &str) -> C
     Cow::Owned(padded)
 }
 
-pub fn unicode_aware_rpad_with_ellipsis<'a>(
-    string: &'a str,
-    width: usize,
-    padding: &str,
-) -> String {
+pub fn unicode_aware_rpad_with_ellipsis(string: &str, width: usize, padding: &str) -> String {
     unicode_aware_rpad(&unicode_aware_ellipsis(string, width), width, padding).into_owned()
 }
 
