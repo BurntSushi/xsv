@@ -3,7 +3,6 @@ use std::collections::BTreeMap;
 use colored::Colorize;
 use csv;
 use numfmt::Formatter;
-use termsize;
 use unicode_width::UnicodeWidthStr;
 
 use config::{Config, Delimiter};
@@ -101,13 +100,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut formatter = util::acquire_number_formatter();
 
-    let cols: usize = match args.flag_cols {
-        None => match termsize::get() {
-            None => 80,
-            Some(size) => size.cols as usize,
-        },
-        Some(c) => c,
-    };
+    let cols = util::acquire_term_cols(&args.flag_cols);
 
     for histogram in histograms.iter() {
         let sum = histogram.sum();

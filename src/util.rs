@@ -9,6 +9,7 @@ use std::time;
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, TimeZone, Utc};
 use chrono_tz::Tz;
+use colored::{ColoredString, Colorize};
 use csv;
 use dateparser::parse_with_timezone;
 use docopt::Docopt;
@@ -303,6 +304,16 @@ pub fn acquire_number_formatter() -> Formatter {
         .unwrap()
 }
 
+pub fn acquire_term_cols(cols: &Option<usize>) -> usize {
+    match cols {
+        None => match termsize::get() {
+            None => 80,
+            Some(size) => size.cols as usize,
+        },
+        Some(c) => *c,
+    }
+}
+
 pub fn pretty_print_float(f: &mut Formatter, x: f64) -> String {
     let mut string = f.fmt2(x).to_string();
 
@@ -311,6 +322,17 @@ pub fn pretty_print_float(f: &mut Formatter, x: f64) -> String {
     }
 
     string
+}
+
+pub fn colorize_by_type<'a, 'b>(string: &'a str) -> impl FnOnce(&'b str) -> ColoredString {
+    match string.parse::<f64>() {
+        Ok(_) => Colorize::red,
+        Err(_) => match string {
+            "true" | "TRUE" | "True" | "false" | "FALSE" | "False" | "yes" | "no" => Colorize::cyan,
+            "null" | "na" | "NA" | "None" | "n/a" | "N/A" | "<empty>" => Colorize::dimmed,
+            _ => Colorize::green,
+        },
+    }
 }
 
 pub fn unicode_aware_ellipsis(string: &str, max_width: usize) -> String {
