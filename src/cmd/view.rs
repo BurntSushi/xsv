@@ -138,13 +138,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .map(|m| usize::min(*m, width_max))
         .collect();
 
-    let mut col_budget = cols - 4;
+    let trailing_cols = 4;
+    let per_cell_padding_cols = 3;
+
+    let mut col_budget = cols - trailing_cols;
     let mut columns_fitting_in_budget: usize = 0;
 
     if args.flag_expand {
         columns_fitting_in_budget = column_widths.len();
     } else {
-        let additional_chars_per_cell = 3; // NOTE: taking into account pipes, etc. for the frames
+        let additional_chars_per_cell = per_cell_padding_cols; // NOTE: taking into account pipes, etc. for the frames
 
         for column_width in column_widths.iter() {
             if column_width + additional_chars_per_cell > col_budget {
@@ -157,7 +160,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let all_columns_shown = columns_fitting_in_budget == column_widths.len();
 
-    // TODO: expand
     // TODO: deal better when everything can be shown on screen
     // TODO: print some useful info on top & bottom regarding columns, rows etc.
 
@@ -166,8 +168,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             .iter()
             .take(columns_fitting_in_budget)
             .sum::<usize>()
-            + (columns_fitting_in_budget - 1) * 3
-            + if all_columns_shown { 0 } else { 4 }
+            + (columns_fitting_in_budget - 1) * per_cell_padding_cols
+            + if all_columns_shown { 0 } else { trailing_cols }
     } else {
         cols
     };
