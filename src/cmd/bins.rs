@@ -25,7 +25,7 @@ bins options:
                            rule.
     --min <min>            Override min value.
     --max <max>            Override max value.
-    --no-extra             Don't include, nulls, nans and out-of-bounds counts.
+    -N, --no-extra         Don't include, nulls, nans and out-of-bounds counts.
 
 Common options:
     -h, --help             Display this message
@@ -127,7 +127,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         if !args.flag_no_extra && series.nulls > 0 {
             wtr.write_record(vec![
                 &headers[series.column],
-                b"<NULL>",
+                b"<null>",
                 b"",
                 b"",
                 series.nulls.to_string().as_bytes(),
@@ -137,7 +137,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         if !args.flag_no_extra && series.out_of_bounds > 0 {
             wtr.write_record(vec![
                 &headers[series.column],
-                b"<REST>",
+                b"<rest>",
                 b"",
                 b"",
                 series.out_of_bounds.to_string().as_bytes(),

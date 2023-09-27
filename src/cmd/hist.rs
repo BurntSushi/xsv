@@ -24,12 +24,12 @@ Usage:
     xsv hist --help
 
 hist options:
-    --field <name>           Name of the field column. I.e. the one containing
+    -f, --field <name>       Name of the field column. I.e. the one containing
                              the represented value (remember this command can
                              print several histograms). [default: field].
-    --label <name>           Name of the label column. I.e. the one containing the
+    -l, --label <name>       Name of the label column. I.e. the one containing the
                              label for a single bar of the histogram. [default: value].
-    --value <name>           Name of the count column. I.e. the one containing the value
+    -v, --value <name>       Name of the count column. I.e. the one containing the value
                              for each bar. [default: count].
     --cols <num>             Width of the graph in terminal columns, i.e. characters.
                              Defaults to using all your terminal's width or 80 if
@@ -165,7 +165,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
             let label = util::unicode_aware_rpad_with_ellipsis(&bar.label, label_cols, " ");
             let label = match bar.label.as_str() {
-                "<REST>" | "<NULL>" | "<NaN>" => label.dimmed(),
+                "<rest>" | "<null>" | "<NaN>" => label.dimmed(),
                 _ => label.normal(),
             };
 

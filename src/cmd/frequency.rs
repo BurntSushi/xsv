@@ -43,7 +43,7 @@ frequency options:
                            this given threshold. It is combined with -l/--limit.
     -a, --asc              Sort the frequency tables in ascending order by
                            count. The default is descending order.
-    --no-extra             Don't include null & remaining counts.
+    -N, --no-extra         Don't include null & remaining counts.
     -j, --jobs <arg>       The number of jobs to run in parallel.
                            This works better when the given CSV data has
                            an index already created. Note that a file handle
@@ -116,7 +116,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         let remaining = row_count - seen_count;
 
         if !args.flag_no_extra && remaining > 0 {
-            wtr.write_record(vec![&*header, b"<REST>", remaining.to_string().as_bytes()])?;
+            wtr.write_record(vec![&*header, b"<rest>", remaining.to_string().as_bytes()])?;
         }
     }
 
@@ -147,7 +147,7 @@ impl Args {
         }
         let counts = counts.into_iter().map(|(bs, c)| {
             if b"" == &**bs {
-                (b"<NULL>"[..].to_vec(), c)
+                (b"<null>"[..].to_vec(), c)
             } else {
                 (bs.clone(), c)
             }

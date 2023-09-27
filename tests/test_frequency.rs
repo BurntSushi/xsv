@@ -16,7 +16,7 @@ fn setup(name: &str) -> (Workdir, process::Command) {
         svec!["a", "y"],
         svec!["b", "z"],
         svec!["", "z"],
-        svec!["<NULL>", "x"],
+        svec!["<null>", "x"],
     ];
 
     let wrk = Workdir::new(name);
@@ -39,8 +39,8 @@ fn frequency_no_headers() {
     got = got.into_iter().skip(1).collect();
     got.sort();
     let expected = vec![
-        svec!["1", "<NULL>", "1"],
-        svec!["1", "<NULL>", "1"],
+        svec!["1", "<null>", "1"],
+        svec!["1", "<null>", "1"],
         svec!["1", "a", "3"],
         svec!["1", "b", "1"],
         svec!["1", "h1", "1"],
@@ -59,7 +59,7 @@ fn frequency_no_extra() {
     got.sort();
     let expected = vec![
         svec!["field", "value", "count"],
-        svec!["h1", "<NULL>", "1"],
+        svec!["h1", "<null>", "1"],
         svec!["h1", "a", "3"],
         svec!["h1", "b", "1"],
     ];
@@ -75,8 +75,8 @@ fn frequency_nulls() {
     got.sort();
     let expected = vec![
         svec!["field", "value", "count"],
-        svec!["h1", "<NULL>", "1"],
-        svec!["h1", "<NULL>", "1"],
+        svec!["h1", "<null>", "1"],
+        svec!["h1", "<null>", "1"],
         svec!["h1", "a", "3"],
         svec!["h1", "b", "1"],
     ];
@@ -216,7 +216,7 @@ fn ftables_from_rows<T: Csv>(rows: T) -> FTables {
         for (i, mut field) in row.into_iter().enumerate() {
             field = field.trim().to_owned();
             if field.is_empty() {
-                field = "<NULL>".to_owned();
+                field = "<null>".to_owned();
             }
             ftables.get_mut(&header[i]).unwrap().add(field);
         }
