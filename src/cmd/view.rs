@@ -318,6 +318,10 @@ fn find_best_column_widths(
         let mut columns_fitting_in_budget: usize = 0;
 
         for column_width in widths.iter_mut() {
+            if col_budget == 0 {
+                break;
+            }
+
             if *column_width + PER_CELL_PADDING_COLS > col_budget {
                 *column_width = col_budget;
                 columns_fitting_in_budget += 1;
