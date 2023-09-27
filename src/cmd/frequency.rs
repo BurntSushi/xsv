@@ -90,7 +90,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let args_clone = args.clone();
 
     let mut wtr = Config::new(&args.flag_output).writer()?;
-    let (headers, tables, _) = match args.rconfig().indexed()? {
+    let (headers, tables, row_count) = match args.rconfig().indexed()? {
         Some(ref mut idx) if args.njobs() > 1 => args.parallel_ftables(idx),
         _ => args.sequential_ftables(),
     }?;
@@ -104,16 +104,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             header.to_vec()
         };
 
-        let mut seen_count: usize = 0;
+        let mut seen_count: u64 = 0;
 
         for (value, count) in args_clone.counts(&ftab).into_iter() {
-            seen_count += 1;
+            seen_count += count;
             let count = count.to_string();
             let row = vec![&*header, &*value, count.as_bytes()];
             wtr.write_record(row)?;
         }
 
-        let remaining = ftab.len() - seen_count;
+        let remaining = row_count - seen_count;
 
         if !args.flag_no_extra && remaining > 0 {
             wtr.write_record(vec![&*header, b"<REST>", remaining.to_string().as_bytes()])?;
