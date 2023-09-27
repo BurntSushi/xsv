@@ -11,6 +11,7 @@ use std::ops::Deref;
 use std::path::PathBuf;
 
 use csv;
+use flate2::read::GzDecoder;
 use index::Indexed;
 use serde::de::{Deserialize, Deserializer, Error};
 
@@ -319,7 +320,13 @@ impl Config {
         Ok(match self.path {
             None => Box::new(io::stdin()),
             Some(ref p) => match fs::File::open(p) {
-                Ok(x) => Box::new(x),
+                Ok(x) => {
+                    if p.to_string_lossy().ends_with(".gz") {
+                        Box::new(GzDecoder::new(x))
+                    } else {
+                        Box::new(x)
+                    }
+                }
                 Err(err) => {
                     let msg = format!("failed to open {}: {}", p.display(), err);
                     return Err(io::Error::new(io::ErrorKind::NotFound, msg));
