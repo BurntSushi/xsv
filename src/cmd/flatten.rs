@@ -105,7 +105,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             };
 
             let cell_colorizer = if args.flag_rainbow {
-                util::colorizer_by_rainbow(i)
+                util::colorizer_by_rainbow(i, cell)
             } else {
                 util::colorizer_by_type(cell)
             };

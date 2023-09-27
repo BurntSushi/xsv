@@ -323,7 +323,11 @@ pub fn colorizer_by_type(string: &str) -> ColorOrStyles {
     }
 }
 
-pub fn colorizer_by_rainbow(index: usize) -> ColorOrStyles {
+pub fn colorizer_by_rainbow(index: usize, string: &str) -> ColorOrStyles {
+    if string == "<empty>" {
+        return ColorOrStyles::Styles(Styles::Dimmed);
+    }
+
     let index = index % 6;
 
     match index {

@@ -240,7 +240,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 let allowed_width = column_widths[i];
 
                 let colorizer = if args.flag_rainbow {
-                    util::colorizer_by_rainbow(i)
+                    util::colorizer_by_rainbow(i, cell)
                 } else {
                     util::colorizer_by_type(cell)
                 };
