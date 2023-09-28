@@ -45,7 +45,7 @@ Some examples of what you can do:
 
 *Counting occurrences of a combination of columns in a file*
 
-`xsv map 'concat(col1, "&", col2)' pair file.csv > xsv frequency -s pair`
+`xsv map 'concat(col1, "&", col2)' pair file.csv | xsv frequency -s pair`
 
 *Filtering lines numerically*
 
