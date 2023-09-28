@@ -27,7 +27,7 @@ available functions):
         'trim(row[2])'
 
   . Indexing a column by name and 0-based nth (for duplicate headers):
-        'trim(row[\"col\"], 1)'
+        'trim(row[\"col\", 1])'
 
   . Integer literals:
         'add(1, count)'
