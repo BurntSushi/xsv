@@ -1,3 +1,4 @@
+extern crate atty;
 extern crate byteorder;
 extern crate calamine;
 extern crate chrono;

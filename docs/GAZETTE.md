@@ -25,6 +25,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod
 - [The kway command](#the-kway-command)
 - [Gzip native support](#gzip-native-support)
 - [Faster explode](#faster-explode)
+- [Stdin guard](#stdin-guard)
 
 ### Dropping `apply`, `enum` & `table`
 
@@ -163,3 +164,7 @@ Wanna know a secret? It seems to be faster than piping from `gunzip -c`!
 ### Faster explode
 
 `xsv explode` is faster. That's it. That's the tweet.
+
+### Stdin guard
+
+`xsv` will now warn you if you did not give a file name and stdin is empty. This way it will not appear stuck forever waiting for some data that will never come.

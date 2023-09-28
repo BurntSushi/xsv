@@ -10,6 +10,7 @@ use std::io::{self, Read, SeekFrom};
 use std::ops::Deref;
 use std::path::PathBuf;
 
+use atty;
 use csv;
 use flate2::read::GzDecoder;
 use index::Indexed;
@@ -318,7 +319,13 @@ impl Config {
 
     pub fn io_reader(&self) -> io::Result<Box<dyn io::Read + 'static>> {
         Ok(match self.path {
-            None => Box::new(io::stdin()),
+            None => {
+                if atty::is(atty::Stream::Stdin) {
+                    return Err(io::Error::new(io::ErrorKind::NotFound, "failed to read CSV data from stdin. Did you forget to give a path to your file?"));
+                } else {
+                    Box::new(io::stdin())
+                }
+            }
             Some(ref p) => match fs::File::open(p) {
                 Ok(x) => {
                     if p.to_string_lossy().ends_with(".gz") {
