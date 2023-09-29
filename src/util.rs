@@ -410,6 +410,12 @@ pub fn unicode_aware_wrap(string: &str, max_width: usize, indent: usize) -> Stri
     let mut current_width: usize = 0;
 
     for grapheme in string.graphemes(true) {
+        if grapheme == "\n" {
+            lines.push(current_string);
+            current_string = String::new();
+            continue;
+        }
+
         let width = grapheme.width();
         current_width += width;
 
