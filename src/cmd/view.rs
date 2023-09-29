@@ -322,8 +322,10 @@ fn find_best_column_widths(
             }
 
             if *column_width + PER_CELL_PADDING_COLS > col_budget {
-                *column_width = col_budget;
-                columns_fitting_in_budget += 1;
+                if col_budget > 2 {
+                    *column_width = col_budget;
+                    columns_fitting_in_budget += 1;
+                }
                 break;
             }
             col_budget -= *column_width + PER_CELL_PADDING_COLS;
