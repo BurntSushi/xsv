@@ -14,7 +14,7 @@ use csv;
 use dateparser::parse_with_timezone;
 use docopt::Docopt;
 use num_cpus;
-use numfmt::{Formatter, Precision};
+use numfmt::{Formatter, Numeric, Precision};
 use rand::{SeedableRng, StdRng};
 use serde::de::{Deserialize, DeserializeOwned, Deserializer, Error};
 use unicode_segmentation::UnicodeSegmentation;
@@ -287,7 +287,7 @@ pub fn acquire_term_cols(cols: &Option<usize>) -> usize {
     }
 }
 
-pub fn pretty_print_float(f: &mut Formatter, x: f64) -> String {
+pub fn pretty_print_float<T: Numeric>(f: &mut Formatter, x: T) -> String {
     let mut string = f.fmt2(x).to_string();
 
     if string.ends_with(".0") {

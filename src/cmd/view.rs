@@ -138,11 +138,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut formatter = util::acquire_number_formatter();
 
     let mut print_info = || {
-        let pretty_records_len = util::pretty_print_float(&mut formatter, records.len() as f64);
-        let pretty_headers_len =
-            util::pretty_print_float(&mut formatter, (headers.len() - 1) as f64);
+        let pretty_records_len = util::pretty_print_float(&mut formatter, records.len());
+        let pretty_headers_len = util::pretty_print_float(&mut formatter, headers.len() - 1);
         let pretty_displayed_headers_len =
-            util::pretty_print_float(&mut formatter, (columns_fitting_in_budget - 1) as f64);
+            util::pretty_print_float(&mut formatter, columns_fitting_in_budget - 1);
 
         println!(
             "Displaying {} col{} from {} of {}",

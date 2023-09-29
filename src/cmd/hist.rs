@@ -111,21 +111,22 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let cols = util::acquire_term_cols(&args.flag_cols);
 
     for histogram in histograms.iter() {
-        let sum = histogram.sum();
-
         if histogram.len() == 0 {
             continue;
         }
 
+        let sum = histogram.sum();
+
         let domain_max = match args.flag_domain_max.as_str() {
             "max" => histogram.max().unwrap(),
-            "sum" => histogram.sum(),
+            "sum" => sum,
             _ => return fail!("unknown --domain-max. Should be one of \"sum\", \"max\"."),
         };
 
         println!(
-            "\nHistogram for field {} (counting {}, max: {}):\n",
+            "\nHistogram for field {} (bars: {}, sum {}, max: {}):\n",
             histogram.field.green(),
+            util::pretty_print_float(&mut formatter, histogram.len()).cyan(),
             util::pretty_print_float(&mut formatter, sum).cyan(),
             util::pretty_print_float(&mut formatter, histogram.max().unwrap()).cyan()
         );
