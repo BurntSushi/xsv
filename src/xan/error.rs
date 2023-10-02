@@ -7,6 +7,7 @@ pub enum PrepareError {
     ParseError(String),
     ColumnNotFound(ColumIndexationBy),
     InvalidRegex(String),
+    UnknownFunction(String),
 }
 
 impl Display for PrepareError {
@@ -19,6 +20,7 @@ impl Display for PrepareError {
                     write!(f, "cannot find column (\"{}\", {})", name, nth)
                 }
             },
+            Self::UnknownFunction(name) => write!(f, "unknown function \"{}\"", name),
             Self::ParseError(expr) => write!(f, "could not parse expression: {}", expr),
             Self::InvalidRegex(pattern) => write!(f, "invalid regex {}", pattern),
         }
@@ -111,7 +113,6 @@ impl Display for SpecifiedCallError {
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum CallError {
     InvalidArity(InvalidArity),
-    UnknownFunction(String),
     InvalidPath,
     NotImplemented(String),
     CannotOpenFile(String),
@@ -172,7 +173,6 @@ impl Display for CallError {
                 write!(f, "cannot open file {}", path)
             }
             Self::CannotReadFile(path) => write!(f, "cannot read file {}", path),
-            Self::UnknownFunction(_) => write!(f, "unknown function"),
             Self::Custom(msg) => write!(f, "{}", msg),
             Self::Cast((from_type, to_type)) => write!(
                 f,

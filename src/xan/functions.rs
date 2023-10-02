@@ -11,75 +11,69 @@ use flate2::read::GzDecoder;
 use unidecode::unidecode;
 use uuid::Uuid;
 
-use super::error::{CallError, SpecifiedCallError};
-use super::types::{BoundArgument, BoundArguments, DynamicNumber, DynamicValue};
+use super::error::{CallError, PrepareError};
+use super::types::{BoundArguments, DynamicNumber, DynamicValue};
 
 type FunctionResult = Result<DynamicValue, CallError>;
+pub type Function = fn(BoundArguments) -> FunctionResult;
 
 // TODO: count should be able to take regex
 // TODO: deal with list in sequence_compare & contains
 // TODO: in list, empty, not empty
 // TODO: we could also have ranges of columns and vec map etc.
 // TODO: random, stats etc.
-pub fn call<'a>(name: &str, args: BoundArguments) -> Result<BoundArgument<'a>, SpecifiedCallError> {
+pub fn get_function<'a>(name: &str) -> Result<Function, PrepareError> {
     Ok(match name {
-        "abs" => abs(args),
-        "abspath" => abspath(args),
-        "add" => arithmetic_op(args, Add::add),
-        "and" => and(args),
-        "coalesce" => coalesce(args),
-        "concat" => concat(args),
-        "contains" => contains(args),
-        "count" => count(args),
-        "div" => arithmetic_op(args, Div::div),
-        "eq" => number_compare(args, Ordering::is_eq),
-        "endswith" => endswith(args),
-        "err" => err(args),
-        "first" => first(args),
-        "get" => get(args),
-        "gt" => number_compare(args, Ordering::is_gt),
-        "gte" => number_compare(args, Ordering::is_ge),
-        "idiv" => arithmetic_op(args, DynamicNumber::idiv),
-        "join" => join(args),
-        "last" => last(args),
-        "len" => len(args),
-        "lt" => number_compare(args, Ordering::is_lt),
-        "lte" => number_compare(args, Ordering::is_le),
-        "ltrim" => ltrim(args),
-        "lower" => lower(args),
-        "match" => is_match(args),
-        "mul" => arithmetic_op(args, Mul::mul),
-        "neq" => number_compare(args, Ordering::is_ne),
-        "not" => not(args),
-        "or" => or(args),
-        "pathjoin" => pathjoin(args),
-        "read" => read(args),
-        "replace" => replace(args),
-        "rtrim" => rtrim(args),
-        "slice" => slice(args),
-        "split" => split(args),
-        "startswith" => startswith(args),
-        "sub" => arithmetic_op(args, Sub::sub),
-        "s_eq" => sequence_compare(args, Ordering::is_eq),
-        "s_gt" => sequence_compare(args, Ordering::is_gt),
-        "s_gte" => sequence_compare(args, Ordering::is_ge),
-        "s_lt" => sequence_compare(args, Ordering::is_lt),
-        "s_lte" => sequence_compare(args, Ordering::is_le),
-        "s_neq" => sequence_compare(args, Ordering::is_ne),
-        "trim" => trim(args),
-        "typeof" => type_of(args),
-        "unidecode" => apply_unidecode(args),
-        "upper" => upper(args),
-        "uuid" => uuid(args),
-        "val" => val(args),
-        _ => Err(CallError::UnknownFunction(name.to_string())),
-    })
-    .and_then(|result| match result {
-        Ok(value) => Ok(Cow::Owned(value)),
-        Err(err) => Err(SpecifiedCallError {
-            function_name: name.to_string(),
-            reason: err,
-        }),
+        "abs" => abs,
+        "abspath" => abspath,
+        "add" => |args| arithmetic_op(args, Add::add),
+        "and" => and,
+        "coalesce" => coalesce,
+        "concat" => concat,
+        "contains" => contains,
+        "count" => count,
+        "div" => |args| arithmetic_op(args, Div::div),
+        "eq" => |args| number_compare(args, Ordering::is_eq),
+        "endswith" => endswith,
+        "err" => err,
+        "first" => first,
+        "get" => get,
+        "gt" => |args| number_compare(args, Ordering::is_gt),
+        "gte" => |args| number_compare(args, Ordering::is_ge),
+        "idiv" => |args| arithmetic_op(args, DynamicNumber::idiv),
+        "join" => join,
+        "last" => last,
+        "len" => len,
+        "lt" => |args| number_compare(args, Ordering::is_lt),
+        "lte" => |args| number_compare(args, Ordering::is_le),
+        "ltrim" => ltrim,
+        "lower" => lower,
+        "match" => is_match,
+        "mul" => |args| arithmetic_op(args, Mul::mul),
+        "neq" => |args| number_compare(args, Ordering::is_ne),
+        "not" => not,
+        "or" => or,
+        "pathjoin" => pathjoin,
+        "read" => read,
+        "replace" => replace,
+        "rtrim" => rtrim,
+        "slice" => slice,
+        "split" => split,
+        "startswith" => startswith,
+        "sub" => |args| arithmetic_op(args, Sub::sub),
+        "s_eq" => |args| sequence_compare(args, Ordering::is_eq),
+        "s_gt" => |args| sequence_compare(args, Ordering::is_gt),
+        "s_gte" => |args| sequence_compare(args, Ordering::is_ge),
+        "s_lt" => |args| sequence_compare(args, Ordering::is_lt),
+        "s_lte" => |args| sequence_compare(args, Ordering::is_le),
+        "s_neq" => |args| sequence_compare(args, Ordering::is_ne),
+        "trim" => trim,
+        "typeof" => type_of,
+        "unidecode" => apply_unidecode,
+        "upper" => upper,
+        "uuid" => uuid,
+        "val" => val,
+        _ => return Err(PrepareError::UnknownFunction(name.to_string())),
     })
 }
 

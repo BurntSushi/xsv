@@ -6,7 +6,7 @@ use super::error::{
     BindingError, CallError, EvaluationError, PrepareError, SpecifiedBindingError,
     SpecifiedCallError,
 };
-use super::functions::call;
+use super::functions::{get_function, Function};
 use super::parser::{parse, Argument, Pipeline};
 use super::types::{
     BoundArgument, BoundArguments, ColumIndexationBy, DynamicValue, EvaluationResult, Regex,
@@ -61,6 +61,7 @@ impl ConcreteArgument {
 #[derive(Debug, Clone)]
 pub struct ConcreteFunctionCall {
     name: String,
+    function: Function,
     args: Vec<ConcreteArgument>,
 }
 
@@ -101,8 +102,11 @@ fn concretize_argument(
                 concrete_args.push(concretize_argument(arg, headers)?);
             }
 
+            let function_name = call.name.to_lowercase();
+
             ConcreteArgument::Call(ConcreteFunctionCall {
-                name: call.name.to_lowercase(),
+                name: function_name.clone(),
+                function: get_function(&function_name)?,
                 args: concrete_args,
             })
         }
@@ -122,8 +126,11 @@ fn concretize_pipeline(
             concrete_arguments.push(concretize_argument(argument, headers)?);
         }
 
+        let function_name = function_call.name.to_lowercase();
+
         concrete_pipeline.push(ConcreteFunctionCall {
-            name: function_call.name.to_lowercase(),
+            name: function_name.clone(),
+            function: get_function(&function_name)?,
             args: concrete_arguments,
         });
     }
@@ -209,7 +216,13 @@ fn evaluate_function_call<'a>(
         }
     }
 
-    call(&function_call.name, bound_args).map_err(|err| EvaluationError::Call(err))
+    match (function_call.function)(bound_args) {
+        Ok(value) => Ok(Cow::Owned(value)),
+        Err(err) => Err(EvaluationError::Call(SpecifiedCallError {
+            function_name: function_call.name.clone(),
+            reason: err,
+        })),
+    }
 }
 
 fn evaluate_expression<'a>(
