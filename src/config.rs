@@ -79,10 +79,11 @@ impl Read for ReverseRead {
         }
 
         if self.offset + buff_size > self.ptr {
-            self.input.seek(SeekFrom::Start(self.offset))?;
-            self.input.read(buf)?;
-
             let e = (self.ptr - self.offset) as usize;
+
+            self.input.seek(SeekFrom::Start(self.offset))?;
+            self.input.read_exact(&mut buf[0..e])?;
+
             buf[0..e].reverse();
 
             self.ptr = self.offset;
@@ -92,7 +93,7 @@ impl Read for ReverseRead {
             let new_position = self.ptr - buff_size;
 
             self.input.seek(SeekFrom::Start(new_position))?;
-            self.input.read(buf)?;
+            self.input.read_exact(buf)?;
             buf.reverse();
 
             self.ptr -= buff_size;
