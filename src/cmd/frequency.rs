@@ -77,12 +77,6 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
-#[derive(Clone, Deserialize, PartialEq)]
-enum DomainMax {
-    Max,
-    Total,
-}
-
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
     let rconfig = args.rconfig();
@@ -147,7 +141,7 @@ impl Args {
         }
         let counts = counts.into_iter().map(|(bs, c)| {
             if b"" == &**bs {
-                (b"<null>"[..].to_vec(), c)
+                (b"<null>".to_vec(), c)
             } else {
                 (bs.clone(), c)
             }
