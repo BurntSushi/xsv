@@ -1,5 +1,9 @@
 use std::cmp;
+use std::iter::FromIterator;
+use std::path::Path;
 
+use bytesize::MB;
+use ext_sort::{buffer::mem::MemoryLimitedBufferBuilder, ExternalSorter, ExternalSorterBuilder};
 use nom::AsBytes;
 use rayon::slice::ParallelSliceMut;
 
@@ -42,23 +46,32 @@ macro_rules! sort_by {
 static USAGE: &str = "
 Sorts CSV data lexicographically.
 
-Note that this requires reading all of the CSV data into memory.
+Note that this requires reading all of the CSV data into memory, unless
+you use the \"-e/--external\" flag, which will be slower and fallback
+to using disk space.
 
 Usage:
     xsv sort [options] [<input>]
 
 sort options:
-    --check                Verify whether the file is already sorted.
-    -s, --select <arg>     Select a subset of columns to sort.
-                           See 'xsv select --help' for the format details.
-    -N, --numeric          Compare according to string numerical value
-    -R, --reverse          Reverse order
-    -c, --count <name>     Number of times the line was consecutively duplicated.
-                           Needs a column name. Can only be used with '--uniq'.
-    -u, --uniq             When set, identical consecutive lines will be dropped
-                           to keep only one line per sorted value.
-    -U, --unstable         Unstable sort. Can improve performance.
-    -p, --parallel         Whether to use parallelism to improve performance.
+    --check                   Verify whether the file is already sorted.
+    -s, --select <arg>        Select a subset of columns to sort.
+                              See 'xsv select --help' for the format details.
+    -N, --numeric             Compare according to string numerical value
+    -R, --reverse             Reverse order
+    -c, --count <name>        Number of times the line was consecutively duplicated.
+                              Needs a column name. Can only be used with '--uniq'.
+    -u, --uniq                When set, identical consecutive lines will be dropped
+                              to keep only one line per sorted value.
+    -U, --unstable            Unstable sort. Can improve performance.
+    -p, --parallel            Whether to use parallelism to improve performance.
+    -e, --external            Whether to use external sorting if you cannot fit the
+                              whole file in memory.
+    --tmp-dir <arg>           Directory where external sorting chunks will be written.
+                              Will default to the sorted file's directory or \"./\" if
+                              sorting an incoming stream.
+    -m, --memory-limit <arg>  Maximum allowed memory when using external sorting, in
+                              megabytes. [default: 512].
 
 Common options:
     -h, --help             Display this message
@@ -85,6 +98,9 @@ struct Args {
     flag_uniq: bool,
     flag_unstable: bool,
     flag_parallel: bool,
+    flag_external: bool,
+    flag_tmp_dir: Option<String>,
+    flag_memory_limit: u64,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -151,21 +167,71 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         return Ok(());
     }
 
-    let mut all = rdr.byte_records().collect::<Result<Vec<_>, _>>()?;
+    let all: Box<dyn Iterator<Item = csv::ByteRecord>> = if args.flag_external {
+        let tmp_dir = args.flag_tmp_dir.unwrap_or(match args.arg_input {
+            None => "./".to_string(),
+            Some(p) => Path::new(&p)
+                .parent()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string(),
+        });
 
-    if args.flag_unstable {
-        if args.flag_parallel {
-            sort_by!(all, par_sort_unstable_by, sel, numeric, reverse);
-        } else {
-            sort_by!(all, sort_unstable_by, sel, numeric, reverse);
-        }
+        let sorter: ExternalSorter<Vec<Vec<u8>>, csv::Error, MemoryLimitedBufferBuilder> =
+            ExternalSorterBuilder::new()
+                .with_tmp_dir(Path::new(&tmp_dir))
+                .with_buffer(MemoryLimitedBufferBuilder::new(args.flag_memory_limit * MB))
+                .build()
+                .unwrap();
+
+        let records = rdr.byte_records().map(|result| {
+            result.map(|record| {
+                record
+                    .into_iter()
+                    .map(|cell| cell.to_vec())
+                    .collect::<Vec<Vec<u8>>>()
+            })
+        });
+
+        let sorted = sorter
+            .sort_by(records, |r1, r2| {
+                let r1 = csv::ByteRecord::from_iter(r1);
+                let r2 = csv::ByteRecord::from_iter(r2);
+
+                let a = sel.select(&r1);
+                let b = sel.select(&r2);
+
+                match (numeric, reverse) {
+                    (false, false) => iter_cmp(a, b),
+                    (true, false) => iter_cmp_num(a, b),
+                    (false, true) => iter_cmp(b, a),
+                    (true, true) => iter_cmp_num(b, a),
+                }
+            })
+            .unwrap()
+            .map(|result| csv::ByteRecord::from(result.unwrap()));
+
+        Box::new(sorted)
     } else {
-        if args.flag_parallel {
-            sort_by!(all, par_sort_by, sel, numeric, reverse);
+        let mut all = rdr.byte_records().collect::<Result<Vec<_>, _>>()?;
+
+        if args.flag_unstable {
+            if args.flag_parallel {
+                sort_by!(all, par_sort_unstable_by, sel, numeric, reverse);
+            } else {
+                sort_by!(all, sort_unstable_by, sel, numeric, reverse);
+            }
         } else {
-            sort_by!(all, sort_by, sel, numeric, reverse);
+            if args.flag_parallel {
+                sort_by!(all, par_sort_by, sel, numeric, reverse);
+            } else {
+                sort_by!(all, sort_by, sel, numeric, reverse);
+            }
         }
-    }
+
+        Box::new(all.into_iter())
+    };
 
     let mut wtr = Config::new(&args.flag_output).writer()?;
 

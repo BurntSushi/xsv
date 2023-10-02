@@ -1,5 +1,6 @@
 extern crate atty;
 extern crate byteorder;
+extern crate bytesize;
 extern crate calamine;
 extern crate chrono;
 extern crate chrono_tz;
@@ -10,6 +11,7 @@ extern crate csv_index;
 extern crate dateparser;
 extern crate docopt;
 extern crate encoding;
+extern crate ext_sort;
 extern crate filetime;
 extern crate flate2;
 extern crate glob;
