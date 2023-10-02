@@ -109,7 +109,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         records
     } else {
         all_records_buffered = true;
-        rdr.into_records().collect::<Result<Vec<_>, _>>()?
+        rdr.into_records()
+            .enumerate()
+            .map(|(i, r)| r.map(|record| prepend(&record, &i.to_string())))
+            .collect::<Result<Vec<_>, _>>()?
     };
 
     let max_column_widths: Vec<usize> = headers
