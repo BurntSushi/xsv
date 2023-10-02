@@ -69,7 +69,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut rdr = rconfig.reader()?;
 
-    let potential_headers = prepend(rdr.headers()?, "⁂");
+    let potential_headers = prepend(rdr.headers()?, "*");
     let mut headers: Vec<String> = Vec::new();
 
     for (i, header) in potential_headers.iter().enumerate() {
