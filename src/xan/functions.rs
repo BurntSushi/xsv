@@ -22,7 +22,7 @@ pub type Function = fn(BoundArguments) -> FunctionResult;
 // TODO: in list, empty, not empty
 // TODO: we could also have ranges of columns and vec map etc.
 // TODO: random, stats etc.
-pub fn get_function<'a>(name: &str) -> Result<Function, PrepareError> {
+pub fn get_function(name: &str) -> Result<Function, PrepareError> {
     Ok(match name {
         "abs" => abs,
         "abspath" => abspath,
@@ -265,7 +265,7 @@ fn get(args: BoundArguments) -> FunctionResult {
     Ok(match target.as_ref() {
         DynamicValue::String(value) => {
             if index < 0 {
-                index = value.len() as i64 + index;
+                index += value.len() as i64;
             }
 
             if index < 0 {
@@ -276,7 +276,7 @@ fn get(args: BoundArguments) -> FunctionResult {
         }
         DynamicValue::List(list) => {
             if index < 0 {
-                index = list.len() as i64 + index;
+                index += list.len() as i64;
             }
 
             if index < 0 {
@@ -391,14 +391,11 @@ fn replace(args: BoundArguments) -> FunctionResult {
     let replacement = arg3.try_as_str()?;
 
     let replaced = match arg2.try_as_regex() {
-        Ok(regex) => regex
-            .inner()
-            .replace_all(&*string, replacement)
-            .into_owned(),
+        Ok(regex) => regex.inner().replace_all(&string, replacement).into_owned(),
         Err(_) => {
             let pattern = arg2.try_as_str()?;
 
-            string.replace(&*pattern, &*replacement)
+            string.replace(&*pattern, &replacement)
         }
     };
 
@@ -517,7 +514,7 @@ fn read(args: BoundArguments) -> FunctionResult {
 
     let contents = match args.get(1) {
         Some(encoding_value) => {
-            let encoding_name = encoding_value.try_as_str()?.replace("_", "-");
+            let encoding_name = encoding_value.try_as_str()?.replace('_', "-");
             let encoding = encoding_from_whatwg_label(&encoding_name);
             let encoding = encoding
                 .ok_or_else(|| CallError::UnsupportedEncoding(encoding_name.to_string()))?;
