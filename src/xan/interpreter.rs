@@ -1,3 +1,4 @@
+use fmt;
 use std::borrow::Cow;
 
 use csv::ByteRecord;
@@ -58,11 +59,24 @@ impl ConcreteArgument {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ConcreteFunctionCall {
     name: String,
     function: Function,
     args: Vec<ConcreteArgument>,
+}
+
+// NOTE: in older rust versions, Debug cannot be derived
+// correctly from `fn` and it will not compile without
+// this custom `Debug` implementation
+impl fmt::Debug for ConcreteFunctionCall {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ConcreteFunctionCall")
+            .field("name", &self.name)
+            .field("function", &"<function>")
+            .field("args", &self.args)
+            .finish()
+    }
 }
 
 type ConcretePipeline = Vec<ConcreteFunctionCall>;
