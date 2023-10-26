@@ -49,6 +49,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv frequency --pretty`
 * `xsv glob`
 * `xsv hist`
+* `xsv implode`
 * `xsv join --prefix-left/--prefix-right`
 * `xsv jsonl`
 * `xsv kway`
@@ -87,6 +88,7 @@ given separator.
 * **glob** - Create a CSV file with paths matching a glob pattern.
 * **headers** - Show the headers of CSV data. Or show the intersection of all
   headers between many CSV files.
+* **implode** - Collapse consecutive identical rows based on a diverging column.
 * **index** - Create an index for a CSV file. This is very quick and provides
   constant time indexing into the CSV file.
 * **input** - Read CSV data with exotic quoting/escaping rules.

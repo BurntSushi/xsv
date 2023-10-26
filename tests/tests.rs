@@ -47,6 +47,7 @@ mod test_fmt;
 mod test_foreach;
 mod test_frequency;
 mod test_headers;
+mod test_implode;
 mod test_index;
 mod test_join;
 mod test_kway;

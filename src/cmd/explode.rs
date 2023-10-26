@@ -9,6 +9,8 @@ static USAGE: &str = "
 Explodes a row into multiple ones by splitting a column value based on the
 given separator.
 
+This is the reverse of the implode command.
+
 For instance the following CSV:
 
 name,colors

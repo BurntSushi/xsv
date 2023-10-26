@@ -85,6 +85,7 @@ macro_rules! command_list {
     headers     Show header names
     help        Show this usage message.
     hist        Print a histogram with rows of CSV file as bars
+    implode     Collapse consecutive identical rows based on a diverging column
     index       Create CSV index for faster access
     input       Read CSV data with special quoting rules
     join        Join CSV files
@@ -202,6 +203,7 @@ enum Command {
     Headers,
     Help,
     Hist,
+    Implode,
     Index,
     Input,
     Join,
@@ -257,6 +259,7 @@ impl Command {
                 Ok(())
             }
             Command::Hist => cmd::hist::run(argv),
+            Command::Implode => cmd::implode::run(argv),
             Command::Index => cmd::index::run(argv),
             Command::Input => cmd::input::run(argv),
             Command::Join => cmd::join::run(argv),

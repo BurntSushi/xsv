@@ -13,6 +13,7 @@ pub mod frequency;
 pub mod glob;
 pub mod headers;
 pub mod hist;
+pub mod implode;
 pub mod index;
 pub mod input;
 pub mod join;
