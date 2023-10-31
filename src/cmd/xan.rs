@@ -246,6 +246,9 @@ macro_rules! xan_function_list {
     - abspath(string) -> string
         Return absolute & canonicalized path.
 
+    - isfile(string) -> bool
+        Return whether the given path is an existing file on disk.
+
     - pathjoin(string, *strings) -> string
         Join multiple paths correctly.
 

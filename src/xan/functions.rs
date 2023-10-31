@@ -4,6 +4,7 @@ use std::cmp::{Ordering, PartialOrd};
 use std::fs::File;
 use std::io::Read;
 use std::ops::{Add, Div, Mul, Sub};
+use std::path::Path;
 use std::path::PathBuf;
 
 use encoding::{label::encoding_from_whatwg_label, DecoderTrap};
@@ -41,6 +42,7 @@ pub fn get_function(name: &str) -> Result<Function, PrepareError> {
         "gt" => |args| number_compare(args, Ordering::is_gt),
         "gte" => |args| number_compare(args, Ordering::is_ge),
         "idiv" => |args| arithmetic_op(args, DynamicNumber::idiv),
+        "isfile" => isfile,
         "join" => join,
         "last" => last,
         "len" => len,
@@ -499,6 +501,13 @@ fn decoder_trap_from_str(name: &str) -> Result<DecoderTrap, CallError> {
         "ignore" => DecoderTrap::Ignore,
         _ => return Err(CallError::UnsupportedDecoderTrap(name.to_string())),
     })
+}
+
+fn isfile(args: BoundArguments) -> FunctionResult {
+    let path = args.get1_as_str()?;
+    let path = Path::new(path.as_ref());
+
+    Ok(DynamicValue::Boolean(path.is_file()))
 }
 
 fn read(args: BoundArguments) -> FunctionResult {
