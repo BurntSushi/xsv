@@ -1,5 +1,54 @@
 # The `xsv` Gazette
 
+## Oct. 2023 Edition
+
+### Summary
+
+- [External memory sort](#external-memory-sort)
+- [The implode command](#the-implode-command)
+- [isfile function](#isfile-function)
+
+### External memory sort
+
+The `xsv sort` command is now able to sort very large files that would not fit into memory by relying on [external sorting](https://en.wikipedia.org/wiki/External_sorting), using the `-e/--external` flag.
+
+You can also tweak the `--tmp-dir` flag if you want temporary files to be written in a different directory than the one currently holding the CSV file.
+
+And if you want to allow more memory than the default 512MB, you can use the `-m/--memory-limit` flag.
+
+### The implode command
+
+The newly added implode command is the reverse of the `explode` one.
+
+This means that the following file:
+
+```csv
+name,color
+John,blue
+John,yellow
+Mary,red
+```
+
+Will be imploded as:
+
+```csv
+name,color
+John,blue|yellow
+Mary,red
+```
+
+Using:
+
+```bash
+xsv implode color '|' file.csv
+```
+
+### isfile function
+
+An `isfile` function was added to the scripting language so you can assess whether the given path exists as a file on disk.
+
+---
+
 ## Sept. 2023 Edition
 
 A lot of shiny and exciting updates to `xsv` this september!
