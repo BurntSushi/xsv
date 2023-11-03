@@ -305,7 +305,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             .enumerate()
             .map(|(i, _)| {
                 let allowed_width = column_widths[i];
-                util::unicode_aware_rpad_with_ellipsis("…", allowed_width, " ").normal()
+                util::unicode_aware_rpad_with_ellipsis("…", allowed_width, " ").dimmed()
             })
             .collect();
 
