@@ -186,23 +186,29 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             HRPosition::Middle => '├',
         });
 
-        headers
-            .iter()
-            .take(columns_fitting_in_budget)
-            .enumerate()
-            .for_each(|(i, _)| {
-                s.push_str(&"─".repeat(column_widths[i] + 2));
+        (0..columns_fitting_in_budget).for_each(|i| {
+            s.push_str(&"─".repeat(column_widths[i] + 2));
 
-                if i == columns_fitting_in_budget - 1 {
-                    return;
-                }
+            if i == columns_fitting_in_budget - 1 {
+                return;
+            }
 
-                s.push(match pos {
-                    HRPosition::Bottom => '┬',
-                    HRPosition::Top => '┴',
-                    HRPosition::Middle => '┼',
-                });
+            s.push(match pos {
+                HRPosition::Bottom => '┬',
+                HRPosition::Top => '┴',
+                HRPosition::Middle => '┼',
             });
+        });
+
+        if !all_columns_shown {
+            s.push(match pos {
+                HRPosition::Bottom => '┬',
+                HRPosition::Top => '┴',
+                HRPosition::Middle => '┼',
+            });
+
+            s.push_str(&"─".repeat(3));
+        }
 
         s.push(match pos {
             HRPosition::Bottom => '┐',
