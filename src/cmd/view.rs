@@ -183,24 +183,23 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             .take(columns_fitting_in_budget)
             .enumerate()
             .for_each(|(i, _)| {
+                let mut s = String::new();
+
+                s.push_str(&"─".repeat(column_widths[i] + (if i > 0 { 2 } else { 1 })));
+
                 let mut c = match pos {
-                    HRPosition::Bottom => "┬",
-                    HRPosition::Top => "┴",
-                    HRPosition::Middle => "┼",
+                    HRPosition::Bottom => '┬',
+                    HRPosition::Top => '┴',
+                    HRPosition::Middle => '┼',
                 };
 
-                print!(
-                    "{}",
-                    "─"
-                        .repeat(column_widths[i] + (if i > 0 { 2 } else { 1 }))
-                        .dimmed()
-                );
-
                 if i == columns_fitting_in_budget - 1 {
-                    c = "─";
+                    c = '─';
                 }
 
-                print!("{}", c.dimmed());
+                s.push(c);
+
+                print!("{}", s.dimmed());
             });
 
         print!("\n");
