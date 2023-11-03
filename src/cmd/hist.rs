@@ -138,12 +138,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
 
         let remaining_cols = cols - pct_cols;
-        let count_cols = usize::min(
-            (remaining_cols as f64 * 0.2).floor() as usize,
-            histogram.value_max_width(&mut formatter).unwrap(),
-        );
+        let count_cols = histogram.value_max_width(&mut formatter).unwrap();
         let label_cols = usize::min(
-            (remaining_cols as f64 * 0.3).floor() as usize,
+            (remaining_cols as f64 * 0.4).floor() as usize,
             histogram.label_max_width().unwrap(),
         );
         let bar_cols = remaining_cols - count_cols - label_cols - 4;
