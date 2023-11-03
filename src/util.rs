@@ -356,8 +356,8 @@ pub fn unicode_aware_ellipsis(string: &str, max_width: usize) -> String {
     let mut string = string.replace('\n', " ");
     string = string.replace('\r', " ");
     string = string.replace('\t', " ");
-    string = string.replace('\u{200F}', "");
-    string = string.replace('\u{200E}', "");
+    // string = string.replace('\u{200F}', "");
+    // string = string.replace('\u{200E}', "");
 
     let mut width: usize = 0;
     let graphemes = string.graphemes(true).collect::<Vec<_>>();
@@ -401,7 +401,14 @@ pub fn unicode_aware_rpad<'a>(string: &'a str, width: usize, padding: &str) -> C
 }
 
 pub fn unicode_aware_rpad_with_ellipsis(string: &str, width: usize, padding: &str) -> String {
-    unicode_aware_rpad(&unicode_aware_ellipsis(string, width), width, padding).into_owned()
+    let mut string =
+        unicode_aware_rpad(&unicode_aware_ellipsis(string, width), width, padding).into_owned();
+
+    // NOTE: we force back to LTR at the end of the string, so it does not destroy
+    // table formatting & wrapping.
+    string.push('\u{200E}');
+
+    string
 }
 
 pub fn unicode_aware_wrap(string: &str, max_width: usize, indent: usize) -> String {

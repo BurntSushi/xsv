@@ -255,7 +255,7 @@ impl Histogram {
     }
 
     fn label_max_width(&self) -> Option<usize> {
-        self.bars.iter().map(|bar| bar.label.width_cjk()).max()
+        self.bars.iter().map(|bar| bar.label.width()).max()
     }
 
     fn value_max_width(&self, fmt: &mut Formatter) -> Option<usize> {
