@@ -6,7 +6,7 @@ use unicode_width::UnicodeWidthStr;
 use util;
 use CliResult;
 
-const TRAILING_COLS: usize = 4;
+const TRAILING_COLS: usize = 7;
 const PER_CELL_PADDING_COLS: usize = 3;
 
 static USAGE: &str = "
@@ -178,34 +178,44 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 
     let print_horizontal_ruler = |pos: HRPosition| {
+        let mut s = String::new();
+
+        s.push(match pos {
+            HRPosition::Bottom => '┌',
+            HRPosition::Top => '└',
+            HRPosition::Middle => '├',
+        });
+
         headers
             .iter()
             .take(columns_fitting_in_budget)
             .enumerate()
             .for_each(|(i, _)| {
-                let mut s = String::new();
+                s.push_str(&"─".repeat(column_widths[i] + 2));
 
-                s.push_str(&"─".repeat(column_widths[i] + (if i > 0 { 2 } else { 1 })));
+                if i == columns_fitting_in_budget - 1 {
+                    return;
+                }
 
-                let mut c = match pos {
+                s.push(match pos {
                     HRPosition::Bottom => '┬',
                     HRPosition::Top => '┴',
                     HRPosition::Middle => '┼',
-                };
-
-                if i == columns_fitting_in_budget - 1 {
-                    c = '─';
-                }
-
-                s.push(c);
-
-                print!("{}", s.dimmed());
+                });
             });
 
-        print!("\n");
+        s.push(match pos {
+            HRPosition::Bottom => '┐',
+            HRPosition::Top => '┘',
+            HRPosition::Middle => '┤',
+        });
+
+        println!("{}", s.dimmed());
     };
 
     let print_row = |row: Vec<colored::ColoredString>| {
+        print!("{}", "│ ".dimmed());
+
         for (i, cell) in row.iter().enumerate() {
             if i != 0 {
                 print!("{}", " │ ".dimmed());
@@ -218,6 +228,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             print!("{}", " │ …".dimmed());
         }
 
+        print!("{}", " │".dimmed());
         print!("\n");
     };
 
