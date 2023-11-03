@@ -171,19 +171,39 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         )
     };
 
-    let hr_cols: usize = if args.flag_expand {
-        column_widths
+    enum HRPosition {
+        Top,
+        Middle,
+        Bottom,
+    }
+
+    let print_horizontal_ruler = |pos: HRPosition| {
+        headers
             .iter()
             .take(columns_fitting_in_budget)
-            .sum::<usize>()
-            + (columns_fitting_in_budget - 1) * PER_CELL_PADDING_COLS
-            + if all_columns_shown { 0 } else { TRAILING_COLS }
-    } else {
-        cols
-    };
+            .enumerate()
+            .for_each(|(i, _)| {
+                let mut c = match pos {
+                    HRPosition::Bottom => "┬",
+                    HRPosition::Top => "┴",
+                    HRPosition::Middle => "┼",
+                };
 
-    let print_horizontal_ruler = || {
-        println!("{}", "─".repeat(hr_cols).dimmed());
+                print!(
+                    "{}",
+                    "─"
+                        .repeat(column_widths[i] + (if i > 0 { 2 } else { 1 }))
+                        .dimmed()
+                );
+
+                if i == columns_fitting_in_budget - 1 {
+                    c = "─";
+                }
+
+                print!("{}", c.dimmed());
+            });
+
+        print!("\n");
     };
 
     let print_row = |row: Vec<colored::ColoredString>| {
@@ -202,8 +222,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         print!("\n");
     };
 
-    let print_headers = || {
-        print_horizontal_ruler();
+    let print_headers = |above: bool| {
+        print_horizontal_ruler(if above {
+            HRPosition::Bottom
+        } else {
+            HRPosition::Middle
+        });
 
         let headers_row: Vec<colored::ColoredString> = headers
             .iter()
@@ -221,12 +245,16 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             .collect();
 
         print_row(headers_row);
-        print_horizontal_ruler();
+        print_horizontal_ruler(if above {
+            HRPosition::Middle
+        } else {
+            HRPosition::Top
+        });
     };
 
     println!();
     print_info();
-    print_headers();
+    print_headers(true);
 
     for record in records.iter() {
         let row: Vec<colored::ColoredString> = record
@@ -274,7 +302,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         print_row(row);
     }
 
-    print_headers();
+    print_headers(false);
     print_info();
     println!();
 
