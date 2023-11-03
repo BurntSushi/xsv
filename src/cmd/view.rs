@@ -183,20 +183,20 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     };
 
     let print_horizontal_ruler = || {
-        println!("{}", "-".repeat(hr_cols));
+        println!("{}", "─".repeat(hr_cols).dimmed());
     };
 
     let print_row = |row: Vec<colored::ColoredString>| {
         for (i, cell) in row.iter().enumerate() {
             if i != 0 {
-                print!(" | ");
+                print!("{}", " │ ".dimmed());
             }
 
             print!("{}", cell);
         }
 
         if !all_columns_shown {
-            print!(" | …");
+            print!("{}", " │ …".dimmed());
         }
 
         print!("\n");
