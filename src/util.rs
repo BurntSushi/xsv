@@ -412,6 +412,7 @@ pub fn unicode_aware_wrap(string: &str, max_width: usize, indent: usize) -> Stri
     for grapheme in string.graphemes(true) {
         if grapheme == "\n" {
             lines.push(current_string);
+            current_width = 0;
             current_string = String::new();
             continue;
         }
@@ -423,10 +424,9 @@ pub fn unicode_aware_wrap(string: &str, max_width: usize, indent: usize) -> Stri
             lines.push(current_string);
             current_width = width;
             current_string = String::new();
-            current_string.push_str(grapheme);
-        } else {
-            current_string.push_str(grapheme);
         }
+
+        current_string.push_str(grapheme);
     }
 
     if !current_string.is_empty() {
@@ -444,7 +444,7 @@ pub fn unicode_aware_wrap(string: &str, max_width: usize, indent: usize) -> Stri
     for line in lines_iter {
         wrapped.push('\n');
         wrapped.push_str(&" ".repeat(indent));
-        wrapped.push_str(&line);
+        wrapped.push_str(line.trim_start());
     }
 
     wrapped
