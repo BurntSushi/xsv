@@ -405,49 +405,18 @@ pub fn unicode_aware_rpad_with_ellipsis(string: &str, width: usize, padding: &st
 }
 
 pub fn unicode_aware_wrap(string: &str, max_width: usize, indent: usize) -> String {
-    let mut lines: Vec<String> = Vec::new();
-    let mut current_string = String::new();
-    let mut current_width: usize = 0;
-
-    for grapheme in string.graphemes(true) {
-        if grapheme == "\n" {
-            lines.push(current_string);
-            current_width = 0;
-            current_string = String::new();
-            continue;
-        }
-
-        let width = grapheme.width();
-        current_width += width;
-
-        if current_width > max_width {
-            lines.push(current_string);
-            current_width = width;
-            current_string = String::new();
-        }
-
-        current_string.push_str(grapheme);
-    }
-
-    if !current_string.is_empty() {
-        lines.push(current_string);
-    }
-
-    let mut wrapped = String::new();
-    let mut lines_iter = lines.into_iter();
-
-    match lines_iter.next() {
-        None => return wrapped,
-        Some(line) => wrapped.push_str(&line),
-    }
-
-    for line in lines_iter {
-        wrapped.push('\n');
-        wrapped.push_str(&" ".repeat(indent));
-        wrapped.push_str(line.trim_start());
-    }
-
-    wrapped
+    textwrap::wrap(string, max_width)
+        .iter()
+        .enumerate()
+        .map(|(i, line)| {
+            if i == 0 {
+                line.to_string()
+            } else {
+                textwrap::indent(line, &" ".repeat(indent))
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 #[cfg(test)]
