@@ -351,6 +351,7 @@ struct DisplayedColumn {
 #[derive(Debug)]
 struct DisplayedColumns {
     left: Vec<DisplayedColumn>,
+    // NOTE: columns are inserted into right in reversed order
     right: Vec<DisplayedColumn>,
 }
 
@@ -451,6 +452,10 @@ fn infer_best_column_display(
     let mut attempts: Vec<DisplayedColumns> = Vec::new();
 
     // TODO: this code can be greatly optimized and early break
+    // NOTE: here we iteratively test for a range of max width being a division
+    // of the term width. But we could also test for an increasing number of
+    // columns, all while respecting the width proportion of each column compared
+    // to the other selected ones.
     for divider in 1..=max_column_widths.len() {
         let mut attempt = DisplayedColumns::new();
 
