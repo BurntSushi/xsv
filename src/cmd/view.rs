@@ -1,3 +1,5 @@
+use std::io::{self, Write};
+
 use colored::{self, Colorize};
 use csv;
 
@@ -60,6 +62,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     if args.flag_force_colors {
         colored::control::set_override(true);
     }
+
+    let output = io::stdout();
 
     let cols = util::acquire_term_cols(&args.flag_cols);
 
@@ -140,13 +144,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut formatter = util::acquire_number_formatter();
 
-    let mut print_info = || {
+    let mut write_info = || -> Result<(), io::Error> {
         let pretty_records_len = util::pretty_print_float(&mut formatter, records.len());
         let pretty_headers_len = util::pretty_print_float(&mut formatter, headers.len() - 1);
         let pretty_displayed_headers_len =
             util::pretty_print_float(&mut formatter, columns_fitting_in_budget - 1);
 
-        println!(
+        writeln!(
+            &output,
             "Displaying {} col{} from {} of {}",
             if all_columns_shown {
                 format!("{}", pretty_headers_len.cyan())
@@ -168,7 +173,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 None => "<stdin>",
             }
             .dimmed()
-        )
+        )?;
+
+        Ok(())
     };
 
     enum HRPosition {
@@ -177,7 +184,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         Bottom,
     }
 
-    let print_horizontal_ruler = |pos: HRPosition| {
+    let write_horizontal_ruler = |pos: HRPosition| -> Result<(), io::Error> {
         let mut s = String::new();
 
         s.push(match pos {
@@ -216,34 +223,38 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             HRPosition::Middle => '┤',
         });
 
-        println!("{}", s.dimmed());
+        writeln!(&output, "{}", s.dimmed())?;
+
+        Ok(())
     };
 
-    let print_row = |row: Vec<colored::ColoredString>| {
-        print!("{}", "│ ".dimmed());
+    let write_row = |row: Vec<colored::ColoredString>| -> Result<(), io::Error> {
+        write!(&output, "{}", "│ ".dimmed())?;
 
         for (i, cell) in row.iter().enumerate() {
             if i != 0 {
-                print!("{}", " │ ".dimmed());
+                write!(&output, "{}", " │ ".dimmed())?;
             }
 
-            print!("{}", cell);
+            write!(&output, "{}", cell)?;
         }
 
         if !all_columns_shown {
-            print!("{}", " │ …".dimmed());
+            write!(&output, "{}", " │ …".dimmed())?;
         }
 
-        print!("{}", " │".dimmed());
-        print!("\n");
+        write!(&output, "{}", " │".dimmed())?;
+        write!(&output, "\n")?;
+
+        Ok(())
     };
 
-    let print_headers = |above: bool| {
-        print_horizontal_ruler(if above {
+    let write_headers = |above: bool| -> Result<(), io::Error> {
+        write_horizontal_ruler(if above {
             HRPosition::Bottom
         } else {
             HRPosition::Middle
-        });
+        })?;
 
         let headers_row: Vec<colored::ColoredString> = headers
             .iter()
@@ -260,17 +271,19 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             })
             .collect();
 
-        print_row(headers_row);
-        print_horizontal_ruler(if above {
+        write_row(headers_row)?;
+        write_horizontal_ruler(if above {
             HRPosition::Middle
         } else {
             HRPosition::Top
-        });
+        })?;
+
+        Ok(())
     };
 
-    println!();
-    print_info();
-    print_headers(true);
+    writeln!(&output)?;
+    write_info()?;
+    write_headers(true)?;
 
     for record in records.iter() {
         let row: Vec<colored::ColoredString> = record
@@ -301,7 +314,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             })
             .collect();
 
-        print_row(row);
+        write_row(row)?;
     }
 
     if !all_records_buffered {
@@ -315,12 +328,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             })
             .collect();
 
-        print_row(row);
+        write_row(row)?;
     }
 
-    print_headers(false);
-    print_info();
-    println!();
+    write_headers(false)?;
+    write_info()?;
+    writeln!(&output)?;
 
     Ok(())
 }
