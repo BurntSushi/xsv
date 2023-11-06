@@ -443,6 +443,11 @@ fn infer_best_column_display(
     for divider in 1..=max_column_widths.len() {
         let mut attempt = DisplayedColumns::new();
 
+        // If we don't have reasonable space we break
+        if cols / divider <= 3 {
+            break;
+        }
+
         let widths = adjust_column_widths(max_column_widths, cols / divider);
 
         let mut col_budget = cols - TRAILING_COLS;
