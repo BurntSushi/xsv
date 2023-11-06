@@ -6,7 +6,7 @@ use unicode_width::UnicodeWidthStr;
 use util;
 use CliResult;
 
-const TRAILING_COLS: usize = 7;
+const TRAILING_COLS: usize = 8;
 const PER_CELL_PADDING_COLS: usize = 3;
 
 static USAGE: &str = "
@@ -69,7 +69,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut rdr = rconfig.reader()?;
 
-    let potential_headers = prepend(rdr.headers()?, "*");
+    let potential_headers = prepend(rdr.headers()?, "-");
     let mut headers: Vec<String> = Vec::new();
 
     for (i, header) in potential_headers.iter().enumerate() {
