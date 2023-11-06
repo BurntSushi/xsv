@@ -198,22 +198,22 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 return;
             }
 
+            if !all_columns_shown && Some(i) == displayed_columns.split_point() {
+                s.push(match pos {
+                    HRPosition::Bottom => '┬',
+                    HRPosition::Top => '┴',
+                    HRPosition::Middle => '┼',
+                });
+
+                s.push_str(&"─".repeat(3));
+            }
+
             s.push(match pos {
                 HRPosition::Bottom => '┬',
                 HRPosition::Top => '┴',
                 HRPosition::Middle => '┼',
             });
         });
-
-        if !all_columns_shown {
-            s.push(match pos {
-                HRPosition::Bottom => '┬',
-                HRPosition::Top => '┴',
-                HRPosition::Middle => '┼',
-            });
-
-            s.push_str(&"─".repeat(3));
-        }
 
         s.push(match pos {
             HRPosition::Bottom => '┐',
@@ -235,10 +235,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             }
 
             write!(&output, "{}", cell)?;
-        }
 
-        if !all_columns_shown {
-            write!(&output, "{}", " │ …".dimmed())?;
+            if !all_columns_shown && Some(i) == displayed_columns.split_point() {
+                write!(&output, "{}", " │ …".dimmed())?;
+            }
         }
 
         write!(&output, "{}", " │".dimmed())?;
@@ -341,16 +341,17 @@ fn adjust_column_widths(widths: &Vec<usize>, max_width: usize) -> Vec<usize> {
     widths.iter().map(|m| usize::min(*m, max_width)).collect()
 }
 
+#[derive(Debug)]
 struct DisplayedColumn {
     index: usize,
     allowed_width: usize,
     max_width: usize,
 }
 
+#[derive(Debug)]
 struct DisplayedColumns {
     left: Vec<DisplayedColumn>,
     right: Vec<DisplayedColumn>,
-    // split_point: Option<usize>,
 }
 
 impl DisplayedColumns {
@@ -358,8 +359,11 @@ impl DisplayedColumns {
         DisplayedColumns {
             left: Vec::new(),
             right: Vec::new(),
-            // split_point: None,
         }
+    }
+
+    fn split_point(&self) -> Option<usize> {
+        self.left.last().map(|col| col.index)
     }
 
     fn from_widths(widths: Vec<usize>) -> Self {
@@ -377,7 +381,6 @@ impl DisplayedColumns {
         DisplayedColumns {
             left,
             right: Vec::new(),
-            // split_point: None,
         }
     }
 
@@ -391,12 +394,18 @@ impl DisplayedColumns {
             .count()
     }
 
-    fn push_left(&mut self, index: usize, allowed_width: usize, max_width: usize) {
-        self.left.push(DisplayedColumn {
+    fn push(&mut self, left: bool, index: usize, allowed_width: usize, max_width: usize) {
+        let col = DisplayedColumn {
             index,
             allowed_width,
             max_width,
-        });
+        };
+
+        if left {
+            self.left.push(col);
+        } else {
+            self.right.push(col);
+        }
     }
 
     fn iter(&self) -> DisplayedColumnsIter {
@@ -416,7 +425,9 @@ impl<'a> Iterator for DisplayedColumnsIter<'a> {
     type Item = &'a DisplayedColumn;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter_left.next().or_else(|| self.iter_right.next())
+        self.iter_left
+            .next()
+            .or_else(|| self.iter_right.next_back())
     }
 }
 
@@ -451,20 +462,47 @@ fn infer_best_column_display(
         let widths = adjust_column_widths(max_column_widths, cols / divider);
 
         let mut col_budget = cols - TRAILING_COLS;
+        let mut widths_iter = widths.iter().enumerate();
+        let mut toggle = true;
+        let mut first = true;
 
-        for (i, column_width) in widths.iter().enumerate() {
-            if col_budget == 0 {
-                break;
-            }
+        loop {
+            let value = if toggle {
+                widths_iter
+                    .next()
+                    .map(|step| (step, true))
+                    .or_else(|| widths_iter.next_back().map(|step| (step, false)))
+            } else {
+                widths_iter
+                    .next_back()
+                    .map(|step| (step, false))
+                    .or_else(|| widths_iter.next().map(|step| (step, true)))
+            };
 
-            if *column_width + PER_CELL_PADDING_COLS > col_budget {
-                if col_budget > 2 {
-                    attempt.push_left(i, col_budget, max_column_widths[i]);
+            if let Some(((i, column_width), left)) = value {
+                // NOTE: we favor left-leaning because of the index column
+                if first {
+                    first = false;
+                } else {
+                    toggle = !toggle;
                 }
+
+                if col_budget == 0 {
+                    break;
+                }
+
+                if *column_width + PER_CELL_PADDING_COLS > col_budget {
+                    if col_budget > 7 {
+                        attempt.push(left, i, col_budget, max_column_widths[i]);
+                    }
+                    break;
+                }
+
+                col_budget -= column_width + PER_CELL_PADDING_COLS;
+                attempt.push(left, i, *column_width, max_column_widths[i]);
+            } else {
                 break;
             }
-            col_budget -= column_width + PER_CELL_PADDING_COLS;
-            attempt.push_left(i, *column_width, max_column_widths[i]);
         }
 
         attempts.push(attempt);
