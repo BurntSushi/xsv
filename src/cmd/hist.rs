@@ -170,7 +170,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             println!(
                 "{} |{} {}|{}|",
                 label,
-                util::unicode_aware_rpad_with_ellipsis(
+                util::unicode_aware_lpad_with_ellipsis(
                     &util::pretty_print_float(&mut formatter, bar.value),
                     count_cols,
                     " "

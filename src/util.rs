@@ -431,7 +431,12 @@ pub fn unicode_aware_ellipsis(string: &str, max_width: usize) -> String {
     parts.into_iter().collect::<String>()
 }
 
-pub fn unicode_aware_rpad<'a>(string: &'a str, width: usize, padding: &str) -> Cow<'a, str> {
+pub fn unicode_aware_pad<'a>(
+    left: bool,
+    string: &'a str,
+    width: usize,
+    padding: &str,
+) -> Cow<'a, str> {
     let string_width = string.width();
 
     if string_width >= width {
@@ -439,21 +444,46 @@ pub fn unicode_aware_rpad<'a>(string: &'a str, width: usize, padding: &str) -> C
     }
 
     let mut padded = String::new();
-    padded.push_str(string);
-    padded.push_str(&padding.repeat(width - string_width));
+    let padding = padding.repeat(width - string_width);
+
+    if left {
+        padded.push_str(&padding);
+        padded.push_str(string);
+    } else {
+        padded.push_str(string);
+        padded.push_str(&padding);
+    }
 
     Cow::Owned(padded)
 }
 
-pub fn unicode_aware_rpad_with_ellipsis(string: &str, width: usize, padding: &str) -> String {
+pub fn unicode_aware_rpad<'a>(string: &'a str, width: usize, padding: &str) -> Cow<'a, str> {
+    unicode_aware_pad(false, string, width, padding)
+}
+
+pub fn unicode_aware_pad_with_ellipsis(
+    left: bool,
+    string: &str,
+    width: usize,
+    padding: &str,
+) -> String {
     let mut string =
-        unicode_aware_rpad(&unicode_aware_ellipsis(string, width), width, padding).into_owned();
+        unicode_aware_pad(left, &unicode_aware_ellipsis(string, width), width, padding)
+            .into_owned();
 
     // NOTE: we force back to LTR at the end of the string, so it does not destroy
     // table formatting & wrapping.
     string.push('\u{200E}');
 
     string
+}
+
+pub fn unicode_aware_rpad_with_ellipsis(string: &str, width: usize, padding: &str) -> String {
+    unicode_aware_pad_with_ellipsis(false, string, width, padding)
+}
+
+pub fn unicode_aware_lpad_with_ellipsis(string: &str, width: usize, padding: &str) -> String {
+    unicode_aware_pad_with_ellipsis(true, string, width, padding)
 }
 
 pub fn unicode_aware_wrap(string: &str, max_width: usize, indent: usize) -> String {
