@@ -27,6 +27,8 @@ Usage:
     xsv hist --help
 
 hist options:
+    --name <name>            Name of the represented field when no field column is
+                             present. [default: unknown].
     -f, --field <name>       Name of the field column. I.e. the one containing
                              the represented value (remember this command can
                              print several histograms). [default: field].
@@ -81,6 +83,7 @@ struct Args {
     flag_domain_max: String,
     flag_simple: bool,
     flag_rainbow: bool,
+    flag_name: String,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -96,7 +99,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut rdr = conf.reader()?;
     let headers = rdr.byte_headers()?;
 
-    let field_pos = find_column_index(headers, &args.flag_field)?;
+    let field_pos_option = find_column_index(headers, &args.flag_field).ok();
     let label_pos = find_column_index(headers, &args.flag_label)?;
     let value_pos = find_column_index(headers, &args.flag_value)?;
 
@@ -105,7 +108,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut record = csv::StringRecord::new();
 
     while rdr.read_record(&mut record)? {
-        let field = record[field_pos].to_string();
+        let field = match field_pos_option {
+            Some(field_pos) => record[field_pos].to_string(),
+            None => args.flag_name.clone(),
+        };
         let label = record[label_pos].to_string();
         let value = record[value_pos]
             .parse::<f64>()
@@ -132,7 +138,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         };
 
         println!(
-            "\nHistogram for field {} (bars: {}, sum: {}, max: {}):\n",
+            "\nHistogram for {} (bars: {}, sum: {}, max: {}):\n",
             histogram.field.green(),
             util::pretty_print_float(&mut formatter, histogram.len()).cyan(),
             util::pretty_print_float(&mut formatter, sum).cyan(),
