@@ -10,6 +10,9 @@ use config::{Config, Delimiter};
 use util;
 use CliResult;
 
+const SIMPLE_BAR_CHARS: [&str; 2] = ["╸", "━"]; // "╾"
+const COMPLEX_BAR_CHARS: [&str; 8] = ["▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"];
+
 // TODO: log scales etc.
 
 static USAGE: &str = "
@@ -31,6 +34,8 @@ hist options:
                              label for a single bar of the histogram. [default: value].
     -v, --value <name>       Name of the count column. I.e. the one containing the value
                              for each bar. [default: count].
+    -S, --simple             Use simple characters to display the bars that will be less
+                             detailed but better suited to be written as raw text.
     --cols <num>             Width of the graph in terminal columns, i.e. characters.
                              Defaults to using all your terminal's width or 80 if
                              terminal's size cannot be found (i.e. when piping to file).
@@ -73,6 +78,7 @@ struct Args {
     flag_cols: Option<usize>,
     flag_force_colors: bool,
     flag_domain_max: String,
+    flag_simple: bool,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -147,14 +153,20 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
         let mut odd = false;
 
+        let chars: &[&str] = if args.flag_simple {
+            &SIMPLE_BAR_CHARS
+        } else {
+            &COMPLEX_BAR_CHARS
+        };
+
         for bar in histogram.bars() {
             let bar_width =
                 from_domain_to_range(bar.value, (0.0, domain_max), (0.0, bar_cols as f64));
 
             let mut bar_as_chars =
-                util::unicode_aware_rpad(&create_bar(bar_width), bar_cols, " ").clear();
+                util::unicode_aware_rpad(&create_bar(chars, bar_width), bar_cols, " ").clear();
 
-            if odd {
+            if !args.flag_simple && odd {
                 bar_as_chars = bar_as_chars.dimmed();
                 odd = false;
             } else {
@@ -194,9 +206,7 @@ fn from_domain_to_range(x: f64, domain: (f64, f64), range: (f64, f64)) -> f64 {
     pct * range_widht + range.0
 }
 
-fn create_bar(width: f64) -> String {
-    let chars = ["▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"];
-    // let chars = ["╸", "╾", "━"];
+fn create_bar(chars: &[&str], width: f64) -> String {
     let f = width.fract();
 
     if f < f64::EPSILON {
