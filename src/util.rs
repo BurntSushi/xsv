@@ -309,10 +309,13 @@ pub fn acquire_stty_size() -> Option<termsize::Size> {
     None
 }
 
-pub fn acquire_term_cols(cols: &Option<usize>) -> usize {
-    match cols {
+pub fn acquire_term_cols(cols_override: &Option<usize>) -> usize {
+    match cols_override {
         None => match termsize::get() {
-            None => 80,
+            None => match acquire_stty_size() {
+                None => 80,
+                Some(size) => size.cols as usize,
+            },
             Some(size) => size.cols as usize,
         },
         Some(c) => *c,
