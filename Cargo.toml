@@ -76,6 +76,7 @@ unicode-width = "0.1.11"
 uuid = { version = "0.8.1", features = ["v4"] }
 pager = "0.16.1"
 unicode-bidi = "0.3.13"
+emojis = "0.6.1"
 
 [dev-dependencies]
 quickcheck = { version = "0.7", default-features = false }

@@ -10,6 +10,7 @@ extern crate csv;
 extern crate csv_index;
 extern crate dateparser;
 extern crate docopt;
+extern crate emojis;
 extern crate encoding;
 extern crate ext_sort;
 extern crate filetime;

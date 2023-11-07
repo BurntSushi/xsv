@@ -507,6 +507,19 @@ pub fn unicode_aware_wrap(string: &str, max_width: usize, indent: usize) -> Stri
         .join("\n")
 }
 
+pub fn sanitize_emojis(string: &str) -> String {
+    string
+        .graphemes(true)
+        .map(|grapheme| match emojis::get(grapheme) {
+            None => Cow::Borrowed(grapheme),
+            Some(emoji) => Cow::Owned(format!(
+                ":{}:",
+                emoji.shortcode().unwrap_or("unknown-emoji")
+            )),
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

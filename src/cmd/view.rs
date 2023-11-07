@@ -111,7 +111,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut all_records_buffered = false;
 
-    let records = if args.flag_limit > 0 {
+    let records = {
         let limit = args.flag_limit as usize;
 
         let mut r_iter = rdr.into_records().enumerate();
@@ -124,7 +124,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 Some((i, record)) => {
                     records.push(prepend(&record?, &i.to_string()));
 
-                    if records.len() == limit {
+                    if limit > 0 && records.len() == limit {
                         break;
                     }
                 }
@@ -136,12 +136,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         }
 
         records
-    } else {
-        all_records_buffered = true;
-        rdr.into_records()
-            .enumerate()
-            .map(|(i, r)| r.map(|record| prepend(&record, &i.to_string())))
-            .collect::<Result<Vec<_>, _>>()?
     };
 
     let need_to_repeat_headers = match rows {
