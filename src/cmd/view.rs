@@ -16,8 +16,15 @@ static USAGE: &str = "
 Preview CSV data in the terminal in a human-friendly way with aligned columns,
 shiny colors & all.
 
-When using the -e/--expand flag, pipe into \"less -SR\" if you need to page the
-result, and use -C/--force-colors not to lose the colors:
+The command will by default try to display as many columns as possible but
+will truncate cells/columns to avoid overflowing available terminal screen.
+
+If you want to display all the columns using a pager, prefer using
+the -p/--pager flag that internally rely on the ubiquitous \"less\"
+command.
+
+If you still want to use a pager manually, don't forget to use
+the -e/--expand and -C/--force-colors flags before piping like so:
 
     $ xsv view -eC file.csv | less -SR
 
@@ -26,14 +33,15 @@ Usage:
     xsv view --help
 
 view options:
+    -p, --pager            Automatically use the \"less\" command to page the results.
+    -l, --limit <number>   Maximum of lines of files to read into memory. Set
+                           to <=0 to disable a limit. [default: 100].
+    -R, --rainbow          Alternating colors for columns, rather than color by value type.
     --cols <num>           Width of the graph in terminal columns, i.e. characters.
                            Defaults to using all your terminal's width or 80 if
                            terminal's size cannot be found (i.e. when piping to file).
     -C, --force-colors     Force colors even if output is not supposed to be able to
                            handle them.
-    -l, --limit <number>   Maximum of lines of files to read into memory. Set
-                           to <=0 to disable a limit. [default: 100].
-    -R, --rainbow          Alternating colors for columns, rather than color by value type.
     -e, --expand           Expand the table so that in can be easily piped to
                            a pager such as \"less\", with no with constraints.
 
@@ -48,6 +56,7 @@ Common options:
 #[derive(Deserialize)]
 struct Args {
     arg_input: Option<String>,
+    flag_pager: bool,
     flag_cols: Option<usize>,
     flag_delimiter: Option<Delimiter>,
     flag_no_headers: bool,
@@ -57,10 +66,24 @@ struct Args {
     flag_expand: bool,
 }
 
+impl Args {
+    fn infer_expand(&self) -> bool {
+        self.flag_pager || self.flag_expand
+    }
+
+    fn infer_force_colors(&self) -> bool {
+        self.flag_pager || self.flag_force_colors
+    }
+}
+
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
 
-    if args.flag_force_colors {
+    if args.flag_pager {
+        pager::Pager::with_pager("less -SR").setup();
+    }
+
+    if args.infer_force_colors() {
         colored::control::set_override(true);
     }
 
@@ -145,7 +168,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         .collect();
 
     let displayed_columns =
-        infer_best_column_display(cols, &max_column_widths, args.flag_expand, 1);
+        infer_best_column_display(cols, &max_column_widths, args.infer_expand(), 1);
 
     let all_columns_shown = displayed_columns.len() == headers.len();
 
