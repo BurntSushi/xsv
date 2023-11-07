@@ -144,7 +144,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         })
         .collect();
 
-    let displayed_columns = infer_best_column_display(cols, &max_column_widths, args.flag_expand);
+    let displayed_columns =
+        infer_best_column_display(cols, &max_column_widths, args.flag_expand, 1);
+
     let all_columns_shown = displayed_columns.len() == headers.len();
 
     let mut formatter = util::acquire_number_formatter();
@@ -201,10 +203,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         displayed_columns.iter().enumerate().for_each(|(i, col)| {
             s.push_str(&"─".repeat(col.allowed_width + 2));
 
-            if i == displayed_columns.len() - 1 {
-                return;
-            }
-
             if !all_columns_shown && Some(i) == displayed_columns.split_point() {
                 s.push(match pos {
                     HRPosition::Bottom => '┬',
@@ -213,6 +211,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 });
 
                 s.push_str(&"─".repeat(3));
+            }
+
+            if i == displayed_columns.len() - 1 {
+                return;
             }
 
             s.push(match pos {
@@ -452,6 +454,7 @@ fn infer_best_column_display(
     cols: usize,
     max_column_widths: &Vec<usize>,
     expand: bool,
+    left_advantage: usize,
 ) -> DisplayedColumns {
     if expand {
         // NOTE: we keep max column size to 3/4 of current screen
@@ -481,7 +484,7 @@ fn infer_best_column_display(
         let mut col_budget = cols - TRAILING_COLS;
         let mut widths_iter = widths.iter().enumerate();
         let mut toggle = true;
-        let mut first = true;
+        let mut left_leaning = left_advantage;
 
         loop {
             let value = if toggle {
@@ -497,9 +500,10 @@ fn infer_best_column_display(
             };
 
             if let Some(((i, column_width), left)) = value {
-                // NOTE: we favor left-leaning because of the index column
-                if first {
-                    first = false;
+                // NOTE: we favor left-leaning columns because of
+                // the index column or just for aesthetical reasons
+                if left_leaning > 0 {
+                    left_leaning -= 1;
                 } else {
                     toggle = !toggle;
                 }
