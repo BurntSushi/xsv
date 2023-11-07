@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::str;
 use std::thread;
 use std::time;
@@ -275,6 +276,37 @@ pub fn acquire_number_formatter() -> Formatter {
         .precision(Precision::Significance(5))
         .separator(',')
         .unwrap()
+}
+
+pub fn acquire_stty_size() -> Option<termsize::Size> {
+    if let Ok(output) = Command::new("/bin/sh")
+        .arg("-c")
+        .arg("stty size < /dev/tty")
+        .output()
+    {
+        let text = String::from_utf8_lossy(&output.stdout);
+        let parts = text.trim().split_whitespace().take(2).collect::<Vec<_>>();
+
+        if parts.len() < 2 {
+            return None;
+        }
+
+        let cols: u16 = if let Ok(c) = parts[1].parse() {
+            c
+        } else {
+            return None;
+        };
+
+        let rows: u16 = if let Ok(r) = parts[0].parse() {
+            r
+        } else {
+            return None;
+        };
+
+        return Some(termsize::Size { cols, rows });
+    }
+
+    None
 }
 
 pub fn acquire_term_cols(cols: &Option<usize>) -> usize {
