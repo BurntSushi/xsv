@@ -507,18 +507,61 @@ pub fn unicode_aware_wrap(string: &str, max_width: usize, indent: usize) -> Stri
         .join("\n")
 }
 
-pub fn sanitize_emojis(string: &str) -> String {
-    string
-        .graphemes(true)
-        .map(|grapheme| match emojis::get(grapheme) {
-            None => Cow::Borrowed(grapheme),
-            Some(emoji) => Cow::Owned(format!(
-                ":{}:",
-                emoji.shortcode().unwrap_or("unknown_emoji")
-            )),
-        })
-        .collect()
+pub struct EmojiSanitizer {
+    pattern: regex::Regex,
 }
+
+impl EmojiSanitizer {
+    pub fn new() -> Self {
+        let mut pattern = String::new();
+        pattern.push_str("(?:");
+
+        let mut all_emojis = emojis::iter().collect::<Vec<_>>();
+        all_emojis.sort_by_key(|e| std::cmp::Reverse((e.as_bytes().len(), e.as_bytes())));
+
+        for emoji in all_emojis {
+            pattern.push_str(&regex::escape(emoji.as_str()));
+            pattern.push('|');
+        }
+
+        pattern.pop();
+        pattern.push(')');
+
+        let pattern = regex::Regex::new(&pattern).unwrap();
+
+        EmojiSanitizer { pattern }
+    }
+
+    pub fn sanitize(&self, string: &str) -> String {
+        self.pattern
+            .replace_all(string, |caps: &regex::Captures| {
+                format!(
+                    ":{}:",
+                    match emojis::get(&caps[0]) {
+                        None => "unknown_emoji",
+                        Some(emoji) => match emoji.shortcode() {
+                            None => "unknown_emoji",
+                            Some(shortcode) => shortcode,
+                        },
+                    }
+                )
+            })
+            .to_string()
+    }
+}
+
+// pub fn sanitize_emojis(string: &str) -> String {
+//     string
+//         .graphemes(true)
+//         .map(|grapheme| match emojis::get(grapheme) {
+//             None => Cow::Borrowed(grapheme),
+//             Some(emoji) => Cow::Owned(format!(
+//                 ":{}:",
+//                 emoji.shortcode().unwrap_or("unknown_emoji")
+//             )),
+//         })
+//         .collect()
+// }
 
 #[cfg(test)]
 mod tests {
@@ -530,5 +573,15 @@ mod tests {
         assert_eq!(unicode_aware_ellipsis("abcde", 5), "abcde".to_string());
         assert_eq!(unicode_aware_ellipsis("abcde", 4), "abc…".to_string());
         assert_eq!(unicode_aware_ellipsis("abcde", 3), "ab…".to_string());
+    }
+
+    #[test]
+    fn test_emoji_sanitizer() {
+        let sanitizer = EmojiSanitizer::new();
+
+        assert_eq!(
+            sanitizer.sanitize("👩 hello 👩‍👩‍👧‍👦"),
+            ":woman: hello :family_woman_woman_girl_boy:"
+        );
     }
 }

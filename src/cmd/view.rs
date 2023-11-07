@@ -89,6 +89,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         colored::control::set_override(true);
     }
 
+    let emoji_sanitizer = util::EmojiSanitizer::new();
+
     let output = io::stdout();
 
     let cols = util::acquire_term_cols(&args.flag_cols);
@@ -127,7 +129,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                     let mut record = record?;
 
                     if args.flag_sanitize_emojis {
-                        record = sanitize_emojis(&record);
+                        record = sanitize_emojis(&emoji_sanitizer, &record);
                     }
 
                     record = prepend(&record, &i.to_string());
@@ -378,11 +380,11 @@ fn prepend(record: &csv::StringRecord, item: &str) -> csv::StringRecord {
     new_record
 }
 
-fn sanitize_emojis(record: &csv::StringRecord) -> csv::StringRecord {
-    record
-        .iter()
-        .map(|cell| util::sanitize_emojis(cell))
-        .collect()
+fn sanitize_emojis(
+    sanitizer: &util::EmojiSanitizer,
+    record: &csv::StringRecord,
+) -> csv::StringRecord {
+    record.iter().map(|cell| sanitizer.sanitize(cell)).collect()
 }
 
 fn adjust_column_widths(widths: &Vec<usize>, max_width: usize) -> Vec<usize> {
