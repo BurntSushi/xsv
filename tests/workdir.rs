@@ -38,6 +38,8 @@ impl Workdir {
             .join(name)
             .join(format!("test-{}", id));
         // println!("{:?}", dir);
+        let _ = std::fs::remove_dir_all(&dir);
+
         if let Err(err) = create_dir_all(&dir) {
             panic!("Could not create '{:?}': {}", dir, err);
         }
