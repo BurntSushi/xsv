@@ -39,6 +39,7 @@ hist options:
     --cols <num>             Width of the graph in terminal columns, i.e. characters.
                              Defaults to using all your terminal's width or 80 if
                              terminal's size cannot be found (i.e. when piping to file).
+    -R, --rainbow            Alternating colors for the bars.
     -m, --domain-max <type>  If \"max\" max bar length will be scaled to the
                              max bar value. If \"sum\", max bar length will be scaled to
                              the sum of bar values (i.e. sum of bar lengths will be 100%).
@@ -79,6 +80,7 @@ struct Args {
     flag_force_colors: bool,
     flag_domain_max: String,
     flag_simple: bool,
+    flag_rainbow: bool,
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -159,18 +161,26 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             &COMPLEX_BAR_CHARS
         };
 
-        for bar in histogram.bars() {
+        for (i, bar) in histogram.bars().enumerate() {
             let bar_width =
                 from_domain_to_range(bar.value, (0.0, domain_max), (0.0, bar_cols as f64));
 
             let mut bar_as_chars =
                 util::unicode_aware_rpad(&create_bar(chars, bar_width), bar_cols, " ").clear();
 
-            if !args.flag_simple && odd {
-                bar_as_chars = bar_as_chars.dimmed();
-                odd = false;
-            } else {
-                odd = true;
+            if !args.flag_simple {
+                if args.flag_rainbow {
+                    bar_as_chars = util::colorize(
+                        &util::colorizer_by_rainbow(i, &bar_as_chars),
+                        &bar_as_chars,
+                    );
+                } else {
+                    if odd {
+                        bar_as_chars = bar_as_chars.dimmed();
+                    }
+
+                    odd = !odd;
+                }
             }
 
             let label = util::unicode_aware_rpad_with_ellipsis(&bar.label, label_cols, " ");
