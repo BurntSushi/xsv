@@ -322,6 +322,16 @@ pub fn acquire_term_cols(cols_override: &Option<usize>) -> usize {
     }
 }
 
+pub fn acquire_term_rows() -> Option<usize> {
+    match termsize::get() {
+        None => match acquire_stty_size() {
+            None => None,
+            Some(size) => Some(size.rows as usize),
+        },
+        Some(size) => Some(size.rows as usize),
+    }
+}
+
 pub fn pretty_print_float<T: Numeric>(f: &mut Formatter, x: T) -> String {
     let mut string = f.fmt2(x).to_string();
 

@@ -10,6 +10,7 @@ use CliResult;
 
 const TRAILING_COLS: usize = 8;
 const PER_CELL_PADDING_COLS: usize = 3;
+const HEADERS_ROWS: usize = 8;
 
 static USAGE: &str = "
 Preview CSV data in the terminal in a human-friendly way with aligned columns,
@@ -66,6 +67,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let output = io::stdout();
 
     let cols = util::acquire_term_cols(&args.flag_cols);
+    let rows = util::acquire_term_rows();
 
     let rconfig = Config::new(&args.arg_input)
         .delimiter(args.flag_delimiter)
@@ -117,6 +119,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             .enumerate()
             .map(|(i, r)| r.map(|record| prepend(&record, &i.to_string())))
             .collect::<Result<Vec<_>, _>>()?
+    };
+
+    let need_to_repeat_headers = match rows {
+        None => true,
+        Some(r) => records.len() + HEADERS_ROWS > r,
     };
 
     let max_column_widths: Vec<usize> = headers
@@ -322,9 +329,14 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         write_row(row)?;
     }
 
-    write_headers(false)?;
-    write_info()?;
-    writeln!(&output)?;
+    if need_to_repeat_headers {
+        write_headers(false)?;
+        write_info()?;
+        writeln!(&output)?;
+    } else {
+        write_horizontal_ruler(HRPosition::Top)?;
+        writeln!(&output)?;
+    }
 
     Ok(())
 }
