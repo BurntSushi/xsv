@@ -44,6 +44,7 @@ view options:
                            handle them.
     -e, --expand           Expand the table so that in can be easily piped to
                            a pager such as \"less\", with no with constraints.
+    -E, --sanitize-emojis  Replace emojis by their shortcode to avoid formatting issues.
 
 Common options:
     -h, --help             Display this message
@@ -64,6 +65,7 @@ struct Args {
     flag_limit: isize,
     flag_rainbow: bool,
     flag_expand: bool,
+    flag_sanitize_emojis: bool,
 }
 
 impl Args {
@@ -122,7 +124,15 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             match r_iter.next() {
                 None => break,
                 Some((i, record)) => {
-                    records.push(prepend(&record?, &i.to_string()));
+                    let mut record = record?;
+
+                    if args.flag_sanitize_emojis {
+                        record = sanitize_emojis(&record);
+                    }
+
+                    record = prepend(&record, &i.to_string());
+
+                    records.push(record);
 
                     if limit > 0 && records.len() == limit {
                         break;
@@ -366,6 +376,13 @@ fn prepend(record: &csv::StringRecord, item: &str) -> csv::StringRecord {
     new_record.extend(record);
 
     new_record
+}
+
+fn sanitize_emojis(record: &csv::StringRecord) -> csv::StringRecord {
+    record
+        .iter()
+        .map(|cell| util::sanitize_emojis(cell))
+        .collect()
 }
 
 fn adjust_column_widths(widths: &Vec<usize>, max_width: usize) -> Vec<usize> {

@@ -514,7 +514,7 @@ pub fn sanitize_emojis(string: &str) -> String {
             None => Cow::Borrowed(grapheme),
             Some(emoji) => Cow::Owned(format!(
                 ":{}:",
-                emoji.shortcode().unwrap_or("unknown-emoji")
+                emoji.shortcode().unwrap_or("unknown_emoji")
             )),
         })
         .collect()
