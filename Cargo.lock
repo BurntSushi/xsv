@@ -2299,6 +2299,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "unicode-bidi"
+version = "0.3.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92888ba5573ff080736b3648696b70cafad7d250551175acbaa4e0385b3e1460"
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2564,6 +2570,7 @@ dependencies = [
  "termsize",
  "textwrap",
  "threadpool",
+ "unicode-bidi",
  "unicode-segmentation",
  "unicode-width",
  "unidecode",

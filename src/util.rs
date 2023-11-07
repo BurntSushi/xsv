@@ -461,6 +461,10 @@ pub fn unicode_aware_rpad<'a>(string: &'a str, width: usize, padding: &str) -> C
     unicode_aware_pad(false, string, width, padding)
 }
 
+fn has_rtl(string: &str) -> bool {
+    unicode_bidi::BidiInfo::new(string, None).has_rtl()
+}
+
 pub fn unicode_aware_pad_with_ellipsis(
     left: bool,
     string: &str,
@@ -473,7 +477,9 @@ pub fn unicode_aware_pad_with_ellipsis(
 
     // NOTE: we force back to LTR at the end of the string, so it does not destroy
     // table formatting & wrapping.
-    string.push('\u{200E}');
+    if has_rtl(&string) {
+        string.push('\u{200E}');
+    }
 
     string
 }

@@ -124,7 +124,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         };
 
         println!(
-            "\nHistogram for field {} (bars: {}, sum {}, max: {}):\n",
+            "\nHistogram for field {} (bars: {}, sum: {}, max: {}):\n",
             histogram.field.green(),
             util::pretty_print_float(&mut formatter, histogram.len()).cyan(),
             util::pretty_print_float(&mut formatter, sum).cyan(),
