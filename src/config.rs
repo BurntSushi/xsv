@@ -252,8 +252,8 @@ impl Config {
                     .copied()
                     .collect();
 
-                if selected.len() > 1 {
-                    return Err("target selection is more than a single column".to_string());
+                if selected.len() != 1 {
+                    return Err("target selection is not a single column".to_string());
                 }
 
                 Ok(selected[0])
