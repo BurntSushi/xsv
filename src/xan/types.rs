@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::cmp::{Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::BTreeMap;
+use std::collections::VecDeque;
 use std::convert::From;
 use std::ops::{Add, Div, Mul, Sub};
 
@@ -423,6 +424,50 @@ impl DynamicValue {
     pub fn is_falsey(&self) -> bool {
         !self.is_truthy()
     }
+
+    pub fn flat_iter(&self) -> DynamicValueFlatIter {
+        DynamicValueFlatIter::new(self)
+    }
+}
+
+struct DynamicValueFlatIter<'a> {
+    queue: VecDeque<&'a DynamicValue>,
+}
+
+impl<'a> DynamicValueFlatIter<'a> {
+    fn new(value: &'a DynamicValue) -> Self {
+        let initial_capacity = match value {
+            DynamicValue::List(list) => list.len(),
+            _ => 1,
+        };
+
+        let mut queue: VecDeque<&DynamicValue> = VecDeque::with_capacity(initial_capacity);
+        queue.push_back(value);
+
+        DynamicValueFlatIter { queue }
+    }
+}
+
+impl<'a> Iterator for DynamicValueFlatIter<'a> {
+    type Item = &'a DynamicValue;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.queue.pop_front() {
+                None => break None,
+                Some(value) => match value {
+                    DynamicValue::List(list) => {
+                        for subvalue in list.iter().rev() {
+                            self.queue.push_front(subvalue);
+                        }
+
+                        continue;
+                    }
+                    _ => break Some(value),
+                },
+            }
+        }
+    }
 }
 
 impl From<&str> for DynamicValue {
@@ -670,5 +715,40 @@ impl<'a> IntoIterator for BoundArguments<'a> {
 
     fn into_iter(self) -> Self::IntoIter {
         BoundArgumentsIntoIterator(self.stack.into_iter())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dynamic_value_flat_iter() {
+        let integer = DynamicValue::Integer(3);
+        let float = DynamicValue::Float(3.5);
+        let string = DynamicValue::String("test".to_string());
+        let list = DynamicValue::List(vec![DynamicValue::Integer(1), DynamicValue::Integer(2)]);
+        let recursive = DynamicValue::List(vec![
+            DynamicValue::List(vec![DynamicValue::Integer(1), DynamicValue::Integer(2)]),
+            DynamicValue::Integer(3),
+            DynamicValue::List(vec![DynamicValue::List(vec![DynamicValue::Integer(4)])]),
+        ]);
+
+        assert_eq!(integer.flat_iter().collect::<Vec<_>>(), vec![&integer]);
+        assert_eq!(float.flat_iter().collect::<Vec<_>>(), vec![&float]);
+        assert_eq!(string.flat_iter().collect::<Vec<_>>(), vec![&string]);
+        assert_eq!(
+            list.flat_iter().collect::<Vec<_>>(),
+            vec![&DynamicValue::Integer(1), &DynamicValue::Integer(2)]
+        );
+        assert_eq!(
+            recursive.flat_iter().collect::<Vec<_>>(),
+            vec![
+                &DynamicValue::Integer(1),
+                &DynamicValue::Integer(2),
+                &DynamicValue::Integer(3),
+                &DynamicValue::Integer(4)
+            ]
+        );
     }
 }
