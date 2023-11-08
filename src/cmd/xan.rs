@@ -269,6 +269,7 @@ macro_rules! xan_function_list {
 pub enum XanMode {
     Map,
     Filter,
+    Transform,
 }
 
 impl XanMode {
@@ -280,6 +281,13 @@ impl XanMode {
     }
 
     fn is_filter(&self) -> bool {
+        match self {
+            Self::Filter => true,
+            _ => false,
+        }
+    }
+
+    fn is_transform(self) -> bool {
         match self {
             Self::Filter => true,
             _ => false,
@@ -339,7 +347,8 @@ impl TryFrom<String> for XanErrorPolicy {
 pub struct XanCmdArgs {
     pub print_cheatsheet: bool,
     pub print_functions: bool,
-    pub new_column: Option<String>,
+    pub target_column: Option<String>,
+    pub rename_column: Option<String>,
     pub map_expr: String,
     pub input: Option<String>,
     pub output: Option<String>,
@@ -438,8 +447,8 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
             must_write_headers = true;
 
             if args.mode.is_map() {
-                if let Some(new_column) = &args.new_column {
-                    headers.push_field(new_column.as_bytes());
+                if let Some(target_column) = &args.target_column {
+                    headers.push_field(target_column.as_bytes());
                 }
             }
 

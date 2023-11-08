@@ -73,7 +73,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let xan_args = XanCmdArgs {
         print_cheatsheet: args.flag_cheatsheet,
         print_functions: args.flag_functions,
-        new_column: None,
+        target_column: None,
+        rename_column: None,
         map_expr: args.arg_expression,
         input: args.arg_input,
         output: args.flag_output,
