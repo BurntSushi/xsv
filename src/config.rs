@@ -240,6 +240,27 @@ impl Config {
         }
     }
 
+    pub fn single_selection(&self, first_record: &csv::ByteRecord) -> Result<usize, String> {
+        match self.select_columns {
+            None => Err("Config has no 'SelectColums'. Did you call \
+                         Config::select?"
+                .to_owned()),
+            Some(ref sel) => {
+                let selected: Vec<usize> = sel
+                    .selection(first_record, !self.no_headers)?
+                    .iter()
+                    .copied()
+                    .collect();
+
+                if selected.len() > 1 {
+                    return Err("target selection is more than a single column".to_string());
+                }
+
+                Ok(selected[0])
+            }
+        }
+    }
+
     pub fn write_headers<R: io::Read, W: io::Write>(
         &self,
         r: &mut csv::Reader<R>,
