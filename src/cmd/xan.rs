@@ -170,6 +170,9 @@ macro_rules! xan_function_list {
 
 ## String & sequence helpers
 
+    - compact(list) -> list
+        Drop all falsey values from given list.
+
     - concat(string, *strings) -> string
         Concatenate given strings into a single one.
 

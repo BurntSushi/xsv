@@ -30,6 +30,7 @@ pub fn get_function(name: &str) -> Result<Function, PrepareError> {
         "add" => |args| arithmetic_op(args, Add::add),
         "and" => and,
         "coalesce" => coalesce,
+        "compact" => compact,
         "concat" => concat,
         "contains" => contains,
         "count" => count,
@@ -402,6 +403,17 @@ fn replace(args: BoundArguments) -> FunctionResult {
     };
 
     Ok(DynamicValue::from(replaced))
+}
+
+fn compact(args: BoundArguments) -> FunctionResult {
+    let arg = args.get1_as_list()?;
+
+    Ok(DynamicValue::List(
+        arg.iter()
+            .filter(|value| value.is_truthy())
+            .cloned()
+            .collect(),
+    ))
 }
 
 // Arithmetics

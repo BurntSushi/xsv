@@ -660,6 +660,10 @@ impl<'a> BoundArguments<'a> {
         self.get1().and_then(|value| value.try_as_str())
     }
 
+    pub fn get1_as_list(&'a self) -> Result<&Vec<DynamicValue>, CallError> {
+        self.get1().and_then(|value| value.try_as_list())
+    }
+
     pub fn get1_as_bool(&'a self) -> Result<bool, CallError> {
         self.get1().map(|value| value.is_truthy())
     }
