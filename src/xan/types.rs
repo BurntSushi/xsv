@@ -273,13 +273,13 @@ impl DynamicValue {
             Self::Integer(value) => Cow::Owned(value.to_string()),
             Self::Boolean(value) => {
                 if *value {
-                    Cow::Owned("true".to_string())
+                    Cow::Borrowed("true")
                 } else {
-                    Cow::Owned("false".to_string())
+                    Cow::Borrowed("false")
                 }
             }
             Self::Regex(pattern) => Cow::Borrowed(pattern.as_str()),
-            Self::None => Cow::Owned("".to_string()),
+            Self::None => Cow::Borrowed(""),
         })
     }
 
