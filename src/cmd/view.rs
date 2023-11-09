@@ -45,6 +45,7 @@ view options:
     -e, --expand           Expand the table so that in can be easily piped to
                            a pager such as \"less\", with no with constraints.
     -E, --sanitize-emojis  Replace emojis by their shortcode to avoid formatting issues.
+    -I, --hide-index       Hide the row index on the left.
 
 Common options:
     -h, --help             Display this message
@@ -66,6 +67,7 @@ struct Args {
     flag_rainbow: bool,
     flag_expand: bool,
     flag_sanitize_emojis: bool,
+    flag_hide_index: bool,
 }
 
 impl Args {
@@ -102,7 +104,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut rdr = rconfig.reader()?;
 
-    let potential_headers = rdr.headers()?.prepend("-");
+    let mut potential_headers = rdr.headers()?.clone();
+
+    if !args.flag_hide_index {
+        potential_headers = potential_headers.prepend("-");
+    }
+
     let mut headers: Vec<String> = Vec::new();
 
     for (i, header) in potential_headers.iter().enumerate() {
@@ -132,7 +139,9 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                         record = sanitize_emojis(&emoji_sanitizer, &record);
                     }
 
-                    record = record.prepend(&i.to_string());
+                    if !args.flag_hide_index {
+                        record = record.prepend(&i.to_string());
+                    }
 
                     records.push(record);
 
@@ -173,8 +182,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         })
         .collect();
 
-    let displayed_columns =
-        infer_best_column_display(cols, &max_column_widths, args.infer_expand(), 1);
+    let displayed_columns = infer_best_column_display(
+        cols,
+        &max_column_widths,
+        args.infer_expand(),
+        if args.flag_hide_index { 0 } else { 1 },
+    );
 
     let all_columns_shown = displayed_columns.len() == headers.len();
 
@@ -299,7 +312,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             .map(|(i, (col, h))| {
                 let cell = util::unicode_aware_rpad_with_ellipsis(h, col.allowed_width, " ");
 
-                if i == 0 {
+                if !args.flag_hide_index && i == 0 {
                     cell.dimmed()
                 } else {
                     cell.bold()
@@ -340,7 +353,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
                 let cell = util::unicode_aware_rpad_with_ellipsis(cell, col.allowed_width, " ");
 
-                if i == 0 {
+                if !args.flag_hide_index && i == 0 {
                     cell.dimmed()
                 } else {
                     util::colorize(&colorizer, &cell)
