@@ -362,13 +362,9 @@ pub fn eval(
     let mut last_value = DynamicValue::None;
 
     for function_call in pipeline {
-        let wrapped_value = function_call.run(record, &last_value, variables)?;
-
-        if let Cow::Borrowed(_) = wrapped_value {
-            panic!("value should not be borrowed here!")
-        }
-
-        last_value = wrapped_value.into_owned();
+        last_value = function_call
+            .run(record, &last_value, variables)?
+            .into_owned();
     }
 
     Ok(last_value)
@@ -713,6 +709,19 @@ mod tests {
         assert_eq!(
             eval_code("replace('hello', /(he)llo/i, '$1')"),
             Ok(DynamicValue::from("he"))
+        );
+    }
+
+    #[test]
+    fn test_if() {
+        assert_eq!(eval_code("if(true, 3, 2)"), Ok(DynamicValue::from(3)));
+        assert_eq!(
+            eval_code("if(eq(2, 2), add(1, 3), sub(1, 0))"),
+            Ok(DynamicValue::from(4))
+        );
+        assert_eq!(
+            eval_code("if(if(if(true, true), true), if(false, add(1, 2), add(4, 5)))"),
+            Ok(DynamicValue::from(9))
         );
     }
 }
