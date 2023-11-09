@@ -5,7 +5,7 @@ use csv;
 
 use config::{Config, Delimiter};
 use unicode_width::UnicodeWidthStr;
-use util;
+use util::{self, ImmutableRecordHelpers};
 use CliResult;
 
 const TRAILING_COLS: usize = 8;
@@ -102,7 +102,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let mut rdr = rconfig.reader()?;
 
-    let potential_headers = prepend(rdr.headers()?, "-");
+    let potential_headers = rdr.headers()?.prepend("-");
     let mut headers: Vec<String> = Vec::new();
 
     for (i, header) in potential_headers.iter().enumerate() {
@@ -132,7 +132,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                         record = sanitize_emojis(&emoji_sanitizer, &record);
                     }
 
-                    record = prepend(&record, &i.to_string());
+                    record = record.prepend(&i.to_string());
 
                     records.push(record);
 
@@ -370,14 +370,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     }
 
     Ok(())
-}
-
-fn prepend(record: &csv::StringRecord, item: &str) -> csv::StringRecord {
-    let mut new_record = csv::StringRecord::new();
-    new_record.push_field(item);
-    new_record.extend(record);
-
-    new_record
 }
 
 fn sanitize_emojis(

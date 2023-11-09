@@ -555,6 +555,9 @@ pub trait ImmutableRecordHelpers<'a> {
 
     #[must_use]
     fn replace_at(&self, column_index: usize, new_value: Self::Cell) -> Self;
+
+    #[must_use]
+    fn prepend(&self, cell_value: Self::Cell) -> Self;
 }
 
 impl<'a> ImmutableRecordHelpers<'a> for csv::ByteRecord {
@@ -566,6 +569,14 @@ impl<'a> ImmutableRecordHelpers<'a> for csv::ByteRecord {
             .map(|(i, v)| if i == column_index { new_value } else { v })
             .collect()
     }
+
+    fn prepend(&self, cell_value: Self::Cell) -> Self {
+        let mut new_record = csv::ByteRecord::new();
+        new_record.push_field(cell_value);
+        new_record.extend(self);
+
+        new_record
+    }
 }
 
 impl<'a> ImmutableRecordHelpers<'a> for csv::StringRecord {
@@ -576,6 +587,14 @@ impl<'a> ImmutableRecordHelpers<'a> for csv::StringRecord {
             .enumerate()
             .map(|(i, v)| if i == column_index { new_value } else { v })
             .collect()
+    }
+
+    fn prepend(&self, cell_value: Self::Cell) -> Self {
+        let mut new_record = csv::StringRecord::new();
+        new_record.push_field(cell_value);
+        new_record.extend(self);
+
+        new_record
     }
 }
 
