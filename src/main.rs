@@ -77,6 +77,7 @@ macro_rules! command_list {
     cat         Concatenate by row or column
     count       Count records
     datefmt     Formats a recognized date column to a specified format and timezone
+    enum        Enumerate CSV file by preprending an index column
     explode     Explode rows based on some column separator
     filter      Only keep some CSV rows based on an evaluated expression
     fixlengths  Makes all records have same length
@@ -196,6 +197,7 @@ enum Command {
     Cat,
     Count,
     Datefmt,
+    Enum,
     Explode,
     ForEach,
     Filter,
@@ -250,6 +252,7 @@ impl Command {
             Command::Cat => cmd::cat::run(argv),
             Command::Count => cmd::count::run(argv),
             Command::Datefmt => cmd::datefmt::run(argv),
+            Command::Enum => cmd::enumerate::run(argv),
             Command::Explode => cmd::explode::run(argv),
             Command::ForEach => cmd::foreach::run(argv),
             Command::Filter => cmd::filter::run(argv),

@@ -80,6 +80,7 @@ impl Args {
     }
 }
 
+// TODO: no-headers, file empty with -I panic
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
 
