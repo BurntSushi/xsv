@@ -44,6 +44,7 @@ mod test_enumerate;
 mod test_explode;
 mod test_filter;
 mod test_fixlengths;
+mod test_flatmap;
 mod test_fmt;
 mod test_foreach;
 mod test_frequency;

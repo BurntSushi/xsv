@@ -135,15 +135,15 @@ impl fmt::Debug for ConcreteSubroutine {
 
 #[derive(Debug, Clone)]
 enum StatementKind {
-    If,
+    If(bool),
 }
 
 impl StatementKind {
     fn parse(name: &str) -> Option<Self> {
-        if name == "if" {
-            Some(StatementKind::If)
-        } else {
-            None
+        match name {
+            "if" => Some(Self::If(false)),
+            "unless" => Some(Self::If(true)),
+            _ => None,
         }
     }
 }
@@ -162,7 +162,7 @@ impl ConcreteStatement {
         variables: &'a Variables,
     ) -> EvaluationResult<'a> {
         match self.kind {
-            StatementKind::If => {
+            StatementKind::If(reverse) => {
                 let arity = self.args.len();
 
                 if !(2..=3).contains(&arity) {
@@ -177,7 +177,13 @@ impl ConcreteStatement {
 
                 let mut branch: Option<&ConcreteArgument> = None;
 
-                if result.is_truthy() {
+                let mut go_left = result.is_truthy();
+
+                if reverse {
+                    go_left = !go_left;
+                }
+
+                if go_left {
                     branch = Some(&self.args[1]);
                 } else if arity == 3 {
                     branch = Some(&self.args[2]);
@@ -723,5 +729,10 @@ mod tests {
             eval_code("if(if(if(true, true), true), if(false, add(1, 2), add(4, 5)))"),
             Ok(DynamicValue::from(9))
         );
+    }
+
+    #[test]
+    fn test_unless() {
+        assert_eq!(eval_code("unless(true, 3, 2)"), Ok(DynamicValue::from(2)));
     }
 }

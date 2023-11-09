@@ -121,6 +121,9 @@ macro_rules! xan_function_list {
     - if(cond, then, else?) -> T
         Evaluate condition and switch to correct branch.
 
+    - unless(cond, then, else?) -> T
+        Shorthand for `if(not(cond), then, else?)`.
+
     - not(a) -> bool
         Perform boolean NOT operation.
 
@@ -280,6 +283,13 @@ impl XanMode {
     fn is_map(&self) -> bool {
         match self {
             Self::Map => true,
+            _ => false,
+        }
+    }
+
+    fn is_flatmap(&self) -> bool {
+        match self {
+            Self::Flatmap => true,
             _ => false,
         }
     }
@@ -499,7 +509,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
         if !headers.is_empty() {
             must_write_headers = true;
 
-            if args.mode.is_map() {
+            if args.mode.is_map() || args.mode.is_flatmap() {
                 if let Some(target_column) = &args.target_column {
                     modified_headers.push_field(target_column.as_bytes());
                 }
