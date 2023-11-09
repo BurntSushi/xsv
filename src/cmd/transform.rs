@@ -25,6 +25,11 @@ name,surname
 john,DAVIS
 mary,SUE
 
+Note that the given expression will be given the target column as its implicit
+value, which means that the latter command can also be written as:
+
+    $ xsv transform 'upper' surname
+
 For a quick review of the capabilities of the script language, use
 the --cheatsheet flag.
 

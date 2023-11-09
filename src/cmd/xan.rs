@@ -472,6 +472,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
     let mut modified_headers = csv::ByteRecord::new();
     let mut must_write_headers = false;
     let mut column_to_replace: Option<usize> = None;
+    let mut map_expr = args.map_expr.clone();
 
     if !args.no_headers {
         headers = rdr.byte_headers()?.clone();
@@ -494,6 +495,9 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
                     }
 
                     column_to_replace = Some(idx);
+
+                    // NOTE: binding implicit last value to target column value
+                    map_expr = format!("val(row[{}]) | {}", idx, map_expr);
                 }
             }
 
@@ -505,7 +509,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
         }
     }
 
-    let pipeline = prepare(&args.map_expr, &headers)?;
+    let pipeline = prepare(&map_expr, &headers)?;
 
     if must_write_headers {
         wtr.write_byte_record(&modified_headers)?;
