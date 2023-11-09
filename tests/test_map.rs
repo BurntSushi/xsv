@@ -21,7 +21,7 @@ fn map() {
 
 #[test]
 fn map_errors_panic() {
-    let wrk = Workdir::new("map");
+    let wrk = Workdir::new("map_errors_panic");
     wrk.create(
         "data.csv",
         vec![svec!["a", "b"], svec!["1", "test"], svec!["2", "3"]],
@@ -34,7 +34,7 @@ fn map_errors_panic() {
 
 #[test]
 fn map_errors_report() {
-    let wrk = Workdir::new("map");
+    let wrk = Workdir::new("map_errors_report");
     wrk.create(
         "data.csv",
         vec![svec!["a", "b"], svec!["1", "test"], svec!["2", "3"]],
@@ -57,7 +57,7 @@ fn map_errors_report() {
 
 #[test]
 fn map_errors_ignore() {
-    let wrk = Workdir::new("map");
+    let wrk = Workdir::new("map_errors_ignore");
     wrk.create(
         "data.csv",
         vec![svec!["a", "b"], svec!["1", "test"], svec!["2", "3"]],
@@ -79,7 +79,7 @@ fn map_errors_ignore() {
 
 #[test]
 fn map_errors_log() {
-    let wrk = Workdir::new("map");
+    let wrk = Workdir::new("map_errors_log");
     wrk.create(
         "data.csv",
         vec![svec!["a", "b"], svec!["1", "test"], svec!["2", "3"]],

@@ -292,7 +292,7 @@ impl XanMode {
 
     fn is_transform(&self) -> bool {
         match self {
-            Self::Filter => true,
+            Self::Transform => true,
             _ => false,
         }
     }
@@ -373,15 +373,13 @@ pub fn handle_eval_result<'a, 'b>(
     let mut records_to_emit: Vec<Cow<csv::ByteRecord>> = Vec::new();
 
     match eval_result {
-        Ok(value) => {
-            if args.mode.is_filter() {
+        Ok(value) => match args.mode {
+            XanMode::Filter => {
                 if value.is_truthy() {
                     records_to_emit.push(Cow::Borrowed(record));
                 }
-            } else if args.mode.is_transform() {
-                let record = record.replace_at(replace.unwrap(), &value.serialize_as_bytes(b"|"));
-                records_to_emit.push(Cow::Owned(record));
-            } else {
+            }
+            XanMode::Map => {
                 record.push_field(&value.serialize_as_bytes(b"|"));
 
                 if args.error_policy.will_report() {
@@ -390,15 +388,27 @@ pub fn handle_eval_result<'a, 'b>(
 
                 records_to_emit.push(Cow::Borrowed(record));
             }
-        }
+            XanMode::Transform => {
+                let mut record =
+                    record.replace_at(replace.unwrap(), &value.serialize_as_bytes(b"|"));
+
+                if args.error_policy.will_report() {
+                    record.push_field(b"");
+                }
+
+                records_to_emit.push(Cow::Owned(record));
+            }
+        },
         Err(err) => match args.error_policy {
             XanErrorPolicy::Ignore => {
+                let value = DynamicValue::None.serialize_as_bytes(b"|");
+
                 if args.mode.is_map() {
-                    let value = DynamicValue::None;
-                    record.push_field(&value.serialize_as_bytes(b"|"));
+                    record.push_field(&value);
                     records_to_emit.push(Cow::Borrowed(record));
                 } else if args.mode.is_transform() {
-                    records_to_emit.push(Cow::Borrowed(record));
+                    let record = record.replace_at(replace.unwrap(), &value);
+                    records_to_emit.push(Cow::Owned(record));
                 }
             }
             XanErrorPolicy::Report => {
@@ -406,20 +416,29 @@ pub fn handle_eval_result<'a, 'b>(
                     unreachable!();
                 }
 
-                if args.mode.is_map() {
-                    record.push_field(b"");
-                }
+                let value = DynamicValue::None.serialize_as_bytes(b"|");
 
-                record.push_field(err.to_string().as_bytes());
-                records_to_emit.push(Cow::Borrowed(record));
+                if args.mode.is_map() {
+                    record.push_field(&value);
+                    record.push_field(err.to_string().as_bytes());
+                    records_to_emit.push(Cow::Borrowed(record));
+                } else if args.mode.is_transform() {
+                    let mut record = record.replace_at(replace.unwrap(), &value);
+                    record.push_field(err.to_string().as_bytes());
+                    records_to_emit.push(Cow::Owned(record));
+                }
             }
             XanErrorPolicy::Log => {
                 eprintln!("Row n°{}: {}", index + 1, err);
 
+                let value = DynamicValue::None.serialize_as_bytes(b"|");
+
                 if args.mode.is_map() {
-                    let value = DynamicValue::None;
-                    record.push_field(&value.serialize_as_bytes(b"|"));
+                    record.push_field(&value);
                     records_to_emit.push(Cow::Borrowed(record));
+                } else if args.mode.is_transform() {
+                    let record = record.replace_at(replace.unwrap(), &value);
+                    records_to_emit.push(Cow::Owned(record));
                 }
             }
             XanErrorPolicy::Panic => {
@@ -450,18 +469,20 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
     let mut wtr = Config::new(&args.output).writer()?;
 
     let mut headers = csv::ByteRecord::new();
+    let mut modified_headers = csv::ByteRecord::new();
     let mut must_write_headers = false;
     let mut column_to_replace: Option<usize> = None;
 
     if !args.no_headers {
         headers = rdr.byte_headers()?.clone();
+        modified_headers = headers.clone();
 
         if !headers.is_empty() {
             must_write_headers = true;
 
             if args.mode.is_map() {
                 if let Some(target_column) = &args.target_column {
-                    headers.push_field(target_column.as_bytes());
+                    modified_headers.push_field(target_column.as_bytes());
                 }
             } else if args.mode.is_transform() {
                 if let Some(name) = &args.target_column {
@@ -469,7 +490,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
                     let idx = rconfig.single_selection(&headers)?;
 
                     if let Some(renamed) = &args.rename_column {
-                        headers = headers.replace_at(idx, renamed.as_bytes());
+                        modified_headers = modified_headers.replace_at(idx, renamed.as_bytes());
                     }
 
                     column_to_replace = Some(idx);
@@ -478,7 +499,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
 
             if args.error_policy.will_report() {
                 if let Some(error_column_name) = &args.error_column_name {
-                    headers.push_field(error_column_name.as_bytes());
+                    modified_headers.push_field(error_column_name.as_bytes());
                 }
             }
         }
@@ -487,7 +508,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
     let pipeline = prepare(&args.map_expr, &headers)?;
 
     if must_write_headers {
-        wtr.write_byte_record(&headers)?;
+        wtr.write_byte_record(&modified_headers)?;
     }
 
     if let Some(threads) = args.threads {

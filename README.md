@@ -63,6 +63,7 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv shuffle`
 * `xsv sort -u`
 * `xsv stats --pretty`
+* `xsv transform`
 * `xsv view`
 * `xsv xls`
 
@@ -115,6 +116,7 @@ given separator.
 * **split** - Split one CSV file into many CSV files of N chunks.
 * **stats** - Show basic types and statistics of each column in the CSV file.
   (i.e., mean, standard deviation, median, range, etc.)
+* **transform** - Transform a column by evaluating an expression on each CSV row.
 * **view** - Preview a CSV file in a human-friendly way.
 * **xls** - Convert Excel/OpenOffice spreadsheets to CSV.
 

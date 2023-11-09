@@ -99,6 +99,7 @@ macro_rules! command_list {
     partition   Partition CSV data based on a column value
     pseudo      Pseudonymise the values of a column
     sample      Randomly sample CSV data
+    transform   Transform a column by evaluating an expression on each CSV row
     replace     Replace patterns in CSV data
     reverse     Reverse rows of CSV data
     search      Search CSV data with regexes
@@ -226,6 +227,7 @@ enum Command {
     Sort,
     Split,
     Stats,
+    Transform,
     View,
     Xls,
 }
@@ -287,6 +289,7 @@ impl Command {
             Command::Sort => cmd::sort::run(argv),
             Command::Split => cmd::split::run(argv),
             Command::Stats => cmd::stats::run(argv),
+            Command::Transform => cmd::transform::run(argv),
             Command::View => cmd::view::run(argv),
             Command::Xls => cmd::xls::run(argv),
         }

@@ -64,6 +64,7 @@ mod test_slice;
 mod test_sort;
 mod test_split;
 mod test_stats;
+mod test_transform;
 
 fn qcheck<T: Testable>(p: T) {
     QuickCheck::new()

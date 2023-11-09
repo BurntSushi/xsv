@@ -19,7 +19,7 @@ autotests = false
 
 [[bin]]
 name = "xsv"
-test = false
+test = true
 bench = false
 doctest = false
 

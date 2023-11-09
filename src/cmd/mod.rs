@@ -34,6 +34,7 @@ pub mod slice;
 pub mod sort;
 pub mod split;
 pub mod stats;
+pub mod transform;
 pub mod view;
 mod xan;
 pub mod xls;
