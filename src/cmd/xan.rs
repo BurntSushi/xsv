@@ -273,6 +273,7 @@ pub enum XanMode {
     Map,
     Filter,
     Transform,
+    Flatmap,
 }
 
 impl XanMode {
@@ -283,16 +284,16 @@ impl XanMode {
         }
     }
 
-    fn is_filter(&self) -> bool {
+    fn is_transform(&self) -> bool {
         match self {
-            Self::Filter => true,
+            Self::Transform => true,
             _ => false,
         }
     }
 
-    fn is_transform(&self) -> bool {
+    fn cannot_report(&self) -> bool {
         match self {
-            Self::Transform => true,
+            Self::Filter | Self::Flatmap => true,
             _ => false,
         }
     }
@@ -398,6 +399,23 @@ pub fn handle_eval_result<'a, 'b>(
 
                 records_to_emit.push(Cow::Owned(record));
             }
+            XanMode::Flatmap => 'm: {
+                if value.is_falsey() {
+                    break 'm;
+                }
+
+                for subvalue in value.flat_iter() {
+                    let cell = subvalue.serialize_as_bytes(b"|");
+
+                    let new_record = if let Some(idx) = replace {
+                        record.replace_at(idx, &cell)
+                    } else {
+                        record.append(&cell)
+                    };
+
+                    records_to_emit.push(Cow::Owned(new_record));
+                }
+            }
         },
         Err(err) => match args.error_policy {
             XanErrorPolicy::Ignore => {
@@ -412,7 +430,7 @@ pub fn handle_eval_result<'a, 'b>(
                 }
             }
             XanErrorPolicy::Report => {
-                if args.mode.is_filter() {
+                if args.mode.cannot_report() {
                     unreachable!();
                 }
 

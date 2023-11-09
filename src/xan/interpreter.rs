@@ -57,25 +57,158 @@ impl ConcreteArgument {
             Self::Call(_) => return Err(BindingError::IllegalBinding),
         })
     }
+
+    fn evaluate<'a>(
+        &'a self,
+        record: &'a csv::ByteRecord,
+        last_value: &'a DynamicValue,
+        variables: &'a Variables,
+    ) -> EvaluationResult<'a> {
+        match self {
+            ConcreteArgument::Call(function_call) => {
+                function_call.run(record, last_value, variables)
+            }
+            _ => self.bind(record, last_value, variables).map_err(|err| {
+                EvaluationError::Binding(SpecifiedBindingError {
+                    function_name: "<expr>".to_string(),
+                    arg_index: None,
+                    reason: err,
+                })
+            }),
+        }
+    }
 }
 
 #[derive(Clone)]
-pub struct ConcreteFunctionCall {
+pub struct ConcreteSubroutine {
     name: String,
     function: Function,
     args: Vec<ConcreteArgument>,
 }
 
+impl ConcreteSubroutine {
+    fn run<'a>(
+        &'a self,
+        record: &'a csv::ByteRecord,
+        last_value: &'a DynamicValue,
+        variables: &'a Variables,
+    ) -> EvaluationResult<'a> {
+        let mut bound_args = BoundArguments::with_capacity(self.args.len());
+
+        for (i, arg) in self.args.iter().enumerate() {
+            match arg {
+                ConcreteArgument::Call(sub_function_call) => {
+                    bound_args.push(sub_function_call.run(record, last_value, variables)?);
+                }
+                _ => bound_args.push(arg.bind(record, last_value, variables).map_err(|err| {
+                    EvaluationError::Binding(SpecifiedBindingError {
+                        function_name: self.name.to_string(),
+                        arg_index: Some(i),
+                        reason: err,
+                    })
+                })?),
+            }
+        }
+
+        match (self.function)(bound_args) {
+            Ok(value) => Ok(Cow::Owned(value)),
+            Err(err) => Err(EvaluationError::Call(SpecifiedCallError {
+                function_name: self.name.clone(),
+                reason: err,
+            })),
+        }
+    }
+}
+
 // NOTE: in older rust versions, Debug cannot be derived
 // correctly from `fn` and it will not compile without
 // this custom `Debug` implementation
-impl fmt::Debug for ConcreteFunctionCall {
+impl fmt::Debug for ConcreteSubroutine {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ConcreteFunctionCall")
+        f.debug_struct("ConcreteSubroutine")
             .field("name", &self.name)
             .field("function", &"<function>")
             .field("args", &self.args)
             .finish()
+    }
+}
+
+#[derive(Debug, Clone)]
+enum StatementKind {
+    If,
+}
+
+impl StatementKind {
+    fn parse(name: &str) -> Option<Self> {
+        if name == "if" {
+            Some(StatementKind::If)
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ConcreteStatement {
+    kind: StatementKind,
+    args: Vec<ConcreteArgument>,
+}
+
+impl ConcreteStatement {
+    fn run<'a>(
+        &'a self,
+        record: &'a csv::ByteRecord,
+        last_value: &'a DynamicValue,
+        variables: &'a Variables,
+    ) -> EvaluationResult<'a> {
+        match self.kind {
+            StatementKind::If => {
+                let arity = self.args.len();
+
+                if !(2..=3).contains(&arity) {
+                    return Err(EvaluationError::Call(SpecifiedCallError {
+                        function_name: "if".to_string(),
+                        reason: CallError::from_range_arity(2, 3, arity),
+                    }));
+                }
+
+                let condition = &self.args[0];
+                let result = condition.evaluate(record, last_value, variables)?;
+
+                let mut branch: Option<&ConcreteArgument> = None;
+
+                if result.is_truthy() {
+                    branch = Some(&self.args[1]);
+                } else if arity == 3 {
+                    branch = Some(&self.args[2]);
+                }
+
+                match branch {
+                    None => Ok(Cow::Owned(DynamicValue::None)),
+                    Some(arg) => arg.evaluate(record, last_value, variables),
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum ConcreteFunctionCall {
+    Subroutine(ConcreteSubroutine),
+    SpecialStatement(ConcreteStatement),
+}
+
+impl ConcreteFunctionCall {
+    pub fn run<'a>(
+        &'a self,
+        record: &'a csv::ByteRecord,
+        last_value: &'a DynamicValue,
+        variables: &'a Variables,
+    ) -> EvaluationResult<'a> {
+        match self {
+            Self::Subroutine(subroutine) => subroutine.run(record, last_value, variables),
+            Self::SpecialStatement(statement) => statement.run(record, last_value, variables),
+        }
     }
 }
 
@@ -118,11 +251,18 @@ fn concretize_argument(
 
             let function_name = call.name.to_lowercase();
 
-            ConcreteArgument::Call(ConcreteFunctionCall {
-                name: function_name.clone(),
-                function: get_function(&function_name)?,
-                args: concrete_args,
-            })
+            if let Some(kind) = StatementKind::parse(&function_name) {
+                ConcreteArgument::Call(ConcreteFunctionCall::SpecialStatement(ConcreteStatement {
+                    kind,
+                    args: concrete_args,
+                }))
+            } else {
+                ConcreteArgument::Call(ConcreteFunctionCall::Subroutine(ConcreteSubroutine {
+                    name: function_name.clone(),
+                    function: get_function(&function_name)?,
+                    args: concrete_args,
+                }))
+            }
         }
     })
 }
@@ -142,10 +282,17 @@ fn concretize_pipeline(
 
         let function_name = function_call.name.to_lowercase();
 
-        concrete_pipeline.push(ConcreteFunctionCall {
-            name: function_name.clone(),
-            function: get_function(&function_name)?,
-            args: concrete_arguments,
+        concrete_pipeline.push(if let Some(kind) = StatementKind::parse(&function_name) {
+            ConcreteFunctionCall::SpecialStatement(ConcreteStatement {
+                kind,
+                args: concrete_arguments,
+            })
+        } else {
+            ConcreteFunctionCall::Subroutine(ConcreteSubroutine {
+                name: function_name.clone(),
+                function: get_function(&function_name)?,
+                args: concrete_arguments,
+            })
         });
     }
 
@@ -207,97 +354,6 @@ pub fn prepare(code: &str, headers: &ByteRecord) -> Result<ConcretePipeline, Pre
     }
 }
 
-fn evaluate_function_call<'a>(
-    function_call: &ConcreteFunctionCall,
-    record: &ByteRecord,
-    last_value: &DynamicValue,
-    variables: &Variables,
-) -> EvaluationResult<'a> {
-    let mut bound_args = BoundArguments::with_capacity(function_call.args.len());
-
-    for (i, arg) in function_call.args.iter().enumerate() {
-        match arg {
-            ConcreteArgument::Call(sub_function_call) => {
-                bound_args.push(traverse(sub_function_call, record, last_value, variables)?);
-            }
-            _ => bound_args.push(arg.bind(record, last_value, variables).map_err(|err| {
-                EvaluationError::Binding(SpecifiedBindingError {
-                    function_name: function_call.name.to_string(),
-                    arg_index: Some(i),
-                    reason: err,
-                })
-            })?),
-        }
-    }
-
-    match (function_call.function)(bound_args) {
-        Ok(value) => Ok(Cow::Owned(value)),
-        Err(err) => Err(EvaluationError::Call(SpecifiedCallError {
-            function_name: function_call.name.clone(),
-            reason: err,
-        })),
-    }
-}
-
-fn evaluate_expression<'a>(
-    arg: &'a ConcreteArgument,
-    record: &'a ByteRecord,
-    last_value: &'a DynamicValue,
-    variables: &'a Variables,
-) -> EvaluationResult<'a> {
-    match arg {
-        ConcreteArgument::Call(function_call) => {
-            evaluate_function_call(function_call, record, last_value, variables)
-        }
-        _ => arg.bind(record, last_value, variables).map_err(|err| {
-            EvaluationError::Binding(SpecifiedBindingError {
-                function_name: "<expr>".to_string(),
-                arg_index: None,
-                reason: err,
-            })
-        }),
-    }
-}
-
-fn traverse<'a>(
-    function_call: &'a ConcreteFunctionCall,
-    record: &'a ByteRecord,
-    last_value: &'a DynamicValue,
-    variables: &'a Variables,
-) -> EvaluationResult<'a> {
-    // Branching
-    if function_call.name == *"if" {
-        let arity = function_call.args.len();
-
-        if !(2..=3).contains(&arity) {
-            return Err(EvaluationError::Call(SpecifiedCallError {
-                function_name: "if".to_string(),
-                reason: CallError::from_range_arity(2, 3, arity),
-            }));
-        }
-
-        let condition = &function_call.args[0];
-        let result = evaluate_expression(condition, record, last_value, variables)?;
-
-        let mut branch: Option<&ConcreteArgument> = None;
-
-        if result.is_truthy() {
-            branch = Some(&function_call.args[1]);
-        } else if arity == 3 {
-            branch = Some(&function_call.args[2]);
-        }
-
-        match branch {
-            None => Ok(Cow::Owned(DynamicValue::None)),
-            Some(arg) => evaluate_expression(arg, record, last_value, variables),
-        }
-    }
-    // Regular call
-    else {
-        evaluate_function_call(function_call, record, last_value, variables)
-    }
-}
-
 pub fn eval(
     pipeline: &ConcretePipeline,
     record: &ByteRecord,
@@ -306,7 +362,7 @@ pub fn eval(
     let mut last_value = DynamicValue::None;
 
     for function_call in pipeline {
-        let wrapped_value = traverse(function_call, record, &last_value, variables)?;
+        let wrapped_value = function_call.run(record, &last_value, variables)?;
 
         if let Cow::Borrowed(_) = wrapped_value {
             panic!("value should not be borrowed here!")

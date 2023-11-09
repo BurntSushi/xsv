@@ -430,7 +430,7 @@ impl DynamicValue {
     }
 }
 
-struct DynamicValueFlatIter<'a> {
+pub struct DynamicValueFlatIter<'a> {
     queue: VecDeque<&'a DynamicValue>,
 }
 

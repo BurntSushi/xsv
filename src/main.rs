@@ -76,11 +76,12 @@ macro_rules! command_list {
     bins        Dispatch numeric columns into bins
     cat         Concatenate by row or column
     count       Count records
-    datefmt     Formats a recognized date column to a specified format and timezone
+    datefmt     Format a recognized date column to a specified format and timezone
     enum        Enumerate CSV file by preprending an index column
     explode     Explode rows based on some column separator
     filter      Only keep some CSV rows based on an evaluated expression
     fixlengths  Makes all records have same length
+    flatmap     Emit one row per value yielded by an expression evaluated for each CSV row
     flatten     Show one field per line
     fmt         Format CSV output (change field delimiter)
     foreach     Loop over a CSV file to execute bash commands
@@ -202,6 +203,7 @@ enum Command {
     ForEach,
     Filter,
     FixLengths,
+    Flatmap,
     Flatten,
     Fmt,
     Frequency,
@@ -257,6 +259,7 @@ impl Command {
             Command::ForEach => cmd::foreach::run(argv),
             Command::Filter => cmd::filter::run(argv),
             Command::FixLengths => cmd::fixlengths::run(argv),
+            Command::Flatmap => cmd::flatmap::run(argv),
             Command::Flatten => cmd::flatten::run(argv),
             Command::Fmt => cmd::fmt::run(argv),
             Command::Frequency => cmd::frequency::run(argv),

@@ -44,10 +44,9 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv datefmt`
 * `xsv enum`
 * `xsv explode`
+* `xsv flatmap`
 * `xsv filter`
-* `xsv flatten --pretty`
 * `xsv foreach`
-* `xsv frequency --pretty`
 * `xsv glob`
 * `xsv hist`
 * `xsv implode`
@@ -63,7 +62,6 @@ cargo install --git https://github.com/medialab/xsv.git --branch prod --features
 * `xsv search --flag col`
 * `xsv shuffle`
 * `xsv sort -u`
-* `xsv stats --pretty`
 * `xsv transform`
 * `xsv view`
 * `xsv xls`
@@ -81,6 +79,7 @@ given separator.
 * **filter** - Only keep some CSV rows based on an evaluated expression.
 * **fixlengths** - Force a CSV file to have same-length records by either
   padding or truncating them.
+* **flatmap** - Emit one row per value yielded by an expression evaluated for each CSV row.
 * **flatten** - A flattened view of CSV records. Useful for viewing one record
   at a time. e.g., `xsv slice -i 5 data.csv | xsv flatten`.
 * **fmt** - Reformat CSV data with different delimiters, record terminators
