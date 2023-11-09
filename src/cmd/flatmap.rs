@@ -65,6 +65,7 @@ Usage:
     xsv flatmap --help
 
 flatmap options:
+    -r, --replace <column>     Name of a column to replaced with the mapped value.
     -t, --threads <threads>    Number of threads to use in order to run the
                                computations in parallel. Only useful if you
                                perform heavy stuff such as reading files etc.
