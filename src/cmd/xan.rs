@@ -1,9 +1,12 @@
+use std::borrow::Cow;
 use std::convert::TryFrom;
 
 use csv;
 use pariter::IteratorExt;
 
 use config::{Config, Delimiter};
+use select::SelectColumns;
+use util::ImmutableRecordHelpers;
 use xan::{eval, prepare, DynamicValue, EvaluationError, Variables};
 use CliError;
 use CliResult;
@@ -287,7 +290,7 @@ impl XanMode {
         }
     }
 
-    fn is_transform(self) -> bool {
+    fn is_transform(&self) -> bool {
         match self {
             Self::Filter => true,
             _ => false,
@@ -360,27 +363,32 @@ pub struct XanCmdArgs {
     pub mode: XanMode,
 }
 
-pub fn handle_eval_result<W: std::io::Write>(
-    args: &XanCmdArgs,
+pub fn handle_eval_result<'a, 'b>(
+    args: &'a XanCmdArgs,
     index: usize,
-    record: &mut csv::ByteRecord,
+    record: &'b mut csv::ByteRecord,
     eval_result: Result<DynamicValue, EvaluationError>,
-    writer: &mut csv::Writer<W>,
-) -> CliResult<()> {
-    let mut should_write_row = true;
+    replace: Option<usize>,
+) -> Result<Vec<Cow<'b, csv::ByteRecord>>, String> {
+    let mut records_to_emit: Vec<Cow<csv::ByteRecord>> = Vec::new();
 
     match eval_result {
         Ok(value) => {
             if args.mode.is_filter() {
-                if value.is_falsey() {
-                    should_write_row = false;
+                if value.is_truthy() {
+                    records_to_emit.push(Cow::Borrowed(record));
                 }
+            } else if args.mode.is_transform() {
+                let record = record.replace_at(replace.unwrap(), &value.serialize_as_bytes(b"|"));
+                records_to_emit.push(Cow::Owned(record));
             } else {
                 record.push_field(&value.serialize_as_bytes(b"|"));
 
                 if args.error_policy.will_report() {
                     record.push_field(b"");
                 }
+
+                records_to_emit.push(Cow::Borrowed(record));
             }
         }
         Err(err) => match args.error_policy {
@@ -388,6 +396,9 @@ pub fn handle_eval_result<W: std::io::Write>(
                 if args.mode.is_map() {
                     let value = DynamicValue::None;
                     record.push_field(&value.serialize_as_bytes(b"|"));
+                    records_to_emit.push(Cow::Borrowed(record));
+                } else if args.mode.is_transform() {
+                    records_to_emit.push(Cow::Borrowed(record));
                 }
             }
             XanErrorPolicy::Report => {
@@ -395,8 +406,12 @@ pub fn handle_eval_result<W: std::io::Write>(
                     unreachable!();
                 }
 
-                record.push_field(b"");
+                if args.mode.is_map() {
+                    record.push_field(b"");
+                }
+
                 record.push_field(err.to_string().as_bytes());
+                records_to_emit.push(Cow::Borrowed(record));
             }
             XanErrorPolicy::Log => {
                 eprintln!("Row n°{}: {}", index + 1, err);
@@ -404,19 +419,16 @@ pub fn handle_eval_result<W: std::io::Write>(
                 if args.mode.is_map() {
                     let value = DynamicValue::None;
                     record.push_field(&value.serialize_as_bytes(b"|"));
+                    records_to_emit.push(Cow::Borrowed(record));
                 }
             }
             XanErrorPolicy::Panic => {
-                Err(format!("Row n°{}: {}", index + 1, err))?;
+                return Err(format!("Row n°{}: {}", index + 1, err));
             }
         },
     };
 
-    if should_write_row {
-        writer.write_byte_record(record)?;
-    }
-
-    Ok(())
+    Ok(records_to_emit)
 }
 
 pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
@@ -430,7 +442,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
         return Ok(());
     }
 
-    let rconfig = Config::new(&args.input)
+    let mut rconfig = Config::new(&args.input)
         .delimiter(args.delimiter)
         .no_headers(args.no_headers);
 
@@ -439,6 +451,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
 
     let mut headers = csv::ByteRecord::new();
     let mut must_write_headers = false;
+    let mut column_to_replace: Option<usize> = None;
 
     if !args.no_headers {
         headers = rdr.byte_headers()?.clone();
@@ -449,6 +462,17 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
             if args.mode.is_map() {
                 if let Some(target_column) = &args.target_column {
                     headers.push_field(target_column.as_bytes());
+                }
+            } else if args.mode.is_transform() {
+                if let Some(name) = &args.target_column {
+                    rconfig = rconfig.select(SelectColumns::parse(name)?);
+                    let idx = rconfig.single_selection(&headers)?;
+
+                    if let Some(renamed) = &args.rename_column {
+                        headers = headers.replace_at(idx, renamed.as_bytes());
+                    }
+
+                    column_to_replace = Some(idx);
                 }
             }
 
@@ -487,7 +511,12 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
             )
             .try_for_each(|result| -> CliResult<()> {
                 let (i, mut record, eval_result) = result?;
-                handle_eval_result(&args, i, &mut record, eval_result, &mut wtr)?;
+                let records_to_emit =
+                    handle_eval_result(&args, i, &mut record, eval_result, column_to_replace)?;
+
+                for record_to_emit in records_to_emit {
+                    wtr.write_byte_record(&record_to_emit)?;
+                }
                 Ok(())
             })?;
 
@@ -502,7 +531,13 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
         variables.insert("index", DynamicValue::Integer(i as i64));
 
         let eval_result = eval(&pipeline, &record, &variables);
-        handle_eval_result(&args, i, &mut record, eval_result, &mut wtr)?;
+        let records_to_emit =
+            handle_eval_result(&args, i, &mut record, eval_result, column_to_replace)?;
+
+        for record_to_emit in records_to_emit {
+            wtr.write_byte_record(&record_to_emit)?;
+        }
+
         i += 1;
     }
 
