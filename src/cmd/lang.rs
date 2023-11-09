@@ -47,8 +47,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
     let mut headers = rdr.byte_headers()?.clone();
-    let sel = rconfig.selection(&headers)?;
-    let column_index = *sel.iter().next().unwrap();
+    let column_index = rconfig.single_selection(&headers)?;
 
     if !rconfig.no_headers {
         headers.push_field(

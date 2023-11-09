@@ -69,8 +69,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let template_pattern = Regex::new(r"\{\}")?;
 
     let headers = rdr.byte_headers()?.clone();
-    let sel = rconfig.selection(&headers)?;
-    let column_index = *sel.iter().next().unwrap();
+    let column_index = rconfig.single_selection(&headers)?;
 
     let mut record = csv::ByteRecord::new();
     let mut output_headers_written = false;

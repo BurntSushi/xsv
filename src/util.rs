@@ -550,18 +550,34 @@ impl EmojiSanitizer {
     }
 }
 
-// pub fn sanitize_emojis(string: &str) -> String {
-//     string
-//         .graphemes(true)
-//         .map(|grapheme| match emojis::get(grapheme) {
-//             None => Cow::Borrowed(grapheme),
-//             Some(emoji) => Cow::Owned(format!(
-//                 ":{}:",
-//                 emoji.shortcode().unwrap_or("unknown_emoji")
-//             )),
-//         })
-//         .collect()
-// }
+pub trait ImmutableRecordHelpers<'a> {
+    type Cell;
+
+    #[must_use]
+    fn replace_at(&self, column_index: usize, new_value: Self::Cell) -> Self;
+}
+
+impl<'a> ImmutableRecordHelpers<'a> for csv::ByteRecord {
+    type Cell = &'a [u8];
+
+    fn replace_at(&self, column_index: usize, new_value: Self::Cell) -> Self {
+        self.iter()
+            .enumerate()
+            .map(|(i, v)| if i == column_index { new_value } else { v })
+            .collect()
+    }
+}
+
+impl<'a> ImmutableRecordHelpers<'a> for csv::StringRecord {
+    type Cell = &'a str;
+
+    fn replace_at(&self, column_index: usize, new_value: Self::Cell) -> Self {
+        self.iter()
+            .enumerate()
+            .map(|(i, v)| if i == column_index { new_value } else { v })
+            .collect()
+    }
+}
 
 #[cfg(test)]
 mod tests {

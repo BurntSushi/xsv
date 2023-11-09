@@ -1,9 +1,8 @@
 use csv;
 
-use cmd::explode::{replace_column_value, replace_column_value_bytes};
 use config::{Config, Delimiter};
 use select::SelectColumns;
-use util;
+use util::{self, ImmutableRecordHelpers};
 use CliResult;
 
 static USAGE: &str = "
@@ -75,13 +74,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
     let headers = rdr.byte_headers()?.clone();
-    let sel = rconfig.selection(&headers)?;
-    let column_index = *sel.iter().next().unwrap();
+    let column_index = rconfig.single_selection(&headers)?;
 
     let mut headers = rdr.headers()?.clone();
 
     if let Some(new_name) = args.flag_rename {
-        headers = replace_column_value(&headers, column_index, &new_name);
+        headers = headers.replace_at(column_index, &new_name);
     }
 
     if !rconfig.no_headers {
@@ -99,8 +97,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             if !compare_but_for_col(&record, previous_record, column_index) {
                 // Flushing
                 let value = accumulator.join(sep.as_bytes());
-                let imploded_record =
-                    replace_column_value_bytes(&previous_record, column_index, &value);
+                let imploded_record = previous_record.replace_at(column_index, &value);
                 wtr.write_byte_record(&imploded_record)?;
 
                 accumulator.clear();
@@ -114,7 +111,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     // Flushing last instance
     if !accumulator.is_empty() {
         let value = accumulator.join(sep.as_bytes());
-        let imploded_record = replace_column_value_bytes(&previous.unwrap(), column_index, &value);
+        let imploded_record = previous.unwrap().replace_at(column_index, &value);
         wtr.write_byte_record(&imploded_record)?;
     }
 

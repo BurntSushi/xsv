@@ -4,7 +4,7 @@ use csv;
 
 use config::{Config, Delimiter};
 use select::SelectColumns;
-use util;
+use util::{self, ImmutableRecordHelpers};
 use CliResult;
 
 static USAGE: &str = "
@@ -33,19 +33,7 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
-pub fn replace_column_value(
-    record: &csv::StringRecord,
-    column_index: usize,
-    new_value: &String,
-) -> csv::StringRecord {
-    record
-        .into_iter()
-        .enumerate()
-        .map(|(i, v)| if i == column_index { new_value } else { v })
-        .collect()
-}
-
-type Values = HashMap<String, u64>;
+type Values = HashMap<Vec<u8>, u64>;
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
@@ -58,30 +46,30 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
     let headers = rdr.byte_headers()?.clone();
-    let sel = rconfig.selection(&headers)?;
-    let column_index = *sel.iter().next().unwrap();
+    let column_index = rconfig.single_selection(&headers)?;
 
     if !rconfig.no_headers {
         wtr.write_record(&headers)?;
     }
 
-    let mut record = csv::StringRecord::new();
+    let mut record = csv::ByteRecord::new();
     let mut values = Values::new();
     let mut counter: u64 = 0;
 
-    while rdr.read_record(&mut record)? {
+    while rdr.read_byte_record(&mut record)? {
         let value = record[column_index].to_owned();
 
-        match values.get(&value) {
-            Some(id) => {
-                record = replace_column_value(&record, column_index, &id.to_string());
-            }
+        let id = match values.get(&value) {
+            Some(id) => *id,
             None => {
+                let id = counter;
                 values.insert(value, counter);
-                record = replace_column_value(&record, column_index, &counter.to_string());
                 counter += 1;
+                id
             }
-        }
+        };
+
+        let record = record.replace_at(column_index, id.to_string().as_bytes());
 
         wtr.write_record(&record)?;
     }

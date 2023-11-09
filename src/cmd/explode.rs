@@ -2,7 +2,7 @@ use csv;
 
 use config::{Config, Delimiter};
 use select::SelectColumns;
-use util;
+use util::{self, ImmutableRecordHelpers};
 use CliResult;
 
 static USAGE: &str = "
@@ -54,30 +54,6 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
-pub fn replace_column_value(
-    record: &csv::StringRecord,
-    column_index: usize,
-    new_value: &String,
-) -> csv::StringRecord {
-    record
-        .into_iter()
-        .enumerate()
-        .map(|(i, v)| if i == column_index { new_value } else { v })
-        .collect()
-}
-
-pub fn replace_column_value_bytes(
-    record: &csv::ByteRecord,
-    column_index: usize,
-    new_value: &[u8],
-) -> csv::ByteRecord {
-    record
-        .into_iter()
-        .enumerate()
-        .map(|(i, v)| if i == column_index { new_value } else { v })
-        .collect()
-}
-
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
     let rconfig = Config::new(&args.arg_input)
@@ -89,13 +65,12 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let mut wtr = Config::new(&args.flag_output).writer()?;
 
     let headers = rdr.byte_headers()?.clone();
-    let sel = rconfig.selection(&headers)?;
-    let column_index = *sel.iter().next().unwrap();
+    let column_index = rconfig.single_selection(&headers)?;
 
     let mut headers = rdr.headers()?.clone();
 
     if let Some(new_name) = args.flag_rename {
-        headers = replace_column_value(&headers, column_index, &new_name);
+        headers = headers.replace_at(column_index, &new_name);
     }
 
     if !rconfig.no_headers {
@@ -112,7 +87,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
         while rdr.read_byte_record(&mut record)? {
             for val in record[column_index].split(|b| b == sep) {
-                let new_record = replace_column_value_bytes(&record, column_index, &val);
+                let new_record = record.replace_at(column_index, val);
                 wtr.write_record(&new_record)?;
             }
         }
@@ -121,7 +96,7 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
         while rdr.read_record(&mut record)? {
             for val in record[column_index].split(&sep) {
-                let new_record = replace_column_value(&record, column_index, &val.to_owned());
+                let new_record = record.replace_at(column_index, val);
                 wtr.write_record(&new_record)?;
             }
         }
