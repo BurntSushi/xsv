@@ -394,7 +394,7 @@ fn replace(args: BoundArguments) -> FunctionResult {
     let replacement = arg3.try_as_str()?;
 
     let replaced = match arg2.try_as_regex() {
-        Ok(regex) => regex.inner().replace_all(&string, replacement).into_owned(),
+        Ok(regex) => regex.replace_all(&string, replacement).into_owned(),
         Err(_) => {
             let pattern = arg2.try_as_str()?;
 

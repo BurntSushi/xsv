@@ -3,40 +3,13 @@ use std::cmp::{Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::BTreeMap;
 use std::collections::VecDeque;
 use std::convert::From;
-use std::ops::{Add, Div, Index, Mul, Sub};
+use std::ops::{Add, Div, Mul, Sub};
 
 use csv;
-use regex;
+use regex::Regex;
 
 use super::error::{CallError, EvaluationError};
 use super::utils::downgrade_float;
-
-#[derive(Debug, Clone)]
-pub struct Regex(regex::Regex);
-
-impl Regex {
-    pub fn new(pattern: &str) -> Result<Self, regex::Error> {
-        Ok(Regex(regex::Regex::new(pattern)?))
-    }
-
-    fn as_str(&self) -> &str {
-        self.0.as_str()
-    }
-
-    pub fn inner(&self) -> &regex::Regex {
-        &self.0
-    }
-
-    pub fn is_match(&self, haystack: &str) -> bool {
-        self.0.is_match(haystack)
-    }
-}
-
-impl PartialEq for Regex {
-    fn eq(&self, other: &Self) -> bool {
-        self.as_str() == other.as_str()
-    }
-}
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ColumIndexationBy {
@@ -208,7 +181,7 @@ impl Div for DynamicNumber {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum DynamicValue {
     List(Vec<DynamicValue>),
     String(String),
@@ -518,6 +491,18 @@ impl From<usize> for DynamicValue {
     }
 }
 
+impl From<i32> for DynamicValue {
+    fn from(value: i32) -> Self {
+        DynamicValue::Integer(value as i64)
+    }
+}
+
+impl From<i64> for DynamicValue {
+    fn from(value: i64) -> Self {
+        DynamicValue::Integer(value)
+    }
+}
+
 impl From<f64> for DynamicValue {
     fn from(value: f64) -> Self {
         DynamicValue::Float(value)
@@ -541,6 +526,20 @@ where
         match option {
             None => DynamicValue::None,
             Some(value) => value.into(),
+        }
+    }
+}
+
+impl PartialEq for DynamicValue {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Regex(a), Self::Regex(b)) => a.as_str() == b.as_str(),
+            (Self::Boolean(a), Self::Boolean(b)) => a == b,
+            (Self::String(a), Self::String(b)) => a == b,
+            (Self::Float(a), Self::Float(b)) => a == b,
+            (Self::Integer(a), Self::Integer(b)) => a == b,
+            (Self::List(a), Self::List(b)) => a == b,
+            _ => false,
         }
     }
 }
@@ -708,6 +707,7 @@ impl<'a> IntoIterator for BoundArguments<'a> {
     }
 }
 
+// #[derive(Debug, Clone, Copy)]
 // pub struct DynamicValuePoolKey(usize);
 
 // pub struct DynamicValuePool {
@@ -735,6 +735,14 @@ impl<'a> IntoIterator for BoundArguments<'a> {
 //         self.values.push(value);
 
 //         key
+//     }
+
+//     pub fn create<T>(&mut self, value: T) -> DynamicValuePoolKey
+//     where
+//         T: Into<DynamicValue>,
+//     {
+//         let value: DynamicValue = value.into();
+//         self.insert(value)
 //     }
 
 //     pub fn finalize_statics(&mut self) {

@@ -2,6 +2,7 @@ use fmt;
 use std::borrow::Cow;
 
 use csv::ByteRecord;
+use regex::Regex;
 
 use super::error::{
     BindingError, CallError, EvaluationError, PrepareError, SpecifiedBindingError,
@@ -10,8 +11,7 @@ use super::error::{
 use super::functions::{get_function, Function};
 use super::parser::{parse, Argument, Pipeline};
 use super::types::{
-    BoundArgument, BoundArguments, ColumIndexationBy, DynamicValue, EvaluationResult, Regex,
-    Variables,
+    BoundArgument, BoundArguments, ColumIndexationBy, DynamicValue, EvaluationResult, Variables,
 };
 
 #[derive(Debug, Clone)]
