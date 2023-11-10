@@ -406,14 +406,16 @@ struct DisplayedColumn {
 
 #[derive(Debug)]
 struct DisplayedColumns {
+    max_allowed_cols: usize,
     left: Vec<DisplayedColumn>,
     // NOTE: columns are inserted into right in reversed order
     right: Vec<DisplayedColumn>,
 }
 
 impl DisplayedColumns {
-    fn new() -> Self {
+    fn new(max_allowed_cols: usize) -> Self {
         DisplayedColumns {
+            max_allowed_cols,
             left: Vec::new(),
             right: Vec::new(),
         }
@@ -423,7 +425,7 @@ impl DisplayedColumns {
         self.left.last().map(|col| col.index)
     }
 
-    fn from_widths(widths: Vec<usize>) -> Self {
+    fn from_widths(cols: usize, widths: Vec<usize>) -> Self {
         let left = widths
             .iter()
             .copied()
@@ -436,6 +438,7 @@ impl DisplayedColumns {
             .collect::<Vec<_>>();
 
         DisplayedColumns {
+            max_allowed_cols: cols,
             left,
             right: Vec::new(),
         }
@@ -500,28 +503,41 @@ fn infer_best_column_display(
 ) -> DisplayedColumns {
     if expand {
         // NOTE: we keep max column size to 3/4 of current screen
-        return DisplayedColumns::from_widths(adjust_column_widths(
-            max_column_widths,
-            ((cols as f64) * 0.75) as usize,
-        ));
+        return DisplayedColumns::from_widths(
+            cols,
+            adjust_column_widths(max_column_widths, ((cols as f64) * 0.75) as usize),
+        );
     }
 
     let mut attempts: Vec<DisplayedColumns> = Vec::new();
+
+    // NOTE: we could also proceed by col increments rather than dividers I suppose
+    let extra_dividers = [1.05, 1.1, 2.5];
+
+    let mut dividers = extra_dividers
+        .iter()
+        .copied()
+        .chain((1..=max_column_widths.len()).map(|d| d as f64))
+        .collect::<Vec<_>>();
+
+    dividers.sort_by(|a, b| a.total_cmp(b));
 
     // TODO: this code can be greatly optimized and early break
     // NOTE: here we iteratively test for a range of max width being a division
     // of the term width. But we could also test for an increasing number of
     // columns, all while respecting the width proportion of each column compared
     // to the other selected ones.
-    for divider in 1..=max_column_widths.len() {
-        let mut attempt = DisplayedColumns::new();
+    for divider in dividers {
+        let max_allowed_width = (cols as f64 / divider) as usize;
 
         // If we don't have reasonable space we break
-        if cols / divider <= 3 {
+        if max_allowed_width <= 3 {
             break;
         }
 
-        let widths = adjust_column_widths(max_column_widths, cols / divider);
+        let mut attempt = DisplayedColumns::new(max_allowed_width);
+
+        let widths = adjust_column_widths(max_column_widths, max_allowed_width);
 
         let mut col_budget = cols - TRAILING_COLS;
         let mut widths_iter = widths.iter().enumerate();
@@ -572,10 +588,10 @@ fn infer_best_column_display(
     }
 
     // NOTE: we sort by number of columns fitting perfectly, then number of
-    // columns we can display
+    // columns we can display, then the maximum cols one cell can have
     let best_attempt = attempts
         .into_iter()
-        .max_by_key(|a| (a.fitting_count(), a.len()))
+        .max_by_key(|a| (a.fitting_count(), a.len(), a.max_allowed_cols))
         .unwrap();
 
     best_attempt
