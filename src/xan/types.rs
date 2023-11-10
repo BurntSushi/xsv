@@ -687,20 +687,6 @@ impl<'a> BoundArguments<'a> {
         let (a, b) = self.get2()?;
         Ok((a.is_truthy(), b.is_truthy()))
     }
-
-    // pub fn iter(&self) -> BoundArgumentsIterator {
-    //     BoundArgumentsIterator(self.stack.iter())
-    // }
-}
-
-pub struct BoundArgumentsIterator<'a>(std::slice::Iter<'a, BoundArgument<'a>>);
-
-impl<'a> Iterator for BoundArgumentsIterator<'a> {
-    type Item = &'a BoundArgument<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
-    }
 }
 
 pub struct BoundArgumentsIntoIterator<'a>(std::vec::IntoIter<BoundArgument<'a>>);
