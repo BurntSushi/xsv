@@ -382,17 +382,6 @@ mod tests {
     use super::super::parser::FunctionCall;
     use super::*;
 
-    pub fn run(
-        code: &str,
-        headers: &ByteRecord,
-        record: &ByteRecord,
-        variables: &Variables,
-    ) -> Result<DynamicValue, RunError> {
-        let pipeline = prepare(code, headers).map_err(RunError::Prepare)?;
-
-        eval(&pipeline, record, variables).map_err(RunError::Evaluation)
-    }
-
     #[test]
     fn test_trim_pipeline() {
         // Should give: add(a, b) | len
@@ -471,6 +460,8 @@ mod tests {
         headers.push_field(b"a");
         headers.push_field(b"b");
 
+        let pipeline = prepare(code, &headers).map_err(RunError::Prepare)?;
+
         let mut record = ByteRecord::new();
         record.push_field(b"john");
         record.push_field(b"SMITH");
@@ -480,7 +471,7 @@ mod tests {
         let mut variables = Variables::new();
         variables.insert(&"index", DynamicValue::Integer(2));
 
-        run(code, &headers, &record, &variables)
+        eval(&pipeline, &record, &variables).map_err(RunError::Evaluation)
     }
 
     #[test]
