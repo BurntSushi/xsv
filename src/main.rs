@@ -27,6 +27,7 @@ extern crate rand;
 extern crate rayon;
 extern crate regex;
 extern crate serde;
+extern crate thread_local;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;

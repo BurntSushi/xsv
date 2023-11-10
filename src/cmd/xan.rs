@@ -1,14 +1,16 @@
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::convert::TryFrom;
+use std::sync::Arc;
 
 use csv;
 use pariter::IteratorExt;
+use thread_local::ThreadLocal;
 
 use config::{Config, Delimiter};
 use select::SelectColumns;
 use util::ImmutableRecordHelpers;
-use xan::{eval, prepare, DynamicValue, EvaluationError, Program, Variables};
+use xan::{DynamicValue, EvaluationError, Program};
 use CliError;
 use CliResult;
 
@@ -554,7 +556,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
         }
     }
 
-    let pipeline = prepare(&map_expr, &headers)?;
+    let mut program = Program::parse(&map_expr, &headers)?;
 
     if must_write_headers {
         wtr.write_byte_record(&modified_headers)?;
@@ -562,9 +564,8 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
 
     if let Some(threads) = args.threads {
         // TODO: drop the move in the closure when we have a working program abstraction
-        thread_local! {
-            pub static VARIABLES: RefCell<Variables<'static>> = RefCell::new(Variables::new());
-        };
+        let local: Arc<ThreadLocal<RefCell<Program>>> =
+            Arc::new(ThreadLocal::with_capacity(threads));
 
         rdr.into_byte_records()
             .enumerate()
@@ -577,10 +578,12 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
                 )> {
                     let record = record?;
 
-                    let eval_result = VARIABLES.with_borrow_mut(|variables| {
-                        variables.insert("index", DynamicValue::Integer(i as i64));
-                        eval(&pipeline, &record, &variables)
-                    });
+                    let mut local_program =
+                        local.get_or(|| RefCell::new(program.clone())).borrow_mut();
+
+                    local_program.set("index", DynamicValue::Integer(i as i64));
+
+                    let eval_result = local_program.run(&record);
 
                     Ok((i, record, eval_result))
                 },
@@ -600,7 +603,6 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
     }
 
     let mut record = csv::ByteRecord::new();
-    let mut program = Program::parse(&map_expr, &headers)?;
     let mut i: usize = 0;
 
     while rdr.read_byte_record(&mut record)? {
