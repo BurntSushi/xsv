@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::convert::TryFrom;
 
 use csv;
@@ -560,6 +561,10 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
     }
 
     if let Some(threads) = args.threads {
+        thread_local! {
+            pub static VARIABLES: RefCell<Variables<'static>> = RefCell::new(Variables::new());
+        };
+
         rdr.into_byte_records()
             .enumerate()
             .parallel_map_custom(
@@ -570,10 +575,11 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
                     Result<DynamicValue, EvaluationError>,
                 )> {
                     let record = record?;
-                    let mut variables = Variables::new();
-                    variables.insert("index", DynamicValue::Integer(i as i64));
 
-                    let eval_result = eval(&pipeline, &record, &variables);
+                    let eval_result = VARIABLES.with_borrow_mut(|variables| {
+                        variables.insert("index", DynamicValue::Integer(i as i64));
+                        eval(&pipeline, &record, &variables)
+                    });
 
                     Ok((i, record, eval_result))
                 },
