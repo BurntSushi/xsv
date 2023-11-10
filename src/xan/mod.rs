@@ -6,5 +6,5 @@ mod types;
 mod utils;
 
 pub use xan::error::{EvaluationError, PrepareError};
-pub use xan::interpreter::{eval, prepare};
+pub use xan::interpreter::{eval, prepare, Program};
 pub use xan::types::{ColumIndexationBy, DynamicValue, Variables};

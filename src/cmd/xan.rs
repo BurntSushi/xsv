@@ -8,7 +8,7 @@ use pariter::IteratorExt;
 use config::{Config, Delimiter};
 use select::SelectColumns;
 use util::ImmutableRecordHelpers;
-use xan::{eval, prepare, DynamicValue, EvaluationError, Variables};
+use xan::{eval, prepare, DynamicValue, EvaluationError, Program, Variables};
 use CliError;
 use CliResult;
 
@@ -561,6 +561,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
     }
 
     if let Some(threads) = args.threads {
+        // TODO: drop the move in the closure when we have a working program abstraction
         thread_local! {
             pub static VARIABLES: RefCell<Variables<'static>> = RefCell::new(Variables::new());
         };
@@ -599,13 +600,14 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
     }
 
     let mut record = csv::ByteRecord::new();
-    let mut variables = Variables::new();
+    let mut program = Program::parse(&map_expr, &headers)?;
     let mut i: usize = 0;
 
     while rdr.read_byte_record(&mut record)? {
-        variables.insert("index", DynamicValue::Integer(i as i64));
+        program.set("index", DynamicValue::Integer(i as i64));
 
-        let eval_result = eval(&pipeline, &record, &variables);
+        let eval_result = program.run(&record);
+
         let records_to_emit =
             handle_eval_result(&args, i, &mut record, eval_result, column_to_replace)?;
 

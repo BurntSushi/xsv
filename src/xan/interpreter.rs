@@ -376,6 +376,31 @@ pub fn eval(
     Ok(last_value)
 }
 
+#[derive(Clone)]
+pub struct Program<'a> {
+    pipeline: ConcretePipeline,
+    variables: Variables<'a>,
+}
+
+impl<'a> Program<'a> {
+    pub fn parse(code: &str, headers: &ByteRecord) -> Result<Self, PrepareError> {
+        let pipeline = prepare(code, headers)?;
+
+        Ok(Program {
+            pipeline,
+            variables: Variables::new(),
+        })
+    }
+
+    pub fn run(&self, record: &ByteRecord) -> Result<DynamicValue, EvaluationError> {
+        eval(&self.pipeline, record, &self.variables)
+    }
+
+    pub fn set<'b>(&'b mut self, key: &'a str, value: DynamicValue) {
+        self.variables.insert(key, value);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::error::RunError;
@@ -460,7 +485,7 @@ mod tests {
         headers.push_field(b"a");
         headers.push_field(b"b");
 
-        let pipeline = prepare(code, &headers).map_err(RunError::Prepare)?;
+        let mut program = Program::parse(code, &headers).map_err(RunError::Prepare)?;
 
         let mut record = ByteRecord::new();
         record.push_field(b"john");
@@ -468,10 +493,8 @@ mod tests {
         record.push_field(b"34");
         record.push_field(b"62");
 
-        let mut variables = Variables::new();
-        variables.insert(&"index", DynamicValue::Integer(2));
-
-        eval(&pipeline, &record, &variables).map_err(RunError::Evaluation)
+        program.set(&"index", DynamicValue::Integer(2));
+        program.run(&record).map_err(RunError::Evaluation)
     }
 
     #[test]
