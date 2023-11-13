@@ -628,6 +628,14 @@ impl<'a> BoundArguments<'a> {
         }
     }
 
+    pub fn get1_owned(mut self) -> Result<BoundArgument<'a>, CallError> {
+        if self.len() != 1 {
+            return Err(CallError::from_invalid_arity(1, self.len()));
+        }
+
+        Ok(self.stack.pop().unwrap())
+    }
+
     pub fn get2(&self) -> Result<(&Cow<DynamicValue>, &Cow<DynamicValue>), CallError> {
         match self.stack.get(0) {
             None => Err(CallError::from_invalid_arity(2, 0)),
@@ -669,14 +677,8 @@ impl<'a> BoundArguments<'a> {
         self.get1().and_then(|value| value.try_as_str())
     }
 
-    pub fn get1_as_list<'b>(&'b mut self) -> Result<Cow<'a, Vec<DynamicValue>>, CallError> {
-        if self.len() != 1 {
-            return Err(CallError::from_invalid_arity(1, self.len()));
-        }
-
-        let arg = self.stack.pop().unwrap();
-
-        Ok(match arg {
+    pub fn get1_as_list(self) -> Result<Cow<'a, Vec<DynamicValue>>, CallError> {
+        Ok(match self.get1_owned()? {
             Cow::Owned(v) => Cow::Owned(v.try_into_list()?),
             Cow::Borrowed(v) => Cow::Borrowed(v.try_as_list()?),
         })

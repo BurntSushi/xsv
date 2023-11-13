@@ -405,7 +405,7 @@ fn replace(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(replaced))
 }
 
-fn compact(mut args: BoundArguments) -> FunctionResult {
+fn compact(args: BoundArguments) -> FunctionResult {
     let arg = args.get1_as_list()?;
 
     Ok(DynamicValue::List(match arg {
@@ -609,7 +609,6 @@ fn err(args: BoundArguments) -> FunctionResult {
 }
 
 fn val(args: BoundArguments) -> FunctionResult {
-    let arg = args.get1()?;
-
-    Ok(arg.as_ref().clone())
+    let arg = args.get1_owned()?;
+    Ok(arg.into_owned())
 }
