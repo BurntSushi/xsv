@@ -276,6 +276,16 @@ impl DynamicValue {
         }
     }
 
+    pub fn try_into_list(self) -> Result<Vec<DynamicValue>, CallError> {
+        match self {
+            Self::List(list) => Ok(list),
+            value => Err(CallError::Cast((
+                value.type_of().to_string(),
+                "list".to_string(),
+            ))),
+        }
+    }
+
     pub fn try_as_number(&self) -> Result<DynamicNumber, CallError> {
         Ok(match self {
             Self::String(string) => match string.parse::<i64>() {
@@ -659,8 +669,17 @@ impl<'a> BoundArguments<'a> {
         self.get1().and_then(|value| value.try_as_str())
     }
 
-    pub fn get1_as_list(&'a self) -> Result<&Vec<DynamicValue>, CallError> {
-        self.get1().and_then(|value| value.try_as_list())
+    pub fn get1_as_list<'b>(&'b mut self) -> Result<Cow<'a, Vec<DynamicValue>>, CallError> {
+        if self.len() != 1 {
+            return Err(CallError::from_invalid_arity(1, self.len()));
+        }
+
+        let arg = self.stack.pop().unwrap();
+
+        Ok(match arg {
+            Cow::Owned(v) => Cow::Owned(v.try_into_list()?),
+            Cow::Borrowed(v) => Cow::Borrowed(v.try_as_list()?),
+        })
     }
 
     pub fn get1_as_bool(&'a self) -> Result<bool, CallError> {

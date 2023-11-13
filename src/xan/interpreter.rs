@@ -749,4 +749,12 @@ mod tests {
     fn test_unless() {
         assert_eq!(eval_code("unless(true, 3, 2)"), Ok(DynamicValue::from(2)));
     }
+
+    #[test]
+    fn test_compact() {
+        assert_eq!(
+            eval_code("compact(split('', '|'))"),
+            Ok(DynamicValue::from(vec![]))
+        );
+    }
 }

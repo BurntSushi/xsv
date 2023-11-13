@@ -405,15 +405,20 @@ fn replace(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(replaced))
 }
 
-fn compact(args: BoundArguments) -> FunctionResult {
+fn compact(mut args: BoundArguments) -> FunctionResult {
     let arg = args.get1_as_list()?;
 
-    Ok(DynamicValue::List(
-        arg.iter()
+    Ok(DynamicValue::List(match arg {
+        Cow::Borrowed(list) => list
+            .iter()
             .filter(|value| value.is_truthy())
             .cloned()
             .collect(),
-    ))
+        Cow::Owned(mut list) => {
+            list.retain(|value| value.is_truthy());
+            list
+        }
+    }))
 }
 
 // Arithmetics
