@@ -563,7 +563,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
     }
 
     if let Some(threads) = args.threads {
-        // TODO: drop the move in the closure when we have a working program abstraction
+        // NOTE: this could be a OnceCell but it is very new in rust
         let local: Arc<ThreadLocal<RefCell<Program>>> =
             Arc::new(ThreadLocal::with_capacity(threads));
 
