@@ -1,6 +1,6 @@
 [package]
 name = "xsv"
-version = "0.13.0-medialab26"  #:version
+version = "0.13.0-medialab27"  #:version
 authors = [
   "Andrew Gallant <jamslam@gmail.com>",
   "Guillaume Plique <guillaume.plique@sciencespo.fr>",

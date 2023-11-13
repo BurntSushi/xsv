@@ -1,5 +1,221 @@
 # The `xsv` Gazette
 
+## Early Nov. 2023 Edition
+
+So much *ææææææsthetic* improvements to `xsv` this november! Very wow!
+
+And remember: `xsv` is just `pandas` for adults!
+
+Install the newest version by running:
+
+```bash
+cargo install --git https://github.com/medialab/xsv.git --branch prod
+```
+
+### Summary
+
+- [Fixed wrapping](#fixed-wrapping)
+- [Better support for RTL languages](#better-support-for-rtl-languages)
+- [hist improvements](#hist-improvements)
+- [view improvements](#view-improvements)
+- [Faster pseudo](#faster-pseudo)
+- [enum is back](#enum-is-back)
+- [transform command](#transform-command)
+- [flatmap command](#flatmap-command)
+- [New xan functions](#new-xan-functions)
+
+### Fixed wrapping
+
+All commands, notably `xsv flatten` with the `-w/--wrap` flag, now wrap text content in the terminal correctly.
+
+No more panicking because the command was botching wrapped text and was making you think your data was corrupted :).
+
+### Better support for RTL languages
+
+The `hist`, `flatten` & `view` command now deal better with languages that are written right-to-left. Arabic script is still a challenge though and I did not find a correct way to measure it ahead of time.
+
+### hist improvements
+
+*Improved proportions*
+
+More space was given to the labels to avoid ellision as much as possible. The numbers column will now only take the necessary space, up to a point.
+
+*Support of absent field column*
+
+Since the command was geared towards processing the output of the `frequency` and `bins` command, `hist` was expecting to find a "field" column taking the name of the represented column/category etc. It is possible to customize the name of this column using the `-f/--field` flag, but still, it was also a legitimate use case not to have this column altogether.
+
+This means the command will now work in the absence of a "field" column, in which case you can always give a name to the represented values in the legend using the `--name` flag, if you need to.
+
+*Rainbow support*
+
+The `hist` command joins the very select club of commands having the `-R/--rainbow` flag.
+
+Here, the flag will assign alternating colors to the bars. This can be nice for a small number of represented category to separate them visually, but will seem quite clownish on a large number of bars. Consider yourself warned. I won't take responsibility if you end up aesthetically injured by the output of the command.
+
+![clow-hist](./img/clown-hist.png)
+
+<small><em>My eyes, it buuurns...</em></small>
+
+*Simple output*
+
+If you know you will write your bars to a text file or want a simpler output, you can now use the `-S/--simple` flag to use basic characters for the bars, that are easy to read without colors.
+
+```txt
+Histogram for status (bars: 6, sum: 1,481, max: 1,048):
+
+200    |1,048  70.76%|━━━━━━━━━━━━━━━━━━━━━━━━━━━|
+<null> |  344  23.23%|━━━━━━━━╸                  |
+404    |   59   3.98%|━╸                         |
+403    |   15   1.01%|╸                          |
+410    |   12   0.81%|╸                          |
+503    |    3   0.20%|╸                          |
+```
+
+### view improvements
+
+*Overhauled look & feel*
+
+![sleeker-view](./img/sleeker-view.png)
+
+The command has been rewritten to display solid borders, to be more clever regarding ideal column width inference and to show a mix of columns from the first & last columns (I blame [@bmaz](https://github.com/bmaz)) when available space is insufficient to display the whole table. Which is a perfect intro for the next section:
+
+*Integrated pager flag*
+
+You can now do `xsv view -p` instead of doing `xsv view -eC | less -SR` to automagically spawn a `less` pager with the correct settings for an extended view output.
+
+*Experimental emojis sanitization*
+
+It's not entirely possible to measure ahead of time the number of terminal columns an emoji will use when rendered. This means some emojis might break layout that rely on precise measurements for the characters such as the one used by the view command.
+
+If this is an issue for you, the `view` command now accepts an experimental `-E` flag that will replace emojis with their usual name to ensure the terminal layout will not glitch.
+
+For instance 👩‍👩‍👧 will be replaced as `:family_woman_woman_girl:`.
+
+If this experiment is conclusive, the flag will be ported to `hist`, probably `flatten`, and why not as a `xan` function.
+
+*Hiding the indices*
+
+If you want more place and feel the index column on the left is useless to you, you can now hide it with the `-I/--hide-index` flag.
+
+### Faster pseudo
+
+`xsv pseudo` is faster. That's it. That's the tweet.
+
+### enum is back
+
+A simpler `enum` command, whose job is now only to prepend an index column to a CSV file, is back (I blame [@MiguelLaura](https://github.com/MiguelLaura)).
+
+It can be useful when you know you are going to sort/shuffle/parallelize/join the file later on and need to find some info about the original order for instance.
+
+```bash
+# Prepending a 0-based index column
+xsv enum file.csv
+
+# Chosing the column name
+xsv enum -c my_fancy_unicorn_index file.csv
+
+# Starting from 1 like a R hipster
+xsv enum -S 1 file.csv
+```
+
+Of course, if you are some kind of hipster, this is somewhat identical to:
+
+```bash
+xsv map 'val(%index)' index file.csv
+```
+
+but faster.
+
+### transform command
+
+`transform` is a new xan-powered command that is somewhat analogous to `map` but will not create a new column. Instead it will modify an existing column, that you can rename if you want.
+
+Don't forget all xan commands come with the `--cheatsheet` flag, for a quick review of this very minimalistic script language, and the `--functions` for an exhaustive list of the supported functions.
+
+For instance, if we have the following CSV file:
+
+```
+name,surname
+John,davis
+Mary,sue
+```
+
+And we want to uppercase the surname, we can run the following command:
+
+```bash
+xsv transform 'upper(surname)' surname -r upper_surname
+```
+
+to obtain:
+
+```
+name,upper_surname
+John,DAVIS
+Mary,SUE
+```
+
+### flatmap command
+
+`flatmap` is yet another new xan-powered command that evaluates an expression for each row of a CSV file and will write 0 or any number of rows in the output by iterating over the expression's result.
+
+Those rows will each have a new column containing a single item of the optionally iterable result of the evaluated expression. Or they can also replace the content of a column instead of adding a new one.
+
+For instance, splitting a column by a character and emitting one new row per item in the splitted result is a typical example of `flatmap` (yes, I know about the `explode` command, which you certainly should use if you don't have weirder shit to do of course).
+
+For instance, given this CSV file:
+
+```txt
+name,colors
+John,blue
+Mary,yellow|red
+```
+
+We can run the following command:
+
+```bash
+xsv flatmap 'split(colors, "|")' color -r colors
+```
+
+To obtain the following:
+
+```txt
+name,color
+John,blue
+Mary,yellow
+Mary,red
+```
+
+And if you are a naughty person you can even use the `flatmap` command as a combined filter and map in one pass over the CSV file. Which means you can go from:
+
+```txt
+name,age
+John Mayer,34
+Mary Sue,45
+```
+
+to:
+
+```txt
+name,age,surname
+Mary Sue,45,Sue
+```
+
+in this single crafty command:
+
+```bash
+xsv flatmap 'if(gte(age, 40), last(split(name, " ")))' surname
+```
+
+### New xan functions
+
+*compact*
+
+Filter out all falsey values from a list.
+
+*unless*
+
+A reverse `if` statement.
+
 ## Oct. 2023 Edition
 
 ### Summary
