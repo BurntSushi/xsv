@@ -164,9 +164,18 @@ fn len(args: BoundArguments) -> FunctionResult {
 }
 
 fn count(args: BoundArguments) -> FunctionResult {
-    let (string, pattern) = args.get2_as_str()?;
+    let (arg1, arg2) = args.get2()?;
 
-    Ok(DynamicValue::from(string.matches(pattern.as_ref()).count()))
+    let string = arg1.try_as_str()?;
+
+    match arg2.try_as_regex() {
+        Ok(regex) => Ok(DynamicValue::from(regex.find_iter(&string).count())),
+        Err(_) => {
+            let pattern = arg2.try_as_str()?;
+
+            Ok(DynamicValue::from(string.matches(pattern.as_ref()).count()))
+        }
+    }
 }
 
 fn startswith(args: BoundArguments) -> FunctionResult {
