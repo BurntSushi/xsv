@@ -148,14 +148,25 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     Ok(wtr.flush()?)
 }
 
-fn compute_iqr(numbers: &Vec<f64>) -> Option<f64> {
+fn compute_rectified_iqr(numbers: &Vec<f64>, stats: &SeriesStats) -> Option<f64> {
     if numbers.len() < 4 {
         None
     } else {
         let q1 = (numbers.len() as f64 * 0.25).floor() as usize;
         let q3 = (numbers.len() as f64 * 0.75).floor() as usize;
 
-        Some(numbers[q3] - numbers[q1])
+        let mut q1 = numbers[q1];
+        let mut q3 = numbers[q3];
+
+        // Translating to avoid non-positive issues
+        let offset = stats.min().unwrap() + 1.0;
+
+        q1 += offset;
+        q3 += offset;
+
+        let iqr = q3 - q1;
+
+        Some(iqr)
     }
 }
 
@@ -273,23 +284,27 @@ impl Series {
     }
 
     pub fn naive_optimal_bin_count(&self) -> usize {
-        (self.len() as f64).sqrt().ceil() as usize
+        usize::min((self.len() as f64).sqrt().ceil() as usize, 50)
     }
 
-    pub fn freedman_diaconis(&mut self, width: f64) -> Option<usize> {
+    pub fn freedman_diaconis(&mut self, width: f64, stats: &SeriesStats) -> Option<usize> {
         self.numbers.par_sort_unstable_by(|a, b| a.total_cmp(b));
 
-        compute_iqr(&self.numbers).map(|iqr| {
+        compute_rectified_iqr(&self.numbers, stats).and_then(|iqr| {
+            if iqr == 0.0 {
+                return None;
+            }
+
             let bin_width = 2.0 * (iqr / (self.numbers.len() as f64).cbrt());
 
-            (width / bin_width).ceil() as usize
+            Some((width / bin_width).ceil() as usize)
         })
     }
 
-    pub fn optimal_bin_count(&mut self, width: f64) -> usize {
+    pub fn optimal_bin_count(&mut self, width: f64, stats: &SeriesStats) -> usize {
         usize::max(
             2,
-            self.freedman_diaconis(width)
+            self.freedman_diaconis(width, stats)
                 .unwrap_or_else(|| self.naive_optimal_bin_count()),
         )
     }
@@ -310,7 +325,7 @@ impl Series {
         let max = max.unwrap_or_else(|| stats.max().unwrap());
         let width = (max - min).abs();
 
-        let count = count.unwrap_or_else(|| self.optimal_bin_count(width));
+        let count = count.unwrap_or_else(|| self.optimal_bin_count(width, &stats));
         let mut bins: Vec<Bin> = Vec::with_capacity(count);
 
         let cell_width = width / count as f64;
