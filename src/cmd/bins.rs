@@ -98,9 +98,13 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                     let lower_bound = util::pretty_print_float(&mut formatter, lower_bound);
                     let upper_bound = util::pretty_print_float(&mut formatter, upper_bound);
 
-                    let label_format = match bins_iter.peek() {
-                        None => format!(">= {} <= {}", lower_bound, upper_bound),
-                        Some(_) => format!(">= {} < {}", lower_bound, upper_bound),
+                    let label_format = if bin.is_constant() {
+                        format!("{}", lower_bound)
+                    } else {
+                        match bins_iter.peek() {
+                            None => format!(">= {} <= {}", lower_bound, upper_bound),
+                            Some(_) => format!(">= {} < {}", lower_bound, upper_bound),
+                        }
                     };
 
                     wtr.write_record(vec![
@@ -196,6 +200,12 @@ struct Bin {
     lower_bound: f64,
     upper_bound: f64,
     count: usize,
+}
+
+impl Bin {
+    fn is_constant(&self) -> bool {
+        return self.lower_bound == self.upper_bound;
+    }
 }
 
 #[derive(Debug)]
@@ -323,6 +333,15 @@ impl Series {
 
         let min = min.unwrap_or_else(|| stats.min().unwrap());
         let max = max.unwrap_or_else(|| stats.max().unwrap());
+
+        if min == max {
+            return Some(vec![Bin {
+                lower_bound: min,
+                upper_bound: max,
+                count: self.len(),
+            }]);
+        }
+
         let width = (max - min).abs();
 
         let count = count.unwrap_or_else(|| self.optimal_bin_count(width, &stats));
