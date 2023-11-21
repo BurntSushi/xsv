@@ -2,11 +2,11 @@
 
 Every month or so, a new blog article touting the near demise of CSV in favor of some "obviously superior" format ([parquet](https://parquet.apache.org/), [apache arrow](https://arrow.apache.org/) and others, notably) find its ways to the reader's eyes. Sadly those articles often offer a very narrow and biased comparison and often fail to understand what makes CSV a seemingly unkillable staple of data serialization.
 
-It is therefore my intention, through this article, to write a love letter to this data format, often criticized for the wrong reasons, even more so when it is somehow deemed "cool" to hate on it. My point is not, of course, to say that CSV is a silver bullet, but rather to shine a light on some of the format's often overlooked strengths.
+It is therefore my intention, through this article, to write a love letter to this data format, often criticized for the wrong reasons, even more so when it is somehow deemed "cool" to hate on it. My point is not, far from it, to say that CSV is a silver bullet but rather to shine a light on some of the format's sometimes overlooked strengths.
 
 ## 1. CSV is dead simple
 
-The specification of CSV holds in its title: "comma separated values". Okay, everyone knows it's a lie, but still, the specification holds in a tweet and can be explained to anybody in seconds: commas separate values, new lines separate rows. Now quote literal commas and line breaks, double quote your quotes, and that's it. This is so simple you might even invent it yourself without knowing it already exists while learning how to program.
+The specification of CSV holds in its title: "comma separated values". Okay, it's a lie, but still, the specification holds in a tweet and can be explained to anybody in seconds: commas separate values, new lines separate rows. Now quote values containing commas and line breaks, double quote your quotes, and that's it. This is so simple you might even invent it yourself without knowing it already exists while learning how to program.
 
 Of course it does not mean you should not use a dedicated CSV parser/writer because you *will* mess something up.
 
