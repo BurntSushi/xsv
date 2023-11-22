@@ -14,7 +14,7 @@ Of course it does not mean you should not use a dedicated CSV parser/writer beca
 
 ## 2. CSV is a collective idea
 
-No one owns CSV. It has no real specification (yes I know about the controversial ex-post [RFC 4180](https://datatracker.ietf.org/doc/html/rfc4180)), just a set of rules everyone kinda agree to respect implicitly. It is, and will forever remain, an open and free collective idea.
+No one owns CSV. It has no real specification (yes, I know about the controversial ex-post [RFC 4180](https://datatracker.ietf.org/doc/html/rfc4180)), just a set of rules everyone kinda agrees to respect implicitly. It is, and will forever remain, an open and free collective idea.
 
 ## 3. CSV is text
 
@@ -22,9 +22,9 @@ Like JSON, YAML or XML, CSV is just plain text, that you are free to encode howe
 
 ## 4. CSV is streamable
 
-CSV can be read row by row very easily without requiring more memory that what is needed to fit a single row. This also means that a trivial program that anyone can write is able to read gigabytes of CSV data with only some kilobytes of RAM.
+CSV can be read row by row very easily without requiring more memory than what is needed to fit a single row. This also means that a trivial program that anyone can write is able to read gigabytes of CSV data with only some kilobytes of RAM.
 
-By comparison, column-oriented data formats such as parquet are not able to stream files row by row without requiring you to jump to and fro in the file or to buffer the memory cleverly so you don't tank read performance.
+By comparison, column-oriented data formats such as parquet are not able to stream files row by row without requiring you to jump to and from in the file or to buffer the memory cleverly so you don't tank read performance.
 
 But of course, CSV is terrible if you are only interested in specific columns because you will indeed need to read all of a row only to access the part you are interested in.
 
