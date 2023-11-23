@@ -2,7 +2,7 @@
 
 *Or why people pretending CSV is dead are wrong*
 
-Every month or so, a new blog article touting the near demise of CSV in favor of some "obviously superior" format ([parquet](https://parquet.apache.org/), newline-delimited JSON, [MessagePack](https://msgpack.org/) records etc.) find its ways to the reader's eyes. Sadly those articles often offer a very narrow and biased comparison and often fail to understand what makes CSV a seemingly unkillable staple of data serialization.
+Every month or so, a new blog article declaring the near demise of CSV in favor of some "obviously superior" format ([parquet](https://parquet.apache.org/), newline-delimited JSON, [MessagePack](https://msgpack.org/) records etc.) find its ways to the reader's eyes. Sadly those articles often offer a very narrow and biased comparison and often fail to understand what makes CSV a seemingly unkillable staple of data serialization.
 
 It is therefore my intention, through this article, to write a love letter to this data format, often criticized for the wrong reasons, even more so when it is somehow deemed "cool" to hate on it. My point is not, far from it, to say that CSV is a silver bullet but rather to shine a light on some of the format's sometimes overlooked strengths.
 
@@ -24,7 +24,7 @@ Like JSON, YAML or XML, CSV is just plain text, that you are free to encode howe
 
 CSV can be read row by row very easily without requiring more memory than what is needed to fit a single row. This also means that a trivial program that anyone can write is able to read gigabytes of CSV data with only some kilobytes of RAM.
 
-By comparison, column-oriented data formats such as parquet are not able to stream files row by row without requiring you to jump to and from in the file or to buffer the memory cleverly so you don't tank read performance.
+By comparison, column-oriented data formats such as parquet are not able to stream files row by row without requiring you to jump here and there in the file or to buffer the memory cleverly so you don't tank read performance.
 
 But of course, CSV is terrible if you are only interested in specific columns because you will indeed need to read all of a row only to access the part you are interested in.
 
