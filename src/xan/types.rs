@@ -728,61 +728,6 @@ impl<'a> IntoIterator for BoundArguments<'a> {
     }
 }
 
-// #[derive(Debug, Clone, Copy)]
-// pub struct DynamicValuePoolKey(usize);
-
-// pub struct DynamicValuePool {
-//     values: Vec<DynamicValue>,
-//     dynamic_offset: usize,
-//     ready: bool,
-// }
-
-// impl DynamicValuePool {
-//     pub fn new() -> Self {
-//         DynamicValuePool {
-//             values: Vec::new(),
-//             dynamic_offset: 0,
-//             ready: false,
-//         }
-//     }
-
-//     pub fn insert(&mut self, value: DynamicValue) -> DynamicValuePoolKey {
-//         let key = DynamicValuePoolKey(self.values.len());
-
-//         if !self.ready {
-//             self.dynamic_offset += 1;
-//         }
-
-//         self.values.push(value);
-
-//         key
-//     }
-
-//     pub fn create<T>(&mut self, value: T) -> DynamicValuePoolKey
-//     where
-//         T: Into<DynamicValue>,
-//     {
-//         let value: DynamicValue = value.into();
-//         self.insert(value)
-//     }
-
-//     pub fn finalize_statics(&mut self) {
-//         self.ready = true;
-//     }
-
-//     pub fn clear(&mut self) {
-//         self.values.truncate(self.dynamic_offset)
-//     }
-// }
-
-// impl Index<DynamicValuePoolKey> for DynamicValuePool {
-//     type Output = DynamicValue;
-
-//     fn index(&self, index: DynamicValuePoolKey) -> &Self::Output {
-//         &self.values[index.0]
-//     }
-// }
-
 #[cfg(test)]
 mod tests {
     use super::*;
