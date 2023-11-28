@@ -94,9 +94,11 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
     let max_value_width = cols - max_header_width - 1;
 
     while rdr.read_record(&mut record)? {
-        println!("{}", "-".repeat(cols));
+        if record_index > 0 {
+            println!("");
+        }
         println!("{}", format!("Row n°{}", record_index).bold());
-        println!("{}", "-".repeat(cols));
+        println!("{}", "─".repeat(cols).dimmed());
 
         for (i, (header, cell)) in headers.iter().zip(record.iter()).enumerate() {
             let cell = match cell.trim() {
