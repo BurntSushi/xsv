@@ -65,9 +65,7 @@ impl ConcreteArgument {
         variables: &'a Variables,
     ) -> EvaluationResult<'a> {
         match self {
-            ConcreteArgument::Call(function_call) => {
-                function_call.run(record, last_value, variables)
-            }
+            Self::Call(function_call) => function_call.run(record, last_value, variables),
             _ => self.bind(record, last_value, variables).map_err(|err| {
                 EvaluationError::Binding(SpecifiedBindingError {
                     function_name: "<expr>".to_string(),
@@ -75,6 +73,13 @@ impl ConcreteArgument {
                     reason: err,
                 })
             }),
+        }
+    }
+
+    fn is_index_variable(&self) -> bool {
+        match self {
+            Self::Variable(name) => name == "index",
+            _ => false,
         }
     }
 }
@@ -205,7 +210,7 @@ pub enum ConcreteFunctionCall {
 }
 
 impl ConcreteFunctionCall {
-    pub fn run<'a>(
+    fn run<'a>(
         &'a self,
         record: &'a csv::ByteRecord,
         last_value: &'a DynamicValue,
@@ -215,6 +220,15 @@ impl ConcreteFunctionCall {
             Self::Subroutine(subroutine) => subroutine.run(record, last_value, variables),
             Self::SpecialStatement(statement) => statement.run(record, last_value, variables),
         }
+    }
+
+    fn has_index_variable(&self) -> bool {
+        let args = match self {
+            Self::SpecialStatement(statement) => &statement.args,
+            Self::Subroutine(subroutine) => &subroutine.args,
+        };
+
+        args.iter().any(|arg| arg.is_index_variable())
     }
 }
 
@@ -380,15 +394,18 @@ pub fn eval(
 pub struct Program<'a> {
     pipeline: ConcretePipeline,
     variables: Variables<'a>,
+    should_bind_index: bool,
 }
 
 impl<'a> Program<'a> {
     pub fn parse(code: &str, headers: &ByteRecord) -> Result<Self, PrepareError> {
         let pipeline = prepare(code, headers)?;
+        let should_bind_index = pipeline.iter().any(|call| call.has_index_variable());
 
         Ok(Program {
             pipeline,
             variables: Variables::new(),
+            should_bind_index,
         })
     }
 
@@ -397,6 +414,10 @@ impl<'a> Program<'a> {
     }
 
     pub fn set<'b>(&'b mut self, key: &'a str, value: DynamicValue) {
+        if key == "index" && !self.should_bind_index {
+            return;
+        }
+
         self.variables.insert(key, value);
     }
 }
