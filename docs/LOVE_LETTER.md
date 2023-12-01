@@ -18,7 +18,7 @@ No one owns CSV. It has no real specification (yes, I know about the controversi
 
 ## 3. CSV is text
 
-Like JSON, YAML or XML, CSV is just plain text, that you are free to encode however you like. CSV is not a binary format, can be opened with any text editor and does not require any specialized program to be read (I am looking at you XLS...).
+Like JSON, YAML or XML, CSV is just plain text, that you are free to encode however you like. CSV is not a binary format, can be opened with any text editor and does not require any specialized program to be read. This means, by extension, that it can be both be read and edited by humans directly, somehow.
 
 ## 4. CSV is streamable
 
