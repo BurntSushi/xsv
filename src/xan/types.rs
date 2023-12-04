@@ -676,37 +676,37 @@ impl<'a> BoundArguments<'a> {
         }
     }
 
-    pub fn get1_as_str(&'a self) -> Result<Cow<'a, str>, CallError> {
+    pub fn get1_str(&'a self) -> Result<Cow<'a, str>, CallError> {
         self.get1().and_then(|value| value.try_as_str())
     }
 
-    pub fn pop1_as_list(&mut self) -> Result<Cow<Vec<DynamicValue>>, CallError> {
+    pub fn pop1_list(&mut self) -> Result<Cow<Vec<DynamicValue>>, CallError> {
         Ok(match self.pop1()? {
             Cow::Owned(v) => Cow::Owned(v.try_into_list()?),
             Cow::Borrowed(v) => Cow::Borrowed(v.try_as_list()?),
         })
     }
 
-    pub fn pop1_as_bool(&mut self) -> Result<bool, CallError> {
+    pub fn pop1_bool(&mut self) -> Result<bool, CallError> {
         self.pop1().map(|value| value.is_truthy())
     }
 
-    pub fn pop1_as_number(&mut self) -> Result<DynamicNumber, CallError> {
+    pub fn pop1_number(&mut self) -> Result<DynamicNumber, CallError> {
         self.pop1().and_then(|value| value.try_as_number())
     }
 
-    pub fn get2_as_str(&self) -> Result<(Cow<str>, Cow<str>), CallError> {
+    pub fn get2_str(&self) -> Result<(Cow<str>, Cow<str>), CallError> {
         let (a, b) = self.get2()?;
 
         Ok((a.try_as_str()?, b.try_as_str()?))
     }
 
-    pub fn get2_as_numbers(&self) -> Result<(DynamicNumber, DynamicNumber), CallError> {
+    pub fn get2_number(&self) -> Result<(DynamicNumber, DynamicNumber), CallError> {
         let (a, b) = self.get2()?;
         Ok((a.try_as_number()?, b.try_as_number()?))
     }
 
-    pub fn get2_as_bool(&self) -> Result<(bool, bool), CallError> {
+    pub fn get2_bool(&self) -> Result<(bool, bool), CallError> {
         let (a, b) = self.get2()?;
         Ok((a.is_truthy(), b.is_truthy()))
     }

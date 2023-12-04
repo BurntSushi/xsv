@@ -146,11 +146,11 @@ fn split(args: BoundArguments) -> FunctionResult {
 }
 
 fn lower(args: BoundArguments) -> FunctionResult {
-    Ok(DynamicValue::from(args.get1_as_str()?.to_lowercase()))
+    Ok(DynamicValue::from(args.get1_str()?.to_lowercase()))
 }
 
 fn upper(args: BoundArguments) -> FunctionResult {
-    Ok(DynamicValue::from(args.get1_as_str()?.to_uppercase()))
+    Ok(DynamicValue::from(args.get1_str()?.to_uppercase()))
 }
 
 fn len(mut args: BoundArguments) -> FunctionResult {
@@ -178,13 +178,13 @@ fn count(args: BoundArguments) -> FunctionResult {
 }
 
 fn startswith(args: BoundArguments) -> FunctionResult {
-    let (string, pattern) = args.get2_as_str()?;
+    let (string, pattern) = args.get2_str()?;
 
     Ok(DynamicValue::from(string.starts_with(&*pattern)))
 }
 
 fn endswith(args: BoundArguments) -> FunctionResult {
-    let (string, pattern) = args.get2_as_str()?;
+    let (string, pattern) = args.get2_str()?;
 
     Ok(DynamicValue::from(string.ends_with(&*pattern)))
 }
@@ -227,7 +227,7 @@ fn concat(args: BoundArguments) -> FunctionResult {
 }
 
 fn apply_unidecode(args: BoundArguments) -> FunctionResult {
-    let arg = args.get1_as_str()?;
+    let arg = args.get1_str()?;
 
     Ok(DynamicValue::from(unidecode(&arg)))
 }
@@ -415,7 +415,7 @@ fn replace(args: BoundArguments) -> FunctionResult {
 }
 
 fn compact(mut args: BoundArguments) -> FunctionResult {
-    let arg = args.pop1_as_list()?;
+    let arg = args.pop1_list()?;
 
     Ok(DynamicValue::List(match arg {
         Cow::Borrowed(list) => list
@@ -435,12 +435,12 @@ fn arithmetic_op<F>(args: BoundArguments, op: F) -> FunctionResult
 where
     F: FnOnce(DynamicNumber, DynamicNumber) -> DynamicNumber,
 {
-    let (a, b) = args.get2_as_numbers()?;
+    let (a, b) = args.get2_number()?;
     Ok(DynamicValue::from(op(a, b)))
 }
 
 fn abs(mut args: BoundArguments) -> FunctionResult {
-    Ok(DynamicValue::from(args.pop1_as_number()?.abs()))
+    Ok(DynamicValue::from(args.pop1_number()?.abs()))
 }
 
 // Utilities
@@ -456,16 +456,16 @@ fn coalesce(args: BoundArguments) -> FunctionResult {
 
 // Boolean
 fn not(mut args: BoundArguments) -> FunctionResult {
-    Ok(DynamicValue::from(!args.pop1_as_bool()?))
+    Ok(DynamicValue::from(!args.pop1_bool()?))
 }
 
 fn and(args: BoundArguments) -> FunctionResult {
-    let (a, b) = args.get2_as_bool()?;
+    let (a, b) = args.get2_bool()?;
     Ok(DynamicValue::from(a && b))
 }
 
 fn or(args: BoundArguments) -> FunctionResult {
-    let (a, b) = args.get2_as_bool()?;
+    let (a, b) = args.get2_bool()?;
     Ok(DynamicValue::from(a || b))
 }
 
@@ -474,7 +474,7 @@ fn number_compare<F>(args: BoundArguments, validate: F) -> FunctionResult
 where
     F: FnOnce(Ordering) -> bool,
 {
-    let (a, b) = args.get2_as_numbers()?;
+    let (a, b) = args.get2_number()?;
 
     Ok(DynamicValue::from(match a.partial_cmp(&b) {
         Some(ordering) => validate(ordering),
@@ -487,7 +487,7 @@ where
     F: FnOnce(Ordering) -> bool,
 {
     // TODO: deal with lists
-    let (a, b) = args.get2_as_str()?;
+    let (a, b) = args.get2_str()?;
 
     Ok(DynamicValue::from(match a.partial_cmp(&b) {
         Some(ordering) => validate(ordering),
@@ -497,7 +497,7 @@ where
 
 // IO
 fn abspath(args: BoundArguments) -> FunctionResult {
-    let arg = args.get1_as_str()?;
+    let arg = args.get1_str()?;
     let mut path = PathBuf::new();
     path.push(arg.as_ref());
     let path = path.canonicalize().unwrap();
@@ -530,7 +530,7 @@ fn decoder_trap_from_str(name: &str) -> Result<DecoderTrap, CallError> {
 }
 
 fn isfile(args: BoundArguments) -> FunctionResult {
-    let path = args.get1_as_str()?;
+    let path = args.get1_str()?;
     let path = Path::new(path.as_ref());
 
     Ok(DynamicValue::Boolean(path.is_file()))
@@ -612,7 +612,7 @@ fn uuid(args: BoundArguments) -> FunctionResult {
 
 // Utils
 fn err(args: BoundArguments) -> FunctionResult {
-    let arg = args.get1_as_str()?;
+    let arg = args.get1_str()?;
 
     Err(CallError::Custom(arg.to_string()))
 }
