@@ -18,7 +18,6 @@ use super::types::{BoundArguments, DynamicNumber, DynamicValue};
 type FunctionResult = Result<DynamicValue, CallError>;
 pub type Function = fn(BoundArguments) -> FunctionResult;
 
-// TODO: count should be able to take regex
 // TODO: deal with list in sequence_compare & contains
 // TODO: in list, empty, not empty
 // TODO: we could also have ranges of columns and vec map etc.
@@ -154,8 +153,8 @@ fn upper(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(args.get1_as_str()?.to_uppercase()))
 }
 
-fn len(args: BoundArguments) -> FunctionResult {
-    let arg = args.get1()?;
+fn len(mut args: BoundArguments) -> FunctionResult {
+    let arg = args.pop1()?;
 
     Ok(DynamicValue::from(match arg.as_ref() {
         DynamicValue::List(list) => list.len(),
@@ -234,8 +233,9 @@ fn apply_unidecode(args: BoundArguments) -> FunctionResult {
 }
 
 // Lists & Sequences
-fn first(args: BoundArguments) -> FunctionResult {
-    let arg = args.get1()?;
+// TODO: optimize last & first wrt cows
+fn first(mut args: BoundArguments) -> FunctionResult {
+    let arg = args.pop1()?;
 
     Ok(match arg.as_ref() {
         DynamicValue::String(value) => DynamicValue::from(value.chars().next()),
@@ -252,8 +252,8 @@ fn first(args: BoundArguments) -> FunctionResult {
     })
 }
 
-fn last(args: BoundArguments) -> FunctionResult {
-    let arg = args.get1()?;
+fn last(mut args: BoundArguments) -> FunctionResult {
+    let arg = args.pop1()?;
 
     Ok(match arg.as_ref() {
         DynamicValue::String(value) => DynamicValue::from(value.chars().next_back()),
@@ -414,8 +414,8 @@ fn replace(args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(replaced))
 }
 
-fn compact(args: BoundArguments) -> FunctionResult {
-    let arg = args.get1_as_list()?;
+fn compact(mut args: BoundArguments) -> FunctionResult {
+    let arg = args.pop1_as_list()?;
 
     Ok(DynamicValue::List(match arg {
         Cow::Borrowed(list) => list
@@ -439,8 +439,8 @@ where
     Ok(DynamicValue::from(op(a, b)))
 }
 
-fn abs(args: BoundArguments) -> FunctionResult {
-    Ok(DynamicValue::from(args.get1_as_number()?.abs()))
+fn abs(mut args: BoundArguments) -> FunctionResult {
+    Ok(DynamicValue::from(args.pop1_as_number()?.abs()))
 }
 
 // Utilities
@@ -455,8 +455,8 @@ fn coalesce(args: BoundArguments) -> FunctionResult {
 }
 
 // Boolean
-fn not(args: BoundArguments) -> FunctionResult {
-    Ok(DynamicValue::from(!args.get1_as_bool()?))
+fn not(mut args: BoundArguments) -> FunctionResult {
+    Ok(DynamicValue::from(!args.pop1_as_bool()?))
 }
 
 fn and(args: BoundArguments) -> FunctionResult {
@@ -594,8 +594,8 @@ fn read(args: BoundArguments) -> FunctionResult {
 }
 
 // Introspection
-fn type_of(args: BoundArguments) -> FunctionResult {
-    Ok(DynamicValue::from(args.get1()?.type_of()))
+fn type_of(mut args: BoundArguments) -> FunctionResult {
+    Ok(DynamicValue::from(args.pop1()?.type_of()))
 }
 
 // Random
@@ -617,7 +617,7 @@ fn err(args: BoundArguments) -> FunctionResult {
     Err(CallError::Custom(arg.to_string()))
 }
 
-fn val(args: BoundArguments) -> FunctionResult {
-    let arg = args.get1_owned()?;
+fn val(mut args: BoundArguments) -> FunctionResult {
+    let arg = args.pop1()?;
     Ok(arg.into_owned())
 }
