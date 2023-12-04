@@ -233,40 +233,72 @@ fn apply_unidecode(args: BoundArguments) -> FunctionResult {
 }
 
 // Lists & Sequences
-// TODO: optimize last & first wrt cows
 fn first(mut args: BoundArguments) -> FunctionResult {
     let arg = args.pop1()?;
 
-    Ok(match arg.as_ref() {
-        DynamicValue::String(value) => DynamicValue::from(value.chars().next()),
-        DynamicValue::List(list) => match list.first() {
-            None => DynamicValue::None,
-            Some(value) => value.clone(),
+    Ok(match arg {
+        Cow::Borrowed(value) => match value {
+            DynamicValue::String(string) => DynamicValue::from(string.chars().next()),
+            DynamicValue::List(list) => match list.first() {
+                None => DynamicValue::None,
+                Some(value) => value.clone(),
+            },
+            _ => {
+                return Err(CallError::Cast((
+                    value.type_of().to_string(),
+                    "sequence".to_string(),
+                )))
+            }
         },
-        value => {
-            return Err(CallError::Cast((
-                value.type_of().to_string(),
-                "sequence".to_string(),
-            )))
-        }
+        Cow::Owned(value) => match value {
+            DynamicValue::String(string) => DynamicValue::from(string.chars().next()),
+            DynamicValue::List(mut list) => {
+                if list.is_empty() {
+                    DynamicValue::None
+                } else {
+                    list.swap_remove(0)
+                }
+            }
+            _ => {
+                return Err(CallError::Cast((
+                    value.type_of().to_string(),
+                    "sequence".to_string(),
+                )))
+            }
+        },
     })
 }
 
 fn last(mut args: BoundArguments) -> FunctionResult {
     let arg = args.pop1()?;
 
-    Ok(match arg.as_ref() {
-        DynamicValue::String(value) => DynamicValue::from(value.chars().next_back()),
-        DynamicValue::List(list) => match list.last() {
-            None => DynamicValue::None,
-            Some(value) => value.clone(),
+    Ok(match arg {
+        Cow::Borrowed(value) => match value {
+            DynamicValue::String(string) => DynamicValue::from(string.chars().next_back()),
+            DynamicValue::List(list) => match list.last() {
+                None => DynamicValue::None,
+                Some(value) => value.clone(),
+            },
+            _ => {
+                return Err(CallError::Cast((
+                    value.type_of().to_string(),
+                    "sequence".to_string(),
+                )))
+            }
         },
-        value => {
-            return Err(CallError::Cast((
-                value.type_of().to_string(),
-                "sequence".to_string(),
-            )))
-        }
+        Cow::Owned(value) => match value {
+            DynamicValue::String(string) => DynamicValue::from(string.chars().next_back()),
+            DynamicValue::List(mut list) => match list.pop() {
+                None => DynamicValue::None,
+                Some(value) => value,
+            },
+            _ => {
+                return Err(CallError::Cast((
+                    value.type_of().to_string(),
+                    "sequence".to_string(),
+                )))
+            }
+        },
     })
 }
 
