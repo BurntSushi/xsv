@@ -1,5 +1,6 @@
 use csv;
 use serde_json::Value;
+use std::borrow::Cow;
 use std::fs;
 use std::io::{self, BufRead, BufReader};
 
@@ -93,17 +94,10 @@ fn json_line_to_csv_record(value: &Value, headers: &Vec<Vec<String>>) -> csv::St
 
         if let Some(value) = value {
             record.push_field(&match value {
-                Value::Null => String::new(),
-                Value::Bool(v) => {
-                    if v {
-                        String::from("true")
-                    } else {
-                        String::from("false")
-                    }
-                }
-                Value::Number(v) => v.to_string(),
-                Value::String(v) => v,
-                _ => String::new(),
+                Value::Bool(v) => Cow::Borrowed(if v { "true" } else { "false" }),
+                Value::Number(v) => Cow::Owned(v.to_string()),
+                Value::String(v) => Cow::Owned(v),
+                _ => Cow::Borrowed(""),
             });
         } else {
             record.push_field("");
