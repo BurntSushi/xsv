@@ -409,7 +409,7 @@ impl<'a> Program<'a> {
         })
     }
 
-    pub fn run(&self, record: &ByteRecord) -> Result<DynamicValue, EvaluationError> {
+    pub fn run_with_record(&self, record: &ByteRecord) -> Result<DynamicValue, EvaluationError> {
         eval(&self.pipeline, record, &self.variables)
     }
 
@@ -515,7 +515,9 @@ mod tests {
         record.push_field(b"62");
 
         program.set(&"index", DynamicValue::Integer(2));
-        program.run(&record).map_err(RunError::Evaluation)
+        program
+            .run_with_record(&record)
+            .map_err(RunError::Evaluation)
     }
 
     #[test]

@@ -586,7 +586,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
 
                     local_program.set("index", DynamicValue::Integer(i as i64));
 
-                    let eval_result = local_program.run(&record);
+                    let eval_result = local_program.run_with_record(&record);
 
                     Ok((i, record, eval_result))
                 },
@@ -611,7 +611,7 @@ pub fn run_xan_cmd(args: XanCmdArgs) -> CliResult<()> {
     while rdr.read_byte_record(&mut record)? {
         program.set("index", DynamicValue::Integer(i as i64));
 
-        let eval_result = program.run(&record);
+        let eval_result = program.run_with_record(&record);
 
         let records_to_emit =
             handle_eval_result(&args, i, &mut record, eval_result, column_to_replace)?;
