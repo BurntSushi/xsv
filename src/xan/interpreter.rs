@@ -395,6 +395,7 @@ pub struct Program<'a> {
     pipeline: ConcretePipeline,
     variables: Variables<'a>,
     should_bind_index: bool,
+    dummy_record: csv::ByteRecord,
 }
 
 impl<'a> Program<'a> {
@@ -406,11 +407,16 @@ impl<'a> Program<'a> {
             pipeline,
             variables: Variables::new(),
             should_bind_index,
+            dummy_record: csv::ByteRecord::new(),
         })
     }
 
     pub fn run_with_record(&self, record: &ByteRecord) -> Result<DynamicValue, EvaluationError> {
         eval(&self.pipeline, record, &self.variables)
+    }
+
+    pub fn run(&self) -> Result<DynamicValue, EvaluationError> {
+        eval(&self.pipeline, &self.dummy_record, &self.variables)
     }
 
     pub fn set<'b>(&'b mut self, key: &'a str, value: DynamicValue) {
