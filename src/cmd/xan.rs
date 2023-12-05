@@ -258,6 +258,9 @@ macro_rules! xan_function_list {
     - abspath(string) -> string
         Return absolute & canonicalized path.
 
+    - filesize(string) -> int
+        Return the size of given file in bytes.
+
     - isfile(string) -> bool
         Return whether the given path is an existing file on disk.
 

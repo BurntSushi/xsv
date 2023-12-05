@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::cmp::max;
 use std::cmp::{Ordering, PartialOrd};
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::Read;
 use std::ops::{Add, Div, Mul, Sub};
 use std::path::Path;
@@ -37,6 +37,7 @@ pub fn get_function(name: &str) -> Result<Function, PrepareError> {
         "eq" => |args| number_compare(args, Ordering::is_eq),
         "endswith" => endswith,
         "err" => err,
+        "filesize" => filesize,
         "first" => first,
         "get" => get,
         "gt" => |args| number_compare(args, Ordering::is_gt),
@@ -623,6 +624,15 @@ fn read(args: BoundArguments) -> FunctionResult {
     };
 
     Ok(DynamicValue::from(contents))
+}
+
+fn filesize(args: BoundArguments) -> FunctionResult {
+    let path = args.get1_str()?;
+
+    match fs::metadata(path.as_ref()) {
+        Ok(size) => Ok(DynamicValue::from(size.len() as i64)),
+        Err(_) => Err(CallError::CannotOpenFile(path.into_owned())),
+    }
 }
 
 // Introspection
