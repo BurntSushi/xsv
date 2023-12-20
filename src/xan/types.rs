@@ -3,7 +3,7 @@ use std::cmp::{Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::BTreeMap;
 use std::collections::VecDeque;
 use std::convert::From;
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 use csv;
 use regex::Regex;
@@ -137,6 +137,17 @@ where
             DynamicNumber::Integer(b) => DynamicNumber::Float(op_float(a, b as f64)),
             DynamicNumber::Float(b) => DynamicNumber::Float(op_float(a, b)),
         },
+    }
+}
+
+impl Neg for DynamicNumber {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            Self::Float(v) => DynamicNumber::Float(-v),
+            Self::Integer(v) => DynamicNumber::Integer(-v),
+        }
     }
 }
 

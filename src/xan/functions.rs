@@ -53,6 +53,7 @@ pub fn get_function(name: &str) -> Result<Function, PrepareError> {
         "lower" => lower,
         "match" => is_match,
         "mul" => |args| arithmetic_op(args, Mul::mul),
+        "neg" => neg,
         "neq" => |args| number_compare(args, Ordering::is_ne),
         "not" => not,
         "or" => or,
@@ -474,6 +475,10 @@ where
 
 fn abs(mut args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(args.pop1_number()?.abs()))
+}
+
+fn neg(mut args: BoundArguments) -> FunctionResult {
+    Ok(DynamicValue::from(-args.pop1_number()?))
 }
 
 // Utilities

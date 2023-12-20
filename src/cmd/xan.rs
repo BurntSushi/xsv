@@ -113,6 +113,9 @@ macro_rules! xan_function_list {
     - mul(x, y) -> number
         Multiply x & y.
 
+    - neg(x) -> Number
+        Return -x.
+
     - sub(x, y) -> number
         Subtract x & y.
 

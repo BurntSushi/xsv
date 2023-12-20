@@ -780,6 +780,15 @@ mod tests {
     }
 
     #[test]
+    fn test_neg() {
+        assert_eq!(eval_code("neg(-1)"), Ok(DynamicValue::from(1)));
+        assert_eq!(eval_code("neg(1)"), Ok(DynamicValue::from(-1)));
+        assert_eq!(eval_code("neg(1.5)"), Ok(DynamicValue::from(-1.5)));
+        assert_eq!(eval_code("neg(0)"), Ok(DynamicValue::from(0)));
+        assert_eq!(eval_code("neg(0.0)"), Ok(DynamicValue::from(0.0)));
+    }
+
+    #[test]
     fn test_compact() {
         assert_eq!(
             eval_code("compact(split('', '|'))"),
