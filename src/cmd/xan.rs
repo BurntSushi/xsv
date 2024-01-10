@@ -76,7 +76,7 @@ available functions):
 
         'trim(name) | lower(_)'
 
-   . Basic branching (also consider using the \"coalesce\" function for simple cases):
+  . Basic branching (also consider using the \"coalesce\" function for simple cases):
         'if(lt(count, 4), trim(name), trim(surname))'
 
 Misc notes:
