@@ -240,7 +240,7 @@ fn regex_literal(input: &str) -> IResult<&str, String> {
     )(input)
 }
 
-fn argument_separator(input: &str) -> IResult<&str, ()> {
+fn comma_separator(input: &str) -> IResult<&str, ()> {
     value((), tuple((space0, char(','), space0)))(input)
 }
 
@@ -253,7 +253,7 @@ fn indexation(input: &str) -> IResult<&str, ColumIndexationBy> {
                 map(
                     pair(
                         string_literal,
-                        opt(preceded(argument_separator, integer_literal::<usize>)),
+                        opt(preceded(comma_separator, integer_literal::<usize>)),
                     ),
                     |(string, index)| match index {
                         Some(pos) => ColumIndexationBy::NameAndNth((string, pos)),
@@ -290,7 +290,7 @@ fn argument(input: &str) -> IResult<&str, Argument> {
 }
 
 fn argument_list(input: &str) -> IResult<&str, Vec<Argument>> {
-    separated_list0(argument_separator, argument)(input)
+    separated_list0(comma_separator, argument)(input)
 }
 
 fn inner_function_call(input: &str) -> IResult<&str, FunctionCall> {
