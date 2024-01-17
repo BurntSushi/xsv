@@ -33,6 +33,7 @@ pub fn get_function(name: &str) -> Result<Function, PrepareError> {
         "concat" => concat,
         "contains" => contains,
         "count" => count,
+        "dec" => dec,
         "div" => |args| arithmetic_op(args, Div::div),
         "eq" => |args| number_compare(args, Ordering::is_eq),
         "endswith" => endswith,
@@ -43,6 +44,7 @@ pub fn get_function(name: &str) -> Result<Function, PrepareError> {
         "gt" => |args| number_compare(args, Ordering::is_gt),
         "gte" => |args| number_compare(args, Ordering::is_ge),
         "idiv" => |args| arithmetic_op(args, DynamicNumber::idiv),
+        "inc" => inc,
         "isfile" => isfile,
         "join" => join,
         "last" => last,
@@ -479,6 +481,14 @@ fn abs(mut args: BoundArguments) -> FunctionResult {
 
 fn neg(mut args: BoundArguments) -> FunctionResult {
     Ok(DynamicValue::from(-args.pop1_number()?))
+}
+
+fn inc(mut args: BoundArguments) -> FunctionResult {
+    Ok(DynamicValue::from(args.pop1_number()?.inc()))
+}
+
+fn dec(mut args: BoundArguments) -> FunctionResult {
+    Ok(DynamicValue::from(args.pop1_number()?.dec()))
 }
 
 // Utilities

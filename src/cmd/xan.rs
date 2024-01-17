@@ -104,11 +104,17 @@ macro_rules! xan_function_list {
     - add(x, y) -> number
         Add two numbers.
 
+    - dec(x) -> number
+        Substract 1 from x.
+
     - div(x, y) -> number
         Divide two numbers.
 
     - idiv(x, y) -> number
         Integer division of two numbers.
+    
+    - inc(x) -> number
+        Add 1 to x.
 
     - mul(x, y) -> number
         Multiply x & y.

@@ -789,6 +789,18 @@ mod tests {
     }
 
     #[test]
+    fn test_inc() {
+        assert_eq!(eval_code("inc(1)"), Ok(DynamicValue::from(2)));
+        assert_eq!(eval_code("inc(2.5)"), Ok(DynamicValue::from(3.5)));
+    }
+
+    #[test]
+    fn test_dec() {
+        assert_eq!(eval_code("dec(1)"), Ok(DynamicValue::from(0)));
+        assert_eq!(eval_code("dec(2.5)"), Ok(DynamicValue::from(1.5)));
+    }
+
+    #[test]
     fn test_compact() {
         assert_eq!(
             eval_code("compact(split('', '|'))"),
