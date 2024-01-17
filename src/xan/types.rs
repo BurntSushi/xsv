@@ -59,6 +59,7 @@ impl ColumIndexationBy {
     }
 }
 
+#[derive(Debug)]
 pub enum DynamicNumber {
     Float(f64),
     Integer(i64),
@@ -69,6 +70,20 @@ impl DynamicNumber {
         match self {
             Self::Float(n) => Self::Float(n.abs()),
             Self::Integer(n) => Self::Integer(n.abs()),
+        }
+    }
+
+    pub fn inc(&self) -> DynamicNumber {
+        match self {
+            Self::Float(n) => Self::Float(n.add(1.0)),
+            Self::Integer(n) => Self::Integer(n.add(1)),
+        }
+    }
+
+    pub fn dec(&self) -> DynamicNumber {
+        match self {
+            Self::Float(n) => Self::Float(n.add(-1.0)),
+            Self::Integer(n) => Self::Integer(n.add(-1)),
         }
     }
 
@@ -773,6 +788,18 @@ mod tests {
                 &DynamicValue::Integer(3),
                 &DynamicValue::Integer(4)
             ]
+        );
+    }
+
+    #[test]
+    fn test_dynamic_number_inc_dec() {
+        assert_eq!(DynamicNumber::Integer(1).inc(), DynamicNumber::Integer(2));
+        assert_eq!(DynamicNumber::Float(1.5).inc(), DynamicNumber::Float(2.5));
+        assert_eq!(DynamicNumber::Integer(1).dec(), DynamicNumber::Integer(0));
+        assert_eq!(DynamicNumber::Float(1.5).dec(), DynamicNumber::Float(0.5));
+        assert_eq!(
+            DynamicNumber::Float(1.5).dec().inc(),
+            DynamicNumber::Float(1.5)
         );
     }
 }
