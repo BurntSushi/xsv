@@ -28,9 +28,9 @@ partition options:
                            will be replaced by a value based on the value
                            of the field, but sanitized for shell safety.
                            [default: {}.csv]
-    -p, --prefix-length <n>  Truncate the partition column after the
-                           specified number of bytes when creating the
-                           output file.
+    -p, --prefix-length <n>  Truncate the value of the partition column 
+                           after the specified number of bytes when creating
+                           the name of the output file.
     --drop                 Drop the partition column from results.
 
 Common options:
