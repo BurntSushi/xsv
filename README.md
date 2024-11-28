@@ -321,6 +321,12 @@ If you're a **Nix/NixOS** user, you can install xsv from nixpkgs:
 $ nix-env -i xsv
 ```
 
+If you're a **[X-CMD](https://www.x-cmd.com)** user, you can install xsv from `x env` command:
+
+```
+$ x env use xsv
+```
+
 Alternatively, you can compile from source by
 [installing Cargo](https://crates.io/install)
 ([Rust's](https://www.rust-lang.org/) package manager)
