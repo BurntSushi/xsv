@@ -1,3 +1,13 @@
+# `xsv` is now unmaintained
+
+In lieu of `xsv`, I'd recommend either
+[qsv](https://github.com/dathere/qsv)
+or
+[xan](https://github.com/medialab/xan).
+
+-------------------------------------------------------------------------------
+
+
 xsv is a command line program for indexing, slicing, analyzing, splitting
 and joining CSV files. Commands should be simple, fast and composable:
 
