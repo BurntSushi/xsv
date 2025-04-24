@@ -55,8 +55,9 @@ macro_rules! command_list {
     input       Read CSV data with special quoting rules
     join        Join CSV files
     partition   Partition CSV data based on a column value
-    sample      Randomly sample CSV data
+    rename      Select and rename columns from CSV
     reverse     Reverse rows of CSV data
+    sample      Randomly sample CSV data
     search      Search CSV data with regexes
     select      Select columns from CSV
     slice       Slice records from CSV
@@ -152,6 +153,7 @@ enum Command {
     Input,
     Join,
     Partition,
+    Rename,
     Reverse,
     Sample,
     Search,
@@ -187,6 +189,7 @@ impl Command {
             Command::Input => cmd::input::run(argv),
             Command::Join => cmd::join::run(argv),
             Command::Partition => cmd::partition::run(argv),
+            Command::Rename => cmd::rename::run(argv),
             Command::Reverse => cmd::reverse::run(argv),
             Command::Sample => cmd::sample::run(argv),
             Command::Search => cmd::search::run(argv),
