@@ -23,6 +23,7 @@ dev:
 
 release:
 	cargo build --release
+	strip ./target/release/xsv
 	mkdir -p ~/bin/bin
 	cp ./target/release/xsv ~/bin/bin/xsv
 
