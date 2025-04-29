@@ -35,6 +35,7 @@ mod workdir;
 
 mod test_cat;
 mod test_count;
+mod test_exclude;
 mod test_fixlengths;
 mod test_flatten;
 mod test_fmt;
