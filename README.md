@@ -343,7 +343,7 @@ cargo install xsv
 Compiling from this repository also works similarly:
 
 ```bash
-git clone git://github.com/BurntSushi/xsv
+git clone git@github.com:BurntSushi/xsv.git 
 cd xsv
 cargo build --release
 ```
