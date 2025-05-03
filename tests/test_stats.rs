@@ -90,6 +90,7 @@ fn setup<S>(name: S, rows: &[&str], headers: bool,
 
 fn get_field_value(wrk: &Workdir, cmd: &mut process::Command, field: &str)
                   -> String {
+    if field == "nullcount" { cmd.arg("--nullcount"); }
     if field == "median" { cmd.arg("--median"); }
     if field == "cardinality" { cmd.arg("--cardinality"); }
     if field == "mode" { cmd.arg("--mode"); }
@@ -180,6 +181,11 @@ stats_tests!(stats_median_even, "median", &["1", "2", "3", "4"], "2.5");
 stats_tests!(stats_median_even_null, "median",
              &["", "1", "2", "3", "4"], "2.5");
 stats_tests!(stats_median_mix, "median", &["1", "2.5", "3"], "2.5");
+
+stats_tests!(stats_nullcount, "nullcount", &["", "1", "2"], "1");
+stats_tests!(stats_nullcount_none, "nullcount", &["a", "1", "2"], "0");
+stats_tests!(stats_nullcount_spacenotnull, "nullcount", &[" ", "1", "2"], "0");
+stats_tests!(stats_nullcount_all, "nullcount", &["", "", ""], "3");
 
 mod stats_infer_nothing {
     // Only test CSV data with headers.
