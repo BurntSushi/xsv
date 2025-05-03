@@ -135,7 +135,7 @@ impl Args {
     }
 }
 
-type BoxedWriter = csv::Writer<Box<io::Write+'static>>;
+type BoxedWriter = csv::Writer<Box<dyn io::Write+'static>>;
 
 /// Generates unique filenames based on CSV values.
 struct WriterGenerator {

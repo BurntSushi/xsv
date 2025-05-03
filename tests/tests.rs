@@ -102,7 +102,7 @@ impl Arbitrary for CsvRecord {
         CsvRecord((0..size).map(|_| Arbitrary::arbitrary(g)).collect())
     }
 
-    fn shrink(&self) -> Box<Iterator<Item=CsvRecord>+'static> {
+    fn shrink(&self) -> Box<dyn Iterator<Item=CsvRecord>+'static> {
         Box::new(self.clone().unwrap()
                      .shrink().filter(|r| r.len() > 0).map(CsvRecord))
     }
@@ -148,7 +148,7 @@ impl Arbitrary for CsvData {
         }
     }
 
-    fn shrink(&self) -> Box<Iterator<Item=CsvData>+'static> {
+    fn shrink(&self) -> Box<dyn Iterator<Item=CsvData>+'static> {
         let len = if self.is_empty() { 0 } else { self[0].len() };
         let mut rows: Vec<CsvData> =
             self.clone()
