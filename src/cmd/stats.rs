@@ -510,7 +510,7 @@ impl Commute for TypedSum {
 
 /// TypedMinMax keeps track of minimum/maximum values for each possible type
 /// where min/max makes sense.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 struct TypedMinMax {
     strings: MinMax<Vec<u8>>,
     str_len: MinMax<usize>,
@@ -582,17 +582,6 @@ impl TypedMinMax {
                     _ => None
                 }
             }
-        }
-    }
-}
-
-impl Default for TypedMinMax {
-    fn default() -> TypedMinMax {
-        TypedMinMax {
-            strings: Default::default(),
-            str_len: Default::default(),
-            integers: Default::default(),
-            floats: Default::default(),
         }
     }
 }
