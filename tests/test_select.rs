@@ -104,6 +104,11 @@ select_test!(select_range_no_end_cat, "h4-,h1", "4-,1",
 select_test!(select_range_no_start_cat, "-h2,h1[1]", "-2,5",
              ["h1", "h2", "h1"], ["a", "b", "e"]);
 
+select_test!(select_regex, "/h[1-3]/", "1,2,5",
+             ["h1", "h2", "h1"], ["a", "b", "e"]);
+select_test!(select_regex_digit, r#"/h\d/"#, "1,2,4,5",
+             ["h1", "h2", "h4", "h1"], ["a", "b", "d", "e"]);
+
 select_test_err!(select_err_unknown_header, "dne");
 select_test_err!(select_err_oob_low, "0");
 select_test_err!(select_err_oob_high, "6");
@@ -114,3 +119,8 @@ select_test_err!(select_err_idx_not_int_2, "h1[a]");
 select_test_err!(select_err_unclosed_quote, r#""h1"#);
 select_test_err!(select_err_unclosed_bracket, r#""h1"[1"#);
 select_test_err!(select_err_expected_end_of_field, "a-b-");
+select_test_err!(select_err_single_slash, "/");
+select_test_err!(select_err_regex_nomatch, "/nomatch/");
+select_test_err!(select_err_regex_invalid, "/?/");
+select_test_err!(select_err_regex_empty, "//");
+select_test_err!(select_err_regex_triple_slash, "///");

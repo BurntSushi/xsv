@@ -7,6 +7,7 @@ use std::slice;
 use std::str::FromStr;
 
 use csv;
+use regex::bytes::Regex;
 use serde::de::{Deserializer, Deserialize, Error};
 
 #[derive(Clone)]
@@ -17,8 +18,10 @@ pub struct SelectColumns {
 
 impl SelectColumns {
     fn parse(mut s: &str) -> Result<SelectColumns, String> {
+        let is_empty = s.is_empty();
+        let bytes = s.as_bytes();
         let invert =
-            if !s.is_empty() && s.as_bytes()[0] == b'!' {
+            if !is_empty && bytes[0] == b'!' {
                 s = &s[1..];
                 true
             } else {
@@ -96,6 +99,18 @@ impl SelectorParser {
     }
 
     fn parse(&mut self) -> Result<Vec<Selector>, String> {
+        if let (Some('/'), Some('/')) = (self.chars.first(), self.chars.last()) {
+            if self.chars.len() == 2 {
+                return Err(format!("Empty regex: {}", self.chars.iter().collect::<String>()))
+            }
+            let re: String = self.chars[1..(self.chars.len() - 1)].iter().collect();
+            let regex = match Regex::new(&re) {
+                Ok(r) => r,
+                Err(_) => return Err(format!("Invalid regex: {}", re))
+            };
+            return Ok(vec![Selector::Regex(regex)])
+        }
+
         let mut sels = vec![];
         loop {
             if self.cur().is_none() {
@@ -227,6 +242,7 @@ impl SelectorParser {
 enum Selector {
     One(OneSelector),
     Range(OneSelector, OneSelector),
+    Regex(Regex),
 }
 
 #[derive(Clone)]
@@ -263,6 +279,19 @@ impl Selector {
                         inds
                     }
                 })
+            }
+            Selector::Regex(ref re) => {
+                let inds: Vec<usize> = first_record
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, h)| re.is_match(h))
+                    .map(|(i, _)| i)
+                    .collect();
+                if inds.is_empty() {
+                    return Err(format!("Selector regex '{}' does not match \
+                                        any columns in the CSV header.", re))
+                }
+                Ok(inds)
             }
         }
     }
@@ -327,6 +356,7 @@ impl fmt::Debug for Selector {
             Selector::One(ref sel) => sel.fmt(f),
             Selector::Range(ref s, ref e) =>
                 write!(f, "Range({:?}, {:?})", s, e),
+            Selector::Regex(ref re) => re.fmt(f)
         }
     }
 }
