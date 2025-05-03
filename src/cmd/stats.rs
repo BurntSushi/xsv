@@ -423,7 +423,7 @@ impl Commute for FieldType {
             (TNull, any) | (any, TNull) => any,
             // There's no way to get around an unknown.
             (TUnknown, _) | (_, TUnknown) => TUnknown,
-            // Integers can degrate to floats.
+            // Integers can degrade to floats.
             (TFloat, TInteger) | (TInteger, TFloat) => TFloat,
             // Numbers can degrade to Unicode strings.
             (TUnicode, TFloat) | (TFloat, TUnicode) => TUnicode,
