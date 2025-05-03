@@ -1,6 +1,5 @@
 use std::collections::hash_map::{HashMap, Entry};
 use std::fmt;
-use std::fs;
 use std::io;
 use std::iter::repeat;
 use std::str;
@@ -9,7 +8,7 @@ use byteorder::{WriteBytesExt, BigEndian};
 use csv;
 
 use CliResult;
-use config::{Config, Delimiter};
+use config::{Config, Delimiter, SeekRead};
 use index::Indexed;
 use select::{SelectColumns, Selection};
 use util;
@@ -278,7 +277,7 @@ impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
 
 impl Args {
     fn new_io_state(&self)
-        -> CliResult<IoState<fs::File, Box<io::Write+'static>>> {
+        -> CliResult<IoState<Box<SeekRead+'static>, Box<io::Write+'static>>> {
         let rconf1 = Config::new(&Some(self.arg_input1.clone()))
             .delimiter(self.flag_delimiter)
             .no_headers(self.flag_no_headers)
@@ -288,8 +287,8 @@ impl Args {
             .no_headers(self.flag_no_headers)
             .select(self.arg_columns2.clone());
 
-        let mut rdr1 = rconf1.reader_file()?;
-        let mut rdr2 = rconf2.reader_file()?;
+        let mut rdr1 = rconf1.reader_file_stdin()?;
+        let mut rdr2 = rconf2.reader_file_stdin()?;
         let (sel1, sel2) = self.get_selections(
             &rconf1, &mut rdr1, &rconf2, &mut rdr2)?;
         Ok(IoState {
