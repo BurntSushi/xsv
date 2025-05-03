@@ -64,6 +64,7 @@ macro_rules! command_list {
     split       Split CSV data into many files
     stats       Compute basic statistics
     table       Align CSV data into columns
+    transpose   Transpose rows/columns of CSV data
 "
     )
 }
@@ -161,6 +162,7 @@ enum Command {
     Split,
     Stats,
     Table,
+    Transpose,
 }
 
 impl Command {
@@ -196,6 +198,7 @@ impl Command {
             Command::Split => cmd::split::run(argv),
             Command::Stats => cmd::stats::run(argv),
             Command::Table => cmd::table::run(argv),
+            Command::Transpose => cmd::transpose::run(argv),
         }
     }
 }

@@ -51,6 +51,7 @@ mod test_sort;
 mod test_split;
 mod test_stats;
 mod test_table;
+mod test_transpose;
 
 fn qcheck<T: Testable>(p: T) {
     QuickCheck::new().gen(StdGen::new(thread_rng(), 5)).quickcheck(p);
