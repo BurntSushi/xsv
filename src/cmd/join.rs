@@ -6,15 +6,15 @@ use std::iter::repeat;
 use std::str;
 
 use byteorder::{WriteBytesExt, BigEndian};
-use csv;
 
-use CliResult;
-use config::{Config, Delimiter};
-use index::Indexed;
-use select::{SelectColumns, Selection};
-use util;
 
-static USAGE: &'static str = "
+use crate::CliResult;
+use crate::config::{Config, Delimiter};
+use crate::index::Indexed;
+use crate::select::{SelectColumns, Selection};
+use crate::util;
+
+static USAGE: &str = "
 Joins two sets of CSV data on the specified columns.
 
 The default join operation is an 'inner' join. This corresponds to the
@@ -278,7 +278,7 @@ impl<R: io::Read + io::Seek, W: io::Write> IoState<R, W> {
 
 impl Args {
     fn new_io_state(&self)
-        -> CliResult<IoState<fs::File, Box<io::Write+'static>>> {
+        -> CliResult<IoState<fs::File, Box<dyn io::Write+'static>>> {
         let rconf1 = Config::new(&Some(self.arg_input1.clone()))
             .delimiter(self.flag_delimiter)
             .no_headers(self.flag_no_headers)
@@ -294,10 +294,10 @@ impl Args {
             &rconf1, &mut rdr1, &rconf2, &mut rdr2)?;
         Ok(IoState {
             wtr: Config::new(&self.flag_output).writer()?,
-            rdr1: rdr1,
-            sel1: sel1,
-            rdr2: rdr2,
-            sel2: sel2,
+            rdr1,
+            sel1,
+            rdr2,
+            sel2,
             no_headers: rconf1.no_headers,
             casei: self.flag_no_case,
             nulls: self.flag_nulls,
@@ -389,7 +389,7 @@ impl<R: io::Read + io::Seek> ValueIndex<R> {
         let idx = Indexed::open(rdr, io::Cursor::new(row_idx.into_inner()))?;
         Ok(ValueIndex {
             values: val_idx,
-            idx: idx,
+            idx,
             num_rows: rowi,
         })
     }

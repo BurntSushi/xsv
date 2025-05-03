@@ -1,11 +1,11 @@
-use csv;
 
-use CliResult;
-use config::{Config, Delimiter};
-use select::SelectColumns;
-use util;
 
-static USAGE: &'static str = "
+use crate::CliResult;
+use crate::config::{Config, Delimiter};
+use crate::select::SelectColumns;
+use crate::util;
+
+static USAGE: &str = "
 Select columns from CSV data efficiently.
 
 This command lets you manipulate the columns in CSV data. You can re-order

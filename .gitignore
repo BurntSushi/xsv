@@ -10,3 +10,4 @@ ctags.rust
 main
 *.idx
 builds
+.idea

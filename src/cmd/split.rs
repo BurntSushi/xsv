@@ -2,16 +2,15 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use channel;
-use csv;
+
 use threadpool::ThreadPool;
 
-use CliResult;
-use config::{Config, Delimiter};
-use index::Indexed;
-use util::{self, FilenameTemplate};
+use crate::CliResult;
+use crate::config::{Config, Delimiter};
+use crate::index::Indexed;
+use crate::util::{self, FilenameTemplate};
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Splits the given CSV data into chunks.
 
 The files are written to the directory given with the name '{start}.csv',
@@ -98,10 +97,8 @@ impl Args {
         let nchunks = util::num_of_chunks(
             idx.count() as usize, self.flag_size);
         let pool = ThreadPool::new(self.njobs());
-        let (tx, rx) = channel::bounded::<()>(0);
         for i in 0..nchunks {
             let args = self.clone();
-            let tx = tx.clone();
             pool.execute(move || {
                 let conf = args.rconfig();
                 let mut idx = conf.indexed().unwrap().unwrap();
@@ -116,11 +113,9 @@ impl Args {
                     wtr.write_byte_record(&row).unwrap();
                 }
                 wtr.flush().unwrap();
-                drop(tx);
             });
         }
-        drop(tx);
-        rx.recv();
+        pool.join();
         Ok(())
     }
 
@@ -128,7 +123,7 @@ impl Args {
         &self,
         headers: &csv::ByteRecord,
         start: usize,
-    ) -> CliResult<csv::Writer<Box<io::Write+'static>>> {
+    ) -> CliResult<csv::Writer<Box<dyn io::Write+'static>>> {
         let dir = Path::new(&self.arg_outdir);
         let path = dir.join(self.flag_filename.filename(&format!("{}", start)));
         let spath = Some(path.display().to_string());

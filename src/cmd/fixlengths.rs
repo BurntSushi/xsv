@@ -1,12 +1,12 @@
 use std::cmp;
 
-use csv;
 
-use CliResult;
-use config::{Config, Delimiter};
-use util;
 
-static USAGE: &'static str = "
+use crate::CliResult;
+use crate::config::{Config, Delimiter};
+use crate::util;
+
+static USAGE: &str = "
 Transforms CSV data so that all records have the same length. The length is
 the length of the longest record in the data (not counting trailing empty fields,
 but at least 1). Records with smaller lengths are padded with empty fields.
@@ -63,12 +63,10 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
             let mut rdr = config.reader()?;
             let mut record = csv::ByteRecord::new();
             while rdr.read_byte_record(&mut record)? {
-                let mut index = 0;
                 let mut nonempty_count = 0;
-                for field in &record {
-                    index += 1;
-                    if index == 1 || !field.is_empty() {
-                        nonempty_count = index;
+                for (index, field) in record.iter().enumerate() {
+                    if index == 0 || !field.is_empty() {
+                        nonempty_count = index+1;
                     }
                 }
                 maxlen = cmp::max(maxlen, nonempty_count);

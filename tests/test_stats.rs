@@ -2,7 +2,7 @@ use std::borrow::ToOwned;
 use std::cmp;
 use std::process;
 
-use workdir::Workdir;
+use crate::workdir::Workdir;
 
 macro_rules! stats_tests {
     ($name:ident, $field:expr, $rows:expr, $expect:expr) => (

@@ -1,10 +1,10 @@
-use csv;
 
-use CliResult;
-use config::{Delimiter, Config};
-use util;
 
-static USAGE: &'static str = "
+use crate::CliResult;
+use crate::config::{Delimiter, Config};
+use crate::util;
+
+static USAGE: &str = "
 Prints a count of the number of records in the CSV data.
 
 Note that the count will not include the header row (unless --no-headers is
@@ -47,5 +47,6 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 count
             }
         };
-    Ok(println!("{}", count))
+    println!("{}", count);
+    Ok(())
 }

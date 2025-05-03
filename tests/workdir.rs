@@ -8,13 +8,13 @@ use std::str::FromStr;
 use std::sync::atomic;
 use std::time::Duration;
 
-use csv;
 
-use Csv;
 
-static XSV_INTEGRATION_TEST_DIR: &'static str = "xit";
+use crate::Csv;
 
-static NEXT_ID: atomic::AtomicUsize = atomic::ATOMIC_USIZE_INIT;
+static XSV_INTEGRATION_TEST_DIR: &str = "xit";
+
+static NEXT_ID: atomic::AtomicUsize = atomic::AtomicUsize::new(0);
 
 pub struct Workdir {
     root: PathBuf,
@@ -39,7 +39,7 @@ impl Workdir {
         if let Err(err) = create_dir_all(&dir) {
             panic!("Could not create '{:?}': {}", dir, err);
         }
-        Workdir { root: root, dir: dir, flexible: false }
+        Workdir { root, dir, flexible: false }
     }
 
     pub fn flexible(mut self, yes: bool) -> Workdir {
@@ -113,8 +113,7 @@ impl Workdir {
     pub fn stdout<T: FromStr>(&self, cmd: &mut process::Command) -> T {
         let o = self.output(cmd);
         let stdout = String::from_utf8_lossy(&o.stdout);
-        stdout.trim_matches(&['\r', '\n'][..]).parse().ok().expect(
-            &format!("Could not convert from string: '{}'", stdout))
+        stdout.trim_matches(&['\r', '\n'][..]).parse().ok().unwrap_or_else(|| panic!("Could not convert from string: '{}'", stdout))
     }
 
     pub fn assert_err(&self, cmd: &mut process::Command) {

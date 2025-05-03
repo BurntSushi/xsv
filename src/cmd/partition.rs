@@ -4,15 +4,15 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use csv;
+
 use regex::Regex;
 
-use CliResult;
-use config::{Config, Delimiter};
-use select::SelectColumns;
-use util::{self, FilenameTemplate};
+use crate::CliResult;
+use crate::config::{Config, Delimiter};
+use crate::select::SelectColumns;
+use crate::util::{self, FilenameTemplate};
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Partitions the given CSV data into chunks based on the value of a column
 
 The files are written to the output directory with filenames based on the
@@ -135,7 +135,7 @@ impl Args {
     }
 }
 
-type BoxedWriter = csv::Writer<Box<io::Write+'static>>;
+type BoxedWriter = csv::Writer<Box<dyn io::Write+'static>>;
 
 /// Generates unique filenames based on CSV values.
 struct WriterGenerator {
@@ -148,7 +148,7 @@ struct WriterGenerator {
 impl WriterGenerator {
     fn new(template: FilenameTemplate) -> WriterGenerator {
         WriterGenerator {
-            template: template,
+            template,
             counter: 1,
             used: HashSet::new(),
             non_word_char: Regex::new(r"\W").unwrap(),

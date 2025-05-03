@@ -1,10 +1,10 @@
-use csv;
 
-use CliResult;
-use config::{Config, Delimiter};
-use util;
 
-static USAGE: &'static str = "
+use crate::CliResult;
+use crate::config::{Config, Delimiter};
+use crate::util;
+
+static USAGE: &str = "
 Concatenates CSV data by column or by row.
 
 When concatenating by column, the columns will be written in the same order as

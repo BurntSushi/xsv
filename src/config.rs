@@ -7,13 +7,13 @@ use std::io::{self, Read};
 use std::ops::Deref;
 use std::path::PathBuf;
 
-use csv;
-use index::Indexed;
+
 use serde::de::{Deserializer, Deserialize, Error};
 
-use CliResult;
-use select::{SelectColumns, Selection};
-use util;
+use crate::CliResult;
+use crate::index::Indexed;
+use crate::select::{SelectColumns, Selection};
+use crate::util;
 
 
 #[derive(Clone, Copy, Debug)]
@@ -87,7 +87,7 @@ impl Config {
             }
         };
         Config {
-            path: path,
+            path,
             idx_path: None,
             select_columns: None,
             delimiter: delim,
@@ -110,7 +110,7 @@ impl Config {
     }
 
     pub fn no_headers(mut self, mut yes: bool) -> Config {
-        if env::var("XSV_TOGGLE_HEADERS").unwrap_or("0".to_owned()) == "1" {
+        if env::var("XSV_TOGGLE_HEADERS").unwrap_or_else(|_| "0".to_owned()) == "1" {
             yes = !yes;
         }
         self.no_headers = yes;
@@ -194,12 +194,12 @@ impl Config {
     }
 
     pub fn writer(&self)
-                 -> io::Result<csv::Writer<Box<io::Write+'static>>> {
+                 -> io::Result<csv::Writer<Box<dyn io::Write+'static>>> {
         Ok(self.from_writer(self.io_writer()?))
     }
 
     pub fn reader(&self)
-                 -> io::Result<csv::Reader<Box<io::Read+'static>>> {
+                 -> io::Result<csv::Reader<Box<dyn io::Read+'static>>> {
         Ok(self.from_reader(self.io_reader()?))
     }
 
@@ -260,7 +260,7 @@ impl Config {
         }
     }
 
-    pub fn io_reader(&self) -> io::Result<Box<io::Read+'static>> {
+    pub fn io_reader(&self) -> io::Result<Box<dyn io::Read+'static>> {
         Ok(match self.path {
                 None => Box::new(io::stdin()),
                 Some(ref p) => {
@@ -290,7 +290,7 @@ impl Config {
             .from_reader(rdr)
     }
 
-    pub fn io_writer(&self) -> io::Result<Box<io::Write+'static>> {
+    pub fn io_writer(&self) -> io::Result<Box<dyn io::Write+'static>> {
         Ok(match self.path {
             None => Box::new(io::stdout()),
             Some(ref p) => Box::new(fs::File::create(p)?),
