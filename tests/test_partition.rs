@@ -48,7 +48,7 @@ TX,Fort Worth
 
 #[test]
 fn partition_drop() {
-    let wrk = Workdir::new("partition");
+    let wrk = Workdir::new("partition_drop");
     wrk.create("in.csv", data(true));
 
     let mut cmd = wrk.command("partition");
@@ -95,7 +95,7 @@ TX,Fort Worth
 
 #[test]
 fn partition_drop_without_headers() {
-    let wrk = Workdir::new("partition_without_headers");
+    let wrk = Workdir::new("partition_drop_without_headers");
     wrk.create("in.csv", data(false));
 
     let mut cmd = wrk.command("partition");

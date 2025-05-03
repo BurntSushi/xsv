@@ -7,6 +7,7 @@ extern crate filetime;
 extern crate num_cpus;
 extern crate rand;
 extern crate regex;
+extern crate rlua;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -57,6 +58,7 @@ macro_rules! command_list {
     partition   Partition CSV data based on a column value
     sample      Randomly sample CSV data
     reverse     Reverse rows of CSV data
+    script      Execute Lua script on CSV data
     search      Search CSV data with regexes
     select      Select columns from CSV
     slice       Slice records from CSV
@@ -154,6 +156,7 @@ enum Command {
     Partition,
     Reverse,
     Sample,
+    Script,
     Search,
     Select,
     Slice,
@@ -189,6 +192,7 @@ impl Command {
             Command::Partition => cmd::partition::run(argv),
             Command::Reverse => cmd::reverse::run(argv),
             Command::Sample => cmd::sample::run(argv),
+            Command::Script => cmd::script::run(argv),
             Command::Search => cmd::search::run(argv),
             Command::Select => cmd::select::run(argv),
             Command::Slice => cmd::slice::run(argv),
