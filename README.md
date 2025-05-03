@@ -62,6 +62,26 @@ Dual-licensed under MIT or the [UNLICENSE](https://unlicense.org).
 * **table** - Show aligned output of any CSV data using
   [elastic tabstops](https://github.com/BurntSushi/tabwriter).
 
+#### Common commands options
+```
+    -h, --help             Display this message
+    -d, --delimiter <arg>  The field delimiter for reading CSV data.
+                           Must be a single character. (default: ,)
+```
+
+**Examples**
+
+File delimited with comma:
+
+`xsv headers -d ',' data_with_comma.csv`
+
+File delimited with semicolon:
+
+`xsv headers -d ';' data_with_semic.csv`
+
+File delimited with tab:
+
+`xsv headers -d '\t' data_with_tab.csv`
 
 ### A whirlwind tour
 
