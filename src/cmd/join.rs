@@ -36,6 +36,8 @@ Usage:
 
 join options:
     --no-case              When set, joins are done case insensitively.
+    --inner                Do an 'inner' join (default option). This returns
+                           only rows that exist in both CSV data sets.
     --left                 Do a 'left outer' join. This returns all rows in
                            first CSV data set, including rows with no
                            corresponding row in the second data set. When no
@@ -83,6 +85,7 @@ struct Args {
     flag_right: bool,
     flag_full: bool,
     flag_cross: bool,
+    flag_inner: bool,
     flag_output: Option<String>,
     flag_no_headers: bool,
     flag_no_case: bool,
@@ -98,24 +101,30 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
         args.flag_right,
         args.flag_full,
         args.flag_cross,
+        args.flag_inner,
     ) {
-        (true, false, false, false) => {
+        (true, false, false, false, false) => {
             state.write_headers()?;
             state.outer_join(false)
         }
-        (false, true, false, false) => {
+        (false, true, false, false, false) => {
             state.write_headers()?;
             state.outer_join(true)
         }
-        (false, false, true, false) => {
+        (false, false, true, false, false) => {
             state.write_headers()?;
             state.full_outer_join()
         }
-        (false, false, false, true) => {
+        (false, false, false, true, false) => {
             state.write_headers()?;
             state.cross_join()
         }
-        (false, false, false, false) => {
+        (false, false, false, false, true) => {
+            state.write_headers()?;
+            state.inner_join()
+        }
+        // If no operation is explicitly requested default to inner join
+        (false, false, false, false, false) => {
             state.write_headers()?;
             state.inner_join()
         }
