@@ -1,7 +1,8 @@
 use std::borrow::Cow;
+use std::convert::From;
 
 use csv;
-use tabwriter::TabWriter;
+use tabwriter::{Alignment, TabWriter};
 
 use CliResult;
 use config::{Config, Delimiter};
@@ -24,7 +25,10 @@ table options:
                            [default: 2]
     -p, --pad <arg>        The minimum number of spaces between each column.
                            [default: 2]
-    -c, --condense <arg>  Limits the length of each field to the value
+    -a, --align <arg>      How entries should be aligned in a column.
+                           Options: \"left\", \"right\", \"center\".
+                           [default: left]
+    -c, --condense <arg>   Limits the length of each field to the value
                            specified. If the field is UTF-8 encoded, then
                            <arg> refers to the number of code points.
                            Otherwise, it refers to the number of bytes.
@@ -43,7 +47,25 @@ struct Args {
     flag_pad: usize,
     flag_output: Option<String>,
     flag_delimiter: Option<Delimiter>,
+    flag_align: Align,
     flag_condense: Option<usize>,
+}
+
+#[derive(Deserialize, Clone, Copy)]
+enum Align {
+    Left,
+    Right,
+    Center,
+}
+
+impl From<Align> for Alignment {
+    fn from(align: Align) -> Self {
+        match align {
+            Align::Left => Alignment::Left,
+            Align::Right => Alignment::Right,
+            Align::Center => Alignment::Center,
+        }
+    }
 }
 
 pub fn run(argv: &[&str]) -> CliResult<()> {
@@ -56,7 +78,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
 
     let tw = TabWriter::new(wconfig.io_writer()?)
         .minwidth(args.flag_width)
-        .padding(args.flag_pad);
+        .padding(args.flag_pad)
+        .alignment(args.flag_align.into());
     let mut wtr = wconfig.from_writer(tw);
     let mut rdr = rconfig.reader()?;
 
