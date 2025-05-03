@@ -7,6 +7,7 @@ fn setup(name: &str) -> (Workdir, process::Command) {
         svec!["h1", "h2"],
         svec!["abcdef", "ghijkl"],
         svec!["mnopqr", "stuvwx"],
+        svec!["ab\"cd\"ef", "gh,ij,kl"],
     ];
 
     let wrk = Workdir::new(name);
@@ -27,7 +28,8 @@ fn fmt_delimiter() {
     let expected = "\
 h1\th2
 abcdef\tghijkl
-mnopqr\tstuvwx";
+mnopqr\tstuvwx
+\"ab\"\"cd\"\"ef\"\tgh,ij,kl";
     assert_eq!(got, expected.to_string());
 }
 
@@ -40,7 +42,8 @@ fn fmt_weird_delimiter() {
     let expected = "\
 \"h1\"h\"h2\"
 abcdefh\"ghijkl\"
-mnopqrhstuvwx";
+mnopqrhstuvwx
+\"ab\"\"cd\"\"ef\"h\"gh,ij,kl\"";
     assert_eq!(got, expected.to_string());
 }
 
@@ -53,7 +56,8 @@ fn fmt_crlf() {
     let expected = "\
 h1,h2\r
 abcdef,ghijkl\r
-mnopqr,stuvwx";
+mnopqr,stuvwx\r
+\"ab\"\"cd\"\"ef\",\"gh,ij,kl\"";
     assert_eq!(got, expected.to_string());
 }
 
@@ -66,6 +70,21 @@ fn fmt_quote_always() {
     let expected = "\
 \"h1\",\"h2\"
 \"abcdef\",\"ghijkl\"
-\"mnopqr\",\"stuvwx\"";
+\"mnopqr\",\"stuvwx\"
+\"ab\"\"cd\"\"ef\",\"gh,ij,kl\"";
+    assert_eq!(got, expected.to_string());
+}
+
+#[test]
+fn fmt_quote_never() {
+    let (wrk, mut cmd) = setup("fmt_quote_never");
+    cmd.arg("--quote-never");
+
+    let got: String = wrk.stdout(&mut cmd);
+    let expected = "\
+h1,h2
+abcdef,ghijkl
+mnopqr,stuvwx
+ab\"cd\"ef,gh,ij,kl";
     assert_eq!(got, expected.to_string());
 }
